@@ -25,7 +25,9 @@ import random as rand
 
 np.set_printoptions(precision=2)
 
-lite_engine = create_engine('sqlite:////home/akucahravy/DB/initdb', echo=False)
+import configs as Conf
+
+lite_engine = create_engine(Conf.dbLocation, echo=False)
 
 Session=sessionmaker()
 Session.configure(bind=lite_engine)

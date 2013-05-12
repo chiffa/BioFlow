@@ -14,8 +14,9 @@ from DBLoader.TableBuilder import UNIPROT_Prot
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String
 from sqlalchemy import ForeignKey
+import configs as Conf
 
-lite_engine = create_engine('sqlite:////home/akucahravy/DB/initdb',echo=False)
+lite_engine = create_engine(Conf.dbLocation, echo=False)
 
 Base = declarative_base()
 

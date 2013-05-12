@@ -8,8 +8,9 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, Float
 from sqlalchemy import Index
 from sqlalchemy import ForeignKey
+import configs as Conf
 
-lite_engine = create_engine('sqlite:////home/akucahravy/DB/initdb',echo=False)
+lite_engine = create_engine(Conf.dbLocation,echo=False)
 
 Base = declarative_base()
 

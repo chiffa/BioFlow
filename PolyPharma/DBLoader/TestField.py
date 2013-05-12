@@ -8,12 +8,12 @@ Created on Feb 25, 2013
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-
+import configs as Conf
 
 
 Base = declarative_base()
 
-lite_engine = create_engine('sqlite:////home/akucahravy/DB/initdb', echo=False)
+lite_engine = create_engine(Conf.dbLocation, echo=False)
 
 Base.metadata.reflect(lite_engine)
 meta=Base.metadata
