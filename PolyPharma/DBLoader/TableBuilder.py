@@ -312,6 +312,22 @@ class UNIPROTid2acnum(Base):
                                               self.uniprotid,
                                               self.acnum)
 
+class ReactomeId2acnum(Base):
+    __tablename__ = 'ReactomeId2acnum'
+    
+    upacrelid = Column(Integer, primary_key=True)
+    acnum = Column(String,ForeignKey('UNIPROTid2acnum.acnum'))
+    ReactomeId = Column(String)
+    
+    def __init__(self,acnum,ReactomeId):
+        self.acnum = acnum
+        self.ReactomeId=ReactomeId
+    
+    def __repr__(self):
+        return "<ReactomeId2acnum('%s','%s')>" % (
+                                              self.acnum,
+                                              self.ReactomeId)
+
 class UNIPROT_FullGO2(Base):
     __tablename__ = 'UNIPROT_FullGO2'
     
