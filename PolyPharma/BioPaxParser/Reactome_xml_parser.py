@@ -6,6 +6,7 @@ Created on 13 mai 2013
 
 import xml.etree.ElementTree as ET
 import logging
+import random
 
 logging.basicConfig(level=logging.DEBUG,
                     format='%(levelname)-8s %(message)s',
@@ -36,19 +37,38 @@ for child in root:
         TypeCount[CurrentType]=0
     TypeCount[CurrentType]+=1
     for subchild in child:
-        if (subchild.tag,subchild.attrib.keys()[0]) not in Subtypes[CurrentType].keys():
-            Subtypes[CurrentType][(subchild.tag,subchild.attrib.keys()[0])]=0
-        Subtypes[CurrentType][(subchild.tag,subchild.attrib.keys()[0])]+=1
+        refference=""
+        if 'resource' in subchild.attrib.keys()[0]:
+            for letter in subchild.attrib.values()[0]:
+                if not letter.isdigit():
+                    refference+=letter
+        else : refference=subchild.attrib.keys()[0]
+        if (subchild.tag,refference) not in Subtypes[CurrentType].keys():
+            Subtypes[CurrentType][(subchild.tag,refference)]=0
+        Subtypes[CurrentType][(subchild.tag,refference)]+=1
 #        if len(subchild)>0:
 #            logging.warning("'further children for '%s','%s'",subchild.tag, subchild.attrib)
 #            # Never happens, so this is actually a pretty well formulated rdf
 
+
 for dattype in Subtypes.keys():
     logging.info("'%s' | '%s'",dattype, TypeCount[dattype])
     for elt in Subtypes[dattype]:
-        logging.info(" \t '%s' | '%s' ", elt, Subtypes[dattype][elt])
+        logging.info(" \t '%s' | '%s' ", elt, "{0:.2f}".format(float(Subtypes[dattype][elt])/float(TypeCount[dattype])*100.0))
+    logging.info('\n')
+    Sample=root.findall(dattype)
+    random.shuffle(Sample)
+    for EntFeat in Sample[:5]:
+        logging.info("'%s' | '%s'", EntFeat.tag, EntFeat.attrib)
+        for subchild in EntFeat:
+            logging.info(" \t '%s' | '%s' | '%s' ", subchild.tag, subchild.attrib, subchild.text)
+    logging.info('<=======================================================>\n\n\n')
+    
 
-for EntFeat in root.findall('{http://biopax-level3#}RelationshipTypeVocabulary'):
+
+Sample=root.findall('{http://biopax-level3#}BioSource')
+for EntFeat in Sample:
     logging.info("'%s' | '%s'", EntFeat.tag, EntFeat.attrib)
     for subchild in EntFeat:
         logging.info(" \t '%s' | '%s' | '%s' ", subchild.tag, subchild.attrib, subchild.text)
+logging.info('<=======================================================>\n\n\n')
