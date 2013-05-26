@@ -142,180 +142,275 @@ TODO: see what is accessed when a index is an exact hit. iterator? List?
  TODO: catalytic action of messenger RNA?
  TODO: is there a possibility of post-translational mutation of DNA or RNA?
  
+ All the information regarding the 
+ 
 '''
 
 from bulbs.model import Node, Relationship
-from bulbs.property import String, Integer, Float
+from bulbs.property import String, Integer, Float, Dictionary, List
 from bulbs.utils import current_datetime
 
 
-#TODO: delete all the IDs
+#CancelledTODO: delete all the IDs => We need to search somehow with external IDs
+#TODO: Transform database pointers into the veretexes pointing towards the nodes to allow bulbs
 
+# TODO: pointers towards common names, common names being indexed
 
-class Meta_Protein(Node):
-    element_type="Protein"
-    
-    Prot_ID=String(nullable=False, Index=True)
-    UniprotId=String(Index=True)
-    CommonNames=String(Index=True) #Names separated by ;
-    Length_aa=Integer(Index=True)
+# TODO: add a SQL database allowing the mapping of Accession numbers and Co to the Objects?
+# WE ARE NOT INTO OPTIMIZATION YET!!!
 
-class Meta_DNA(Node):
-    element_type="DNA"
-    
-    DNA_Position=String(nullable=False, Index=True) # under the form X12341-X512341234
-    Gene_name=String(Index=True)
-    CommonNames=String(Index=True) #Names separated by ;
-    Length_pb=Integer(Index=True)
+# TODO: add fragement to fragment composition relation
 
-class Meta_RNA(Node):
-    element_type="RNA"
-    
-    RNA_ID=String(nullable=False, Index=True)
+class Meta(Node):
+    ID=String(nullable=False)
     name=String(Index=True)
-    CommonNames=String(Index=True) #Names separated by ;
-    Length_pb=Integer(Index=True)
+    custom=String(Index=True)
+    Size=String()
     
-class Meta_Complex(Node):
-    element_type="Complex"
-    
-    Complex_ID=String(nullable=False, Index=True)
+class Fragment(Node):
+    ApproximateStart=Integer(nullable=False, Index=True)
+    ApproxinateEnd=Integer(nullable=False, Index=True)
+    location=String(nullable=False,) #Location is relative for everything except DNA fragmements
     name=String(Index=True)
-    CommonNames=String(Index=True) #Names separated by ;
+    custom=String(Index=True)
 
-class Meta_SmallMolecule(Node):
-    element_type="Small Molecule"
-
-    SmallMolecule_ID=String(nullable=False,Index=True)
-    ChEBI_ID=String(Index=True)
-    name=String(Index=True)
-    CommonNames=String(Index=True) #Names separated by;
-
-class Fragment_CatalyticSite(Node):
-    element_type="Catalytic Site"
-    
-    CatalyticSite_ID=String(nullable=False, Index=True)
-    name=String(Index=True)
-    CommonNames=String(Index=True)
-    # No localization, because regroups other catalytic sites
-
-class Fragment_Composite_CatalyticSite(Node): # Exists only within a complex, made up by several catalytic sites types
-    element_type="Composit Catalytic Site"
-    
-    Comp_CatalyticSite_ID=String(nullable=False,Index=True)
-    name=String(Index=True)
-    CommonNames=String(Index=True)
-    localization=String(Index=True)
-    
-class Fragment_ContactRegion(Node):
-    element_type="Contact Region" # => Region of contact with an another protein
-    
-    ID=String(nullable=False, Index=True)
-    name=String(Index=True)
-    localization=String(Index=True)
-    
-class Fragment_EvoDefSite(Node): #classification introduction in a machine-readable format
-    element_type="Evolutionary defined site" # => Conserved elements, evolution hotspots, etc...
-    
-    EvDefSite_ID=String(nullable=False, Index=True)
-    name=String(Index=True)
-    localization=String(Index=True)
-    type=String(Index=True)
-
-class Instantiation_PostTranslationalModificationSite(Node): # Do we need it? we can instantiate it otherwise
-    element_type="Post-Translational Modification site"
-    
-    ID=String(nullable=False, Index=True)
-    name=String(Index=True)
-    Type=String(Index=True)
-    localization=String(Index=True)
-    
-class Instantiation_Mutation(Node):
-    element_type="Mutation"
-    
-    ID=String(nullable=False, Index=True)
-    type=String(Index=True)
-    Abs_Location=String(Index=True) 
-    Rel_Location=String(Index=True)
-
-class Instantiation_Epigenetic_Modification(Node): # Specific only to DNA
-    element_type="Epugenetic_Modification"
-    
+class Instantiation(Node):
     ID=String(nullable=False,Index=True)
-    Abs_location = String(Index=True)
-
-class Instantiation_InComplex(Node):
-    element_type="In Complex"
+    name=String(Index=True)
+    custom=String(Index=True)
     
-    ID=String(nullable=False, Index=True)
-    
-class Instantiation_Localization(Node):
-    element_type="Localization"
-    
-    ID=String(nullable=False, Index=True)
-    Location=String(Index=True)
-    
-class Meta_Reaction(Node):
-    element_type="Reaction"
-    
+class Reaction(Node):
     ID=String(nullable=False, Index=True)
     name=String(Index=True)
     type=String(Index=True)
     Free_Entalpy=String()
     Cinetic_Constant=String()
+    frequency=Float()
+    custom=String(Index=True)
 
-class Instance_of_Object(Node):
-    element_type="Reaction"
+#<=======================================================================================================>
+#<=======================================================================================================>
+#<=======================================================================================================>
 
-    ID=String(nullable=False, Index=True)
+class Meta_Protein(Meta):
+    element_type="Protein"
     
-class Instace_of_Reaction(Node):
+    UniprotId=String(Index=True)
+    CommonNames=List(Index=True) # No, this doesn't allow efficient indexing
+
+class Meta_Chromosome(Meta):
+    element_type="Chromosome or Chromosome fragment"
+
+#In theory DNA is always a fragment, not an entity. Chromosome or chromosome fragment / recombination is
+
+class Meta_RNA(Meta):
+    element_type="RNA"
+    
+    EMBL_RNA_ID=String(Index=True)
+    CommonNames=String(Index=True) # No, this doesn't allow efficient indexing
+    
+class Meta_Complex(Meta):
+    element_type="Complex"
+    
+    PDB_ID=String(Index=True)
+    CommonNames=String(Index=True) # No, this doesn't allow efficient indexing
+
+class Meta_SmallMolecule(Meta):
+    element_type="Small Molecule"
+
+    ChEBI_ID=String(Index=True)
+    CommonNames=String(Index=True) # No, this doesn't allow efficient indexing
+
+#<=======================================================================================================>
+
+class Fragment_DNA(Fragment):
+    element_type="DNA Fragment"
+    
+    Gene_name=String(Index=True)
+    CommonNames=String(Index=True) # No, this doesn't allow efficient indexing
+    Length_pb=Integer(Index=True)
+
+class Fragment_CatalyticSite(Fragment):
+    element_type="Catalytic Site"
+    
+    CommonNames=String(Index=True) # No, this doesn't allow efficient indexing
+    # No localization, because regroups other catalytic sites
+
+class Fragment_Composit_CatalyticSite(Fragment): # Exists only within a complex, made up by several catalytic sites types
+    element_type="Composit Catalytic Site"
+    
+    CommonNames=String(Index=True) # No, this doesn't allow efficient indexing
+    
+class Fragment_ContactRegion(Fragment):
+    element_type="Contact Region" # => Region of contact with an another protein
+    
+    CommonNames=String(Index=True) # No, this doesn't allow efficient indexing
+    
+class Fragment_EvoDefSite(Fragment): #classification introduction in a machine-readable format
+    element_type="Evolutionary defined site" # => Conserved elements, evolution hotspots, etc...
+    
+    EvoType=String(Index=True)
+
+class Fragment_PTM_Site(Fragment):
+    element_type="Post-Translational Modification site"
+
+class Fragment_Mutation_Site(Fragment):
+    element_type="Mutation Site"
+
+class Fragment_Domain(Fragment):
+    element_type="Domain"
+
+    DomainType=String(Index=True)
+    
+#<======================================================================================================>
+
+# Instantiation always occurs at a place defined by a Fragment
+
+class Instantiation_PostTranslationalModification(Instantiation): # Do we need it? => Yes, for annotation purposes
+    element_type="Post-Translational Modification"
+    
+    Type=String(Index=True)
+    
+class Instantiation_Mutation(Node):
+    element_type="Mutation"
+    
+    type=String(Index=True)
+
+class Instantiation_Epigenetic_Modification(Node): # Acts on DNA fragments
+    element_type="Epugenetic_Modification"
+
+class Instantiation_InComplex(Node):
+    element_type="In Complex"
+    
+class Instantiation_Localization(Node):
+    element_type="Localization"
+
+    Location=String(Index=True)
+
+#<========================================================================================================>
+    
+class Instance_of_Meta(Meta): # Points towards original Meta and the Instantiators
+    element_type="Instance of Meta"
+    
+    UID=String()
+    
+class Instance_of_Fragment(Meta): # Points towards original Meta and the Instantiators
+    element_type="Instance of Meta"
+    
+    UID=String()
+    
+class Instace_of_Reaction(Reaction): # Points towards original Reaction and the Instantiators
     element_type="Instance of reaction"
-    
-    ID=String(nullable=False, Index=True)
 
-class Instance_modification(Node):
-    element_type="modification of instantiation"
-    
-    ID=String(nullable=False,Index=True)
-    
+    UID=String()
+#<========================================================================================================>
+
+class Instance_modification(Reaction):
+    element_type="Instance change Reaction"  # Can change only the instantiation of Meta. Reaction will flow anywhere the ingredients required for it are present
+
+#<========================================================================================================>
+
 class Annot_Reaction_type(Node):
-    element_type="Reaction Type"
+    element_type="Reaction type"
     
-    ID=String(nullable=False, Index=True)
     name=String(Index=True)
     
-class Annot_domain(Node):
-    element_type="Domain types"
+class Annot_domain_type(Node):
+    element_type="Domain type"
     
     name=String(nullable=False, Index=True)
     
-class Annot_Locations(Node):
-    element_type="Location types"
+class Annot_Location_type(Node):
+    element_type="Location type"
     
     name=String(nullable=False, Index=True)
     
-class Annot_PostTransMod_Type(Node):
+class Annot_PostTransMod_type(Node):
     element_type="Post Translational Modification Type"
     
     name=String(nullable=False, Index=True)
 
 class Annot_GOTerm(Node):
-    element_type="goterm"
+    element_type="GO term"
     
     GOTermID=String(nullable=False)
     FullName=String()
 
-class M2A_Annotates(Relationship):
-    #relation between a Protein and a GOTerm
-    label = "annotates"
-    
-    confidence=Float() # between 0 for false to 1 for sure 
-
-#Other classes are to be constructed in relation with the Reactome data structure
-
 class Annot_Database(Node):
     # Should not be used for the search because of a large number of nodes attached to it
-    element_type="database_id"
+    element_type="database name"
     
     db_name=String(nullable=False, Index=True)
+
+class Annot_Database_ID(Node):
+    element_type="id in database"
+
+    id=String(nullable=False,Index=True)
+    
+class Annot_Evidence(Node):
+    # Annotation evidence
+    element_type="evidence types"
+    
+    evidence_type=String()
+    
+class Annot_EvidenceInstance(Node): # Publication or a part of publication
+    element_type="evidence instance"
+    
+    type=String(String=True)
+    evidence_instance=Dictionary()
+
+#<========================================================================================================>
+#<========================================================================================================>
+#<========================================================================================================>
+
+class CostumRelationship(Relationship):
+    confidence=Float() # between 0 for false to 1 for sure 
+    costum=String()
+
+class M_F2A_Annotates(CostumRelationship):
+    # Relation between a meta-object and a GOTerm
+    label = "annotates"
+
+class M_F_I2A_Xref(Relationship):
+    # Relationship between a meta-objects and their representations in other databases
+    label = "Xref"
+
+class A2A_WitinDB(Relationship): # ACHTUNG: potential problem since a potential supernode will be created and thousands unnecessary links added
+    # Relationship between DB Id and a database name 
+    label = "Within database"
+
+class M2R_Participates_in_reaction(CostumRelationship):
+    # Relation between a meta-object and a reaction:
+    label="Participates"
+    
+    side=String() # left or right
+    stocheometry=Integer()
+
+class M_F_I_IO2A_CommonName(CostumRelationship): # to be used in a search engine
+    lablel="CommonlyNamed"
+
+class M2F_Maps_To(CostumRelationship):
+    # Maps a meta-objetct to the fragment of DNA/RNA that encoded it
+    label="Maps"
+
+class F_M2M_Part_of(Relationship):
+    #Relations of appartenance between Fragments and Meta-objects and Complex and other Meta-objects
+    label="Part_of"
+    
+class M_F2IM_IF_Instance_of(CostumRelationship):
+    label="Instance of"
+    
+class ToA_Evidence(CostumRelationship):
+    label="Evidence"
+
+class ToA_Evidence_type(Relationship):
+    label="Evidence type"
+
+class ToA_Typing(CostumRelationship):
+    label="Types"
+
+class IM_IF_IR2I_Instantiated_by(CostumRelationship):
+    label="Instantiated by"
+    
+class F2M_BelongsTo(CostumRelationship):
+    label="Belongs To"
