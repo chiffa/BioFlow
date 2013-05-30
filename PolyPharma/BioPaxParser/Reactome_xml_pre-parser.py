@@ -55,13 +55,13 @@ for dattype in Subtypes.keys():
     logging.info("'%s' | '%s'",dattype, TypeCount[dattype])
     for elt in Subtypes[dattype]:
         logging.info(" \t '%s' | '%s' ", elt, "{0:.2f}".format(float(Subtypes[dattype][elt])/float(TypeCount[dattype])*100.0))
-    logging.info('\n')
-    Sample=root.findall(dattype)
-    random.shuffle(Sample)
-    for EntFeat in Sample[:5]:
-        logging.info("'%s' | '%s'", EntFeat.tag, EntFeat.attrib)
-        for subchild in EntFeat:
-            logging.info(" \t '%s' | '%s' | '%s' ", subchild.tag, subchild.attrib, subchild.text)
+#     logging.info('\n')
+#     Sample=root.findall(dattype)
+#     random.shuffle(Sample)
+#     for EntFeat in Sample[:5]:
+#         logging.info("'%s' | '%s'", EntFeat.tag, EntFeat.attrib)
+#         for subchild in EntFeat:
+#             logging.info(" \t '%s' | '%s' | '%s' ", subchild.tag, subchild.attrib, subchild.text)
     logging.info('<=======================================================>\n\n\n')
     
 

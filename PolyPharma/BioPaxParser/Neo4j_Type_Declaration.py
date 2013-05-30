@@ -344,10 +344,10 @@ class Annot_Database(Node):
     
     db_name=String(nullable=False, Index=True)
 
-class Annot_Database_ID(Node):
-    element_type="id in database"
-
-    id=String(nullable=False,Index=True)
+class Annot_CommonName(Node):
+    element_type="common name"
+    
+    common_name=String(nullable=False, Index=True)
     
 class Annot_Evidence(Node):
     # Annotation evidence
@@ -360,6 +360,10 @@ class Annot_EvidenceInstance(Node): # Publication or a part of publication
     
     type=String(String=True)
     evidence_instance=Dictionary()
+    
+class Annot_Pathway(Node):
+    # A pathway
+    element_type="Pathway"
 
 #<========================================================================================================>
 #<========================================================================================================>
@@ -369,6 +373,15 @@ class CostumRelationship(Relationship):
     confidence=Float() # between 0 for false to 1 for sure 
     costum=String()
 
+class R2R_NextStepInPathway(CostumRelationship):
+    label="next step"
+
+class R_A2A_InPatway(CostumRelationship):
+    label="In pathway"
+
+class toA_CommonName(Relationship):
+    label="Commonly named"
+
 class M_F2A_Annotates(CostumRelationship):
     # Relation between a meta-object and a GOTerm
     label = "annotates"
@@ -376,10 +389,8 @@ class M_F2A_Annotates(CostumRelationship):
 class M_F_I2A_Xref(Relationship):
     # Relationship between a meta-objects and their representations in other databases
     label = "Xref"
-
-class A2A_WitinDB(Relationship): # ACHTUNG: potential problem since a potential supernode will be created and thousands unnecessary links added
-    # Relationship between DB Id and a database name 
-    label = "Within database"
+    
+    id=String(nullable=False,Index=True)
 
 class M2R_Participates_in_reaction(CostumRelationship):
     # Relation between a meta-object and a reaction:
@@ -388,14 +399,18 @@ class M2R_Participates_in_reaction(CostumRelationship):
     side=String() # left or right
     stocheometry=Integer()
 
-class M_F_I_IO2A_CommonName(CostumRelationship): # to be used in a search engine
-    lablel="CommonlyNamed"
+class M2M_Encodes(Relationship):
+    #relation between a protein and a rna/dna fragment that encodes it
+    label="Encodes"
+
+class M2R_Regulates(CostumRelationship):
+    label="regulates"
 
 class M2F_Maps_To(CostumRelationship):
     # Maps a meta-objetct to the fragment of DNA/RNA that encoded it
     label="Maps"
 
-class F_M2M_Part_of(Relationship):
+class M_F2M_Part_of(Relationship):
     #Relations of appartenance between Fragments and Meta-objects and Complex and other Meta-objects
     label="Part_of"
     
