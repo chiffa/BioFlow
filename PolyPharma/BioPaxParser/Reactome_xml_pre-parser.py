@@ -20,7 +20,7 @@ formatter = logging.Formatter('%(levelname)-8s %(message)s')
 console.setFormatter(formatter)
 logging.getLogger('').addHandler(console)
 
-tree = ET.parse('C:\Users\User\Documents\UCSD\Parsing_Reactome\Homo sapiens.owl')
+tree = ET.parse('/home/andrei/UCSD/Parsing_Reactome/Homo sapiens.owl')
 root = tree.getroot()
 
 #TODO: understand how to perform batch-create with bulbs
