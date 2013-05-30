@@ -140,10 +140,9 @@ TODO: see what is accessed when a index is an exact hit. iterator? List?
  
  TODO: add an evidence describing method for the observation of different events?
  TODO: catalytic action of messenger RNA?
- TODO: is there a possibility of post-translational mutation of DNA or RNA?
+ TODO: is there a possibility of post-translational modification of DNA or RNA?
  
  All the information regarding the 
- 
 '''
 
 from bulbs.model import Node, Relationship
@@ -281,6 +280,9 @@ class Instantiation_Epigenetic_Modification(Node): # Acts on DNA fragments
 
 class Instantiation_InComplex(Node):
     element_type="In Complex"
+
+class Instantiation_Conformation(Node):
+    element_type="Conformation"
     
 class Instantiation_Localization(Node):
     element_type="Localization"
@@ -402,7 +404,7 @@ class M_F2IM_IF_Instance_of(CostumRelationship):
     
 class ToA_Evidence(CostumRelationship):
     label="Evidence"
-
+    
 class ToA_Evidence_type(Relationship):
     label="Evidence type"
 
