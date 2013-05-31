@@ -52,7 +52,6 @@ class Graph(Neo4jGraph):
         self.Common_Name=self.build_proxy(DDT.Annot_CommonName)
         self.Pathway=self.build_proxy(DDT.Annot_Pathway)
         
-
         # Relationship Proxies
         self.rel = self.build_proxy(DDT.toA_CommonName)
         self.type = self.build_proxy(DDT.ToA_Typing)
@@ -71,21 +70,57 @@ class Graph(Neo4jGraph):
 
 DatabaseGraph=Graph()
 
-SequenceMods=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}SequenceModificationVocabulary')
-Cellular_Location=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}CellularLocationVocabulary')
+UnificationXref={}
+UnificationXrefs=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}UnificationXref')
+for singlexref in UnificationXrefs:
+    key=singlexref.attrib.values()[0]
+    val=(singlexref[0].text, singlexref[1].text)
+    UnificationXref[key]=val    
+# Xref## : (dbName, ID within the DB)
+# Ok, so for the proteins the Unification Xrefs are useless: they will have to be parsed from
+# the list of human proteins before we can do any annotation on them. However the names are pretty 
+# well defined
+
+
+
+ProteinNames=set()
+ProteinDisplayNames=set()
+DbNames=set()
+distinctXrefs=set()
+Proteins=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}Protein')
+for single_prot in Proteins:
+    LoadingObject={'xrefs':[], 'names':[], 'displayNames':[]}
+    for prot_property in single_prot:
+        if '}xref' in prot_property.tag:
+            LoadingObject['xrefs'].append(UnificationXref[prot_property.attrib.values()[0][1:]])
+        if '}name' in prot_property.tag:
+            LoadingObject['names'].append(prot_property.text)
+        if '}displayName' in prot_property.tag:
+            LoadingObject['displayNames'].append(prot_property.text)
+    if LoadingObject['displayNames']
+# Now let's see if there are any conflicting names within the database            
+    
+
+
 Small_Molecules=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}SmallMolecule')
 Complex=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}Complex')
-'{http://www.biopax.org/release/biopax-level3.owl#}Control'
-'{http://www.biopax.org/release/biopax-level3.owl#}Protein'
+
+
+
+SequenceMods=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}SequenceModificationVocabulary')
+Cellular_Location=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}CellularLocationVocabulary')
+Regulation=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}Control')
+
 #! Attention not to include the GO terms
-'{http://www.biopax.org/release/biopax-level3.owl#}RelationshipXref'
-'{http://www.biopax.org/release/biopax-level3.owl#}PathwayStep'
-'{http://www.biopax.org/release/biopax-level3.owl#}Pathway'
+Xref2=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}xref')
+Xref1=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}RelationshipXref')
+PathwaySteps=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}PathwayStep')
+PathwaySteps=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}Pathway')
 
 #Complex parsings:
 FragmentFeatures=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}FragmentFeature')
 FragmentFeatures=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}TemplateReaction')
 FragmentFeatures=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}TemplateReactionRegulation')
-'{http://www.biopax.org/release/biopax-level3.owl#}PhysicalEntity'
-'{http://www.biopax.org/release/biopax-level3.owl#}SequenceInterval'
-'{http://www.biopax.org/release/biopax-level3.owl#}SequenceSite'
+PhysicalEntity=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}PhysicalEntity')
+SeqInterval=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}SequenceInterval')
+SeqSite=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}SequenceSite')

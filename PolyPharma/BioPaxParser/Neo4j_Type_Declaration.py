@@ -3,8 +3,8 @@ Created on 13 mai 2013
 
 @author: Andrei Kucharavy
 
-TODO: learn how to build indexes with bulbs
-TODO: see what is accessed when a index is an exact hit. iterator? List?
+TODO: learn how to build es with bulbs
+TODO: see what is accessed when a  is an exact hit. iterator? List?
 
  Can we do class heritages? Like the ones in the owl system: localized version comprehends the same
  properties as the non-localized one, for instance modification features, domains, conserved regions,
@@ -61,7 +61,7 @@ TODO: see what is accessed when a index is an exact hit. iterator? List?
      - Small molecule processing
      - RNA processing
      - DNA processing (includes spontaneous modification, retro-transposon insertion, etc...)
-     - Complex processing (post-translational modification, )
+     - Complex processing (post-translational modification)
      
      - Reactions:
         - Transport
@@ -153,7 +153,7 @@ from bulbs.utils import current_datetime
 #CancelledTODO: delete all the IDs => We need to search somehow with external IDs
 #TODO: Transform database pointers into the veretexes pointing towards the nodes to allow bulbs
 
-# TODO: pointers towards common names, common names being indexed
+# TODO: pointers towards common names, common names being ed
 
 # TODO: add a SQL database allowing the mapping of Accession numbers and Co to the Objects?
 # WE ARE NOT INTO OPTIMIZATION YET!!!
@@ -161,31 +161,35 @@ from bulbs.utils import current_datetime
 # TODO: add fragement to fragment composition relation
 
 class Meta(Node):
+    element_type="meta"
     ID=String(nullable=False)
-    name=String(Index=True)
-    custom=String(Index=True)
+    name=String()
+    custom=String()
     Size=String()
     
 class Fragment(Node):
-    ApproximateStart=Integer(nullable=False, Index=True)
-    ApproxinateEnd=Integer(nullable=False, Index=True)
-    location=String(nullable=False,) #Location is relative for everything except DNA fragmements
-    name=String(Index=True)
-    custom=String(Index=True)
+    element_type="fragment"
+    ApproximateStart=Integer(nullable=False)
+    ApproxinateEnd=Integer(nullable=False)
+    location=String(nullable=False) #Location is relative for everything except DNA fragmements
+    name=String()
+    custom=String()
 
 class Instantiation(Node):
-    ID=String(nullable=False,Index=True)
-    name=String(Index=True)
-    custom=String(Index=True)
+    element_type="instantiation"
+    ID=String(nullable=False)
+    name=String()
+    custom=String()
     
 class Reaction(Node):
-    ID=String(nullable=False, Index=True)
-    name=String(Index=True)
-    type=String(Index=True)
+    element_type="reaction"
+    ID=String(nullable=False)
+    name=String()
+    type=String()
     Free_Entalpy=String()
     Cinetic_Constant=String()
     frequency=Float()
-    custom=String(Index=True)
+    custom=String()
 
 #<=======================================================================================================>
 #<=======================================================================================================>
@@ -194,8 +198,8 @@ class Reaction(Node):
 class Meta_Protein(Meta):
     element_type="Protein"
     
-    UniprotId=String(Index=True)
-    CommonNames=List(Index=True) # No, this doesn't allow efficient indexing
+    UniprotId=String()
+    CommonNames=List() # No, this doesn't allow efficient ing
 
 class Meta_Chromosome(Meta):
     element_type="Chromosome or Chromosome fragment"
@@ -205,50 +209,50 @@ class Meta_Chromosome(Meta):
 class Meta_RNA(Meta):
     element_type="RNA"
     
-    EMBL_RNA_ID=String(Index=True)
-    CommonNames=String(Index=True) # No, this doesn't allow efficient indexing
+    EMBL_RNA_ID=String()
+    CommonNames=String() # No, this doesn't allow efficient ing
     
 class Meta_Complex(Meta):
     element_type="Complex"
     
-    PDB_ID=String(Index=True)
-    CommonNames=String(Index=True) # No, this doesn't allow efficient indexing
+    PDB_ID=String()
+    CommonNames=String() # No, this doesn't allow efficient ing
 
 class Meta_SmallMolecule(Meta):
     element_type="Small Molecule"
 
-    ChEBI_ID=String(Index=True)
-    CommonNames=String(Index=True) # No, this doesn't allow efficient indexing
+    ChEBI_ID=String()
+    CommonNames=String() # No, this doesn't allow efficient ing
 
 #<=======================================================================================================>
 
 class Fragment_DNA(Fragment):
     element_type="DNA Fragment"
     
-    Gene_name=String(Index=True)
-    CommonNames=String(Index=True) # No, this doesn't allow efficient indexing
-    Length_pb=Integer(Index=True)
+    Gene_name=String()
+    CommonNames=String() # No, this doesn't allow efficient ing
+    Length_pb=Integer()
 
 class Fragment_CatalyticSite(Fragment):
     element_type="Catalytic Site"
     
-    CommonNames=String(Index=True) # No, this doesn't allow efficient indexing
+    CommonNames=String() # No, this doesn't allow efficient ing
     # No localization, because regroups other catalytic sites
 
 class Fragment_Composit_CatalyticSite(Fragment): # Exists only within a complex, made up by several catalytic sites types
     element_type="Composit Catalytic Site"
     
-    CommonNames=String(Index=True) # No, this doesn't allow efficient indexing
+    CommonNames=String() # No, this doesn't allow efficient ing
     
 class Fragment_ContactRegion(Fragment):
     element_type="Contact Region" # => Region of contact with an another protein
     
-    CommonNames=String(Index=True) # No, this doesn't allow efficient indexing
+    CommonNames=String() # No, this doesn't allow efficient ing
     
 class Fragment_EvoDefSite(Fragment): #classification introduction in a machine-readable format
     element_type="Evolutionary defined site" # => Conserved elements, evolution hotspots, etc...
     
-    EvoType=String(Index=True)
+    EvoType=String()
 
 class Fragment_PTM_Site(Fragment):
     element_type="Post-Translational Modification site"
@@ -259,7 +263,7 @@ class Fragment_Mutation_Site(Fragment):
 class Fragment_Domain(Fragment):
     element_type="Domain"
 
-    DomainType=String(Index=True)
+    DomainType=String()
     
 #<======================================================================================================>
 
@@ -268,12 +272,12 @@ class Fragment_Domain(Fragment):
 class Instantiation_PostTranslationalModification(Instantiation): # Do we need it? => Yes, for annotation purposes
     element_type="Post-Translational Modification"
     
-    Type=String(Index=True)
+    Type=String()
     
 class Instantiation_Mutation(Node):
     element_type="Mutation"
     
-    type=String(Index=True)
+    type=String()
 
 class Instantiation_Epigenetic_Modification(Node): # Acts on DNA fragments
     element_type="Epugenetic_Modification"
@@ -287,7 +291,7 @@ class Instantiation_Conformation(Node):
 class Instantiation_Localization(Node):
     element_type="Localization"
 
-    Location=String(Index=True)
+    Location=String()
 
 #<========================================================================================================>
     
@@ -315,22 +319,22 @@ class Instance_modification(Reaction):
 class Annot_Reaction_type(Node):
     element_type="Reaction type"
     
-    name=String(Index=True)
+    name=String()
     
 class Annot_domain_type(Node):
     element_type="Domain type"
     
-    name=String(nullable=False, Index=True)
+    name=String(nullable=False)
     
 class Annot_Location_type(Node):
     element_type="Location type"
     
-    name=String(nullable=False, Index=True)
+    name=String(nullable=False)
     
 class Annot_PostTransMod_type(Node):
     element_type="Post Translational Modification Type"
     
-    name=String(nullable=False, Index=True)
+    name=String(nullable=False)
 
 class Annot_GOTerm(Node):
     element_type="GO term"
@@ -342,12 +346,12 @@ class Annot_Database(Node):
     # Should not be used for the search because of a large number of nodes attached to it
     element_type="database name"
     
-    db_name=String(nullable=False, Index=True)
+    db_name=String(nullable=False)
 
 class Annot_CommonName(Node):
     element_type="common name"
     
-    common_name=String(nullable=False, Index=True)
+    common_name=String(nullable=False)
     
 class Annot_Evidence(Node):
     # Annotation evidence
@@ -358,7 +362,7 @@ class Annot_Evidence(Node):
 class Annot_EvidenceInstance(Node): # Publication or a part of publication
     element_type="evidence instance"
     
-    type=String(String=True)
+    type=String()
     evidence_instance=Dictionary()
     
 class Annot_Pathway(Node):
@@ -390,7 +394,7 @@ class M_F_I2A_Xref(Relationship):
     # Relationship between a meta-objects and their representations in other databases
     label = "Xref"
     
-    id=String(nullable=False,Index=True)
+    id=String(nullable=False)
 
 class M2R_Participates_in_reaction(CostumRelationship):
     # Relation between a meta-object and a reaction:
