@@ -81,15 +81,23 @@ for singlexref in UnificationXrefs:
 # the list of human proteins before we can do any annotation on them. However the names are pretty 
 # well defined
 
+ProteinXref={}
+ProteinXrefs=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}UnificationXref')
+for single_prot_ref in ProteinXrefs:
+    key=single_prot_ref.attrib.values()[0]
+    val=[]
+    for prot_ref_property in single_prot_ref:
+        if '}name' in prot_ref_property.tag:
+            val.append(prot_ref_property.text)
+    ProteinXref[key]=val
 
 
-ProteinNames=set()
-ProteinDisplayNames=set()
+DispName2Obj={}
 DbNames=set()
-distinctXrefs=set()
+Protein_Internal_Ref2Obj={}
 Proteins=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}Protein')
 for single_prot in Proteins:
-    LoadingObject={'xrefs':[], 'names':[], 'displayNames':[]}
+    LoadingObject={'xrefs':[], 'names':[], 'displayNames':[],'memberOf':[],'ProtRef':[]}
     for prot_property in single_prot:
         if '}xref' in prot_property.tag:
             LoadingObject['xrefs'].append(UnificationXref[prot_property.attrib.values()[0][1:]])
@@ -97,9 +105,58 @@ for single_prot in Proteins:
             LoadingObject['names'].append(prot_property.text)
         if '}displayName' in prot_property.tag:
             LoadingObject['displayNames'].append(prot_property.text)
-    if LoadingObject['displayNames']
-# Now let's see if there are any conflicting names within the database            
+#         if '}memberPhysicalEntity' in prot_property.tag:
+#             LoadingObject['memberOf'].append(prot_property.attrib.values()[0])
+        if '}entityReference' in prot_property.tag:
+            LoadingObject['ProtRef'].append(prot_property.attrib.values()[0])
     
+    for displayName in LoadingObject['displayNames']:
+        if displayName not in DispName2Obj.keys():
+            DispName2Obj[displayName]=[]
+        DispName2Obj[displayName].append((LoadingObject['xrefs'], LoadingObject['names'],LoadingObject['memberOf'],LoadingObject['ProtRef']))
+    Protein_Internal_Ref2Obj[single_prot.attrib.values()[0]]=LoadingObject
+
+#Consider only the proteins that have a non-null external protein reference
+
+for key in Protein_Internal_Ref2Obj.keys()[:10]:
+    if Protein_Internal_Ref2Obj[key]['ProtRef']!=[]:
+        print ProteinXref[Protein_Internal_Ref2Obj[key]['ProtRef'][0]]
+#        No issues found: there are at most one prot.reference per protein
+#         if len(Protein_Internal_Ref2Obj[key]['ProtRef'])>1:
+#             print Protein_Internal_Ref2Obj[key]['ProtRef']
+
+duplicates={}
+for key in DispName2Obj.keys():
+    if len(DispName2Obj[key])>1:
+        if len(DispName2Obj[key]) not in duplicates.keys():
+            duplicates[len(DispName2Obj[key])]=0
+        duplicates[len(DispName2Obj[key])]+=1
+
+print duplicates
+
+a_n_plicate={}
+for key in DispName2Obj.keys():
+    if len(DispName2Obj[key])==8:
+        a_n_plicate[key]=DispName2Obj[key]
+
+for key in a_n_plicate.keys():
+    print key 
+    for lline in a_n_plicate[key]:
+        print '\t', lline
+    
+
+# Now let's see if there are any conflicting names within the database            
+# Up, there are quite a lot of them. Reasons:
+#     - cellular location defines a protein, not it's instance
+#     - Modification features (phosphorilation et Co)
+#     - Fragments of chains within the protein structure (refered as fragment/domains for me)
+# For me right now these are instances, under meta. Should I incorporate them?
+# What we will do - we will invoke them all at once
+
+# Whitelist the proteins that are adressed by the reaction.
+# Problem: this will also change the instantiation methodology
+
+# However the references to the Uniprot accession numbers are stored in the Protein Reference Field
 
 
 Small_Molecules=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}SmallMolecule')
