@@ -4,6 +4,8 @@ Created on May 30, 2013
 @author: andrei
 '''
 
+# TODO: link togethere the proteins that share the same entity name
+
 from bulbs.neo4jserver import Graph as Neo4jGraph
 
 import xml.etree.ElementTree as ET
@@ -81,15 +83,38 @@ for singlexref in UnificationXrefs:
 # the list of human proteins before we can do any annotation on them. However the names are pretty 
 # well defined
 
-ProteinXref={}
-ProteinXrefs=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}UnificationXref')
+ProteinXref2AcNum={}
+ProteinXrefs=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}ProteinReference')
 for single_prot_ref in ProteinXrefs:
     key=single_prot_ref.attrib.values()[0]
-    val=[]
     for prot_ref_property in single_prot_ref:
-        if '}name' in prot_ref_property.tag:
-            val.append(prot_ref_property.text)
-    ProteinXref[key]=val
+        if '}name' in prot_ref_property.tag and 'UniProt:' in prot_ref_property.text:
+            if key in ProteinXref2AcNum.keys():
+                print '!ref already exists!'
+            ProteinXref2AcNum[key]=prot_ref_property.text.split()[0].split(':')[1]
+        
+# Does it have any duplicate Uniprot accession numbers?
+
+CellLocId2CellLoc={}
+CellLocs=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}CellularLocationVocabulary')
+for Loc in CellLocs:
+    key=Loc.attrib.values()[0]
+    for loc_ref in Loc:
+        if '}term' in loc_ref.tag:
+            CellLocId2CellLoc[key]=loc_ref.text
+
+Sequence_Site={}
+
+Modification_Type={}
+
+
+ModFeature2Annot={}
+ModFeatures=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}ModificationFeature')
+for ModFeat in ModFeatures:
+    key=Loc.attrib.values()[0]
+    for loc_ref in Loc:
+        if '}term'
+            # TODO
 
 
 DispName2Obj={}
@@ -97,34 +122,43 @@ DbNames=set()
 Protein_Internal_Ref2Obj={}
 Proteins=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}Protein')
 for single_prot in Proteins:
-    LoadingObject={'xrefs':[], 'names':[], 'displayNames':[],'memberOf':[],'ProtRef':[]}
+    LoadingObject={'xrefs':[], 'names':[], 'displayNames':[],'memberOf':[],'ProtRef':[],'Location':[]}
     for prot_property in single_prot:
+        if '}entityReference' in prot_property.tag:
+            LoadingObject['ProtRef'].append(ProteinXref2AcNum[prot_property.attrib.values()[0][1:]])
         if '}xref' in prot_property.tag:
             LoadingObject['xrefs'].append(UnificationXref[prot_property.attrib.values()[0][1:]])
         if '}name' in prot_property.tag:
             LoadingObject['names'].append(prot_property.text)
         if '}displayName' in prot_property.tag:
             LoadingObject['displayNames'].append(prot_property.text)
-#         if '}memberPhysicalEntity' in prot_property.tag:
-#             LoadingObject['memberOf'].append(prot_property.attrib.values()[0])
-        if '}entityReference' in prot_property.tag:
-            LoadingObject['ProtRef'].append(prot_property.attrib.values()[0])
-    
+        if '}cellularLocation' in prot_property.tag:
+            LoadingObject['Location'].append(CellLocId2CellLoc[prot_property.attrib.values()[0][1:]])
     for displayName in LoadingObject['displayNames']:
         if displayName not in DispName2Obj.keys():
             DispName2Obj[displayName]=[]
         DispName2Obj[displayName].append((LoadingObject['xrefs'], LoadingObject['names'],LoadingObject['memberOf'],LoadingObject['ProtRef']))
     Protein_Internal_Ref2Obj[single_prot.attrib.values()[0]]=LoadingObject
+#         if '}memberPhysicalEntity' in prot_property.tag:
+#             LoadingObject['memberOf'].append(prot_property.attrib.values()[0])
+#         if '}entityReference' in prot_property.tag:
+#             LoadingObject['ProtRef'].append(ProteinXref2AcNum[prot_property.attrib.values()[0]])
+'''
+Not really needed since the entity reference creates random groups of proteins
+'''
+    
 
 #Consider only the proteins that have a non-null external protein reference
 
-for key in Protein_Internal_Ref2Obj.keys()[:10]:
-    if Protein_Internal_Ref2Obj[key]['ProtRef']!=[]:
-        print ProteinXref[Protein_Internal_Ref2Obj[key]['ProtRef'][0]]
-#        No issues found: there are at most one prot.reference per protein
-#         if len(Protein_Internal_Ref2Obj[key]['ProtRef'])>1:
-#             print Protein_Internal_Ref2Obj[key]['ProtRef']
-
+# for key in Protein_Internal_Ref2Obj.keys()[:10]:
+#     if Protein_Internal_Ref2Obj[key]['ProtRef']!=[]:
+#         print ProteinXref2AcNum[Protein_Internal_Ref2Obj[key]['ProtRef'][0]]
+'''
+        No issues found: there are at most one prot.reference per protein
+'''
+#          if len(Protein_Internal_Ref2Obj[key]['ProtRef'])>1:
+#              print Protein_Internal_Ref2Obj[key]['ProtRef']
+             
 duplicates={}
 for key in DispName2Obj.keys():
     if len(DispName2Obj[key])>1:
