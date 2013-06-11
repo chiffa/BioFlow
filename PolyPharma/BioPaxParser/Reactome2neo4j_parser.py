@@ -103,26 +103,41 @@ for Loc in CellLocs:
         if '}term' in loc_ref.tag:
             CellLocId2CellLoc[key]=loc_ref.text
 
-Sequence_Site={}
+Ref2SequenceSite={}
+SequenceSites=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}SequenceSite')
+for SeqSite in SequenceSites:
+    Ref2SequenceSite[SeqSite.attrib.values()[0]]=SeqSite[0].text
 
-Modification_Type={}
-
+SeqModVoc={}
+SeqModTerms=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}SequenceModificationVocabulary')
+for SeqModTerm in SeqModTerms:
+    SeqModVoc[SeqModTerm.attrib.values()[0]]=SeqModTerm[1].text #Error Righe here : correct it!!!!
 
 ModFeature2Annot={}
 ModFeatures=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}ModificationFeature')
 for ModFeat in ModFeatures:
-    key=Loc.attrib.values()[0]
-    for loc_ref in Loc:
-        if '}term'
-            # TODO
+    key=ModFeat.attrib.values()[0]
+    value={'type':'','location':''}
+    for feat_ref in ModFeat:
+        if '}modificationType' in feat_ref.tag:
+            feat_ref.attrib.values()[0][1:]
+            value['type']=SeqModVoc[feat_ref.attrib.values()[0][1:]]
+        if '}featureLocation' in feat_ref.tag:
+            value['location']=Ref2SequenceSite[feat_ref.attrib.values()[0][1:]]
+    ModFeature2Annot[key]=(value['type'],value['location'])
 
+# What is the percentage of proteins that are having a Physical entity membership class?
+# What is the average class size?
+# Is there a relation between protein fragments and proteins in itself (part_of_relation)
 
 DispName2Obj={}
+Name2Obj={}
+UNIPROTAccnum2Obj={}
 DbNames=set()
 Protein_Internal_Ref2Obj={}
 Proteins=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}Protein')
 for single_prot in Proteins:
-    LoadingObject={'xrefs':[], 'names':[], 'displayNames':[],'memberOf':[],'ProtRef':[],'Location':[]}
+    LoadingObject={'xrefs':[], 'names':[], 'displayNames':[],'memberOf':[],'ProtRef':[],'Location':[], 'PostTranslMod':[]}
     for prot_property in single_prot:
         if '}entityReference' in prot_property.tag:
             LoadingObject['ProtRef'].append(ProteinXref2AcNum[prot_property.attrib.values()[0][1:]])
@@ -134,11 +149,16 @@ for single_prot in Proteins:
             LoadingObject['displayNames'].append(prot_property.text)
         if '}cellularLocation' in prot_property.tag:
             LoadingObject['Location'].append(CellLocId2CellLoc[prot_property.attrib.values()[0][1:]])
+        if '}feature' in prot_property.tag and '#ModificationFeature' in prot_property.attrib.values()[0]:
+            LoadingObject['PostTranslMod'].append(ModFeature2Annot[prot_property.attrib.values()[0][1:]])
+            
     for displayName in LoadingObject['displayNames']:
         if displayName not in DispName2Obj.keys():
             DispName2Obj[displayName]=[]
         DispName2Obj[displayName].append((LoadingObject['xrefs'], LoadingObject['names'],LoadingObject['memberOf'],LoadingObject['ProtRef']))
     Protein_Internal_Ref2Obj[single_prot.attrib.values()[0]]=LoadingObject
+    
+    
 #         if '}memberPhysicalEntity' in prot_property.tag:
 #             LoadingObject['memberOf'].append(prot_property.attrib.values()[0])
 #         if '}entityReference' in prot_property.tag:
@@ -146,7 +166,8 @@ for single_prot in Proteins:
 '''
 Not really needed since the entity reference creates random groups of proteins
 '''
-    
+
+   
 
 #Consider only the proteins that have a non-null external protein reference
 
