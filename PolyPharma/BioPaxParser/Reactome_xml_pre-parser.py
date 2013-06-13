@@ -86,13 +86,13 @@ for child in root:
         update_Counter_subdict(Counter[lvl0Container['objType']],lvl0Container)
 
 for entry in Counter.keys():
-    logging.info("%-40s%s",entry,Counter[entry]['TotalCount'])
+    logging.info("%-30s%s",entry,Counter[entry]['TotalCount'])
     keyslvl1=Counter[entry].keys()
     keyslvl1.remove('TotalCount')
     for key_lvl1 in keyslvl1:
         lvl1_apperance_percentage="{:>10}".format("{0:.2f}".format(float(Counter[entry][key_lvl1]['appearances'])/float(Counter[entry]['TotalCount'])*100))
         lvl1_count_per_appearance="{:>10}".format("{0:.2f}".format(float(Counter[entry][key_lvl1]['count'])/float(Counter[entry][key_lvl1]['appearances'])))
-        logging.info("\t  %-40s%-10s%s", key_lvl1,lvl1_apperance_percentage+' %',lvl1_count_per_appearance)
+        logging.info("    %-34s%-10s%s", key_lvl1,lvl1_apperance_percentage+' %',lvl1_count_per_appearance)
         keyslvl2=Counter[entry][key_lvl1].keys()
         keyslvl2.remove('appearances')
         keyslvl2.remove('count')
@@ -101,7 +101,7 @@ for entry in Counter.keys():
         for key_lvl2 in keyslvl2:
             lvl2_apperance_percentage="{:>10}".format("{0:.2f}".format(float(Counter[entry][key_lvl1][key_lvl2]['appearances'])/float(Counter[entry][key_lvl1]['appearances'])*100))
             lvl2_count_per_appearance="{:>10}".format("{0:.2f}".format(float(Counter[entry][key_lvl1][key_lvl2]['count'])/float(Counter[entry][key_lvl1][key_lvl2]['appearances'])))
-            logging.info("\t\t    %-30s%-9s%s", key_lvl2,lvl2_apperance_percentage+' %',lvl2_count_per_appearance)
+            logging.info("\t%-30s%-8s%s", key_lvl2,'   '+lvl2_apperance_percentage+' %',lvl2_count_per_appearance)
     logging.info("\n")
 
 #TODO: correlation between presences?
