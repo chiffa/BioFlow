@@ -59,35 +59,35 @@ class DNA(Meta):
 class Location(Instantiation_Type):
     element_type="Location"
 
-class Meta2Location(Instantiation_Type):
-    element_type="Localizes"
+class is_localized(Instantiation_Type):
+    element_type="is_localized"
 
 class DNA_Collection(Meta):
     element_type="DNA Collection"
 
-class Collection2Meta(CostumLink):
-    label="Part_of_Collection"
+class is_part_of_collection(CostumLink):
+    label="is_part_of_collection"
 
-class Meta2AnnotNode(Relationship):
-    label="external_Reference"
+class is_annotated(Relationship):
+    label="is_annotated"
 
 class Complex(Meta):
     element_type="Complex"
 
-class Complex2Meta(Relationship):
-    element_type="Part_of_Complex"
+class is_part_of_complex(Relationship):
+    element_type="is_part_of_complex"
 
 class Complex_Collection(Meta):
     element_type="Complex_Collection"
 
-class Catalysis(CostumLink):
-    element_type="Catalysis"
+class is_catalysant(CostumLink):
+    element_type="is_Catalysant"
     controlType=String()
     ID=String(nullable=False)
     displayName=String()
     
-class Regulation(CostumLink):
-    element_type="Regulation"
+class is_regulant(CostumLink):
+    element_type="is_Regulant"
     controlType=String()
     ID=String(nullable=False)
     displayName=String()
@@ -113,13 +113,13 @@ class RNA_Collection(Meta):
 class Originating_Organism(Instantiation_Type):
     element_type="Originating_Organism"
 
-class Meta2OriginatingOrganism(Relationship):
-    label="Belongs to an organism"
+class is_originating_in_organism(Relationship):
+    label="is_originating_in_organismBelongs to an organism"
     
 class Protein(Meta):    
     element_type="Protein"
 
-class Protein__Collection(Meta):
+class Protein_Collection(Meta):
     element_type="Protein_Collection"
 
 class SmallMolecule(Meta):
@@ -131,10 +131,19 @@ class SmallMolecule_Collection(Meta):
 class BiochemicalReaction(Reaction):
     element_type="Biochemical_Reaction"
     
-class ReactionParticipant(CostumLink):
-    element_type="Reaction_Particpant"
+class is_reaction_participant(CostumLink):
+    element_type="is_reaction_particpant"
     side=String()
 
 class ModificationFeature(Instantiation_Type):
     element_type="Modification_Feature"
     location=String()
+
+class is_instantiating(CostumLink):
+    element_type="is_instantiating"
+
+class is_an_instantiator(CostumLink):
+    element_type="is_an_instantiator"
+
+
+        
