@@ -65,9 +65,9 @@ class Graph(Neo4jGraph):
         self.is_part_of_complex=self.build_proxy(DDT.is_part_of_complex)
         
         #That can be instantiated
-        self.is_instantiating=self.build_proxy(DDT.is_instantiating)
+        self.is_modified_to=self.build_proxy(DDT.is_modified_to)
         #With Instantiators
-        self.is_an_instantiator=self.is_a_possible_instance(DDT.is_an_instantiator)
+        self.is_able_to_modify=self.build_proxy(DDT.is_able_to_modify)
         #Or belong to collections        
         self.is_part_of_collection=self.build_proxy(DDT.is_part_of_collection)
         

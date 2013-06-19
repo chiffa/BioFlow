@@ -24,8 +24,8 @@ tree = ET.parse('/home/andrei/UCSD/Parsing_Reactome/Homo sapiens.owl')
 root = tree.getroot()
 
 #TODO: understand how to perform batch-create with bulbs
-#TODO: perform the dictionnaries linking the subtypes of grouping nodes 
-# ATTENTION: if there is a feature, it should be reagarded as a 
+#TODO: perform the dictionnaries linking the subtypes of grouping nodes
+#TODO: correlation between presences?
 
 
 def make_readable(stree):
@@ -103,91 +103,3 @@ for entry in Counter.keys():
             lvl2_count_per_appearance="{:>10}".format("{0:.2f}".format(float(Counter[entry][key_lvl1][key_lvl2]['count'])/float(Counter[entry][key_lvl1][key_lvl2]['appearances'])))
             logging.info("\t%-30s%-8s%s", key_lvl2,'   '+lvl2_apperance_percentage+' %',lvl2_count_per_appearance)
     logging.info("\n")
-
-#TODO: correlation between presences?
-#'''
-#<=========================================================================================================================================>
-#'''
-
-
-# Subtypes={}
-# Subtypes2={}
-# TypeCount={}
-# 
-# for child in root:
-#     CurrentType=child.tag
-#     if CurrentType not in Subtypes.keys():
-#         Subtypes[CurrentType]={}
-#         Subtypes2[CurrentType]={}
-#         TypeCount[CurrentType]=0
-#     TypeCount[CurrentType]+=1
-#     RunningDict=set()
-#     for subchild in child:
-#         refference=""
-#         if 'resource' in subchild.attrib.keys()[0]:
-#             for letter in subchild.attrib.values()[0]:
-#                 if not letter.isdigit():
-#                     refference+=letter
-#         else : refference=subchild.attrib.keys()[0]
-#         pair=(subchild.tag,refference)
-#         if pair not in Subtypes[CurrentType].keys():
-#             Subtypes[CurrentType][pair]=0
-#             Subtypes2[CurrentType][pair]=0
-#         Subtypes[CurrentType][pair]+=1
-#         RunningDict.add(pair)
-#     for pair in RunningDict:
-#         Subtypes2[CurrentType][pair]+=1
-#         
-#     # Wait, this is logical that the coun2 would be superior, since the signature is encountered several times in different contexts. Like left: reagent1(protein) and left: reagent2(RNA) are both pretty valid
-#     # Add a global add, so that only one iteration is performed each time there is a subchild present
-#     
-# #        if len(subchild)>0:
-# #            logging.warning("'further children for '%s','%s'",subchild.tag, subchild.attrib)
-# #            # Never happens, so this is actually a pretty well formulated rdf
-# 
-# Restructured={}
-# 
-# for objtype in Subtypes.keys(): #they are unique, so Subtypes2.keys()==Subtypes.keys()=True
-#     Restructured[objtype]={}
-#     for daattype in Subtypes[objtype]:
-#         if not daattype[0] in Restructured[objtype].keys():
-#             Restructured[objtype][daattype[0]]={"count1":0,"count2":0}
-#         Restructured[objtype][daattype[0]]["count1"]+=Subtypes[objtype][daattype]
-#         logging.debug("debug: added to count1 %s based on %s, %s", Subtypes[objtype][daattype],objtype,daattype)
-#         Restructured[objtype][daattype[0]]["count2"]+=Subtypes2[objtype][daattype]
-#         logging.debug("debug: added to count2 %s based on %s, %s", Subtypes2[objtype][daattype],objtype,daattype)
-#         Restructured[objtype][daattype[0]][daattype[1]]=(Subtypes[objtype][daattype], Subtypes2[objtype][daattype])
-#         logging.debug("\t<<")
-#     logging.debug("\n")
-# 
-# for objtype in Restructured.keys():
-#     logging.info("'%s' | '%s'", objtype, TypeCount[objtype])
-#     for dattype in Restructured[objtype].keys():
-#         logging.info(" \t '%s' | present in '%s' percent | on average: '%s' items", dattype, "{0:.2f}".format(float(max(Restructured[objtype][dattype]["count2"],1))/float(TypeCount[objtype])*100.0), "{0:.2f}".format(float(Restructured[objtype][dattype]["count1"])/float(max(Restructured[objtype][dattype]["count2"],1)))) 
-#         for subdattype in Restructured[objtype][dattype].keys():
-#             if subdattype!="count1" and subdattype!="count2":
-#                 logging.info(" \t\t '%s' | present in '%s' percent | on average: '%s' items", subdattype, "{0:.2f}".format(float(max(Restructured[objtype][dattype][subdattype][1],1))/float(max(Restructured[objtype][dattype]["count2"],1))*100.0), "{0:.2f}".format(float(Restructured[objtype][dattype][subdattype][0])/float(max(Restructured[objtype][dattype][subdattype][1],1)))) 
-#     logging.info('<=======================================================>\n\n')
-# 
-# 
-# for dattype in Subtypes.keys():
-#     logging.info("'%s' | '%s'",dattype, TypeCount[dattype])
-#     for elt in Subtypes[dattype]:
-#         logging.info(" \t '%s' | present in '%s'% | on average: '%s' items", elt, "{0:.2f}".format(float(max(Subtypes2[dattype][elt],1))/float(TypeCount[dattype])*100.0), "{0:.2f}".format(float(Subtypes[dattype][elt])/float(max(Subtypes2[dattype][elt],1)))) 
-# #     logging.info('\n')
-# #     Sample=root.findall(dattype)
-# #     random.shuffle(Sample)
-# #     for EntFeat in Sample[:5]:
-# #         logging.info("'%s' | '%s'", EntFeat.tag, EntFeat.attrib)
-# #         for subchild in EntFeat: 
-# #             logging.info(" \t '%s' | '%s' | '%s' ", subchild.tag, subchild.attrib, subchild.text)
-#     logging.info('<=======================================================>\n\n\n')
-#     
-# 
-# 
-# Sample=root.findall('{http://biopax-level3#}BioSource')
-# for EntFeat in Sample:
-#     logging.info("'%s' | '%s'", EntFeat.tag, EntFeat.attrib)
-#     for subchild in EntFeat:
-#         logging.info(" \t '%s' | '%s' | '%s' ", subchild.tag, subchild.attrib, subchild.text)
-# logging.info('<=======================================================>\n\n\n')

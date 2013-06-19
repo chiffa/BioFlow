@@ -8,7 +8,6 @@ from bulbs.model import Node, Relationship
 from bulbs.property import String, Integer, Float, Dictionary, List
 from bulbs.utils import current_datetime
 
-s
 class CostumNode(Node):             # Serves as a basis for the annotation
     element_type="CostumNode"
     ID=String(nullable=False)       # Reactome import heritage
@@ -75,19 +74,19 @@ class Complex(Meta):
     element_type="Complex"
 
 class is_part_of_complex(Relationship):
-    element_type="is_part_of_complex"
+    label="is_part_of_complex"
 
 class Complex_Collection(Meta):
     element_type="Complex_Collection"
 
 class is_catalysant(CostumLink):
-    element_type="is_Catalysant"
+    label="is_Catalysant"
     controlType=String()
     ID=String(nullable=False)
     displayName=String()
     
 class is_regulant(CostumLink):
-    element_type="is_Regulant"
+    label="is_Regulant"
     controlType=String()
     ID=String(nullable=False)
     displayName=String()
@@ -114,7 +113,7 @@ class Originating_Organism(Instantiation_Type):
     element_type="Originating_Organism"
 
 class is_originating_in_organism(Relationship):
-    label="is_originating_in_organismBelongs to an organism"
+    label="is_originating_in_organism"
     
 class Protein(Meta):    
     element_type="Protein"
@@ -132,18 +131,18 @@ class BiochemicalReaction(Reaction):
     element_type="Biochemical_Reaction"
     
 class is_reaction_participant(CostumLink):
-    element_type="is_reaction_particpant"
+    label="is_reaction_particpant"
     side=String()
 
 class ModificationFeature(Instantiation_Type):
     element_type="Modification_Feature"
     location=String()
 
-class is_instantiating(CostumLink):
-    element_type="is_instantiating"
+class is_modified_to(CostumLink):
+    label="is_modified_to "
 
-class is_an_instantiator(CostumLink):
-    element_type="is_an_instantiator"
+class is_able_to_modify(CostumLink):
+    label="is_able_to_modify"
 
 
         

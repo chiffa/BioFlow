@@ -287,16 +287,16 @@ def parse_Proteins():
     Proteins_Xml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}Protein')
     for single_Protein in Proteins_Xml:
         key=single_Protein.attrib.values()[0]
-        LocalDict={'collectionMembers':[],'instance':[],'references':{'name':[]}}
+        LocalDict={'collectionMembers':[],'modification':[],'references':{'name':[]}}
         Collection=False
         for Protein_property in single_Protein:
             Collection=MetaParser_SecLoop(LocalDict, Protein_property, Collection)
             if '}entityReference' in Protein_property.tag:
                 LocalDict['references']=zipDicts(ProteinRefs[Protein_property.attrib.values()[0][1:]], LocalDict['references'])
             if '}feature' in Protein_property.tag and 'ModificationFeature' in single_Protein.attrib.values()[0]:
-                LocalDict['instance'].append(single_Protein.attrib.values()[0][1:])
-        if LocalDict['instance']==[]:
-            del LocalDict['instance']
+                LocalDict['modification'].append(single_Protein.attrib.values()[0][1:])
+        if LocalDict['modification']==[]:
+            del LocalDict['modification']
         if Collection:
             Protein_Collections[key]=LocalDict
         else:
