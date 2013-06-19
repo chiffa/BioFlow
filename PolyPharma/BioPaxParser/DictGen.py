@@ -9,6 +9,7 @@ Created on Jun 17, 2013
 
 import logging
 import xml.etree.ElementTree as ET
+from random import shuffle
 
 logging.basicConfig(level=logging.DEBUG,
                     format='%(levelname)-8s %(message)s',
@@ -51,12 +52,19 @@ Complexes={} #{Id:{'cellularLocation':'', displayName:'', 'parts':[], collection
 Complex_Collections={}
 
 TemplateReactions={} # {ID:{'product':'','displayName':'','references':{'names':[],...}}}
-Degradation={}# {ID:{'product':'','displayName':'','references':{'eCNumber':[],...}}}
+Degradations={}# {ID:{'product':'','displayName':'','references':{'eCNumber':[],...}}}
 BiochemicalReactions={} # {ID:{'left':[],'right':[],'displayName':'','references':{'eCNumber':[],...}}}
 Catalysises={}#{ID:{Controller:'', Controlled:'', controlType:''}}
 
 Modulations={} #{ID:{modulator, modulated} # This is essentially a compressed regulation of activity of the catalysts
 
+
+def shDic(dico, entries=10):
+    EntryList=dico.items()
+    shuffle(EntryList)
+    print 'length:', len(EntryList)
+    for elt in EntryList[0:entries]:
+        print elt[0],'\t| ',elt[1]       
 
 def zipDicts(dict1,dict2):
     '''
@@ -80,7 +88,7 @@ def parse_BioSource():
     for single_bio_source in BioSourcesXml:
         key=single_bio_source.attrib.values()[0]
         for bio_source_ref_property in single_bio_source:
-            if '}name' in bio_source_ref_property:
+            if '}name' in bio_source_ref_property.tag:
                 BioSources[key]=bio_source_ref_property.text
                 break
     
@@ -101,7 +109,7 @@ def parse_SeqModVoc():
                 SeqModVoc[key]=mod_ref.text
 
 def parse_SeqSite():
-    SeqSiteXml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}SequenceModificationVocabulary')
+    SeqSiteXml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}SequenceSite')
     for single_SeqSite in SeqSiteXml:
         key=single_SeqSite.attrib.values()[0]
         for site_ref in single_SeqSite:
@@ -126,7 +134,7 @@ def parse_DnaRefs():
                             DnaRefs[key]['ENSEMBL']=word.split(':')[1]
                 else:
                     DnaRefs[key]['name'].append(dna_ref_property.text)
-            if '}organism' in dna_ref_property.tag:
+            if '}organism' in dna_ref_property.tag and dna_ref_property.attrib.values()[0][1:]!='BioSource1':
                 DnaRefs[key]['organism']=BioSources[dna_ref_property.attrib.values()[0][1:]]
     
 def parse_RnaRefs():
@@ -142,21 +150,23 @@ def parse_RnaRefs():
                     for word in line:
                         if 'ENSEMBL:' in word:
                             RnaRefs[key]['ENSEMBL']=word.split(':')[1]
-                if 'miRBase:' in rna_ref_property.text:
-                    line=rna_ref_property.text
-                    line=line.split()
-                    for word in line:
-                        if 'miRBase:' in word:
-                            RnaRefs[key]['miRBase']=word.split(':')[1]
-                if 'EMBL:' in rna_ref_property.text:
-                    line=rna_ref_property.text
-                    line=line.split()
-                    for word in line:
-                        if 'EMBL:' in word:
-                            RnaRefs[key]['EMBL']=word.split(':')[1]
-                else:
-                    RnaRefs[key]['name'].append(rna_ref_property.text)
-            if '}organism' in rna_ref_property.tag:
+                else: 
+                    if 'miRBase:' in rna_ref_property.text:
+                        line=rna_ref_property.text
+                        line=line.split()
+                        for word in line:
+                            if 'miRBase:' in word:
+                                RnaRefs[key]['miRBase']=word.split(':')[1]
+                    else: 
+                        if 'EMBL:' in rna_ref_property.text:
+                            line=rna_ref_property.text
+                            line=line.split()
+                            for word in line:
+                                if 'EMBL:' in word:
+                                    RnaRefs[key]['EMBL']=word.split(':')[1]
+                        else:
+                            RnaRefs[key]['name'].append(rna_ref_property.text)
+            if '}organism' in rna_ref_property.tag and rna_ref_property.attrib.values()[0][1:]!='BioSource1':
                 RnaRefs[key]['organism']=BioSources[rna_ref_property.attrib.values()[0][1:]]
     
 def parse_SmallMoleculeRefs():
@@ -174,7 +184,7 @@ def parse_SmallMoleculeRefs():
                             SmallMoleculeRefs[key]['ChEBI']=word.split(':')[1].strip(']')
                 else:
                     SmallMoleculeRefs[key]['name'].append(SmallMolecule_ref_property.text)
-            if '}organism' in SmallMolecule_ref_property.tag:
+            if '}organism' in SmallMolecule_ref_property.tag and SmallMolecule_ref_property.attrib.values()[0][1:]!='BioSource1':
                 SmallMoleculeRefs[key]['organism']=BioSources[SmallMolecule_ref_property.attrib.values()[0][1:]]
     
 def parse_ProteinRefs(): 
@@ -192,7 +202,7 @@ def parse_ProteinRefs():
                             ProteinRefs[key]['UniProt']=word.split(':')[1]
                 else:
                     ProteinRefs[key]['name'].append(protein_ref_property.text)
-            if '}organism' in protein_ref_property.tag:
+            if '}organism' in protein_ref_property.tag and protein_ref_property.attrib.values()[0][1:]!='BioSource1':
                 ProteinRefs[key]['organism']=BioSources[protein_ref_property.attrib.values()[0][1:]]
     
 def parse_ModificationFeatures():
@@ -205,7 +215,6 @@ def parse_ModificationFeatures():
                 ModificationFeatures[key]['location']=SeqSite[modification_property.attrib.values()[0][1:]]
             if '}modificationType' in modification_property.tag:
                 ModificationFeatures[key]['modification']=SeqModVoc[modification_property.attrib.values()[0][1:]]
-                
 
 ####################################################################
 # Core parses : parsing at the same time objects and their collections
@@ -220,18 +229,17 @@ def MetaParser_SecLoop(LocDic,local_property,CollectionMarker):
     if '}displayName' in local_property.tag:
         LocDic['displayName']=local_property.text
     if '}name' in local_property.tag:
-        LocDic['references']['names'](local_property.text)
+        LocDic['references']['name'].append(local_property.text)
     if '}memberPhysicalEntity' in local_property.tag:
         CollectionMarker=True
-        LocDic['collectionMemebers'].append(local_property.attrib.values()[0][1:])
+        LocDic['collectionMembers'].append(local_property.attrib.values()[0][1:])
     return CollectionMarker
-
 
 def parse_Dnas():
     Dnas_Xml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}Dna')
     for single_Dna in Dnas_Xml:
         key=single_Dna.attrib.values()[0]
-        LocalDict={'collectionMembers':[],'references':{'names':[]}}
+        LocalDict={'collectionMembers':[],'references':{'name':[]}}
         Collection=False
         for dna_property in single_Dna:
             Collection=MetaParser_SecLoop(LocalDict, dna_property, Collection)
@@ -240,27 +248,30 @@ def parse_Dnas():
         if Collection:
             Dna_Collections[key]=LocalDict
         else:
+            del LocalDict['collectionMembers']
             Dnas[key]=LocalDict
     
 def parse_Rnas():
     Rnas_Xml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}Rna')
     for single_Rna in Rnas_Xml:
         key=single_Rna.attrib.values()[0]
-        LocalDict={'collectionMembers':[],'references':{'names':[]}}
+        LocalDict={'collectionMembers':[],'references':{'name':[]}}
         Collection=False
         for Rna_property in single_Rna:
             Collection=MetaParser_SecLoop(LocalDict, Rna_property, Collection)
             if '}entityReference' in Rna_property.tag:
                 LocalDict['references']=zipDicts(RnaRefs[Rna_property.attrib.values()[0][1:]], LocalDict['references'])
+        if Collection:
             Rna_Collections[key]=LocalDict
         else:
+            del LocalDict['collectionMembers']
             Rnas[key]=LocalDict
     
 def parse_SmallMolecules():
-    SmallMolecules_Xml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}SmallMolecules')
+    SmallMolecules_Xml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}SmallMolecule')
     for single_SmallMolecule in SmallMolecules_Xml:
         key=single_SmallMolecule.attrib.values()[0]
-        LocalDict={'collectionMembers':[],'references':{'names':[]}}
+        LocalDict={'collectionMembers':[],'references':{'name':[]}}
         Collection=False
         for SmallMolecule_property in single_SmallMolecule:
             Collection=MetaParser_SecLoop(LocalDict, SmallMolecule_property, Collection)
@@ -269,13 +280,14 @@ def parse_SmallMolecules():
         if Collection:
             SmallMolecule_Collections[key]=LocalDict
         else:
+            del LocalDict['collectionMembers']
             SmallMolecules[key]=LocalDict
 
 def parse_Proteins():
     Proteins_Xml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}Protein')
     for single_Protein in Proteins_Xml:
         key=single_Protein.attrib.values()[0]
-        LocalDict={'collectionMembers':[],'instance':[],'references':{'names':[]}}
+        LocalDict={'collectionMembers':[],'instance':[],'references':{'name':[]}}
         Collection=False
         for Protein_property in single_Protein:
             Collection=MetaParser_SecLoop(LocalDict, Protein_property, Collection)
@@ -283,58 +295,64 @@ def parse_Proteins():
                 LocalDict['references']=zipDicts(ProteinRefs[Protein_property.attrib.values()[0][1:]], LocalDict['references'])
             if '}feature' in Protein_property.tag and 'ModificationFeature' in single_Protein.attrib.values()[0]:
                 LocalDict['instance'].append(single_Protein.attrib.values()[0][1:])
+        if LocalDict['instance']==[]:
+            del LocalDict['instance']
         if Collection:
             Protein_Collections[key]=LocalDict
         else:
+            del LocalDict['collectionMembers']
             Proteins[key]=LocalDict
     
 def parse_PhysicalEntities():
     PhysicalEntities_Xml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}PhysicalEntity')
     for single_PhysicalEntity in PhysicalEntities_Xml:
         key=single_PhysicalEntity.attrib.values()[0]
-        LocalDict={'collectionMembers':[],'references':{'names':[]}}
+        LocalDict={'collectionMembers':[],'references':{'name':[]}}
         Collection=False
         for PhysicalEntity_property in single_PhysicalEntity:
             Collection=MetaParser_SecLoop(LocalDict, PhysicalEntity_property, Collection)
         if Collection:
             PhysicalEntity_Collections[key]=LocalDict
         else:
+            del LocalDict['collectionMembers']
             PhysicalEntities[key]=LocalDict
     
-def parse_Comeplex():
+def parse_Complexes():
     Complex_Xml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}Complex')
     for single_Complex in Complex_Xml:
         key=single_Complex.attrib.values()[0]
-        LocalDict={'collectionMembers':[],'parts':[],'references':{'names':[]}}
+        LocalDict={'collectionMembers':[],'parts':[],'references':{'name':[]}}
         Collection=False
         for complex_property in single_Complex:
-            Collection=MetaParser_SecLoop(LocalDict, PhysicalEntity_property, Collection)
+            Collection=MetaParser_SecLoop(LocalDict, complex_property, Collection)
             if '}component' in complex_property.tag:
                 LocalDict['parts'].append(complex_property.attrib.values()[0][1:])
         if Collection:
+            del LocalDict['parts']
             Complex_Collections[key]=LocalDict
         else:
+            del LocalDict['collectionMembers']
             Complexes[key]=LocalDict
     
-def parse_TemplateReaction():
+def parse_TemplateReactions():
     TemplateReaction_Xml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}TemplateReactionRegulation')
     for single_TemplateReaction in TemplateReaction_Xml:
         key=single_TemplateReaction.attrib.values()[0]
-        LocalDict={'references':{'names':[]}}
+        LocalDict={'references':{'name':[]}}
         for TemplateReaction_property in single_TemplateReaction:
             if '}product' in TemplateReaction_property.tag:
                 LocalDict['product']=TemplateReaction_property.attrib.values()[0][1:]
             if '}displayName' in TemplateReaction_property.tag:
                 LocalDict['displayName']=TemplateReaction_property.text
             if '}name' in TemplateReaction_property.tag:
-                LocalDict['references']['names']=TemplateReaction_property.text
-            TemplateReactions[key]=LocalDict
+                LocalDict['references']['name']=TemplateReaction_property.text
+        TemplateReactions[key]=LocalDict
     
-def parse_Degradation():    
-    DegradationXml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}TemplateReactionRegulation')
+def parse_Degradations():    
+    DegradationXml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}Degradation')
     for single_Degradation in DegradationXml:
         key=single_Degradation.attrib.values()[0]
-        LocalDict={'references':{'names':[]}}
+        LocalDict={'references':{'name':[]}}
         for Degradation_property in single_Degradation:
             if '}left' in Degradation_property.tag:
                 LocalDict['degraded']=Degradation_property.attrib.values()[0][1:]
@@ -342,62 +360,66 @@ def parse_Degradation():
                 LocalDict['displayName']=Degradation_property.text
             if '}eCNumber' in Degradation_property.tag:
                 LocalDict['references']['eCNumber']=Degradation_property.attrib.values()[0][1:]
-            TemplateReactions[key]=LocalDict
+        Degradations[key]=LocalDict
     
-def parse_BiochemicalREaction():    
-    BiochemicalReactionXml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}TemplateReactionRegulation')
+def parse_BiochemicalReactions():    
+    BiochemicalReactionXml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}BiochemicalReaction')
     for single_BiochemicalReaction in BiochemicalReactionXml:
         key=single_BiochemicalReaction.attrib.values()[0]
-        LocalDict={'right':[],'left':[],'references':{'names':[]}}
+        LocalDict={'right':[],'left':[],'references':{'name':[]}}
         for BiochemicalReaction_property in single_BiochemicalReaction:
             if '}left' in BiochemicalReaction_property.tag:
-                LocalDict['left']=BiochemicalReaction_property.attrib.values()[0][1:]
+                LocalDict['left'].append(BiochemicalReaction_property.attrib.values()[0][1:])
             if '}right' in BiochemicalReaction_property.tag:
-                LocalDict['right']=BiochemicalReaction_property.attrib.values()[0][1:]
+                LocalDict['right'].append(BiochemicalReaction_property.attrib.values()[0][1:])
             if '}displayName' in BiochemicalReaction_property.tag:
                 LocalDict['displayName']=BiochemicalReaction_property.text
             if '}eCNumber' in BiochemicalReaction_property.tag:
                 LocalDict['references']['eCNumber']=BiochemicalReaction_property.attrib.values()[0][1:]
-            TemplateReactions[key]=LocalDict
+        BiochemicalReactions[key]=LocalDict
     
 def parse_Catalysises():    
     CatalysisesXml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}Catalysis')
     for single_Catalysis in CatalysisesXml:
         key=single_Catalysis.attrib.values()[0]
+        Catalysises[key]={}
         for catalysis_property in single_Catalysis:
             if '}controlled' in catalysis_property.tag:
-                Catalysises['controlled']=catalysis_property.attrib.values()[0][1:]
+                Catalysises[key]['controlled']=catalysis_property.attrib.values()[0][1:]
             if '}controller' in catalysis_property.tag:
-                Catalysises['controller']=catalysis_property.attrib.values()[0][1:]
+                Catalysises[key]['controller']=catalysis_property.attrib.values()[0][1:]
             if '}controlType' in catalysis_property.tag:
-                Catalysises['ControlType']=catalysis_property.text
+                Catalysises[key]['ControlType']=catalysis_property.text
     TemplateReactRegulationXml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}TemplateReactionRegulation')
     for single_TRR in TemplateReactRegulationXml:
         key=single_Catalysis.attrib.values()[0]
+        Catalysises[key]={}
         for TRR_property in single_TRR:
             if '}controlled' in TRR_property.tag:
-                Catalysises['controlled']=TRR_property.attrib.values()[0][1:]
+                Catalysises[key]['controlled']=TRR_property.attrib.values()[0][1:]
             if '}controller' in TRR_property.tag:
-                Catalysises['controller']=TRR_property.attrib.values()[0][1:]
+                Catalysises[key]['controller']=TRR_property.attrib.values()[0][1:]
             if '}controlType' in TRR_property.tag:
-                Catalysises['ControlType']=TRR_property.text
+                Catalysises[key]['ControlType']=TRR_property.text
     ControlXml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}Control')
     for single_Control in ControlXml:
         key=single_Control.attrib.values()[0]
+        Catalysises[key]={}
         for control_property in single_Control:
             if '}displayName' in control_property.tag:
-                Catalysises['displayName']=control_property.text
+                Catalysises[key]['displayName']=control_property.text
             if '}controlled' in control_property.tag:
-                Catalysises['controlled']=control_property.attrib.values()[0][1:]
+                Catalysises[key]['controlled']=control_property.attrib.values()[0][1:]
             if '}controller' in control_property.tag:
-                Catalysises['controller']=control_property.attrib.values()[0][1:]
+                Catalysises[key]['controller']=control_property.attrib.values()[0][1:]
             if '}controlType' in control_property.tag and 'BiochemicalReaction' in control_property.attrib.values()[0]:
-                Catalysises['ControlType']=control_property.text
+                Catalysises[key]['ControlType']=control_property.text
     
 def parse_Modulations():    
-    ModulationsXml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}Modulations')
+    ModulationsXml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}Modulation')
     for single_Modulation in ModulationsXml:
-        key=single_Modulation.attrib.value()[0]
+        key=single_Modulation.attrib.values()[0]
+        Modulations[key]={}
         for modulation_property in single_Modulation:
             if '}displayName' in modulation_property.tag:
                 Modulations[key]['displayName']=modulation_property.text
@@ -407,5 +429,34 @@ def parse_Modulations():
                 Modulations[key]['controlled']=Catalysises[modulation_property.attrib.values()[0][1:]]['controller']
             if '}controlType' in modulation_property.tag:
                 Modulations[key]['controlType']=modulation_property.text
+
+def parse_all():
+    parse_BioSource()
+    parse_CellularLocations()
+    parse_SeqModVoc()
+    parse_SeqSite()
+    
+    parse_DnaRefs()
+    parse_RnaRefs()
+    parse_SmallMoleculeRefs()
+    parse_ProteinRefs()
+    parse_ModificationFeatures()
+    
+    parse_Dnas()
+    parse_Rnas()
+    parse_SmallMolecules()
+    parse_Proteins()
+    parse_PhysicalEntities()
+    parse_Complexes()
+    
+    parse_TemplateReactions()
+    parse_Degradations()
+    parse_BiochemicalReactions()
+    parse_Catalysises()
+    
+    parse_Modulations()
+    
+parse_all()
+    
 
 
