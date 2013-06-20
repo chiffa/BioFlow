@@ -89,17 +89,21 @@ LocalDict={} # accelerated access pointer to the objects
 
 def InsertCellLocations():
     for Loc in DG.CellularLocations.keys():
-        LocalDict[Loc]=DatabaseGraph.Location.create(ID=Loc, DG.CellularLocations[Loc])
+        LocalDict[Loc]=DatabaseGraph.Location.create(ID=Loc, displayName=DG.CellularLocations[Loc])
 
 def MinimalAnnotInsert(primary,reflist):
     for Type in reflist.keys():
-        if Type!='name' and reflist[Type]!='':
-            DatabaseGraph.is_annotated(primary, DatabaseGraph.AnnotNode.create(ptype=Type,load=reflist[Type]))
+        if Type!='name' and reflist[Type]!='' and reflist[Type]!=[]:
+            DatabaseGraph.is_annotated.create(primary, DatabaseGraph.AnnotNode.create(ptype=Type,payload=reflist[Type]))
 
 def MetaInsert(function,dico):
     for key in dico.keys():
-        LocalDict[key]=function.create(ID=key, displayName=dico[key]['displayName'], localization=dico[key]['cellularLocation'])
-        DatabaseGraph.is_localized(LocalDict[key], LocalDict[dico[key]['cellularLocation']])
+        res=function.create(ID=key, displayName=dico[key]['displayName'], localization=dico[key]['cellularLocation'])
+        print res, type(res)
+        LocalDict[key]=res
+        elt1=LocalDict[key]
+        elt2=LocalDict[dico[key]['cellularLocation']]
+        DatabaseGraph.is_localized.create(elt1, elt2)
         # TODOL add ModificationFeature insertion
         MinimalAnnotInsert(LocalDict[key], dico[key]['references'])
 
@@ -121,21 +125,21 @@ def ReactionInsert(function,dico):
         for subkey in dico[key].keys():
             if subkey in ['left','right']:
                 for elt in dico[key][subkey]:
-                    DatabaseGraph.is_reaction_participant(LocalDict[key],LocalDict[elt],side=subkey) 
+                    DatabaseGraph.is_reaction_participant.create(LocalDict[key],LocalDict[elt],side=subkey) 
             if subkey=='product':
-                DatabaseGraph.is_reaction_participant(LocalDict[key],LocalDict[dico[key][subkey]])
+                DatabaseGraph.is_reaction_participant.create(LocalDict[key],LocalDict[dico[key][subkey]])
 
 def CatalysisInsert():
     for key in DG.Catalysises.keys():
-        LocalDict[key]=DatabaseGraph.is_catalysant.create(ID=key,controlType=DG.Catalysises[key]['controlType'],LocalDict[DG.Catalysises[key]['Controller']],LocalDict[DG.Catalysises[key]['Controlled']])
+        LocalDict[key]=DatabaseGraph.is_catalysant.create(LocalDict[DG.Catalysises[key]['Controller']], LocalDict[DG.Catalysises[key]['Controlled']], ID=key, controlType=DG.Catalysises[key]['controlType'])
 
 def ModulationInsert():
     for key in DG.Modulations.keys():
         LocalDict[key]=DatabaseGraph.is_regulant.create(LocalDict[DG.Modulations[key]['modulator']], LocalDict[DG.Modulations[key]['modulated']])
 # 
-# InsertCellLocations()
+InsertCellLocations()
 # 
-# MetaInsert(DatabaseGraph.DNA, DG.Dnas)
+MetaInsert(DatabaseGraph.DNA, DG.Dnas)
 # MetaInsert(DatabaseGraph.DNA_Collection, DG.Dna_Collections)
 # MetaInsert(DatabaseGraph.RNA, DG.Rnas)
 # MetaInsert(DatabaseGraph.RNA_Collection, DG.Rna_Collections)

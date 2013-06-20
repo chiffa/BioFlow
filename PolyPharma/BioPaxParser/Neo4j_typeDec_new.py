@@ -59,8 +59,8 @@ class DNA(Meta):
 class Location(Instantiation_Type):
     element_type="Location"
 
-class is_localized(Instantiation_Type):
-    element_type="is_localized"
+class is_localized(Relationship):
+    label="is_localized"
 
 class DNA_Collection(Meta):
     element_type="DNA Collection"
