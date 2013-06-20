@@ -17,8 +17,8 @@ class CostumNode(Node):             # Serves as a basis for the annotation
 
 class AnnotNode(Node):                  # Used mainly the simplest annotation basis annotation
     element_type="AnnotNode"   
-    ContentType=String(nullable=False)  # Payload type          
-    Contents=String(nullable=False)     # Indexed payload
+    ptype=String(nullable=False)  # Payload type          
+    payload=String(nullable=False)     # Indexed payload
  
 class CostumLink(Relationship):
     label="CostumLink"
@@ -30,6 +30,7 @@ class CostumLink(Relationship):
     
 class Meta(CostumNode):
     element_type="Meta"
+    localization=String()
     
 class Fragment(CostumNode):
     element_type="Fragment"

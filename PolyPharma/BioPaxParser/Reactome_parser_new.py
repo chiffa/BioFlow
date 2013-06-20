@@ -6,6 +6,7 @@ Created on Jun 15, 2013
 import logging
 from bulbs.neo4jserver import Graph as Neo4jGraph
 import Neo4j_typeDec_new as DDT
+import DictGen as DG
 
 logging.basicConfig(level=logging.DEBUG,
                     format='%(levelname)-8s %(message)s',
@@ -73,7 +74,7 @@ class Graph(Neo4jGraph):
         
         #And contribute to reactions
         self.is_catalysant=self.build_proxy(DDT.is_catalysant)
-        self.is_regulant=self.build_proxy(DDT.is_regulant)
+        self.is_regulant=self.build_proxy(DDT.is_regulant) # regulates not a reaction, but a compound activity
         self.is_reaction_participant=self.build_proxy(DDT.is_reaction_participant)
         
         
@@ -81,6 +82,110 @@ class Graph(Neo4jGraph):
 
 DatabaseGraph=Graph()
 
-# The idea is to do as little operations on the neo4j database, so we will be first loading everything in a system of dictionnaries and then
-# flushing it alltogether to the neo4j database.
+# Now, we use our custom parsed dictionaries to insert them in neo4j
+# TODO: externalize locations?
+
+LocalDict={} # accelerated access pointer to the objects
+
+def InsertCellLocations():
+    for Loc in DG.CellularLocations.keys():
+        LocalDict[Loc]=DatabaseGraph.Location.create(ID=Loc, DG.CellularLocations[Loc])
+
+def MinimalAnnotInsert(primary,reflist):
+    for Type in reflist.keys():
+        if Type!='name' and reflist[Type]!='':
+            DatabaseGraph.is_annotated(primary, DatabaseGraph.AnnotNode.create(ptype=Type,load=reflist[Type]))
+
+def MetaInsert(function,dico):
+    for key in dico.keys():
+        LocalDict[key]=function.create(ID=key, displayName=dico[key]['displayName'], localization=dico[key]['cellularLocation'])
+        DatabaseGraph.is_localized(LocalDict[key], LocalDict[dico[key]['cellularLocation']])
+        # TODOL add ModificationFeature insertion
+        MinimalAnnotInsert(LocalDict[key], dico[key]['references'])
+
+
+def CollectionRefsInsert(primaryCollection):
+    for key in primaryCollection.keys():
+        for ref in primaryCollection[key]['collectionMembers']:
+            DatabaseGraph.is_part_of_collection.create(LocalDict[key],LocalDict[ref])
+
+def ComplexPartsInsert():
+    for key in DG.Complexes.keys():
+        for part in DG.Complexes[key]['parts']:
+            DatabaseGraph.is_part_of_complex.create(LocalDict[key],LocalDict[part])
+
+def ReactionInsert(function,dico):
+    for key in dico.keys():
+        LocalDict[key]=function.create(ID=key,displayName=dico[key]['displayName'])
+        MinimalAnnotInsert(LocalDict[key], dico[key]['references'])
+        for subkey in dico[key].keys():
+            if subkey in ['left','right']:
+                for elt in dico[key][subkey]:
+                    DatabaseGraph.is_reaction_participant(LocalDict[key],LocalDict[elt],side=subkey) 
+            if subkey=='product':
+                DatabaseGraph.is_reaction_participant(LocalDict[key],LocalDict[dico[key][subkey]])
+
+def CatalysisInsert():
+    for key in DG.Catalysises.keys():
+        LocalDict[key]=DatabaseGraph.is_catalysant.create(ID=key,controlType=DG.Catalysises[key]['controlType'],LocalDict[DG.Catalysises[key]['Controller']],LocalDict[DG.Catalysises[key]['Controlled']])
+
+def ModulationInsert():
+    for key in DG.Modulations.keys():
+        LocalDict[key]=DatabaseGraph.is_regulant.create(LocalDict[DG.Modulations[key]['modulator']], LocalDict[DG.Modulations[key]['modulated']])
+# 
+# InsertCellLocations()
+# 
+# MetaInsert(DatabaseGraph.DNA, DG.Dnas)
+# MetaInsert(DatabaseGraph.DNA_Collection, DG.Dna_Collections)
+# MetaInsert(DatabaseGraph.RNA, DG.Rnas)
+# MetaInsert(DatabaseGraph.RNA_Collection, DG.Rna_Collections)
+# MetaInsert(DatabaseGraph.SmallMolecule, DG.SmallMolecules)
+# MetaInsert(DatabaseGraph.SmallMolecule_Collection, DG.SmallMolecule_Collections)
+# MetaInsert(DatabaseGraph.Protein, DG.Proteins)
+# MetaInsert(DatabaseGraph.Protein_Collection, DG.Protein_Collections)
+# MetaInsert(DatabaseGraph.Complex, DG.Complexes)
+# MetaInsert(DatabaseGraph.Complex_Collection, DG.Complex_Collections)
+# 
+# CollectionRefsInsert(DG.Dna_Collections)
+# CollectionRefsInsert(DG.Rna_Collections)
+# CollectionRefsInsert(DG.SmallMolecule_Collections)
+# CollectionRefsInsert(DG.Protein_Collections)
+# CollectionRefsInsert(DG.Complex_Collections)
+# 
+# ComplexPartsInsert()
+# 
+# ## Meta insert finished
+# ReactionInsert(DatabaseGraph.TemplateReaction, DG.TemplateReactions)
+# ReactionInsert(DatabaseGraph.Degradation, DG.Degradations)
+# ReactionInsert(DatabaseGraph.BiochemicalReaction, DG.BiochemicalReactions)
+# 
+# ## Reaction insert finished
+# CatalysisInsert()
+# ModulationInsert()
+
+## Catalysis and modulation insertion finished
+
+# Dnas={} #{Id:{'cellularLocation':'', displayName:'', collectionMembers':[], 'references':{'name':[],...}}}
+# Dna_Collections={}
+# Rnas={} #{Id:{'cellularLocation':'', displayName:'', collectionMembers':[], 'references':{'name':[],...}}}
+# Rna_Collections={}
+# SmallMolecules={} #{Id:{'cellularLocation':'', displayName:'', collectionMembers':[], 'references':{'name':[],...}}}
+# SmallMolecule_Collections={}
+# Proteins={} #{Id:{'cellularLocation':'', displayName:'', collectionMembers':[], 'references':{'name':[],...}}}
+# Protein_Collections={}
+# PhysicalEntities={} #{Id:{'cellularLocation':'', displayName:'', collectionMembers':[], 'references':{'name':[],...}}}
+# PhysicalEntity_Collections={}
+# Complexes={} #{Id:{'cellularLocation':'', displayName:'', 'parts':[], collectionMembers':[], 'references':{'name':[],...}}}
+# Complex_Collections={}
+# 
+# TemplateReactions={} # {ID:{'product':'','displayName':'','references':{'names':[],...}}}
+# Degradations={}# {ID:{'product':'','displayName':'','references':{'eCNumber':[],...}}}
+# BiochemicalReactions={} # {ID:{'left':[],'right':[],'displayName':'','references':{'eCNumber':[],...}}}
+#
+# Catalysises={}#{ID:{Controller:'', Controlled:'', controlType:''}}
+# 
+# Modulations={} #{ID:{modulator, modulated} # This is essentially a compressed regulation of activity of the catalysts
+
+
+
 

@@ -225,7 +225,7 @@ def MetaParser_SecLoop(LocDic,local_property,CollectionMarker):
     '''
     
     if '}cellularLocation' in local_property.tag:
-        LocDic['cellularLocation']=CellularLocations[local_property.attrib.values()[0][1:]]
+        LocDic['cellularLocation']=local_property.attrib.values()[0][1:]
     if '}displayName' in local_property.tag:
         LocDic['displayName']=local_property.text
     if '}name' in local_property.tag:
@@ -294,7 +294,7 @@ def parse_Proteins():
             if '}entityReference' in Protein_property.tag:
                 LocalDict['references']=zipDicts(ProteinRefs[Protein_property.attrib.values()[0][1:]], LocalDict['references'])
             if '}feature' in Protein_property.tag and 'ModificationFeature' in single_Protein.attrib.values()[0]:
-                LocalDict['modification'].append(single_Protein.attrib.values()[0][1:])
+                LocalDict['modification'].append(ModificationFeatures[single_Protein.attrib.values()[0][1:]])
         if LocalDict['modification']==[]:
             del LocalDict['modification']
         if Collection:
