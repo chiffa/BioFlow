@@ -325,7 +325,7 @@ def parse_Complexes():
         Collection=False
         for complex_property in single_Complex:
             Collection=MetaParser_SecLoop(LocalDict, complex_property, Collection)
-            if '}component' in complex_property.tag:
+            if '}component' in complex_property.tag and not 'Stoichiometry' in complex_property.tag:
                 LocalDict['parts'].append(complex_property.attrib.values()[0][1:])
         if Collection:
             del LocalDict['parts']
@@ -384,7 +384,7 @@ def parse_Catalysises():
         key=single_Catalysis.attrib.values()[0]
         Catalysises[key]={}
         for catalysis_property in single_Catalysis:
-            if '}controlled' in catalysis_property.tag:
+            if '}controlled' in catalysis_property.tag :
                 Catalysises[key]['controlled']=catalysis_property.attrib.values()[0][1:]
             if '}controller' in catalysis_property.tag:
                 Catalysises[key]['controller']=catalysis_property.attrib.values()[0][1:]
@@ -406,9 +406,7 @@ def parse_Catalysises():
         key=single_Control.attrib.values()[0]
         Catalysises[key]={}
         for control_property in single_Control:
-            if '}displayName' in control_property.tag:
-                Catalysises[key]['displayName']=control_property.text
-            if '}controlled' in control_property.tag:
+            if '}controlled' in control_property.tag and 'Pathway' not in control_property.attrib.values()[0][1:]:
                 Catalysises[key]['controlled']=control_property.attrib.values()[0][1:]
             if '}controller' in control_property.tag:
                 Catalysises[key]['controller']=control_property.attrib.values()[0][1:]

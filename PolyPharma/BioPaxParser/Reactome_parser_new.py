@@ -116,7 +116,8 @@ def CollectionRefsInsert(primaryCollection):
 def ComplexPartsInsert():
     for key in DG.Complexes.keys():
         for part in DG.Complexes[key]['parts']:
-            DatabaseGraph.is_part_of_complex.create(LocalDict[key],LocalDict[part])
+            if 'Stoichiometry' not in part:
+                DatabaseGraph.is_part_of_complex.create(LocalDict[key],LocalDict[part])
 
 def ReactionInsert(function,dico):
     for key in dico.keys():
@@ -130,16 +131,24 @@ def ReactionInsert(function,dico):
                 DatabaseGraph.is_reaction_participant.create(LocalDict[key],LocalDict[dico[key][subkey]])
 
 def CatalysisInsert():
+# TODO: debug the catalysis paring and insertions
     for key in DG.Catalysises.keys():
-        LocalDict[key]=DatabaseGraph.is_catalysant.create(LocalDict[DG.Catalysises[key]['Controller']], LocalDict[DG.Catalysises[key]['Controlled']], ID=key, controlType=DG.Catalysises[key]['controlType'])
+        if 'controller' in DG.Catalysises[key].keys() and 'controlled' in DG.Catalysises[key].keys() and key in LocalDict.keys() and DG.Catalysises[key]['controlled'] in LocalDict.keys() and DG.Catalysises[key]['controller'] in LocalDict.keys():
+            if 'ControlType' in DG.Catalysises[key].keys():
+                LocalDict[key]=DatabaseGraph.is_catalysant.create(LocalDict[DG.Catalysises[key]['controller']], LocalDict[DG.Catalysises[key]['controlled']], ID=key, controlType=DG.Catalysises[key]['ControlType'])
+            else:
+                LocalDict[key]=DatabaseGraph.is_catalysant.create(LocalDict[DG.Catalysises[key]['controller']], LocalDict[DG.Catalysises[key]['controlled']], ID=key, controlType='UNKNOWN')
+        else: 
+            logging.debug("%s : %s", key,  DG.Catalysises[key])
 
 def ModulationInsert():
     for key in DG.Modulations.keys():
-        LocalDict[key]=DatabaseGraph.is_regulant.create(LocalDict[DG.Modulations[key]['modulator']], LocalDict[DG.Modulations[key]['modulated']])
+        LocalDict[key]=DatabaseGraph.is_regulant.create(LocalDict[DG.Modulations[key]['controller']], LocalDict[DG.Modulations[key]['controlled']], ID=key,controlType=DG.Modulations[key]['controlType'])
+
 # 
-InsertCellLocations()
+# InsertCellLocations()
 # 
-MetaInsert(DatabaseGraph.DNA, DG.Dnas)
+# MetaInsert(DatabaseGraph.DNA, DG.Dnas)
 # MetaInsert(DatabaseGraph.DNA_Collection, DG.Dna_Collections)
 # MetaInsert(DatabaseGraph.RNA, DG.Rnas)
 # MetaInsert(DatabaseGraph.RNA_Collection, DG.Rna_Collections)
@@ -149,13 +158,16 @@ MetaInsert(DatabaseGraph.DNA, DG.Dnas)
 # MetaInsert(DatabaseGraph.Protein_Collection, DG.Protein_Collections)
 # MetaInsert(DatabaseGraph.Complex, DG.Complexes)
 # MetaInsert(DatabaseGraph.Complex_Collection, DG.Complex_Collections)
-# 
+# MetaInsert(DatabaseGraph.PhysicalEntity, DG.PhysicalEntities)
+# MetaInsert(DatabaseGraph.PhysicalEntity_Collection, DG.PhysicalEntity_Collections)
+
 # CollectionRefsInsert(DG.Dna_Collections)
 # CollectionRefsInsert(DG.Rna_Collections)
 # CollectionRefsInsert(DG.SmallMolecule_Collections)
 # CollectionRefsInsert(DG.Protein_Collections)
 # CollectionRefsInsert(DG.Complex_Collections)
-# 
+# CollectionRefsInsert(DG.PhysicalEntity_Collections)
+
 # ComplexPartsInsert()
 # 
 # ## Meta insert finished
@@ -166,30 +178,3 @@ MetaInsert(DatabaseGraph.DNA, DG.Dnas)
 # ## Reaction insert finished
 # CatalysisInsert()
 # ModulationInsert()
-
-## Catalysis and modulation insertion finished
-
-# Dnas={} #{Id:{'cellularLocation':'', displayName:'', collectionMembers':[], 'references':{'name':[],...}}}
-# Dna_Collections={}
-# Rnas={} #{Id:{'cellularLocation':'', displayName:'', collectionMembers':[], 'references':{'name':[],...}}}
-# Rna_Collections={}
-# SmallMolecules={} #{Id:{'cellularLocation':'', displayName:'', collectionMembers':[], 'references':{'name':[],...}}}
-# SmallMolecule_Collections={}
-# Proteins={} #{Id:{'cellularLocation':'', displayName:'', collectionMembers':[], 'references':{'name':[],...}}}
-# Protein_Collections={}
-# PhysicalEntities={} #{Id:{'cellularLocation':'', displayName:'', collectionMembers':[], 'references':{'name':[],...}}}
-# PhysicalEntity_Collections={}
-# Complexes={} #{Id:{'cellularLocation':'', displayName:'', 'parts':[], collectionMembers':[], 'references':{'name':[],...}}}
-# Complex_Collections={}
-# 
-# TemplateReactions={} # {ID:{'product':'','displayName':'','references':{'names':[],...}}}
-# Degradations={}# {ID:{'product':'','displayName':'','references':{'eCNumber':[],...}}}
-# BiochemicalReactions={} # {ID:{'left':[],'right':[],'displayName':'','references':{'eCNumber':[],...}}}
-#
-# Catalysises={}#{ID:{Controller:'', Controlled:'', controlType:''}}
-# 
-# Modulations={} #{ID:{modulator, modulated} # This is essentially a compressed regulation of activity of the catalysts
-
-
-
-
