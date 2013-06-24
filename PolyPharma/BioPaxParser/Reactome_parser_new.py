@@ -145,6 +145,19 @@ def ModulationInsert():
     for key in DG.Modulations.keys():
         LocalDict[key]=DatabaseGraph.is_regulant.create(LocalDict[DG.Modulations[key]['controller']], LocalDict[DG.Modulations[key]['controlled']], ID=key,controlType=DG.Modulations[key]['controlType'])
 
+def ModificationFeatureInsert():
+    iteration=0
+    for ProteinObject in DatabaseGraph.Protein.get_all():
+        iteration+=1
+        print iteration
+        if 'modification' in DG.Proteins[ProteinObject.ID].keys():
+            for modification in DG.Proteins[ProteinObject.ID]['modification']:
+                if 'location' in modification.keys() and 'modification' in modification.keys():
+                    LocMod=DatabaseGraph.ModificationFeature.create(ID = modification['ID'], type="post-translational_Mod", location=modification['location'], displayName=modification['modification'])
+                    DatabaseGraph.is_able_to_modify.create(ProteinObject,LocMod)
+
+#TODO: insert secondary structure modifications(post-translational modifications)
+
 # 
 # InsertCellLocations()
 # 

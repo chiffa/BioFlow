@@ -36,7 +36,7 @@ def Connected_to_Reactions(ReactionType):
         
         # if this is an annotation
         
-        # if this is a 
+        # if this is a modification
         
     
         

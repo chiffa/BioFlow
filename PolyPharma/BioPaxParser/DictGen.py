@@ -4,8 +4,11 @@ Created on Jun 17, 2013
 @author: andrei
 #Put it into the a Reactome parser package later on
 '''
-# TODO: we might want to parse the traceability of the all the compouunds and link by adding
-# the xref parsed information to them
+# TODO: we might want to parse the traceability of the all the compouunds and link by adding the xref parsed information to them
+# TODO: perform a search in the UNIPROT Database in order to imoprove the annotation based on the DisplayNames
+# TODO: perform GO terms parsing and linking of their structure to the neo4j database
+# TODO: perform a recovery of important domains from PDB
+# TODO: perform a recovery of post-translational modification sites in the normal proteins
 
 import logging
 import xml.etree.ElementTree as ET
@@ -209,7 +212,7 @@ def parse_ModificationFeatures():
     ModificationFeatureXml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}ModificationFeature')
     for single_ModificationFeature in ModificationFeatureXml:
         key=single_ModificationFeature.attrib.values()[0]
-        ModificationFeatures[key]={}
+        ModificationFeatures[key]={'ID':key}
         for modification_property in single_ModificationFeature:
             if '}featureLocation' in modification_property.tag:
                 ModificationFeatures[key]['location']=SeqSite[modification_property.attrib.values()[0][1:]]
@@ -293,8 +296,8 @@ def parse_Proteins():
             Collection=MetaParser_SecLoop(LocalDict, Protein_property, Collection)
             if '}entityReference' in Protein_property.tag:
                 LocalDict['references']=zipDicts(ProteinRefs[Protein_property.attrib.values()[0][1:]], LocalDict['references'])
-            if '}feature' in Protein_property.tag and 'ModificationFeature' in single_Protein.attrib.values()[0]:
-                LocalDict['modification'].append(ModificationFeatures[single_Protein.attrib.values()[0][1:]])
+            if '}feature' in Protein_property.tag and 'ModificationFeature' in Protein_property.attrib.values()[0]:
+                LocalDict['modification'].append(ModificationFeatures[Protein_property.attrib.values()[0][1:]])
         if LocalDict['modification']==[]:
             del LocalDict['modification']
         if Collection:

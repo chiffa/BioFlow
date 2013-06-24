@@ -4,9 +4,6 @@ Created on Mar 27, 2013
 @author: akucahravy
 '''
 
-# TODO: in the protein and GO reporting modules filter out the GOs and proteins 
-# without information circulation, eventually throw prots as an additional output
-
 class Protein():
     '''
     Wraps the protein object and the relation it has with GOs and other nodes
