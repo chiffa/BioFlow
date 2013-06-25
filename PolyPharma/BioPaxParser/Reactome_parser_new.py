@@ -87,6 +87,8 @@ DatabaseGraph=Graph()
 
 LocalDict={} # accelerated access pointer to the objects
 
+# TODO: NOW, add the reference costum_To and costum_From for all the new edges!!!!!!
+
 def InsertCellLocations():
     for Loc in DG.CellularLocations.keys():
         LocalDict[Loc]=DatabaseGraph.Location.create(ID=Loc, displayName=DG.CellularLocations[Loc])
@@ -94,30 +96,40 @@ def InsertCellLocations():
 def MinimalAnnotInsert(primary,reflist):
     for Type in reflist.keys():
         if Type!='name' and reflist[Type]!='' and reflist[Type]!=[]:
-            DatabaseGraph.is_annotated.create(primary, DatabaseGraph.AnnotNode.create(ptype=Type,payload=reflist[Type]))
+            secondary=DatabaseGraph.AnnotNode.create(ptype=Type,payload=reflist[Type])
+            print primary, secondary, primary.ID
+            DatabaseGraph.is_annotated.create(primary, secondary, costum_from=primary.ID,costum_to='Annotation')
 
 def MetaInsert(function,dico):
+    length=len(dico)
+    counter=0
     for key in dico.keys():
-        res=function.create(ID=key, displayName=dico[key]['displayName'], localization=dico[key]['cellularLocation'])
-        print res, type(res)
-        LocalDict[key]=res
-        elt1=LocalDict[key]
-        elt2=LocalDict[dico[key]['cellularLocation']]
-        DatabaseGraph.is_localized.create(elt1, elt2)
-        # TODOL add ModificationFeature insertion
+        counter+=1
+        print '\n',counter,'/',length,'\n'
+        primary=function.create(ID=key, displayName=dico[key]['displayName'], localization=dico[key]['cellularLocation'])
+        LocalDict[key]=primary
         MinimalAnnotInsert(LocalDict[key], dico[key]['references'])
+        if 'cellularLocation' in dico[key].keys():
+            secondary=LocalDict[dico[key]['cellularLocation']]
+            DatabaseGraph.is_localized.create(primary, secondary,costum_from=primary.ID,costum_to=secondary.ID)
+            # TODO add ModificationFeature insertion
+        if 'modification' in dico[key].keys():
+            for modification in dico[key]['modification']:
+                if 'location' in modification.keys() and 'modification' in modification.keys():
+                    LocMod=DatabaseGraph.ModificationFeature.create(ID = modification['ID'], type="post-translational_Mod", location=modification['location'], displayName=modification['modification'])
+                    DatabaseGraph.is_able_to_modify.create(primary,LocMod,costum_from=primary.ID,costum_to=LocMod.ID)
 
 
 def CollectionRefsInsert(primaryCollection):
     for key in primaryCollection.keys():
         for ref in primaryCollection[key]['collectionMembers']:
-            DatabaseGraph.is_part_of_collection.create(LocalDict[key],LocalDict[ref])
+            DatabaseGraph.is_part_of_collection.create(LocalDict[key],LocalDict[ref],costum_from=LocalDict[key].ID,costum_to=LocalDict[ref].ID)
 
 def ComplexPartsInsert():
     for key in DG.Complexes.keys():
         for part in DG.Complexes[key]['parts']:
             if 'Stoichiometry' not in part:
-                DatabaseGraph.is_part_of_complex.create(LocalDict[key],LocalDict[part])
+                DatabaseGraph.is_part_of_complex.create(LocalDict[key],LocalDict[part],costum_from=LocalDict[key].ID,costum_to=LocalDict[part].ID)
 
 def ReactionInsert(function,dico):
     for key in dico.keys():
@@ -126,37 +138,35 @@ def ReactionInsert(function,dico):
         for subkey in dico[key].keys():
             if subkey in ['left','right']:
                 for elt in dico[key][subkey]:
-                    DatabaseGraph.is_reaction_participant.create(LocalDict[key],LocalDict[elt],side=subkey) 
+                    DatabaseGraph.is_reaction_participant.create(LocalDict[key],LocalDict[elt],side=subkey,costum_from=LocalDict[key].ID,costum_to=LocalDict[elt].ID) 
             if subkey=='product':
-                DatabaseGraph.is_reaction_participant.create(LocalDict[key],LocalDict[dico[key][subkey]])
+                DatabaseGraph.is_reaction_participant.create(LocalDict[key],LocalDict[dico[key][subkey]],costum_from=LocalDict[key].ID,costum_to=LocalDict[dico[key][subkey]].ID)
 
 def CatalysisInsert():
-# TODO: debug the catalysis paring and insertions
     for key in DG.Catalysises.keys():
-        if 'controller' in DG.Catalysises[key].keys() and 'controlled' in DG.Catalysises[key].keys() and key in LocalDict.keys() and DG.Catalysises[key]['controlled'] in LocalDict.keys() and DG.Catalysises[key]['controller'] in LocalDict.keys():
-            if 'ControlType' in DG.Catalysises[key].keys():
-                LocalDict[key]=DatabaseGraph.is_catalysant.create(LocalDict[DG.Catalysises[key]['controller']], LocalDict[DG.Catalysises[key]['controlled']], ID=key, controlType=DG.Catalysises[key]['ControlType'])
-            else:
-                LocalDict[key]=DatabaseGraph.is_catalysant.create(LocalDict[DG.Catalysises[key]['controller']], LocalDict[DG.Catalysises[key]['controlled']], ID=key, controlType='UNKNOWN')
+        if 'controller' in DG.Catalysises[key].keys() and 'controlled' in DG.Catalysises[key].keys():
+            if DG.Catalysises[key]['controlled'] in LocalDict.keys() and DG.Catalysises[key]['controller'] in LocalDict.keys():
+                if 'ControlType' in DG.Catalysises[key].keys():
+                    primary=LocalDict[DG.Catalysises[key]['controller']]
+                    secondary=LocalDict[DG.Catalysises[key]['controlled']]
+                    LocalDict[key]=DatabaseGraph.is_catalysant.create(primary, secondary, ID=key, controlType=DG.Catalysises[key]['ControlType'],costum_from=primary.ID,costum_to=secondary.ID)
+                else:
+                    primary=LocalDict[DG.Catalysises[key]['controller']]
+                    secondary=LocalDict[DG.Catalysises[key]['controlled']]
+                    LocalDict[key]=DatabaseGraph.is_catalysant.create(primary, secondary, ID=key, controlType='UNKNOWN',costum_from=primary.ID,costum_to=secondary.ID)
+            else: 
+                logging.debug("\t%s : %s, %s, %s", key, DG.Catalysises[key],DG.Catalysises[key]['controlled'] in LocalDict.keys(),DG.Catalysises[key]['controller'] in LocalDict.keys())
         else: 
-            logging.debug("%s : %s", key,  DG.Catalysises[key])
+            logging.debug("%s : %s, %s, %s,", key, DG.Catalysises[key],'controller' in DG.Catalysises[key].keys(),'controlled' in DG.Catalysises[key].keys())
+
+
 
 def ModulationInsert():
     for key in DG.Modulations.keys():
-        LocalDict[key]=DatabaseGraph.is_regulant.create(LocalDict[DG.Modulations[key]['controller']], LocalDict[DG.Modulations[key]['controlled']], ID=key,controlType=DG.Modulations[key]['controlType'])
+        primary=LocalDict[DG.Modulations[key]['controller']]
+        secondary=LocalDict[DG.Modulations[key]['controlled']]
+        LocalDict[key]=DatabaseGraph.is_regulant.create(primary, secondary, ID=key,controlType=DG.Modulations[key]['controlType'],costum_from=primary.ID,costum_to=secondary.ID)
 
-def ModificationFeatureInsert():
-    iteration=0
-    for ProteinObject in DatabaseGraph.Protein.get_all():
-        iteration+=1
-        print iteration
-        if 'modification' in DG.Proteins[ProteinObject.ID].keys():
-            for modification in DG.Proteins[ProteinObject.ID]['modification']:
-                if 'location' in modification.keys() and 'modification' in modification.keys():
-                    LocMod=DatabaseGraph.ModificationFeature.create(ID = modification['ID'], type="post-translational_Mod", location=modification['location'], displayName=modification['modification'])
-                    DatabaseGraph.is_able_to_modify.create(ProteinObject,LocMod)
-
-#TODO: insert secondary structure modifications(post-translational modifications)
 
 # 
 # InsertCellLocations()
@@ -169,25 +179,24 @@ def ModificationFeatureInsert():
 # MetaInsert(DatabaseGraph.SmallMolecule_Collection, DG.SmallMolecule_Collections)
 # MetaInsert(DatabaseGraph.Protein, DG.Proteins)
 # MetaInsert(DatabaseGraph.Protein_Collection, DG.Protein_Collections)
-# MetaInsert(DatabaseGraph.Complex, DG.Complexes)
-# MetaInsert(DatabaseGraph.Complex_Collection, DG.Complex_Collections)
-# MetaInsert(DatabaseGraph.PhysicalEntity, DG.PhysicalEntities)
-# MetaInsert(DatabaseGraph.PhysicalEntity_Collection, DG.PhysicalEntity_Collections)
+MetaInsert(DatabaseGraph.Complex, DG.Complexes)
+MetaInsert(DatabaseGraph.Complex_Collection, DG.Complex_Collections)
+MetaInsert(DatabaseGraph.PhysicalEntity, DG.PhysicalEntities)
+MetaInsert(DatabaseGraph.PhysicalEntity_Collection, DG.PhysicalEntity_Collections)
+CollectionRefsInsert(DG.Dna_Collections)
+CollectionRefsInsert(DG.Rna_Collections)
+CollectionRefsInsert(DG.SmallMolecule_Collections)
+CollectionRefsInsert(DG.Protein_Collections)
+CollectionRefsInsert(DG.Complex_Collections)
+CollectionRefsInsert(DG.PhysicalEntity_Collections)
 
-# CollectionRefsInsert(DG.Dna_Collections)
-# CollectionRefsInsert(DG.Rna_Collections)
-# CollectionRefsInsert(DG.SmallMolecule_Collections)
-# CollectionRefsInsert(DG.Protein_Collections)
-# CollectionRefsInsert(DG.Complex_Collections)
-# CollectionRefsInsert(DG.PhysicalEntity_Collections)
-
-# ComplexPartsInsert()
+ComplexPartsInsert()
 # 
 # ## Meta insert finished
-# ReactionInsert(DatabaseGraph.TemplateReaction, DG.TemplateReactions)
-# ReactionInsert(DatabaseGraph.Degradation, DG.Degradations)
-# ReactionInsert(DatabaseGraph.BiochemicalReaction, DG.BiochemicalReactions)
+ReactionInsert(DatabaseGraph.TemplateReaction, DG.TemplateReactions)
+ReactionInsert(DatabaseGraph.Degradation, DG.Degradations)
+ReactionInsert(DatabaseGraph.BiochemicalReaction, DG.BiochemicalReactions)
 # 
 # ## Reaction insert finished
-# CatalysisInsert()
-# ModulationInsert()
+CatalysisInsert()
+ModulationInsert()

@@ -22,6 +22,8 @@ class AnnotNode(Node):                  # Used mainly the simplest annotation ba
  
 class CostumLink(Relationship):
     label="CostumLink"
+    costum_from=String()
+    costum_to=String()
     linkType=String()
     custom=String()
     load=Float()
@@ -59,22 +61,22 @@ class DNA(Meta):
 class Location(Instantiation_Type):
     element_type="Location"
 
-class is_localized(Relationship):
+class is_localized(CostumLink):
     label="is_localized"
 
 class DNA_Collection(Meta):
-    element_type="DNA Collection"
+    element_type="DNA_Collection"
 
 class is_part_of_collection(CostumLink):
     label="is_part_of_collection"
 
-class is_annotated(Relationship):
+class is_annotated(CostumLink):
     label="is_annotated"
 
 class Complex(Meta):
     element_type="Complex"
 
-class is_part_of_complex(Relationship):
+class is_part_of_complex(CostumLink):
     label="is_part_of_complex"
 
 class Complex_Collection(Meta):
@@ -99,7 +101,7 @@ class PhysicalEntity_Collection(Meta):
     element_type="PhysicalEntity_Collection"
 
 class TemplateReaction(Reaction):
-    element_type="TemplateReaction"
+    element_type="Template_Reaction"
     
 class Degradation(Reaction):
     element_type="Degradation"
