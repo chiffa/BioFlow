@@ -4,6 +4,8 @@ Created on Jun 13, 2013
 @author: andrei
 '''
 
+# TODO: add the Pathway integration as an annotation node. Add is_next_in_pathway and is_part_of_pathway relationships.
+
 from bulbs.model import Node, Relationship
 from bulbs.property import String, Integer, Float, Dictionary, List
 from bulbs.utils import current_datetime
@@ -147,5 +149,13 @@ class is_modified_to(CostumLink):
 class is_able_to_modify(CostumLink):
     label="is_able_to_modify"
 
+class Pathway(CostumNode):
+    element_type="Pathway"
+
+class is_part_of_pathway(CostumLink):
+    label="is_part_of_pathway"
+
+class is_next_in_pathway(CostumLink):
+    label="is_next_in_pathway"
 
         

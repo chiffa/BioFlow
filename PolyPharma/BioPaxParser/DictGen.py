@@ -338,7 +338,7 @@ def parse_Complexes():
             Complexes[key]=LocalDict
     
 def parse_TemplateReactions():
-    TemplateReaction_Xml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}TemplateReactionRegulation')
+    TemplateReaction_Xml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}TemplateReaction')
     for single_TemplateReaction in TemplateReaction_Xml:
         key=single_TemplateReaction.attrib.values()[0]
         LocalDict={'references':{'name':[]}}

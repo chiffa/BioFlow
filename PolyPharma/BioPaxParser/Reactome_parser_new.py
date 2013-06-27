@@ -29,6 +29,7 @@ class Graph(Neo4jGraph):
         self.Location=self.build_proxy(DDT.Location)
         self.AnnotNode=self.build_proxy(DDT.AnnotNode)
         self.Originating_Organism=self.build_proxy(DDT.Originating_Organism)
+        self.Pathway=self.build_proxy(DDT.Pathway)
         
         #Simple Compounds
         self.DNA=self.build_proxy(DDT.DNA)
@@ -61,6 +62,8 @@ class Graph(Neo4jGraph):
         self.is_localized=self.build_proxy(DDT.is_localized)
         self.is_annotated=self.build_proxy(DDT.is_annotated)
         self.is_originating_in_organism=self.build_proxy(DDT.is_originating_in_organism)
+        self.is_part_of_pathway=self.build_proxy(DDT.is_part_of_pathway)
+        self.is_next_in_pathway=self.build_proxy(DDT.is_next_in_pathway)
         
         #And from Complex Compounds to the simple Compounds they are made of
         self.is_part_of_complex=self.build_proxy(DDT.is_part_of_complex)
@@ -167,6 +170,31 @@ def ModulationInsert():
         secondary=LocalDict[DG.Modulations[key]['controlled']]
         LocalDict[key]=DatabaseGraph.is_regulant.create(primary, secondary, ID=key,controlType=DG.Modulations[key]['controlType'],costum_from=primary.ID,costum_to=secondary.ID)
 
+def getOneMetaSet(function):
+    for MetaKey in function.get_all():
+        if MetaKey!=None:
+            LocalDict[MetaKey.ID]=MetaKey
+        
+def getAllMetaSets():
+    functionList=[
+                  DatabaseGraph.DNA,
+                  DatabaseGraph.DNA_Collection,
+                  DatabaseGraph.RNA,
+                  DatabaseGraph.RNA_Collection,
+                  DatabaseGraph.SmallMolecule,
+                  DatabaseGraph.SmallMolecule_Collection,
+                  DatabaseGraph.Protein,
+                  DatabaseGraph.Protein_Collection,
+                  DatabaseGraph.Complex,
+                  DatabaseGraph.Complex_Collection,
+                  DatabaseGraph.PhysicalEntity,
+                  DatabaseGraph.PhysicalEntity_Collection
+                  ]
+    
+    for function in functionList:
+        getOneMetaSet(function)
+
+#TODO: insert catalysis
 
 # 
 # InsertCellLocations()
@@ -179,24 +207,24 @@ def ModulationInsert():
 # MetaInsert(DatabaseGraph.SmallMolecule_Collection, DG.SmallMolecule_Collections)
 # MetaInsert(DatabaseGraph.Protein, DG.Proteins)
 # MetaInsert(DatabaseGraph.Protein_Collection, DG.Protein_Collections)
-MetaInsert(DatabaseGraph.Complex, DG.Complexes)
-MetaInsert(DatabaseGraph.Complex_Collection, DG.Complex_Collections)
-MetaInsert(DatabaseGraph.PhysicalEntity, DG.PhysicalEntities)
-MetaInsert(DatabaseGraph.PhysicalEntity_Collection, DG.PhysicalEntity_Collections)
-CollectionRefsInsert(DG.Dna_Collections)
-CollectionRefsInsert(DG.Rna_Collections)
-CollectionRefsInsert(DG.SmallMolecule_Collections)
-CollectionRefsInsert(DG.Protein_Collections)
-CollectionRefsInsert(DG.Complex_Collections)
-CollectionRefsInsert(DG.PhysicalEntity_Collections)
-
-ComplexPartsInsert()
+# MetaInsert(DatabaseGraph.Complex, DG.Complexes)
+# MetaInsert(DatabaseGraph.Complex_Collection, DG.Complex_Collections)
+# MetaInsert(DatabaseGraph.PhysicalEntity, DG.PhysicalEntities)
+# MetaInsert(DatabaseGraph.PhysicalEntity_Collection, DG.PhysicalEntity_Collections)
+# CollectionRefsInsert(DG.Dna_Collections)
+# CollectionRefsInsert(DG.Rna_Collections)
+# CollectionRefsInsert(DG.SmallMolecule_Collections)
+# CollectionRefsInsert(DG.Protein_Collections)
+# CollectionRefsInsert(DG.Complex_Collections)
+# CollectionRefsInsert(DG.PhysicalEntity_Collections)
+#
+# ComplexPartsInsert()
 # 
 # ## Meta insert finished
-ReactionInsert(DatabaseGraph.TemplateReaction, DG.TemplateReactions)
-ReactionInsert(DatabaseGraph.Degradation, DG.Degradations)
-ReactionInsert(DatabaseGraph.BiochemicalReaction, DG.BiochemicalReactions)
+# ReactionInsert(DatabaseGraph.TemplateReaction, DG.TemplateReactions)
+# ReactionInsert(DatabaseGraph.Degradation, DG.Degradations)
+# ReactionInsert(DatabaseGraph.BiochemicalReaction, DG.BiochemicalReactions)
 # 
 # ## Reaction insert finished
-CatalysisInsert()
-ModulationInsert()
+# CatalysisInsert()
+# ModulationInsert()

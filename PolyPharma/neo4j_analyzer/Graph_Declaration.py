@@ -17,6 +17,7 @@ class Graph(Neo4jGraph):
         self.Location=self.build_proxy(DDT.Location)
         self.AnnotNode=self.build_proxy(DDT.AnnotNode)
         self.Originating_Organism=self.build_proxy(DDT.Originating_Organism)
+        self.Pathway=self.build_proxy(DDT.Pathway)
         
         #Simple Compounds
         self.DNA=self.build_proxy(DDT.DNA)
@@ -49,6 +50,8 @@ class Graph(Neo4jGraph):
         self.is_localized=self.build_proxy(DDT.is_localized)
         self.is_annotated=self.build_proxy(DDT.is_annotated)
         self.is_originating_in_organism=self.build_proxy(DDT.is_originating_in_organism)
+        self.is_part_of_pathway=self.build_proxy(DDT.is_part_of_pathway)
+        self.is_next_in_pathway=self.build_proxy(DDT.is_next_in_pathway)
         
         #And from Complex Compounds to the simple Compounds they are made of
         self.is_part_of_complex=self.build_proxy(DDT.is_part_of_complex)
