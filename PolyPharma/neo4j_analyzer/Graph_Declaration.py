@@ -52,6 +52,7 @@ class Graph(Neo4jGraph):
         self.is_originating_in_organism=self.build_proxy(DDT.is_originating_in_organism)
         self.is_part_of_pathway=self.build_proxy(DDT.is_part_of_pathway)
         self.is_next_in_pathway=self.build_proxy(DDT.is_next_in_pathway)
+        self.is_possiby_same=self.build_proxy(DDT.is_possibly_same)
         
         #And from Complex Compounds to the simple Compounds they are made of
         self.is_part_of_complex=self.build_proxy(DDT.is_part_of_complex)

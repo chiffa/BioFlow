@@ -4,8 +4,9 @@ Created on Jun 24, 2013
 @author: andrei
 '''
 
-import Graph_Declaration as GD
+from neo4j_analyzer import Graph_Declaration as GD
 import copy
+import numpy as np
 
 def displayNameClusters(func):
     displayNameClusters={}
@@ -21,6 +22,20 @@ def displayNameClusters(func):
     
     return displayNameClusters
 
+
+def crossLinkClusters(dictionary):
+    for commonDispName in dictionary.keys():
+        print 'enterCopy'
+        lst=copy.deepcopy(dictionary[commonDispName])
+        while lst!=[]:
+            elt=lst.pop()
+            print 'popped ', elt
+            for elt2 in lst:
+                print '\t interated over', elt2
+                GD.DatabaseGraph.is_possiby_same.create(elt,elt2)
+        
+
+
 # ProtNameCollections=displayNameClusters(GD.DatabaseGraph.Protein)
 # print len(ProtNameCollections)
 # 
@@ -34,6 +49,14 @@ def recount_dict(dico):
             correctDic[val]=0
         correctDic[val]+=1
     return correctDic
+
+def resume_dict(dico):
+    resumeDic={}
+    for key, val in dico.items():
+        if val not in resumeDic.keys():
+            resumeDic[val]=[]
+        resumeDic[val].append(key)
+    return resumeDic
 
 def recoverGenerated(generator):
     lst=[]
@@ -50,18 +73,32 @@ def updateDic(dico, lst, multiplicator):
             dico[elt]=0
         dico[elt]+=multiplicator
 
+def updateDic_experimental(dico, lst, multiplicator):
+    for elt in lst:
+        if elt in dico.keys():
+            dico[elt]+=multiplicator
+
 def Connected_to_Reactions(ReactionType):
     dico={}
     for Reaction in ReactionType.get_all():
-        if Reaction!=None and Reaction.bothV()!=None:
-            for elt in Reaction.bothV():
-                ID=str(elt).split('/')[-1][:-1]
-                if ID not in dico.keys():
-                    dico[ID]=0 
-                dico[ID]+=1
+        if Reaction!=None:
+            if Reaction.bothV("is_Catalysant")!=None:
+                for elt in Reaction.bothV("is_Catalysant"):
+                    ID=str(elt).split('/')[-1][:-1]
+                    if ID not in dico.keys():
+                        dico[ID]=0 
+                    dico[ID]+=1   
+            if Reaction.bothV("is_reaction_particpant")!=None:
+                for elt in Reaction.bothV("is_reaction_particpant"):
+                    ID=str(elt).split('/')[-1][:-1]
+                    if ID not in dico.keys():
+                        dico[ID]=0 
+                    dico[ID]+=1
     print recount_dict(dico)
     return dico
 
+
+# TODO: perform a join over the displayNames and eliminate elements of Collections that are not encountered in the other reactions
 def propagate_Connections(dico):
     dict2=copy.deepcopy(dico)
     for component_id in dico.keys():
@@ -69,12 +106,13 @@ def propagate_Connections(dico):
         if component_object==None:
             print component_id
         else:
-            updateDic(dict2,recoverGenerated(component_object.bothV('is_annotated')),dico[component_id])
+            #updateDic(dict2,recoverGenerated(component_object.bothV('is_annotated')),dico[component_id])
             updateDic(dict2,recoverGenerated(component_object.bothV('is_part_of_complex')),dico[component_id])
-            updateDic(dict2,recoverGenerated(component_object.bothV('is_localized')),dico[component_id])
-            updateDic(dict2,recoverGenerated(component_object.bothV('is_able_to_modify')),dico[component_id])
-            updateDic(dict2,recoverGenerated(component_object.bothV('is_regulant')),dico[component_id])
+            #updateDic(dict2,recoverGenerated(component_object.bothV('is_localized')),dico[component_id])
+            #updateDic(dict2,recoverGenerated(component_object.bothV('is_able_to_modify')),dico[component_id])
+            updateDic(dict2,recoverGenerated(component_object.bothV('is_Regulant')),dico[component_id])
             updateDic(dict2,recoverGenerated(component_object.bothV('is_part_of_collection')),dico[component_id])
+            updateDic(dict2,recoverGenerated(component_object.bothV('is_possibly_same')),dico[component_id])
     print recount_dict(dict2)
     return dict2
 
@@ -87,78 +125,22 @@ def merge_dictionaries(dicoList):
             result[elt]+=dico[elt]
     return result
 
+def getMatrix():
+    NodeNumber2MatrixNumber={}
+    MatrixNumber2NodeNumbe={}
+    counter=0
+    
+    
+    
+    
+    
 
 TR1=Connected_to_Reactions(GD.DatabaseGraph.TemplateReaction)
 D1=Connected_to_Reactions(GD.DatabaseGraph.Degradation)
 BR1=Connected_to_Reactions(GD.DatabaseGraph.BiochemicalReaction)
-
-
-TR2=propagate_Connections(TR1)
-D2=propagate_Connections(D1)
-BR2=propagate_Connections(BR1)
-
-
+ 
+ 
 merge1=merge_dictionaries([TR1,D1,BR1])
-merge2=merge_dictionaries([TR2,D2,BR2])
-
-# def Connected_to_Reactions(ReactionType):
-#     lst=[]
-#     for Reaction in ReactionType.get_all():
-#         lst.append(Reaction.outV('is_reaction_participant'))
-#     lst=list(set(lst))
-#     lst2=[]
-#     for Nde in lst:
-#         if Nde!=None:
-#             print Nde
-#             # if this is a complex, get all it's parts
-#             for elt in Nde.bothV('is_part_of_complex'):
-#                 lst2.append(elt)
-#             # if this is an annotation, keep it
-#             for elt in Nde.outV('is_localized'):
-#                 lst2.append(elt)
-#             for elt in Nde.inV('is_localized'):
-#                 lst2.append(elt)
-#             # if this is a modification, keep it
-#             for elt in Nde.outV('is_able_to_modify'):
-#                 lst2.append(elt)
-#             for elt in Nde.inV('is_able_to_modify'):
-#                 lst2.append(elt)
-#             # if it is a regulant or regulated, get it's part
-#             for elt in Nde.outV('is_regulant'):
-#                 lst2.append(elt)
-#             for elt in Nde.inV('is_regulant'):
-#                 lst2.append(elt) 
-#             # if it's a collection, get all of it's elements
-#             for elt in Nde.outV('is_part_of_collection'):
-#                 lst2.append(elt)
-#             for elt in Nde.inV('is_part_of_collection'):
-#                 lst2.append(elt) 
-#     lst2=list(set(lst))
-#     return lst, lst2
+merge2=propagate_Connections(merge1)
 
 # TODO: create a pullMatrix class
-
-
-# Recover the Ids of the nodes in a form that is easily accessible to the neo4j database
-# reclist.append(str(ModObj).split('/')[-1][:-1])
-# 
-# 
-# Dna_Gen=GD.DatabaseGraph.DNA.get_all()
-# 
-# 
-# counter=0
-# 
-# 
-# for Dna_el in Dna_Gen:
-#     if Dna_el!=None and Dna_el.bothV()!=None:
-#         counter+=1
-#         print Dna_el.ID
-#         for element in Dna_el.bothV():
-#             print element
-# 
-# 
-# 
-# print counter
-# 
-#         
-#         
