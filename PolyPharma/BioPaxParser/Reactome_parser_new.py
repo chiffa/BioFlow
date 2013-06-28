@@ -147,20 +147,21 @@ def ReactionInsert(function,dico):
 
 def CatalysisInsert():
     for key in DG.Catalysises.keys():
-        if 'controller' in DG.Catalysises[key].keys() and 'controlled' in DG.Catalysises[key].keys():
-            if DG.Catalysises[key]['controlled'] in LocalDict.keys() and DG.Catalysises[key]['controller'] in LocalDict.keys():
-                if 'ControlType' in DG.Catalysises[key].keys():
-                    primary=LocalDict[DG.Catalysises[key]['controller']]
-                    secondary=LocalDict[DG.Catalysises[key]['controlled']]
-                    LocalDict[key]=DatabaseGraph.is_catalysant.create(primary, secondary, ID=key, controlType=DG.Catalysises[key]['ControlType'],costum_from=primary.ID,costum_to=secondary.ID)
-                else:
-                    primary=LocalDict[DG.Catalysises[key]['controller']]
-                    secondary=LocalDict[DG.Catalysises[key]['controlled']]
-                    LocalDict[key]=DatabaseGraph.is_catalysant.create(primary, secondary, ID=key, controlType='UNKNOWN',costum_from=primary.ID,costum_to=secondary.ID)
+        if 'Degradation' in DG.Catalysises.values():
+            if 'controller' in DG.Catalysises[key].keys() and 'controlled' in DG.Catalysises[key].keys():
+                if DG.Catalysises[key]['controlled'] in LocalDict.keys() and DG.Catalysises[key]['controller'] in LocalDict.keys():
+                    if 'ControlType' in DG.Catalysises[key].keys():
+                        primary=LocalDict[DG.Catalysises[key]['controller']]
+                        secondary=LocalDict[DG.Catalysises[key]['controlled']]
+                        LocalDict[key]=DatabaseGraph.is_catalysant.create(primary, secondary, ID=key, controlType=DG.Catalysises[key]['ControlType'],costum_from=primary.ID,costum_to=secondary.ID)
+                    else:
+                        primary=LocalDict[DG.Catalysises[key]['controller']]
+                        secondary=LocalDict[DG.Catalysises[key]['controlled']]
+                        LocalDict[key]=DatabaseGraph.is_catalysant.create(primary, secondary, ID=key, controlType='UNKNOWN',costum_from=primary.ID,costum_to=secondary.ID)
+                else: 
+                    logging.debug("\t%s : %s, %s, %s", key, DG.Catalysises[key],DG.Catalysises[key]['controlled'] in LocalDict.keys(),DG.Catalysises[key]['controller'] in LocalDict.keys())
             else: 
-                logging.debug("\t%s : %s, %s, %s", key, DG.Catalysises[key],DG.Catalysises[key]['controlled'] in LocalDict.keys(),DG.Catalysises[key]['controller'] in LocalDict.keys())
-        else: 
-            logging.debug("%s : %s, %s, %s,", key, DG.Catalysises[key],'controller' in DG.Catalysises[key].keys(),'controlled' in DG.Catalysises[key].keys())
+                logging.debug("%s : %s, %s, %s,", key, DG.Catalysises[key],'controller' in DG.Catalysises[key].keys(),'controlled' in DG.Catalysises[key].keys())
 
 
 

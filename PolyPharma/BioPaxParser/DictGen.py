@@ -358,7 +358,7 @@ def parse_Degradations():
         LocalDict={'references':{'name':[]}}
         for Degradation_property in single_Degradation:
             if '}left' in Degradation_property.tag:
-                LocalDict['degraded']=Degradation_property.attrib.values()[0][1:]
+                LocalDict['product']=Degradation_property.attrib.values()[0][1:]
             if '}displayName' in Degradation_property.tag:
                 LocalDict['displayName']=Degradation_property.text
             if '}eCNumber' in Degradation_property.tag:

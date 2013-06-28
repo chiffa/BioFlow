@@ -4,7 +4,8 @@ Created on Jun 13, 2013
 @author: andrei
 '''
 
-# TODO: add the Pathway integration as an annotation node. Add is_next_in_pathway and is_part_of_pathway relationships.
+# @attention: DO NOT WRITE "element_type" or "label" differently from the name of hte calss, they are used in the indexes and it could be very hard to remember what is what after some time
+# TODO: correct the element types and re-import the graph
 
 from bulbs.model import Node, Relationship
 from bulbs.property import String, Integer, Float, Dictionary, List
@@ -74,6 +75,9 @@ class is_part_of_collection(CostumLink):
 
 class is_annotated(CostumLink):
     label="is_annotated"
+
+class is_possibly_same(CostumLink):
+    label="is_possibly_same"
 
 class Complex(Meta):
     element_type="Complex"
