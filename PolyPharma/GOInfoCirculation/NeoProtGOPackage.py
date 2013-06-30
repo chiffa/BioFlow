@@ -373,7 +373,6 @@ def simple_rapid_naive_group_info(ProtNames2Importance):
             print Buffer
             print '<==============================>'
 
-# TODO: eliminate importance from the protein description in the neo4j database        
 # TODO: Add a distinct method for inter-group info circulation
 
 def rapid_naive_group_pairwise_info(ProtNames2Importance):
@@ -420,7 +419,6 @@ def rapid_naive_group_pairwise_info_normalized(ProtNames2Importance):
     #  Information flow is not all that skrewed all
     #  We want self-similarity to be equal to 100% and everyting else build from it.
     
-    ## TODO: perform a more violent buffering of GOname2informativities to avoid redundant
     #  Calls to graph db
     
     # Should we cast the self-informativity to 0 or not? => Yes

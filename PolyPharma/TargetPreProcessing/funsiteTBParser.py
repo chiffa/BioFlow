@@ -118,7 +118,7 @@ def fullPredParse(eHiTsDockName='/home/akucahravy/Downloads/TB-Drugome/SMAP_eHiT
             #targetPDB=words[0] # if you want the PDB identifier rather then gene
             Gene=words[2].replace('"', '').strip().split(', ')
             DrugLIG=words[3].strip()
-            #Ehits score is assumed to be proportional to the energy. TODO: ask Li if it is true
+            #Ehits score is assumed to be proportional to the energy.
             EhitsEnergy=words[8].strip()
             # we set here a default Ehits Score. the value chosen is the average of lowest quartile and minimum: -4.41 
             if EhitsEnergy=='x':
@@ -159,7 +159,7 @@ def fullPredParse(eHiTsDockName='/home/akucahravy/Downloads/TB-Drugome/SMAP_eHiT
             #targetPDB=words[0] # if you want the PDB identifier rather then gene
             Gene=words[1].replace('"', '').strip().split(', ')
             DrugLIG=words[3].strip()
-            #Ehits score is assumed to be proportional to the energy. TODO: ask Li if it is true
+            #Ehits score is assumed to be proportional to the energy.
             EhitsEnergy=words[5].strip()
             # we set here a default Ehits Score. the value chosen is the average of lowest quartile and minimum: -4.41 
             if EhitsEnergy=='x':

@@ -3,9 +3,6 @@ Created on Feb 26, 2013
 
 @author: akucahravy
 '''
-
-# TODO: create a simple to use reparser
-
 from TableBuilder import UNIPROT_Prot
 from TableBuilder import UNIPROT2GO
 from TableBuilder import UNIPROTid2acnum
@@ -29,7 +26,7 @@ j=0
 
 defpackage={'uniprotid':'err0','full_name':'err1','orf_name':'err2','taxid':'err3','AC_line':' '}
 packa=defpackage.copy()
-#TODO: redo with a dictionary
+# suppedly a task: redo with a dictionary => Cancelled because of the filesize. Better to store in a sqlite3 instance
 
 
 ################################################

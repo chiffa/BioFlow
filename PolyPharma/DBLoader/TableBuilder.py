@@ -15,8 +15,6 @@ lite_engine = create_engine(Conf.dbLocation,echo=False)
 Base = declarative_base()
 
 # TODO: bring GORapidfire Table in this declaration sheet
-# TODO: pull it out from the current package and into a highest-level file,
-# just as file name references
 
 class GO_Term(Base):
     '''

@@ -41,7 +41,7 @@ while True:
         if not FirstRead:
             newTerm = TableBuilder.GO_Term(packa['termid'],packa['name'],packa['namespace'],packa['definition'])
             print newTerm
-            #TODO: Uncomment this part for Term Loading
+            #Uncomment this part for Term Loading
             #session.add(newTerm)
         else:
             FirstRead=False
@@ -52,7 +52,7 @@ while True:
             LastRead=True
             newTerm = TableBuilder.GO_Term(packa['termid'],packa['name'],packa['namespace'],packa['definition'])
             print newTerm
-            #TODO: Uncomment this part for Term Loading
+            #Uncomment this part for Term Loading
             #session.add(newTerm)
     
     if attribute=='id':

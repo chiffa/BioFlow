@@ -85,12 +85,7 @@ class Graph(Neo4jGraph):
 
 DatabaseGraph=Graph()
 
-# Now, we use our custom parsed dictionaries to insert them in neo4j
-# TODO: externalize locations?
-
 LocalDict={} # accelerated access pointer to the objects
-
-# TODO: NOW, add the reference costum_To and costum_From for all the new edges!!!!!!
 
 def InsertCellLocations():
     for Loc in DG.CellularLocations.keys():
@@ -194,9 +189,6 @@ def getAllMetaSets():
     for function in functionList:
         getOneMetaSet(function)
 
-#TODO: insert catalysis
-
-# 
 # InsertCellLocations()
 # 
 # MetaInsert(DatabaseGraph.DNA, DG.Dnas)

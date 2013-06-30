@@ -16,54 +16,6 @@ Session=sessionmaker()
 Session.configure(bind=lite_engine)
 session=Session()
 
-# Ok, so the method is assymetric, which is really uncool
-
-#TODO: once set and intermediate term construction is terminated, we would need to
-        # create a new dictionary containing the GO terms to informativity mapping
-        # The informativity transformation should be done on loading. 
-        # In fact this informativity transformation would allow us to balance the 
-        # term informativity (what is the fraction of proteins that have it)
-        # v.s. the number that this GO term appears among different terms of a 
-        # group of terms
-        
-#TODO: Implement a benchmark comparing the global term informativity v.s. the local
-        # informativity and see how a flow methods relates to the benchmark test.
-        
-        ###
-        # Well, what happens is that we are interested in computing the information
-        # flow, and not the gradient that induces that flow. So our GO are resistances
-        # but our proteins are in fact sources of current and not of tension
-        
-        ###
-        # The problem is the management of the forced current flows. It is much better
-        # to consider it as a system with total tension proportional to the importance
-        # of all the proteins loaded and a conductivity of each protein and GO term
-        # that is proportional to it's importance or informativeness
-        
-        ###
-        # An alternative would be to use Lagrange method for optimization under
-        # Under Constraints, where the constraint is actaully the information
-        # flow through each of the proteins
-        
-        ####
-        # Wouldn't it be easier to use java-like object oriented programming instead
-        # of using a set of inter-indexed dictionnaries?
-        # The problem is that the dictionaries are not necessarily visible
-        # On the other hand, we might have to manage a non-shallow copies of 
-        # objects in case they are 
-        # Err. I guess after all it will actually be easier to implement it all with
-        # Proteins as objects and GOs as objects, which are created individually
-        # for each class.
-
-        ####
-        # TODO: build a benchmark to compare the results for the two-sided and one
-        # sided protein computation. My guess is that the two-sided would be 
-        # slightly more sensitive to the weights of proteins
-        
-        ####
-        # TODO: build a benchmark based on LU transformation and information flow based
-        # on a small subset of proteins. Each protein is a Node, each GO is an edge
-
 
 class Protein:
     '''
@@ -385,10 +337,10 @@ class GOFlowSystem:
         # Now we Finally can compute the information flow through the terms, starting from
         # the left and finishing on the right
         
-        # TODO: correlate the Tension with the total importance of proteins, so that the protein
+        # correlate the Tension with the total importance of proteins, so that the protein
         # similarity score can be expressed as a the value of the flow
         
-        # TODO: transform GO annotation values so that they specifically mediate the 
+        # transform GO annotation values so that they specifically mediate the 
         # informativity of a given protein 
         
         for ProteinObj in self.ObjProtLeft.values():
@@ -621,7 +573,7 @@ class GOFlowSystem:
 
 ###
 # TODO: perform a protein-wise normalization of the GO terms so that the proteins that 
-# are highly annotated don't pull too much attention on them
+# are highly annotated don't pull too much attention on them => it's more of a Zipf distribution question here
 
 amp=3.330
 
