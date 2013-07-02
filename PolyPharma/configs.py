@@ -10,3 +10,4 @@ Holds all the configurations of the environmental variables for the whole projec
 dbLocation='sqlite:///C:\\Users\\User\\Documents\\UCSD\\DB\\initdb'
 # If Linux filesystem:
 #dbLocation='sqlite:////home/akucahravy/DB/initdb'
+
