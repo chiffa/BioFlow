@@ -4,6 +4,9 @@ Created on Jun 25, 2013
 @author: andrei
 '''
 
+# TODO: Import Uniprot and GO into neo4j
+# TODO: Import the curated reactome from Yu lab into the neo4j database
+
 # TODO: Unify DatabaseGraphDeclarations
 
 # TODO: Include mappings to the Gene onthology
