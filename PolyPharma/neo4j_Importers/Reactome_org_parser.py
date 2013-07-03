@@ -35,6 +35,8 @@ BioSources={} #{ID:name}
 CellularLocations={} #{Id:name}
 SeqModVoc={} #{Id:name}
 SeqSite={} #{Id:Position}
+Pathways={} #{ID:{'displayName':'','pathwayComponent':'','name':[], 'PathwayStep':[]}}
+PathwaySteps={} #{ID:{'stepProcess':[],'nextStep':[]}}
 
 DnaRefs={} # {ID:{'name':[],'ENSEMBL':'','organism':''}}
 RnaRefs={} # {ID:{'name':[],'ENSEMBL':'', 'miRBase':'', EMBL:'', s'organism':''}}
@@ -432,6 +434,35 @@ def parse_Modulations():
             if '}controlType' in modulation_property.tag:
                 Modulations[key]['controlType']=modulation_property.text
 
+def parse_Pathways():
+    PathwaysXml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}Pathway')
+    for single_Pathway in PathwaysXml:
+        key=single_Pathway.attrib.values()[0]
+        LocalDict={'components':[],'references':{'name':[]}, 'PathwayStep':[]}
+        for pathway_property in single_Pathway:
+            if '}displayName' in pathway_property.tag:
+                Modulations[key]['displayName']=pathway_property.text
+            if '}name' in pathway_property.tag:
+                LocalDict['references']['name'].append(pathway_property.text)
+            if '}pathwayComponent' in pathway_property.tag:
+                LocalDict['components'].append(pathway_property.attrib.values()[0][1:])
+            if '}pathwayOrder' in pathway_property.tag:
+                LocalDict['PathwayStep'].append(pathway_property.attrib.values()[0][1:])    
+        Pathways[key]=LocalDict
+
+def parse_Pathway_Steps():
+    Pathway_Steps_Xml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}PathwayStep')
+    exclude=['Modulation','Control','TemplateReactionRegulation ']
+    for single_Pathway_step in Pathway_Steps_Xml:
+        key=single_Pathway_step.attrib.values()[0]
+        LocalDict={'components':[], 'nextStep':[]}
+        for pathway_property in single_Pathway_step:
+            if '}stepProcess ' in pathway_property.tag and not any(x in pathway_property.attrib.values()[0] for x in exclude):
+                LocalDict['components'].append(pathway_property.attrib.values()[0][1:])
+            if '}nextStep ' in pathway_property.tag:
+                LocalDict['nextStep'].append(pathway_property.attrib.values()[0][1:])    
+        Pathways[key]=LocalDict
+
 def parse_all():
     parse_BioSource()
     parse_CellularLocations()
@@ -457,6 +488,8 @@ def parse_all():
     parse_Catalysises()
     
     parse_Modulations()
+    parse_Pathways()
+    parse_Pathway_Steps()
     
 parse_all()
     
