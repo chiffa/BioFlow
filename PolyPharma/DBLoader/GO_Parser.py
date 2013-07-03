@@ -7,7 +7,7 @@ Created on Feb 25, 2013
 import TableBuilder
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-import configs as Conf
+import configs as conf
 
 lite_engine = create_engine(Conf.dbLocation, echo=False)
 
@@ -16,7 +16,7 @@ Session.configure(bind=lite_engine)
 session=Session()
 
 
-docu=open('/home/akucahravy/Downloads/gene_ontology.1_0.obo',"r")
+docu=open(conf.GeneOntology,"r")
 
 i=0
 

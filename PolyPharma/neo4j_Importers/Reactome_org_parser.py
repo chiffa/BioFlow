@@ -13,6 +13,7 @@ Created on Jun 17, 2013
 import logging
 import xml.etree.ElementTree as ET
 from random import shuffle
+import configs as conf
 
 logging.basicConfig(level=logging.DEBUG,
                     format='%(levelname)-8s %(message)s',
@@ -27,7 +28,7 @@ console.setFormatter(formatter)
 logging.getLogger('').addHandler(console)
 
 
-tree = ET.parse('/home/andrei/UCSD/Parsing_Reactome/Homo sapiens.owl')
+tree = ET.parse(conf.ReactomeBioPax)
 root = tree.getroot()
 
 BioSources={} #{ID:name}

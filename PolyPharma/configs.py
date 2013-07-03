@@ -11,3 +11,7 @@ dbLocation='sqlite:///C:\\Users\\User\\Documents\\UCSD\\DB\\initdb'
 # If Linux filesystem:
 #dbLocation='sqlite:////home/akucahravy/DB/initdb'
 
+
+GeneOntology='/home/andrei/workspaces/UCSD/gene_ontology.1_0.obo'
+ReactomeBioPax='/home/andrei/workspaces/UCSD/Parsing_Reactome/Homo sapiens.owl'
+
