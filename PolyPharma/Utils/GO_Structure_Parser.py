@@ -6,7 +6,8 @@ Created on Jul 2, 2013
 
 import configs as conf
 
-GO_Terms={} 
+GO_Terms={}
+GO_Terms_Structure={}
 '''
 Parse dictionary is of the type GO_Term_ID: {}
 '''
@@ -23,14 +24,13 @@ def fill_GO_Terms():
     #    'regulates'
     #    'positively_regulates'
     #    'negatively_regulates'
-    # 'related_synonym',
-    # 'narrow_synonym',
-    # 'broad_synonym',
-    # 'replaced_by',
-    # 'alt_id',
-    # 'xref_analog']
+    # 'related_synonym', => ignore
+    # 'narrow_synonym', => ignore
+    # 'broad_synonym', => ignore
+    # 'replaced_by', => ignore
+    # 'alt_id', => ignore
+    # 'xref_analog'] => ignore
     localDictionary={}
-    i=0
     blocks=0
     Block=False
     Obsolete=False
@@ -43,7 +43,7 @@ def fill_GO_Terms():
             Block=True
             Obsolete=False
             # reset the temporary dictionary
-            localDictionary={'is_a':[],'part_of':[],'regulates':[],'positively_regulates':[],'negatively_regulates':[]}
+            localDictionary={}
         else :
             if line=='\n':
                 Block=False
@@ -66,13 +66,13 @@ def fill_GO_Terms():
                         localDictionary[header]=payload
                     if header=='is_a':
                         payload=payload.split('!')[0].split(':')[1].strip()
-                        localDictionary[header].append(payload)
+                        GO_Terms_Structure[localDictionary['id']]=(header,payload)
                     if header=='is_obsolete': 
                         Obsolete=True
                     if header=='relationship':
                         header=str(payload.split()[0].strip())
                         payload=str(payload.split()[1].strip().split(':')[1])
-                        localDictionary[header].append(payload)
+                        GO_Terms_Structure[localDictionary['id']]=(header,payload)
     
 fill_GO_Terms()
 
