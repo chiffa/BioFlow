@@ -14,4 +14,5 @@ dbLocation='sqlite:///C:\\Users\\User\\Documents\\UCSD\\DB\\initdb'
 
 GeneOntology='/home/andrei/workspaces/UCSD/gene_ontology.1_0.obo'
 ReactomeBioPax='/home/andrei/workspaces/UCSD/Parsing_Reactome/Homo sapiens.owl'
+UNIPROT_text='/home/andrei/workspaces/UCSD/uniprot_sprot.dat'
 
