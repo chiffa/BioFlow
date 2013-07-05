@@ -13,6 +13,7 @@ docu=open(conf.UNIPROT_text,"r")
 
 Interesting_lines=['ID','AC','DE','GN','OX','DR']
 Interesing_xrefs=['EMBL','GO','Pfam']
+NameIgnore=['Contains','Allergen','EC=','Flags: ','CD_antigen', 'INN=']
 
 Uniprot={}  # {SWISSPROT_ID:{
             #                 'Acnum':[],
@@ -27,7 +28,7 @@ Uniprot={}  # {SWISSPROT_ID:{
 
 defDict={'Flags':[],'Acnum':[],'Names':{'Full':'','AltNames':[],'Includes':[]},'GeneRefs':{'Names':[],'OrderedLocusNames':[],'ORFNames':[]},'EMBL':[],'GO':[],'Pfam':[], 'SUPFAM':[]}
 
-Buffer_vars=[False,[]]
+Ignore=[False,2]
 
 def parse_Xref(Dico,Line):
     if 'EMBL; ' in Line and 'ChEMBL' not in Line:
@@ -56,31 +57,27 @@ def parse_GeneRefs(Dico,Line):
 
 
 def parse_Name(Dico,Line):
-    # TODO: improve the includes and contains protections of variables => We don't need them so far, but it is still better
-    # TODO: add FlagIgnore
     if 'RecName: Full=' in Line:
-        if Buffer_vars[0]==False:
-            Dico['Names']['Full']=Line.split('RecName: Full=')[1].split(';')[0]
+        Dico['Names']['Full']=Line.split('RecName: Full=')[1].split(';')[0]
+        return ''
+    if 'AltName: Full=' in Line:
+        Dico['Names']['AltNames'].append(Line.split('AltName: Full=')[1].split(';')[0])
+        return ''
+    if 'Short=' in Line:
+        Dico['Names']['AltNames'].append(Line.split('Short=')[1].split(';')[0])
+        return ''
+    if Ignore[0]:
+        if Ignore[1]==0:
+            Ignore[0]=False
+            Ignore[1]=2
+            return ''
         else:
-            Buffer_vars[1].append(Line.split('RecName: Full=')[1].split(';')[0])
-    else:
-        if 'AltName: Full=' in Line:
-            Dico['Names']['AltNames'].append(Line.split('AltName: Full=')[1].split(';')[0])
-        else:
-            if 'Short=' in Line:
-                Dico['Names']['AltNames'].append(Line.split('Short=')[1].split(';')[0])
-            else:
-                if 'EC=' in Line:
-                    Buffer_vars[1].append(Line.split('EC=')[1].split(';')[0])
-                else:
-                    if ' Includes:' in Line:
-                        Buffer_vars[0]=True
-                        if Buffer_vars[1]!=[]:
-                            Dico['Names']['Includes'].append(Buffer_vars[1])
-                            Buffer_vars[1]=[]
-#                     else:
-#                         print 'issue1 here \n',Line,'\n','<========================>'
-                
+            return ''
+    if ' Includes:' in Line:
+        Ignore[0]=True
+        return ''
+    if any(x in Line for x in NameIgnore):
+        return ''         
                 
 def process_line(Dico, Line, keyword):
     if keyword=='ID':
@@ -99,10 +96,9 @@ def process_line(Dico, Line, keyword):
     if keyword=='DR' and any(x in Line for x in Interesing_xrefs):
         parse_Xref(Dico,Line)
 
-
 def end_Block(Dico):
     if Dico['TaxID'] in Interesting_TaxIDs:
-        Buffer_vars[0]=False
+        Ignore[0]=False
         Uniprot[Dico['ID']]=Dico
     return copy.deepcopy(defDict)
 
@@ -118,5 +114,4 @@ def Parse_Uniprot():
         if  keyword in Interesting_lines:
             process_line(LocalDictionary, line, keyword)
 
-Parse_Uniprot()
-print len(Uniprot)
+Parse_Uniprot()   
