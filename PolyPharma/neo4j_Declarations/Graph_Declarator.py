@@ -16,6 +16,9 @@ class Graph(Neo4jGraph):
         self.AnnotNode=self.build_proxy(DDT.AnnotNode)
         self.Originating_Organism=self.build_proxy(DDT.Originating_Organism)
         self.Pathway=self.build_proxy(DDT.Pathway)
+        self.PathwayStep=self.build_proxy(DDT.Pathway_Step)
+        self.GOTerm=self.build_proxy(DDT.GOTerm)
+        self.UNIPORT=self.build_proxy(DDT.UNIPROT)
         
         #Simple Compounds
         self.DNA=self.build_proxy(DDT.DNA)
@@ -66,7 +69,11 @@ class Graph(Neo4jGraph):
         self.is_regulant=self.build_proxy(DDT.is_regulant) # regulates not a reaction, but a compound activity
         self.is_reaction_participant=self.build_proxy(DDT.is_reaction_participant)
         
+        #GOAnnotationTypes:
+        self.is_go_annotation=self.build_proxy(DDT.is_go_annotation)
+        self.is_a_go=self.build_proxy(DDT.is_a_go)
+        self.is_part_of_go=self.build_proxy(DDT.is_part_of_go)
+        self.is_same=self.is_same(DDT.is_same)
         
-#now, let's connect the graph and fill it with data from the etree parsing
 
 DatabaseGraph=Graph()

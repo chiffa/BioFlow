@@ -156,10 +156,37 @@ class is_able_to_modify(CostumLink):
 class Pathway(CostumNode):
     element_type="Pathway"
 
+class Pathway_Step(CostumNode):
+    element_type="Pathway_Step"
+
 class is_part_of_pathway(CostumLink):
     label="is_part_of_pathway"
 
 class is_next_in_pathway(CostumLink):
     label="is_next_in_pathway"
+    
+class UNIPROT(Meta):
+    element_type="UNIPROT"
+    involved=Integer() # 1 / 0 -> if it is involved in the Reactome.org interactions or not.
+
+class GOTerm(CostumNode):
+    element_type="GOTerm"
+    ID=String(nullable=False)
+    Name=String()
+    Namespace=String()
+    Definition=String()
+
+class is_go_annotation(CostumLink):
+    label="is_go_annotation"
+
+class is_a_go(CostumLink):
+    label="is_a_go"
+
+class is_part_of_go(CostumLink):
+    label="is_part_of_go"
+
+class is_same(CostumLink):
+    label="is_same"
+
 
         
