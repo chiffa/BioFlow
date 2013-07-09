@@ -7,29 +7,38 @@ Created on Jul 2, 2013
 import configs as conf
 
 GO_Terms={}
-GO_Terms_Structure={}
-'''
-Parse dictionary is of the type GO_Term_ID: {}
-'''
-
-def fill_GO_Terms():
-    docu=open(conf.GeneOntology,"r")
-    ## other_types=set() # keeps the types of the "other" relations
+    # {id:
+    # {'id':''
+    # 'name':''
+    # 'def':''
+    # 'namespace':''}}
+    #
+    # Ignored
     # ['subset', => ignore
     # 'comment', => ignore
-    # 'exact_synonym',
+    # 'exact_synonym',=> Ignore
     # 'consider', => ignore
-    # 'relationship', => integrate
-    #    'part_of'
-    #    'regulates'
-    #    'positively_regulates'
-    #    'negatively_regulates'
     # 'related_synonym', => ignore
     # 'narrow_synonym', => ignore
     # 'broad_synonym', => ignore
     # 'replaced_by', => ignore
     # 'alt_id', => ignore
     # 'xref_analog'] => ignore
+
+GO_Terms_Structure={} 
+    # 'is_a'
+    # 'relationship',
+    #    'part_of'
+    #    'regulates'
+    #    'positively_regulates'
+    #    'negatively_regulates'
+
+'''
+Parse dictionary is of the type GO_Term_ID: {}
+'''
+
+def fill_GO_Terms():
+    docu=open(conf.GeneOntology,"r")
     localDictionary={}
     blocks=0
     Block=False

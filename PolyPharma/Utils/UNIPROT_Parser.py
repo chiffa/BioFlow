@@ -26,7 +26,7 @@ Uniprot={}  # {SWISSPROT_ID:{
             #                 'Pfam':[],
             #                 }}
 
-defDict={'Flags':[],'Acnum':[],'Names':{'Full':'','AltNames':[],'Includes':[]},'GeneRefs':{'Names':[],'OrderedLocusNames':[],'ORFNames':[]},'EMBL':[],'GO':[],'Pfam':[], 'SUPFAM':[]}
+defDict={'Acnum':[],'Names':{'Full':'','AltNames':[]},'GeneRefs':{'Names':[],'OrderedLocusNames':[],'ORFNames':[]},'EMBL':[],'GO':[],'Pfam':[], 'SUPFAM':[]}
 
 Ignore=[False,2]
 
