@@ -444,7 +444,7 @@ def parse_Pathways():
                 Modulations[key]['displayName']=pathway_property.text
             if '}name' in pathway_property.tag:
                 LocalDict['references']['name'].append(pathway_property.text)
-            if '}pathwayComponent' in pathway_property.tag:
+            if '}pathwayComponent' in pathway_property.tag and 'Pathway' in pathway_property.attrib.values()[0]:
                 LocalDict['components'].append(pathway_property.attrib.values()[0][1:])
             if '}pathwayOrder' in pathway_property.tag:
                 LocalDict['PathwayStep'].append(pathway_property.attrib.values()[0][1:])    
@@ -452,7 +452,7 @@ def parse_Pathways():
 
 def parse_Pathway_Steps():
     Pathway_Steps_Xml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}PathwayStep')
-    exclude=['Modulation','Control','TemplateReactionRegulation ']
+    exclude=['Modulation','Control','TemplateReactionRegulation', 'Catalysis']
     for single_Pathway_step in Pathway_Steps_Xml:
         key=single_Pathway_step.attrib.values()[0]
         LocalDict={'components':[], 'nextStep':[]}

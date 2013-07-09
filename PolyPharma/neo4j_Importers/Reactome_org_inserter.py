@@ -93,13 +93,37 @@ def CatalysisInsert():
         else: 
             logging.debug("%s : %s, %s, %s,", key, DG.Catalysises[key],'controller' in DG.Catalysises[key].keys(),'controlled' in DG.Catalysises[key].keys())
 
-
-
 def ModulationInsert():
     for key in DG.Modulations.keys():
         primary=LocalDict[DG.Modulations[key]['controller']]
         secondary=LocalDict[DG.Modulations[key]['controlled']]
         LocalDict[key]=DatabaseGraph.is_regulant.create(primary, secondary, ID=key,controlType=DG.Modulations[key]['controlType'],costum_from=primary.ID,costum_to=secondary.ID)
+
+def Pathways_Insert():
+    for key in DG.PathwaySteps.keys():
+        primary=DatabaseGraph.PathwayStep.create(ID=key)
+        LocalDict[key]=primary
+    for key in DG.Pathways.keys():
+        primary=DatabaseGraph.Pathway.create(ID=key, displayName=DG.Pathways['displayName'])
+        LocalDict[key]=primary
+    for key in DG.PathwaySteps.keys():
+        for component in DG.PathwaySteps[key]['components']:
+            primary=LocalDict[key]
+            secondary=LocalDict[component]
+            DatabaseGraph.is_part_of_pathway.create(primary,secondary,costum_from=key,costum_to=component)
+        for nextStep in DG.PathwaySteps[key]['nextStep']:
+            primary=LocalDict[key]
+            secondary=LocalDict[nextStep]
+            DatabaseGraph.is_next_in_pathway.create(primary,secondary,costum_from=key,costum_to=nextStep)
+    for key in DG.Pathways.keys():
+        for pathwayStep in DG.Pathways[key]['PathwayStep']:
+            primary=LocalDict[key]
+            secondary=LocalDict[pathwayStep]
+            DatabaseGraph.is_part_of_pathway.create(primary,secondary,costum_from=key,costum_to=pathwayStep)
+        for Sub_Pathway in DG.Pathways[key]['components']:
+            primary=LocalDict[key]
+            secondary=LocalDict[Sub_Pathway]
+            DatabaseGraph.is_part_of_pathway.create(primary,secondary,costum_from=key,costum_to=Sub_Pathway)
 
 def getOneMetaSet(function):
     for MetaKey in function.get_all():
@@ -125,6 +149,7 @@ def getAllMetaSets():
     for function in functionList:
         getOneMetaSet(function)
 
+#
 # InsertCellLocations()
 # 
 # MetaInsert(DatabaseGraph.DNA, DG.Dnas)
@@ -156,3 +181,6 @@ def getAllMetaSets():
 # ## Reaction insert finished
 # CatalysisInsert()
 # ModulationInsert()
+# Pathways_Insert()
+#
+
