@@ -25,7 +25,8 @@ GO_Terms={}
     # 'alt_id', => ignore
     # 'xref_analog'] => ignore
 
-GO_Terms_Structure={} 
+GO_Terms_Structure=[] # [(Node1,relation,Node2)]
+    #  Where relation in:
     # 'is_a'
     # 'relationship',
     #    'part_of'
@@ -40,6 +41,8 @@ Parse dictionary is of the type GO_Term_ID: {}
 def fill_GO_Terms():
     docu=open(conf.GeneOntology,"r")
     localDictionary={}
+    LocalRelations=[]
+    GO_Terms_Structure=[]
     blocks=0
     Block=False
     Obsolete=False
@@ -53,6 +56,7 @@ def fill_GO_Terms():
             Obsolete=False
             # reset the temporary dictionary
             localDictionary={}
+            LocalRelations=[]
         else :
             if line=='\n':
                 Block=False
@@ -62,6 +66,7 @@ def fill_GO_Terms():
                         if localDictionary[key]==[]:
                             del localDictionary[key]
                     GO_Terms[localDictionary['id']]=localDictionary
+                    GO_Terms_Structure=GO_Terms_Structure+LocalRelations
             else:
                 if Block:
                     header=line.split(': ')[0].strip()
@@ -75,13 +80,15 @@ def fill_GO_Terms():
                         localDictionary[header]=payload
                     if header=='is_a':
                         payload=payload.split('!')[0].split(':')[1].strip()
-                        GO_Terms_Structure[localDictionary['id']]=(header,payload)
+                        LocalRelations.append((localDictionary['id'],header,payload))
                     if header=='is_obsolete': 
                         Obsolete=True
                     if header=='relationship':
                         header=str(payload.split()[0].strip())
                         payload=str(payload.split()[1].strip().split(':')[1])
-                        GO_Terms_Structure[localDictionary['id']]=(header,payload)
+                        LocalRelations.append((localDictionary['id'],header,payload))
+    return GO_Terms_Structure
+
     
-fill_GO_Terms()
+GO_Terms_Structure=fill_GO_Terms()
 

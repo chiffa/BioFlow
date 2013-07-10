@@ -86,7 +86,7 @@ def process_line(Dico, Line, keyword):
     if keyword=='AC':
         words=filter(lambda a:a!='', Line.split(' '))
         for word in words[1:]:
-            Dico['Acnum'].append(word)
+            Dico['Acnum'].append(word.split(';')[0])
     if keyword=='OX':
         Dico['TaxID']=Line.split('NCBI_TaxID=')[1].split(';')[0]
     if keyword=='DE':
