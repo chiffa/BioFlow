@@ -150,6 +150,9 @@ class ModificationFeature(Instantiation_Type):
 class is_modified_to(CostumLink):
     label="is_modified_to "
 
+class is_modified_by(CostumLink):
+    label="is_modified_by "
+
 class is_able_to_modify(CostumLink):
     label="is_able_to_modify"
 
@@ -186,6 +189,3 @@ class is_part_of_go(CostumLink):
 
 class is_same(CostumLink):
     label="is_same"
-
-
-        
