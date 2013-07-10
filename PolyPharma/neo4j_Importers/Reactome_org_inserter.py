@@ -30,9 +30,15 @@ def InsertCellLocations():
 def MinimalAnnotInsert(primary,reflist):
     for Type in reflist.keys():
         if Type!='name' and reflist[Type]!='' and reflist[Type]!=[]:
-            secondary=DatabaseGraph.AnnotNode.create(ptype=Type,payload=reflist[Type])
-            print primary, secondary, primary.ID
-            DatabaseGraph.is_annotated.create(primary, secondary, costum_from=primary.ID,costum_to='Annotation')
+            if type(Type)!=list:
+                secondary=DatabaseGraph.AnnotNode.create(ptype=Type,payload=reflist[Type])
+                print primary, secondary, primary.ID
+                DatabaseGraph.is_annotated.create(primary, secondary, costum_from=primary.ID,costum_to='Annotation')
+            else:
+                for subelt in reflist[Type]:
+                    secondary=DatabaseGraph.AnnotNode.create(ptype=Type,payload=subelt)
+                    print primary, secondary, primary.ID
+                    DatabaseGraph.is_annotated.create(primary, secondary, costum_from=primary.ID,costum_to='Annotation')
 
 def MetaInsert(function,dico):
     length=len(dico)
@@ -104,7 +110,7 @@ def Pathways_Insert():
         primary=DatabaseGraph.PathwayStep.create(ID=key)
         LocalDict[key]=primary
     for key in DG.Pathways.keys():
-        primary=DatabaseGraph.Pathway.create(ID=key, displayName=DG.Pathways['displayName'])
+        primary=DatabaseGraph.Pathway.create(ID=key, displayName=DG.Pathways[key]['displayName'])
         LocalDict[key]=primary
     for key in DG.PathwaySteps.keys():
         for component in DG.PathwaySteps[key]['components']:
@@ -124,6 +130,12 @@ def Pathways_Insert():
             primary=LocalDict[key]
             secondary=LocalDict[Sub_Pathway]
             DatabaseGraph.is_part_of_pathway.create(primary,secondary,costum_from=key,costum_to=Sub_Pathway)
+
+def clean():
+    for PathStep in DatabaseGraph.PathwayStep.get_all():
+        ID=str(PathStep).split('/')[-1][:-1]
+        DatabaseGraph.PathwayStep.delete(ID)
+
 
 def getOneMetaSet(function):
     for MetaKey in function.get_all():
@@ -181,6 +193,8 @@ def getAllMetaSets():
 # ## Reaction insert finished
 # CatalysisInsert()
 # ModulationInsert()
+# clean()
+# getAllMetaSets() 
 # Pathways_Insert()
 #
 

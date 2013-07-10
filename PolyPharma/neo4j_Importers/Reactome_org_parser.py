@@ -441,7 +441,7 @@ def parse_Pathways():
         LocalDict={'components':[],'references':{'name':[]}, 'PathwayStep':[]}
         for pathway_property in single_Pathway:
             if '}displayName' in pathway_property.tag:
-                Modulations[key]['displayName']=pathway_property.text
+                LocalDict['displayName']=pathway_property.text
             if '}name' in pathway_property.tag:
                 LocalDict['references']['name'].append(pathway_property.text)
             if '}pathwayComponent' in pathway_property.tag and 'Pathway' in pathway_property.attrib.values()[0]:
@@ -461,7 +461,7 @@ def parse_Pathway_Steps():
                 LocalDict['components'].append(pathway_property.attrib.values()[0][1:])
             if '}nextStep ' in pathway_property.tag:
                 LocalDict['nextStep'].append(pathway_property.attrib.values()[0][1:])    
-        Pathways[key]=LocalDict
+        PathwaySteps[key]=LocalDict
 
 def parse_all():
     parse_BioSource()
