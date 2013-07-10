@@ -73,7 +73,7 @@ class Graph(Neo4jGraph):
         self.is_go_annotation=self.build_proxy(DDT.is_go_annotation)
         self.is_a_go=self.build_proxy(DDT.is_a_go)
         self.is_part_of_go=self.build_proxy(DDT.is_part_of_go)
-        self.is_same=self.is_same(DDT.is_same)
+        self.is_same=self.build_proxy(DDT.is_same)
         
 
 DatabaseGraph=Graph()

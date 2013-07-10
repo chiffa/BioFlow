@@ -171,7 +171,6 @@ class UNIPROT(Meta):
 
 class GOTerm(CostumNode):
     element_type="GOTerm"
-    ID=String(nullable=False)
     Name=String()
     Namespace=String()
     Definition=String()
