@@ -189,3 +189,6 @@ class is_part_of_go(CostumLink):
 
 class is_same(CostumLink):
     label="is_same"
+    
+class is_interacting(CostumLink):   # According to the Yu lab hint database for humans there is one-to-one interaction
+    label='is_interacting'

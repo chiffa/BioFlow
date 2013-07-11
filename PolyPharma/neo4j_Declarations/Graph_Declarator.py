@@ -75,5 +75,8 @@ class Graph(Neo4jGraph):
         self.is_part_of_go=self.build_proxy(DDT.is_part_of_go)
         self.is_same=self.build_proxy(DDT.is_same)
         
+        # Interacts physically:
+        self.is_interacting=self.build_proxy(DDT.is_interacting)
+        
 
 DatabaseGraph=Graph()
