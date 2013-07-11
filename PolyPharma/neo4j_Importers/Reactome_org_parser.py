@@ -365,7 +365,7 @@ def parse_Degradations():
             if '}displayName' in Degradation_property.tag:
                 LocalDict['displayName']=Degradation_property.text
             if '}eCNumber' in Degradation_property.tag:
-                LocalDict['references']['eCNumber']=Degradation_property.attrib.values()[0][1:]
+                LocalDict['references']['eCNumber']=Degradation_property.text
         Degradations[key]=LocalDict
     
 def parse_BiochemicalReactions():    
@@ -381,7 +381,7 @@ def parse_BiochemicalReactions():
             if '}displayName' in BiochemicalReaction_property.tag:
                 LocalDict['displayName']=BiochemicalReaction_property.text
             if '}eCNumber' in BiochemicalReaction_property.tag:
-                LocalDict['references']['eCNumber']=BiochemicalReaction_property.attrib.values()[0][1:]
+                LocalDict['references']['eCNumber']=BiochemicalReaction_property.text
         BiochemicalReactions[key]=LocalDict
     
 def parse_Catalysises():    

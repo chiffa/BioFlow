@@ -113,6 +113,7 @@ def import_UNIPROTS():
         set1=set(Uniprot[CH_PROT_ID]['Acnum'])
         set2=set(Acnums2RProts.keys())
         if not set1.isdisjoint(set2):
+            print set1
             i+=1
             logging.debug('UNIPROT %s', str("{0:.2f}".format(float(i)/float(leng)*100)))
             #Create uniprot terms
@@ -140,15 +141,17 @@ def clean(ObjectType):
         i+=1
         logging.debug('del %s', i)
         ObjectType.delete(ID)
+        
 def getGOs(ObjectType):
     for elt in ObjectType.get_all():
         ID=str(elt).split('/')[-1][:-1]
         primary=ObjectType.get(ID)
         GODict[primary.ID]=primary
     logging.debug('GO Loaded')
-        
+    
 
-clean(DatabaseGraph.UNIPORT)                                                                                                                                                                                                                                                                                                                                                                                                                    
-getGOs(DatabaseGraph.GOTerm)
-#import_GOs()
-import_UNIPROTS()
+
+# clean(DatabaseGraph.UNIPORT)                                                                                                                                                                                                                                                                                                                                                                                                                    
+# getGOs(DatabaseGraph.GOTerm)
+# import_GOs()
+#import_UNIPROTS()
