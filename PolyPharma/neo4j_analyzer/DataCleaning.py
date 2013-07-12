@@ -4,9 +4,8 @@ Created on Jun 24, 2013
 @author: andrei
 '''
 
-from neo4j_analyzer import Graph_Declaration as GD
+from neo4j_Declarations.Graph_Declarator import DatabaseGraph
 import copy
-import numpy as np
 
 def displayNameClusters(func):
     displayNameClusters={}
@@ -32,7 +31,7 @@ def crossLinkClusters(dictionary):
             print 'popped ', elt
             for elt2 in lst:
                 print '\t interated over', elt2
-                GD.DatabaseGraph.is_possiby_same.create(elt,elt2)
+                DatabaseGraph.is_possiby_same.create(elt,elt2)
         
 
 
@@ -102,7 +101,7 @@ def Connected_to_Reactions(ReactionType):
 def propagate_Connections(dico):
     dict2=copy.deepcopy(dico)
     for component_id in dico.keys():
-        component_object=GD.DatabaseGraph.vertices.get(component_id)
+        component_object=DatabaseGraph.vertices.get(component_id)
         if component_object==None:
             print component_id
         else:
@@ -125,19 +124,11 @@ def merge_dictionaries(dicoList):
             result[elt]+=dico[elt]
     return result
 
-def getMatrix():
-    NodeNumber2MatrixNumber={}
-    MatrixNumber2NodeNumbe={}
-    counter=0
-    
-    
-    
-    
-    
 
-TR1=Connected_to_Reactions(GD.DatabaseGraph.TemplateReaction)
-D1=Connected_to_Reactions(GD.DatabaseGraph.Degradation)
-BR1=Connected_to_Reactions(GD.DatabaseGraph.BiochemicalReaction)
+
+TR1=Connected_to_Reactions(DatabaseGraph.TemplateReaction)
+D1=Connected_to_Reactions(DatabaseGraph.Degradation)
+BR1=Connected_to_Reactions(DatabaseGraph.BiochemicalReaction)
  
  
 merge1=merge_dictionaries([TR1,D1,BR1])
