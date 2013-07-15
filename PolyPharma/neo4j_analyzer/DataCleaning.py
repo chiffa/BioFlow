@@ -6,6 +6,8 @@ Created on Jun 24, 2013
 
 from neo4j_Declarations.Graph_Declarator import DatabaseGraph
 import copy
+import operator
+import pickle
 
 def displayNameClusters(func):
     displayNameClusters={}
@@ -125,13 +127,19 @@ def merge_dictionaries(dicoList):
     return result
 
 
-
-TR1=Connected_to_Reactions(DatabaseGraph.TemplateReaction)
-D1=Connected_to_Reactions(DatabaseGraph.Degradation)
-BR1=Connected_to_Reactions(DatabaseGraph.BiochemicalReaction)
- 
- 
-merge1=merge_dictionaries([TR1,D1,BR1])
-merge2=propagate_Connections(merge1)
-
-# TODO: pull the list of elements attended from the most points
+def get_most_connected_elements():
+    TR1=Connected_to_Reactions(DatabaseGraph.TemplateReaction)
+    D1=Connected_to_Reactions(DatabaseGraph.Degradation)
+    BR1=Connected_to_Reactions(DatabaseGraph.BiochemicalReaction)
+     
+     
+    merge1=merge_dictionaries([TR1,D1,BR1])
+    merge2=propagate_Connections(merge1)
+    
+    pickleDump2=file('pickleDump2.dump','r')
+    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type = pickle.load(pickleDump2)
+    
+    srtd=sorted(merge2.iteritems(), key=operator.itemgetter(1),reverse=True)
+    for key, val in srtd[:100]:
+        print key, val
+        print '\t', ID2Type[key], ID2displayName[key]
