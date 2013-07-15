@@ -4,18 +4,15 @@ Created on Jun 25, 2013
 @author: andrei
 '''
 
-# TODO: Import Uniprot and GO into neo4j
-# TODO: Import the curated reactome from Yu lab into the neo4j database
+# Cancelled: Include mappings to the EC numbers from UNIPROT
 
-# TODO: Unify DatabaseGraphDeclarations
+# TODO: load the GO term informativity into the neo4j database
 
-# TODO: Include mappings to the Gene onthology
-# TODO: Include mappings to the EC numbers from UNIPROT
+# TODO: add a filter on the GO import to exclude:
+    # - Molecular functions
+    # - cellular locations
 
-# TODO: Refactor the UNIPROT parsing module
-# It might be the most wise to first parse it with by specifying the tags you are interested in and then filling an Dictionary with them, then retrieving the tags one by one and storing 
-# them in the wanted format (SQL table)
-# On parse, add an additional "is_possibly the same" if a reactome protein displayName is the same as a UNIPROT SWISSPROT name without the 
+# TODO: add pdb references to all the indexed proteins from uniprot
 
 # TODO: for each uniprot gene iserted add a DNA reference to the gene that was actually concerned.
 # That sucks, because we will also need to insert all the names references and check for the possible collisions with the UNIPROT identifiers
@@ -36,14 +33,10 @@ Created on Jun 25, 2013
 # We are not taking in account the EC numbers of enzymes, since they do not point towards the reaction participants, just the catalysing elements.
 
 # TODO: Ask Li if the eHiTs scores are proportional to the binding energy / inhibition strength
-# TODO: refactor the UNIPORT Parsing code to make it more modular and more easy to use
-
-# TODO: pull the neo4j declaration files to the highest instance, so there is only one place where the files should be accessed and modified
-# TODO: create a separate, 'config' file, allowing to specify filenames of files to be parsed and/or used
 
 # Ok, so the method is assymetric, which is really uncool
 
-#TODO: once set and intermediate term construction is terminated, we would need to
+# TODO: once set and intermediate term construction is terminated, we would need to
         # create a new dictionary containing the GO terms to informativity mapping
         # The informativity transformation should be done on loading. 
         # In fact this informativity transformation would allow us to balance the 
@@ -51,7 +44,7 @@ Created on Jun 25, 2013
         # v.s. the number that this GO term appears among different terms of a 
         # group of terms
         
-#TODO: Implement a benchmark comparing the global term informativity v.s. the local
+# TODO: Implement a benchmark comparing the global term informativity v.s. the local
         # informativity and see how a flow methods relates to the benchmark test.
         
         ###
@@ -90,3 +83,4 @@ Created on Jun 25, 2013
         # on a small subset of proteins. Each protein is a Node, each GO is an edge
 
 # Ideas regarding the information analysis: get the most information circulation within group and the most different terms for inter-group information circulation
+
