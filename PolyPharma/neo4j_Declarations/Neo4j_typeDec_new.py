@@ -191,4 +191,4 @@ class is_same(CostumLink):
     label="is_same"
     
 class is_interacting(CostumLink):   # According to the Yu lab hint database for humans there is one-to-one interaction
-    label='is_interacting'
+    label="is_interacting"
