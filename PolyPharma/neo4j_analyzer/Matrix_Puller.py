@@ -5,19 +5,41 @@ Created on Jul 11, 2013
 '''
 from neo4j_Declarations.Graph_Declarator import DatabaseGraph
 import copy
+from scipy.sparse import lil_matrix
+from scipy.sparse.linalg import eigsh
+import itertools
+from time import time
+import pickle
 import numpy as np
 
-edge_type_filter0=["is_same"]
+edge_type_filter0_1=["is_part_of_collection"]
+edge_type_filter0_2=["is_same"]
 edge_type_filter1_1=["is_Catalysant","is_reaction_particpant"]
-edge_type_filter1_2=["is_part_of_complex","is_Regulant","is_interacting","is_Catalysant"]
-edge_type_filter2=["is_part_of_collection","is_possibly_same"]
-edge_type_filter3=["is_part_of_pathway","is_next_in_pathway"]
+edge_type_filter1_2=["is_part_of_complex", "is_Regulant"]
+edge_type_filter1_3=["is_interacting"]
+edge_type_filter2=["is_possibly_same"]
+val1=0.9
+val2=0.5
+val3=0.25
+DfactorDict={"Group":val1,
+             "Same":val1,
+             "Reaction":val2,
+             "Contact_interaction":val2,
+             "possibly_same":val3,
+             }
+
+# edge_type_filter3=["is_part_of_pathway","is_next_in_pathway"]
+
+# Matrix filled with 0 (full dissipation, no connection), 1 (no dissipation, aliases) or r in [0,1] for partial dissipations
+
+
 
 ReactionsList=[DatabaseGraph.TemplateReaction, DatabaseGraph.Degradation, DatabaseGraph.BiochemicalReaction]
 
 def get_Reaction_blocks():
     ReagentClusters=[]
     Seeds=set()
+    count=0
     for ReactionType in ReactionsList:
         for Reaction in ReactionType.get_all():
             if Reaction!=None:
@@ -28,68 +50,197 @@ def get_Reaction_blocks():
                             ID=str(elt).split('/')[-1][:-1]
                             LocalList.append(ID)
                             Seeds.add(ID)
+                            count+=1
                 ReagentClusters.append(copy.copy(LocalList))
-    return ReagentClusters, Seeds
+    return ReagentClusters, Seeds, count
 
-def get_blocks_expansions(SeedSet):
-    BlockClusters=[]
-    for element in SeedSet:
+def get_expansion(SubSeed,edge_type_filter):
+    Clusters=[]
+    SuperSeed=set()
+    SuperSeed.update(SubSeed)
+    count=0
+    for element in SubSeed:
         SeedNode=DatabaseGraph.vertices.get(element)
         LocalList=[element]
-        for edge_type in edge_type_filter1_2:
+        for edge_type in edge_type_filter:
             if SeedNode.bothV(edge_type)!=None:
                 for elt in SeedNode.bothV(edge_type):
                     ID=str(elt).split('/')[-1][:-1]
                     LocalList.append(ID)
-        BlockClusters.append(copy.copy(LocalList))
-    return BlockClusters
+                    SuperSeed.add(ID)
+                    count+=1
+        if len(LocalList)>1:
+            Clusters.append(copy.copy(LocalList))
+    return Clusters, SuperSeed, count
 
-def get_UNIPROT_equivalences(SuperSeed):  # expanded seed should be applied
-    NodeEquivalences=[]
-    for element in 
-    
-    
-def get_HiNT_interactions():
-
-def Connected_to_Reactions(ReactionType):
-    dico={}
-    for Reaction in ReactionType.get_all():
-        if Reaction!=None:
-            if Reaction.bothV("is_Catalysant")!=None:
-                for elt in Reaction.bothV("is_Catalysant"):
-                    ID=str(elt).split('/')[-1][:-1]
-                    if ID not in dico.keys():
-                        dico[ID]=0 
-                    dico[ID]+=1   
-            if Reaction.bothV("is_reaction_particpant")!=None:
-                for elt in Reaction.bothV("is_reaction_particpant"):
-                    ID=str(elt).split('/')[-1][:-1]
-                    if ID not in dico.keys():
-                        dico[ID]=0 
-                    dico[ID]+=1
-    return dico
-
-def getMatrix():
-    NodeNumber2MatrixNumber={}
-    MatrixNumber2NodeNumbe={}
+def build_correspondances(IDSet):
+    NodeID2MatrixNumber={}
+    MatrixNumber2NodeID={}
     ID2displayName={}
     ID2Type={}
-    RelationSet=set()
-    DicosList=[]
-    IDSet=set()
+    counter=0
+    for ID in IDSet:
+        NodeID2MatrixNumber[ID]=counter
+        MatrixNumber2NodeID[counter]=ID
+        Vertex=DatabaseGraph.vertices.get(ID)
+        ID2displayName[ID]=Vertex.displayName
+        ID2Type[ID]=Vertex.element_type
+        counter+=1
+    return NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type
+
+def getMatrix(decreaseFactorDict):
+    NodeID2MatrixNumber={}
+    MatrixNumber2NodeID={}
+    ID2displayName={}
+    ID2Type={}
+    init=time()
     
     # Connect the groups of ingredients that share the same reactions
     
     # Retrieve seeds for the matrix computation
-    for Reaction in ReactionsList:
-        DicosList.append(Connected_to_Reactions(Reaction))
-    for Dico in DicosList:
-        IDSet.update(Dico.keys())
-    # Expand the ID list to include all the edges likely to be reached via "
+    ReactLinks, InitSet, c = get_Reaction_blocks()
+    print len(ReactLinks), len(InitSet), c
+    print time()-init
+    t=time()
+    GroupLinks, GroupSet, c = get_expansion(InitSet,edge_type_filter0_1)
+    print len(GroupLinks), len(GroupSet),c
+    print time()-init, time()-t
+    t=time()
+    SecLinks, SecSet, c = get_expansion(GroupSet,edge_type_filter1_2)
+    print len(SecLinks), len(SecSet), c
+    print time()-init, time()-t
+    t=time()
+    UP_Links, UPSet, c = get_expansion(SecSet,edge_type_filter0_2)
+    print len(UP_Links), len(UPSet), c
+    print time()-init, time()-t
+    t=time()
+    HiNT_Links, FullSet, c = get_expansion(UPSet,edge_type_filter1_3)
+    print len(HiNT_Links), len(FullSet), c
+    print time()-init, time()-t
+    t=time()
+    Super_Links, ExpSet, c = get_expansion(FullSet,edge_type_filter2)
+    print len(Super_Links), len(ExpSet), c
+    print time()-init, time()-t
+    t=time()
     
-    # for each ID, create the forwards and reverse mappings to matrixNumbers(just increase it)
-    for key in IDSet:
-        
+    loadLen=len(ExpSet)
+    ValueMatrix=lil_matrix((loadLen,loadLen))
     
+    # Fill in the matrix with the values
+    # Take an impact vector
+    # Continue multiplications as long as needed for convergence
+    
+    # export the matrix as a flat file
+    #    => Most significantly touched elements, especially in the UNIPORT
+    #    => Get the vector of affected proteins, then multiply it over the transfer
+    #        Matrix until an equilibrium is reached.
+    
+    # Pay attention to the criticality spread => vector shoud increase exponentially for the important prots, effectively shutting down the whole system
+    # But not in the case of "unimportant proteins"
+    
+    # => Assymetric influence matrices (causality followship)
+    # Markov clustering linalgebra on sparce matrices to accelerate all this shit?
+    
+    # We could actually envision it as a chain reaction in a nuclear reactor, leading either to a reaction spiraling out of control (total functional shutdown, at least for a
+    # given function.
+    
+    # Idea behind the eigenvectors: if we generate random sets of genes perturbating the network, some combination would lead to a way more powerful effect when propagated
+    # in a markovian, turn-based network (runaway), whereas other sets will lead to a lighter runaway. A way to estimate runaway specifics of protein-protein interaction network
+    # The strongest runaway would be generated by the highest absolute-value link
+    # ACHTUNG!!!!! all the lanes have to be normalized later on to be effectively corresponding to a Markov model!!!! => Not in our case, since some proteins are affecting
+    # SEVERAL other proteins at the same time
+    
+    print "building correspondances", time()-init, time()-t
+    t=time()
+    
+    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type = build_correspondances(ExpSet)
+    
+    
+    print "building the ValMatrix", time()-init, time()-t
+    t=time()
 
-getMatrix()
+    for group in ReactLinks:
+        for elt in itertools.permutations(group,2):
+            element=(NodeID2MatrixNumber[elt[0]],NodeID2MatrixNumber[elt[1]])
+            ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Reaction"],1-1e3)
+    for group in GroupLinks:
+        for elt in itertools.permutations(group,2):
+            element=(NodeID2MatrixNumber[elt[0]],NodeID2MatrixNumber[elt[1]])
+            ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Group"],1-1e3)
+    for group in SecLinks:
+        for elt in itertools.permutations(group,2):
+            element=(NodeID2MatrixNumber[elt[0]],NodeID2MatrixNumber[elt[1]])
+            ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Contact_interaction"],1-1e3)
+    for group in UP_Links:
+        for elt in itertools.permutations(group,2):
+            element=(NodeID2MatrixNumber[elt[0]],NodeID2MatrixNumber[elt[1]])
+            ValueMatrix[element[0],element[1]]=decreaseFactorDict["Same"]
+    for group in  HiNT_Links:
+        for elt in itertools.permutations(group,2):
+            element=(NodeID2MatrixNumber[elt[0]],NodeID2MatrixNumber[elt[1]])
+            ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Contact_interaction"],1-1e3)
+    for group in  Super_Links:
+        for elt in itertools.permutations(group,2):
+            element=(NodeID2MatrixNumber[elt[0]],NodeID2MatrixNumber[elt[1]])
+            ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["possibly_same"],1-1e3)        
+    
+#     print "entering eigenvect computation", time()-init, time()-t
+#     t=time()
+#     eigenvals, eigenvects = eigsh(ValueMatrix,1000)
+#     print eigenvals
+#     output = file('eigenvals.csv','w')
+#     output.write(eigenvals)
+#     print eigenvects.shape
+#     pickleDump=file('pickleDump','w')
+#     pickle.dump(eigenvects, pickleDump)
+#     pickle.dump.close()
+    pickleDump2=file('pickleDump2','w')
+    pickle.dump((NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type),pickleDump2)
+    pickleDump2.close()
+    pickleDump3=file('pickleDump3','w')
+    pickle.dump(ValueMatrix,pickleDump3)
+    pickleDump3.close()
+    
+    print time()-init, time()-t
+    # find out the configuration most important elements for the eigenvectors, then get back to their name
+    
+def processEigenVectors():
+    init=time()
+    pickleDump=file('pickleDump','r')
+    eigenvects=pickle.load(pickleDump)
+    pickleDump2=file('pickleDump2','r')
+    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type = pickle.load(pickleDump2)
+    pickleDump3=file('pickleDump3','r')
+    ValueMatrix=pickle.load(pickleDump3)
+    eigenVectsList=[]
+    SuperIndex=[]
+    print 'depicked',time()-init
+    for i in range(0,eigenvects.shape[1]):
+        eigenVectsList.append(eigenvects[:,i])
+    i=0
+    print len(eigenVectsList)
+    for eigenvect in eigenVectsList:
+        i+=1
+        normalized=np.multiply(eigenvect,eigenvect)
+        indexes={}
+        for k in range(0,10):
+            index=np.argmax(normalized, 0)
+            print eigenvect.shape
+            print normalized.shape
+            indexes[MatrixNumber2NodeID[index]]=(normalized[index], ID2Type[MatrixNumber2NodeID[index]], ID2displayName[MatrixNumber2NodeID[index]])
+            normalized[index]=0
+        SuperIndex.append(indexes)
+    for subIndex in SuperIndex:
+        for key in subIndex.keys():
+            print '\t', key, subIndex[key]
+        print '<=========================>'
+    return SuperIndex
+
+# getMatrix(DfactorDict)
+
+processEigenVectors()
+
+# TODO: create compound exclusion list
+
+# TODO: create GO and Pathway Structure access
+# TODO: retrieve the most connected nodes and disconnect them (ATP, H2O, etc..)

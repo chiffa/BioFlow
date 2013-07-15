@@ -134,4 +134,4 @@ BR1=Connected_to_Reactions(DatabaseGraph.BiochemicalReaction)
 merge1=merge_dictionaries([TR1,D1,BR1])
 merge2=propagate_Connections(merge1)
 
-# TODO: create a pullMatrix class
+# TODO: pull the list of elements attended from the most points
