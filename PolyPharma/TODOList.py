@@ -6,7 +6,7 @@ Created on Jun 25, 2013
 
 # Cancelled: Include mappings to the EC numbers from UNIPROT
 
-# TODO: load the GO term informativity into the neo4j database
+# TODO: (See with Bourne): perform a HiNT-only analysis of reactivity
 
 # TODO: add a filter on the GO import to exclude:
     # - Molecular functions
