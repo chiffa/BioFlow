@@ -7,10 +7,11 @@ Holds all the configurations of the environmental variables for the whole projec
 '''
 
 # If windows filesystem:
-dbLocation='sqlite:///C:\\Users\\User\\Documents\\UCSD\\DB\\initdb'
-# If Linux filesystem:
+# dbLocation='sqlite:///C:\\Users\\User\\Documents\\UCSD\\DB\\initdb'
+# If Skaggs Linux filesystem:
 #dbLocation='sqlite:////home/akucahravy/DB/initdb'
-
+# If Linux filesystem on Asus:
+dbLocation='sqlite:////media/andrei/OS/Users/Andrei/Documents/UCSD/DB/initdb'
 
 GeneOntology='/home/andrei/workspaces/UCSD/gene_ontology.1_0.obo'
 ReactomeBioPax='/home/andrei/workspaces/UCSD/Parsing_Reactome/Homo sapiens.owl'
@@ -40,4 +41,12 @@ IDFilter=['5379',     # Small_Molecule_Collection Purine nucleotide
           '2429',     # ('Small_Molecule', u'H2O', 'nucleoplasm')
           '1240',     # ('Small_Molecule', u'O2', 'peroxisomal matrix')
           '818',      # ('Small_Molecule', u'Pi', 'nucleoplasm')
+          '810',      # ('Small_Molecule', u'ADP', 'nucleoplasm')
+          '2727',     # ('Small_Molecule', u'H2O', 'mitochondrial matrix')
+          '1601',     # ('Small_Molecule', u'H2O', 'peroxisomal matrix')
+          '2157',     # ('Small_Molecule', u'O2', 'endoplasmic reticulum lumen')
+          '2741',     # ('Small_Molecule', u'ADP', 'mitochondrial matrix')
+          '2347',     # ('Small_Molecule', u'Pi', 'mitochondrial matrix')
+          '1050',     # ('Small_Molecule', u'H+', 'endoplasmic reticulum lumen')
+          '2151',     # ('Small_Molecule', u'CO2', 'endoplasmic reticulum lumen')
                ]
