@@ -214,7 +214,7 @@ def getMatrix(decreaseFactorDict):
     
     print "entering eigenvect computation", time()-init, time()-t
     t=time()
-    eigenvals, eigenvects = eigsh(ValueMatrix,10)
+    eigenvals, eigenvects = eigsh(ValueMatrix,1000)
     print eigenvals
     output = file('eigenvals.csv','w')
     output.write(eigenvals)
@@ -281,11 +281,13 @@ def UniprotCalibrate(rounds,depth, filename):
     for ID in Uniprots:
         Vector=np.zeros((ValueMatrix.shape[1],1))
         Vector[NodeID2MatrixNumber[ID]]=1.0
+        ForbidList=[]
         for i in range(0,rounds):
-            Vector1=ValueMatrix*Vector
-            for k in np.nonzero(Vector):
-                Vector1[k]=0
-            Vector=Vector1
+            for k in Vector.nonzero():
+                ForbidList.append(k)
+            Vector=ValueMatrix*Vector
+            for k in ForbidList:
+                Vector[k]=0.0
         Positive=np.multiply(Vector,Vector)
         LocalMaximas={ID:get_Descriptor(MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, NodeID2MatrixNumber[ID])}
         for i in range(0,depth):
@@ -302,13 +304,13 @@ def UniprotCalibrate(rounds,depth, filename):
     pickle.dump(Finale, write)
     write.close()            
 
-def mass_Calibrate():
+def mass_Calibrate(maxrange,depth):
     '''
     Performs several rounds of calibration, actually recomputing the figure presented by P. Silver
     '''
-    for i in range(1,7):
+    for i in range(1,maxrange):
         filename=str('calibrate'+str(i)+'.dump')
-        UniprotCalibrate(i,5,filename)
+        UniprotCalibrate(i,depth,filename)
     
 def treat_Calibration():
     '''
@@ -387,15 +389,15 @@ def processEigenVectors():
 
 
 
-getMatrix(DfactorDict)
+# getMatrix(DfactorDict)
 
 # processEigenVectors()
 
 # get_eigenvect_Stats()
 
-# mass_Calibrate()
+mass_Calibrate(3,5)
 
-checkMatrix()
+# checkMatrix()
 
 # treat_Calibration()
 
