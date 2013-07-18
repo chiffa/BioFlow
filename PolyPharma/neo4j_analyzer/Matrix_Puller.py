@@ -22,9 +22,9 @@ edge_type_filter1_1=["is_Catalysant","is_reaction_particpant"]
 edge_type_filter1_2=["is_part_of_complex", "is_Regulant"]
 edge_type_filter1_3=["is_interacting"]
 edge_type_filter2=["is_possibly_same"]
-val1=0.9
+val1=0.95
 val2=0.5
-val3=0.25
+val3=0.15
 DfactorDict={"Group":val1,
              "Same":1,
              "Reaction":val2,
@@ -60,6 +60,8 @@ def get_Reaction_blocks():
     return ReagentClusters, Seeds, count
 
 def get_expansion(SubSeed,edge_type_filter):
+    # TODO: rewrite this as a dictionnary
+    
     Clusters=[]
     SuperSeed=set()
     SuperSeed.update(SubSeed)
@@ -186,7 +188,10 @@ def getMatrix(decreaseFactorDict):
     
     print "building the ValMatrix", time()-init, time()-t
     t=time()
-
+    
+    # Group node definintion have to be corrected so they are not all related together but instead are linked towards the central "group" node!!!!
+    
+    # TODO: update all this element so that it incorporates the new linkage 
     for group in ReactLinks:
         for elt in itertools.permutations(group,2):
             element=(NodeID2MatrixNumber[elt[0]],NodeID2MatrixNumber[elt[1]])
@@ -203,14 +208,14 @@ def getMatrix(decreaseFactorDict):
         for elt in itertools.permutations(group,2):
             element=(NodeID2MatrixNumber[elt[0]],NodeID2MatrixNumber[elt[1]])
             ValueMatrix[element[0],element[1]]=decreaseFactorDict["Same"]
-    for group in  HiNT_Links:
-        for elt in itertools.permutations(group,2):
-            element=(NodeID2MatrixNumber[elt[0]],NodeID2MatrixNumber[elt[1]])
-            ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Contact_interaction"],1)
-    for group in  Super_Links:
-        for elt in itertools.permutations(group,2):
-            element=(NodeID2MatrixNumber[elt[0]],NodeID2MatrixNumber[elt[1]])
-            ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["possibly_same"],1)        
+#     for group in  HiNT_Links:
+#         for elt in itertools.permutations(group,2):
+#             element=(NodeID2MatrixNumber[elt[0]],NodeID2MatrixNumber[elt[1]])
+#             ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Contact_interaction"],1)
+#     for group in  Super_Links:
+#         for elt in itertools.permutations(group,2):
+#             element=(NodeID2MatrixNumber[elt[0]],NodeID2MatrixNumber[elt[1]])
+#             ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["possibly_same"],1)        
     
     print "entering eigenvect computation", time()-init, time()-t
     t=time()
@@ -219,7 +224,7 @@ def getMatrix(decreaseFactorDict):
     output = file('eigenvals.csv','w')
     output.write(eigenvals)
     pickleDump=file('pickleDump.dump','w')
-    pickle.dump(eigenvects, pickleDump)
+    pickle.dump((eigenvals, eigenvects), pickleDump)
     pickleDump.close()
     pickleDump2=file('pickleDump2.dump','w')
     pickle.dump((NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots),pickleDump2)
@@ -239,7 +244,7 @@ def get_Descriptor(MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization
 def get_eigenvect_Stats():
     init=time()
     pickleDump=file('pickleDump.dump','r')
-    eigenvects=pickle.load(pickleDump)
+    eigenvals, eigenvects = pickle.load(pickleDump)
     pickleDump2=file('pickleDump2.dump','r')
     NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(pickleDump2)
     eigenVectsList=[]
@@ -267,50 +272,69 @@ def get_eigenvect_Stats():
             print 'error on key: ', key
     return CounterIndex, SuperIndex
 
-def UniprotCalibrate(rounds,depth, filename):
+def UniprotCalibrate(rounds,depth, filename, Rdom):
     '''
     Checks if the decrease corresponds on average to the value predicted for natural networks by 
     P. Silver in E.Coli. One single propagation iteration
     # NOTICE: it might be better to perform the information collection only for the other uniprot- proteins
     '''
+    init=time()
     pickleDump2=file('pickleDump2.dump','r')
     NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(pickleDump2)
     pickleDump3=file('pickleDump3.dump','r')
     ValueMatrix=pickle.load(pickleDump3)
-    Finale=[]
-    for ID in Uniprots:
-        Vector=np.zeros((ValueMatrix.shape[1],1))
-        Vector[NodeID2MatrixNumber[ID]]=1.0
-        ForbidList=[]
-        for i in range(0,rounds):
-            for k in Vector.nonzero():
-                ForbidList.append(k)
-            Vector=ValueMatrix*Vector
-            for k in ForbidList:
-                Vector[k]=0.0
-        Positive=np.multiply(Vector,Vector)
-        LocalMaximas={ID:get_Descriptor(MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, NodeID2MatrixNumber[ID])}
-        for i in range(0,depth):
-            index=int(np.argmax(Positive, 0))
-            LocalMaximas[MatrixNumber2NodeID[index]]=(Vector[index], get_Descriptor(MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, index))
-            Positive[index,0]=0
-        Finale.append(LocalMaximas)
-
-    for dico in Finale:
-        for key in dico.keys():
-            print key, dico[key]
-    
+    print 'unpickled in:', time()-init
+    Finale=MainUprotCalLoop(Uniprots,ValueMatrix,NodeID2MatrixNumber,rounds,MatrixNumber2NodeID,ID2displayName,ID2Type,ID2Localization,depth,Rdom)
     write=file(filename, 'w')
     pickle.dump(Finale, write)
-    write.close()            
+    write.close()
+    print 'round completed in:', time()-init      
 
-def mass_Calibrate(maxrange,depth):
+
+def MainUprotCalLoop(Uniprots,ValueMatrix,NodeID2MatrixNumber,rounds,MatrixNumber2NodeID,ID2displayName,ID2Type,ID2Localization,depth,Rdom):
+    iterations=1
+    ReUniprots=copy.copy(Uniprots)
+    Finale=[]
+    if Rdom:
+        iterations=3
+    for i in range(0,iterations):
+        Subfinale=[]
+        if Rdom:
+            Uniprots=random.sample(Uniprots, 200)
+        for ID in Uniprots:
+            Vector=np.zeros((ValueMatrix.shape[1],1))
+            Vector[NodeID2MatrixNumber[ID]]=1.0
+            ForbidList=[]
+            for i in range(0,rounds):
+                for k in Vector.nonzero():
+                    ForbidList.append(k)
+                Vector=ValueMatrix*Vector
+                for k in ForbidList:
+                    Vector[k]=0.0
+            LocalSample={ID:get_Descriptor(MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, NodeID2MatrixNumber[ID])}
+            nzIndexes = Vector.nonzero()[0]
+            redepth=min(depth,len(nzIndexes))
+            suplist=random.sample(nzIndexes,redepth)
+            for index in suplist:
+                index=int(index)
+                value=0
+                if np.linalg.norm(Vector,1) < 10e-3:
+                    print 'error', ID, np.linalg.norm(Vector,1)
+                    value='infinity'
+                else:
+                    value=Vector[index]/np.linalg.norm(Vector,1)
+                LocalSample[MatrixNumber2NodeID[index]]=(Vector[index], value, get_Descriptor(MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, index))
+            Subfinale.append(LocalSample)
+        Finale.append(Subfinale)
+    return Finale
+
+def mass_Calibrate(maxrange,depth,Rdom=False):
     '''
     Performs several rounds of calibration, actually recomputing the figure presented by P. Silver
     '''
     for i in range(1,maxrange):
         filename=str('calibrate'+str(i)+'.dump')
-        UniprotCalibrate(i,depth,filename)
+        UniprotCalibrate(i,depth,filename,Rdom)
     
 def treat_Calibration():
     '''
@@ -324,19 +348,29 @@ def treat_Calibration():
             FnameList.append(filename)
     for fname in FnameList:
         DicList[fname.split('.')[0][-1]]=(pickle.load(file(fname,'r')))
-        
+    memory={}    
     for key in DicList.keys():
-        average=0
-        count=0
-        for Dict in DicList[key]:
-            for subkey, subval in Dict.iteritems():
-                if subval[0]!='UNIPROT':
-                    if int(subval[0])<0:
-                        print Dict
-                    count+=1
-                    average+=int(subval[0])
-        average=float(average)/float(count)
-        print key, average
+        memory[key]=[]
+        print key, 'iterated!'
+        for sublist in DicList[key]:
+            average1=0
+            average2=0
+            count=0 
+            for Dict in sublist:
+                for subkey, subval in Dict.iteritems():
+                    if subval[0]!='UNIPROT':
+                        if int(subval[0])<0:
+                            print Dict
+                        count+=1
+                        average1+=int(subval[0])
+                        average2+=int(subval[1])
+            average1=float(average1)/float(count)
+            average2=float(average2)/float(count)
+            memory[key].append((average1,average2))
+    srtd=sorted(memory.iteritems(), key=operator.itemgetter(0))
+    for key, val in srtd:
+        print key, val[0][0], val[1][0], val[2][0], '|', val[0][1], val[1][1], val[2][1]
+            
 
 def checkMatrix():
     pickleDump3=file('pickleDump3.dump','r')
@@ -359,24 +393,21 @@ def checkMatrix():
 def processEigenVectors():
     init=time()
     pickleDump=file('pickleDump.dump','r')
-    eigenvects=pickle.load(pickleDump)
+    eigenvals, eigenvects=pickle.load(pickleDump)
     pickleDump2=file('pickleDump2.dump','r')
-    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization = pickle.load(pickleDump2)
+    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(pickleDump2)
     eigenVectsList=[]
     SuperIndex=[]
     print 'depicked',time()-init
     for i in range(0,eigenvects.shape[1]):
         eigenVectsList.append(eigenvects[:,i])
     i=0
-    print len(eigenVectsList)
     for eigenvect in eigenVectsList:
         i+=1
         normalized=np.multiply(eigenvect,eigenvect)
         indexes={}
         for k in range(0,10):
             index=np.argmax(normalized, 0)
-            print eigenvect.shape
-            print normalized.shape
             indexes[MatrixNumber2NodeID[index]]=(normalized[index], get_Descriptor(MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, index))
             normalized[index]=0
         SuperIndex.append(indexes)
@@ -387,19 +418,68 @@ def processEigenVectors():
     return SuperIndex
 
 
-
+def columnSort():
+    '''
+    np.sum is broken for sparse matrixes. does the same thing with option axis=0
+    '''
+    pickleDump3=file('pickleDump3.dump','r')
+    ValueMatrix=pickle.load(pickleDump3)
+    SupportDict={}
+    IndexDict={}
+    nz=ValueMatrix.nonzero()
+    pickleDump2=file('pickleDump2.dump','r')
+    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(pickleDump2)
+    print 'ended imports'
+    for i in range(0, len(nz[0])):
+        if nz[0][i] not in SupportDict.keys():
+            SupportDict[nz[0][i]]=[]
+        SupportDict[nz[0][i]].append(nz[1][i])
+    print 'ended loading indexes'
+    for key in SupportDict.keys():
+        if len(SupportDict[key])>1:
+            IndexDict[key]=0
+            for val in SupportDict[key]:
+                IndexDict[key]+=float(ValueMatrix[key,val])
+                
+    srtd=sorted( IndexDict.iteritems(), key=operator.itemgetter(1),reverse=True )
+    
+    outf=file('columnSum.csv','w')
+    
+    for elt in srtd:
+        Stri=str(str(MatrixNumber2NodeID[elt[0]])+'\t'+str(elt[1])+'\n')
+        print  MatrixNumber2NodeID[elt[0]], elt[1]
+        outf.write(Stri)
+    outf.close()
 
 # getMatrix(DfactorDict)
 
-# processEigenVectors()
+# checkMatrix()
 
 # get_eigenvect_Stats()
 
-mass_Calibrate(3,5)
+# processEigenVectors()
 
-# checkMatrix()
+# mass_Calibrate(6,10,True)
 
 # treat_Calibration()
 
+columnSort()
+
 # TODO: create GO and Pathway Structure access
-# Calibrate the values so that after ~ 3 transitions the correlation vanishes on average (Follow Pamela Silver Approach)
+# Calibrate the values so that after ~ 3 transitions the correlation vanishes on average (Follow Pamela Silver Approach) => this is actually the cumulated perturbation of
+# two targets that shoudl vanish totally 
+
+# Shut down HiNT analysis => Slightly improves the result
+
+# Synchronious eigenvectors approach: protect agains entering into a forbidden list the target node
+# start iterating matrix multiplications starting from the node1 to go to the node2
+# enter each node visited in the forbidden set, except for node2
+# terminate iterating when there are no more new reaches for node2 after all the interations
+
+# Percentage of information reaching a given node compared to all the information reaching the node: eigenvalue approach too.
+# Error we do: compute three times
+
+# Ok, what is going on is that we have collections of ~ 300 elements completely screwing our system
+
+# The problem that a information broadcasting between the elements of the same group is not a good thing, but a direct broadcasting into a reaction is actually
+# what we need in our matrix.

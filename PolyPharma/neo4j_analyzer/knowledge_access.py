@@ -35,6 +35,9 @@ def get_GO_access(Filtr):
     Loads all of the relations between the UNIPROTs and GOs as one giant dictionary
     @param Filtr: the List of GO types we would like to get loaded into our analysis
     @type Filtr: list of strings
+    
+    @return RelDict: NodeID -> list of IDs of GO annotations nodes associated to it
+    @return SeedSet: List of GO nodes reached from the NodeID
     '''
     NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = import_TargetMappings()
     RelDict={}
@@ -50,6 +53,8 @@ def get_GO_access(Filtr):
                     LocList.append(GOID)
                     SeedSet.add(GOID)
         RelDict[ID]=copy.copy(LocList)
+        Fle=file('GO.dump','w')
+        pickle.dump((RelDict, SeedSet),Fle)
     return RelDict, SeedSet
 
 def get_GO_structure(Filtr,seedList):
@@ -91,8 +96,22 @@ def get_GO_structure(Filtr,seedList):
         LocUpList=list(set(LocUpList))
         LocRegList=list(set(LocRegList))
         GeneralDict[ID]=(LocUpList,LocRegList)
-        
+        Fle=file('GO_structure.dump','w')
+        pickle.dump(GeneralDict,Fle)
     return GeneralDict
-        
+
+def get_GO_Informativities():
+    '''
+    here calculated without any information on regulation
+    '''
+    GO_access=pickle.load(file('GO.dump','r'))
+    GO_structure=pickle.load(file('GO_structure.dump','r'))
+    TimesReached={}
+    for key in GO_access:
+        toVisit=set()
+        toVisit.update(GO_access[key])
+        vis
+        while toVisit!=set():
+            
         
         
