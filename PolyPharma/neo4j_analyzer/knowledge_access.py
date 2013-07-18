@@ -53,8 +53,8 @@ def get_GO_access(Filtr):
                     LocList.append(GOID)
                     SeedSet.add(GOID)
         RelDict[ID]=copy.copy(LocList)
-        Fle=file('GO.dump','w')
-        pickle.dump((RelDict, SeedSet),Fle)
+    Fle=file('GO.dump','w')
+    pickle.dump((RelDict, SeedSet),Fle)
     return RelDict, SeedSet
 
 def get_GO_structure(Filtr,seedList):
@@ -65,6 +65,8 @@ def get_GO_structure(Filtr,seedList):
     
     @param seedList: the List of GO types we would like to get loaded into our analysis. It is assumed that seedList obeys the Filtr rules
     @type seedList: list of strings
+    
+    @return GeneralDict: ID -> Local Ontology List, Local Regulation List
     '''
     GeneralDict={}
     VisitedSet=set()
@@ -96,22 +98,41 @@ def get_GO_structure(Filtr,seedList):
         LocUpList=list(set(LocUpList))
         LocRegList=list(set(LocRegList))
         GeneralDict[ID]=(LocUpList,LocRegList)
-        Fle=file('GO_structure.dump','w')
-        pickle.dump(GeneralDict,Fle)
+    Fle=file('GO_structure.dump','w')
+    pickle.dump(GeneralDict,Fle)
     return GeneralDict
 
 def get_GO_Informativities():
     '''
     here calculated without any information on regulation
     '''
+    init=time()
     GO_access=pickle.load(file('GO.dump','r'))
     GO_structure=pickle.load(file('GO_structure.dump','r'))
     TimesReached={}
+    i=0
+    l=len(GO_access)
     for key in GO_access:
-        toVisit=set()
-        toVisit.update(GO_access[key])
-        vis
-        while toVisit!=set():
+        i+=1
+        print 'entering',i,'/',l,time()-init
+        init=time()
+        toVisit=[]
+        toVisit=copy.copy(GO_access[key])
+        visited=[]
+        while toVisit!=[]:
+            elt=toVisit.pop()
+            for subelt in GO_structure[elt]:
+                if subelt not in visited and subelt not in toVisit:
+                    toVisit.append(subelt)
+            visited.append(elt)
+        for elt in visited:
+            if elt not in TimesReached.keys():
+                TimesReached[elt]=0
+            TimesReached+=1
+    Fle=file('GO_Informativities.dump','w')
+    pickle.dump(TimesReached,Fle)
+    
             
+                    
         
         

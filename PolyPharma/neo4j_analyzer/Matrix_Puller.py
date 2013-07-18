@@ -22,9 +22,9 @@ edge_type_filter1_1=["is_Catalysant","is_reaction_particpant"]
 edge_type_filter1_2=["is_part_of_complex", "is_Regulant"]
 edge_type_filter1_3=["is_interacting"]
 edge_type_filter2=["is_possibly_same"]
-val1=0.95
-val2=0.5
-val3=0.15
+val1=0.5
+val2=0.33
+val3=0.10
 DfactorDict={"Group":val1,
              "Same":1,
              "Reaction":val2,
@@ -62,13 +62,13 @@ def get_Reaction_blocks():
 def get_expansion(SubSeed,edge_type_filter):
     # TODO: rewrite this as a dictionnary
     
-    Clusters=[]
+    Clusters={}
     SuperSeed=set()
     SuperSeed.update(SubSeed)
     count=0
     for element in SubSeed:
         SeedNode=DatabaseGraph.vertices.get(element)
-        LocalList=[element]
+        LocalList=[]
         for edge_type in edge_type_filter:
             if SeedNode.bothV(edge_type)!=None:
                 for elt in SeedNode.bothV(edge_type):
@@ -78,7 +78,7 @@ def get_expansion(SubSeed,edge_type_filter):
                         SuperSeed.add(ID)
                         count+=1
         if len(LocalList)>1:
-            Clusters.append(copy.copy(LocalList))
+            Clusters[element]=copy.copy(LocalList)
     return Clusters, SuperSeed, count
 
 def build_correspondances(IDSet):
@@ -115,7 +115,7 @@ def request_location(LocationBufferDict,location):
                 return str(elt.displayName)
 
 
-def getMatrix(decreaseFactorDict):
+def getMatrix(decreaseFactorDict, numberEigvals):
     init=time()
     # Connect the groups of ingredients that share the same reactions1
     # Retrieve seeds for the matrix computation
@@ -197,29 +197,44 @@ def getMatrix(decreaseFactorDict):
             element=(NodeID2MatrixNumber[elt[0]],NodeID2MatrixNumber[elt[1]])
             ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Reaction"],1)
     for group in GroupLinks:
-        for elt in itertools.permutations(group,2):
-            element=(NodeID2MatrixNumber[elt[0]],NodeID2MatrixNumber[elt[1]])
-            ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Group"],1)
+        for key in GroupLinks.keys():
+            for val in GroupLinks[key]:
+                element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
+                ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Group"],1)
+                element=(NodeID2MatrixNumber[val],NodeID2MatrixNumber[key])
+                ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Group"],1)
     for group in SecLinks:
-        for elt in itertools.permutations(group,2):
-            element=(NodeID2MatrixNumber[elt[0]],NodeID2MatrixNumber[elt[1]])
-            ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Contact_interaction"],1)
+        for key in GroupLinks.keys():
+            for val in GroupLinks[key]:
+                element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
+                ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Contact_interaction"],1)
+                element=(NodeID2MatrixNumber[val],NodeID2MatrixNumber[key])
+                ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Contact_interaction"],1)
     for group in UP_Links:
-        for elt in itertools.permutations(group,2):
-            element=(NodeID2MatrixNumber[elt[0]],NodeID2MatrixNumber[elt[1]])
-            ValueMatrix[element[0],element[1]]=decreaseFactorDict["Same"]
+        for key in GroupLinks.keys():
+            for val in GroupLinks[key]:
+                element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
+                ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Same"],1)
+                element=(NodeID2MatrixNumber[val],NodeID2MatrixNumber[key])
+                ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Same"],1)
 #     for group in  HiNT_Links:
-#         for elt in itertools.permutations(group,2):
-#             element=(NodeID2MatrixNumber[elt[0]],NodeID2MatrixNumber[elt[1]])
-#             ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Contact_interaction"],1)
-#     for group in  Super_Links:
-#         for elt in itertools.permutations(group,2):
-#             element=(NodeID2MatrixNumber[elt[0]],NodeID2MatrixNumber[elt[1]])
-#             ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["possibly_same"],1)        
+#         for key in GroupLinks.keys():
+#             for val in GroupLinks[key]:
+#                 element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
+#                 ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Contact_interaction"],1)
+#                 element=(NodeID2MatrixNumber[val],NodeID2MatrixNumber[key])
+#                 ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Contact_interaction"],1)
+    for group in  Super_Links:
+        for key in GroupLinks.keys():
+            for val in GroupLinks[key]:
+                element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
+                ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["possibly_same"],1)
+                element=(NodeID2MatrixNumber[val],NodeID2MatrixNumber[key])
+                ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["possibly_same"],1)    
     
     print "entering eigenvect computation", time()-init, time()-t
     t=time()
-    eigenvals, eigenvects = eigsh(ValueMatrix,1000)
+    eigenvals, eigenvects = eigsh(ValueMatrix,numberEigvals)
     print eigenvals
     output = file('eigenvals.csv','w')
     output.write(eigenvals)
@@ -451,9 +466,9 @@ def columnSort():
         outf.write(Stri)
     outf.close()
 
-# getMatrix(DfactorDict)
+getMatrix(DfactorDict, 100)
 
-# checkMatrix()
+checkMatrix()
 
 # get_eigenvect_Stats()
 
