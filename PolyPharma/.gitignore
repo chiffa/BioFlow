@@ -2,3 +2,4 @@
 *.log
 *.dump
 *.csv
+configs.py

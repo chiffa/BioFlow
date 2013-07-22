@@ -16,6 +16,8 @@ JPype-0.5.4.2 (x86_64 build)
 Java JDK 1.6.0_24 (x86_64 build)
 neo4j-embedded 1.6 (x86_64 build)
 numpy (latest x86_64 build)
+Scipy (latest x86_64 build of LAPACK, ATLAS and BLAS + pip-install)
+bulbs (via pip)
 
 Documentation Build:
 Sphinx-1.1.3

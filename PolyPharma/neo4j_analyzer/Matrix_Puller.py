@@ -60,8 +60,6 @@ def get_Reaction_blocks():
     return ReagentClusters, Seeds, count
 
 def get_expansion(SubSeed,edge_type_filter):
-    # TODO: rewrite this as a dictionnary
-    
     Clusters={}
     SuperSeed=set()
     SuperSeed.update(SubSeed)
@@ -196,42 +194,37 @@ def getMatrix(decreaseFactorDict, numberEigvals):
         for elt in itertools.permutations(group,2):
             element=(NodeID2MatrixNumber[elt[0]],NodeID2MatrixNumber[elt[1]])
             ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Reaction"],1)
-    for group in GroupLinks:
-        for key in GroupLinks.keys():
-            for val in GroupLinks[key]:
-                element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
-                ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Group"],1)
-                element=(NodeID2MatrixNumber[val],NodeID2MatrixNumber[key])
-                ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Group"],1)
-    for group in SecLinks:
-        for key in GroupLinks.keys():
-            for val in GroupLinks[key]:
-                element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
-                ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Contact_interaction"],1)
-                element=(NodeID2MatrixNumber[val],NodeID2MatrixNumber[key])
-                ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Contact_interaction"],1)
-    for group in UP_Links:
-        for key in GroupLinks.keys():
-            for val in GroupLinks[key]:
-                element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
-                ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Same"],1)
-                element=(NodeID2MatrixNumber[val],NodeID2MatrixNumber[key])
-                ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Same"],1)
-#     for group in  HiNT_Links:
-#         for key in GroupLinks.keys():
-#             for val in GroupLinks[key]:
-#                 element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
-#                 ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Contact_interaction"],1)
-#                 element=(NodeID2MatrixNumber[val],NodeID2MatrixNumber[key])
-#                 ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Contact_interaction"],1)
-    for group in  Super_Links:
-        for key in GroupLinks.keys():
-            for val in GroupLinks[key]:
-                element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
-                ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["possibly_same"],1)
-                element=(NodeID2MatrixNumber[val],NodeID2MatrixNumber[key])
-                ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["possibly_same"],1)    
-    
+    for key in GroupLinks.keys():
+        for val in GroupLinks[key]:
+            element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
+            ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Group"],1)
+            element=(NodeID2MatrixNumber[val],NodeID2MatrixNumber[key])
+            ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Group"],1)
+    for key in SecLinks.keys():
+        for val in SecLinks[key]:
+            element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
+            ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Contact_interaction"],1)
+            element=(NodeID2MatrixNumber[val],NodeID2MatrixNumber[key])
+            ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Contact_interaction"],1)
+    for key in UP_Links.keys():
+        for val in UP_Links[key]:
+            element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
+            ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Same"],1)
+            element=(NodeID2MatrixNumber[val],NodeID2MatrixNumber[key])
+            ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Same"],1)
+    for key in HiNT_Links.keys():
+        for val in HiNT_Links[key]:
+            element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
+            ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Contact_interaction"],1)
+            element=(NodeID2MatrixNumber[val],NodeID2MatrixNumber[key])
+            ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Contact_interaction"],1)
+    for key in Super_Links.keys():
+        for val in Super_Links[key]:
+            element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
+            ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["possibly_same"],1)
+            element=(NodeID2MatrixNumber[val],NodeID2MatrixNumber[key])
+            ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["possibly_same"],1)    
+
     print "entering eigenvect computation", time()-init, time()-t
     t=time()
     eigenvals, eigenvects = eigsh(ValueMatrix,numberEigvals)
@@ -285,6 +278,7 @@ def get_eigenvect_Stats():
         print val, key, SuperIndex[key], key in IDFilter
         if key in IDFilter:
             print 'error on key: ', key
+    print eigenvals
     return CounterIndex, SuperIndex
 
 def UniprotCalibrate(rounds,depth, filename, Rdom):
@@ -347,7 +341,7 @@ def mass_Calibrate(maxrange,depth,Rdom=False):
     '''
     Performs several rounds of calibration, actually recomputing the figure presented by P. Silver
     '''
-    for i in range(1,maxrange):
+    for i in range(2, maxrange+1):
         filename=str('calibrate'+str(i)+'.dump')
         UniprotCalibrate(i,depth,filename,Rdom)
     
@@ -372,6 +366,7 @@ def treat_Calibration():
             average2=0
             count=0 
             for Dict in sublist:
+                print Dict
                 for subkey, subval in Dict.iteritems():
                     if subval[0]!='UNIPROT':
                         if int(subval[0])<0:
@@ -466,19 +461,19 @@ def columnSort():
         outf.write(Stri)
     outf.close()
 
-getMatrix(DfactorDict, 100)
-
-checkMatrix()
-
+# getMatrix(DfactorDict, 100)
+#  
+# checkMatrix()
+# 
 # get_eigenvect_Stats()
 
 # processEigenVectors()
 
-# mass_Calibrate(6,10,True)
+mass_Calibrate(6,10,True)
+ 
+treat_Calibration()
 
-# treat_Calibration()
-
-columnSort()
+# columnSort()
 
 # TODO: create GO and Pathway Structure access
 # Calibrate the values so that after ~ 3 transitions the correlation vanishes on average (Follow Pamela Silver Approach) => this is actually the cumulated perturbation of
