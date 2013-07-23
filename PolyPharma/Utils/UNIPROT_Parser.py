@@ -5,7 +5,7 @@ Created on Jun 26, 2013
 '''
 
 import configs as conf
-import copy 
+import copy
 
 Interesting_TaxIDs=['9606'] #['36329','9606','1773'] #PLAFA taxonomy id is actually 5833
 
@@ -29,6 +29,9 @@ Uniprot={}  # {SWISSPROT_ID:{
 defDict={'Acnum':[],'Names':{'Full':'','AltNames':[]},'GeneRefs':{'Names':[],'OrderedLocusNames':[],'ORFNames':[]},'EMBL':[],'GO':[],'Pfam':[], 'SUPFAM':[]}
 
 Ignore=[False,2]
+
+# TODO: define Aligne
+# TODO: define softDict
 
 def parse_Xref(Dico,Line):
     if 'EMBL; ' in Line and 'ChEMBL' not in Line:
@@ -114,4 +117,30 @@ def Parse_Uniprot():
         if  keyword in Interesting_lines:
             process_line(LocalDictionary, line, keyword)
 
-Parse_Uniprot()   
+def get_Names_dict():
+    namesDict={}
+    for elt in Uniprot.keys():
+        NameList=[Uniprot[elt]['Names']['Full'].lower().strip()]
+        for subelt in Uniprot[elt]['Names']['AltNames']:
+            NameList.append(subelt.lower().strip())
+        for subelt in Uniprot[elt]['GeneRefs']['Names']:
+            NameList.append(subelt.lower().strip())
+        for subelt in Uniprot[elt]['GeneRefs']['OrderedLocusNames']:
+            NameList.append(subelt.lower().strip())
+        for subelt in Uniprot[elt]['GeneRefs']['ORFNames']:
+            NameList.append(subelt.lower().strip())
+        
+        for subelt in NameList:
+            namesDict[subelt]=elt
+    
+    return namesDict
+
+
+# TODO: go to the utils and reformat the fuzzy indexing:
+# Levenshtein distance 
+# parts of the word sequence
+# remove non-informative sequences
+
+
+Parse_Uniprot()
+names_Dict=get_Names_dict()
