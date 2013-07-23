@@ -6,9 +6,11 @@ Created on Jun 25, 2013
 
 # Cancelled: Include mappings to the EC numbers from UNIPROT
 
+# TODO: possible extensions to the organ specificity
+
 # TODO: (See with Bourne): perform a HiNT-only analysis of reactivity
 
-# TODO: add a filter on the GO import to exclude:
+# Cancelled (done on pulling): add a filter on the GO import to exclude:
     # - Molecular functions
     # - cellular locations
 
