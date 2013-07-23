@@ -18,6 +18,7 @@ neo4j-embedded 1.6 (x86_64 build)
 numpy (latest x86_64 build)
 Scipy (latest x86_64 build of LAPACK, ATLAS and BLAS + pip-install)
 bulbs (via pip)
+python-Levenshtein (via pip)
 
 Documentation Build:
 Sphinx-1.1.3
