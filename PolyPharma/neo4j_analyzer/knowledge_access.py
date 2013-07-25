@@ -5,16 +5,10 @@ Created on Jul 16, 2013
 '''
 
 from neo4j_Declarations.Graph_Declarator import DatabaseGraph
-from configs import IDFilter
 import copy
-from scipy.sparse import lil_matrix
-from scipy.sparse.linalg import eigsh
-import itertools
 from time import time
 import pickle
-import numpy as np
 import operator
-import Levenshtein as lv
 
 GOUpTypes=["is_a_go","is_part_of_go"]
 GORegTypes=["is_Regulant"]
@@ -31,6 +25,17 @@ def import_RelMatrix():
     ValueMatrix = pickle.load(pickleDump3)
     pickleDump3.close()
     return ValueMatrix
+
+def import_UniprotDict():
+    pickleDump2=file('pickleDump2.dump','r')
+    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots=pickle.load(pickleDump2)
+    pickleDump2.close()
+    UniprotDict={}
+    for elt in Uniprots:
+        node=DatabaseGraph.UNIPORT.get(elt)
+        altID=node.ID
+        UniprotDict[altID]=(elt,ID2displayName[elt])
+    return UniprotDict
 
 def get_GO_access(Filtr):
     '''
@@ -58,7 +63,8 @@ def get_GO_access(Filtr):
         if LocList==[]:
             i+=1
             print "error!!!!!!", ID, ID2displayName[ID]
-        RelDict[ID]=copy.copy(LocList)
+        else:
+            RelDict[ID]=copy.copy(LocList)
     print i
     Fle=file('GO.dump','w')
     pickle.dump((RelDict, SeedSet),Fle)
@@ -134,10 +140,9 @@ def get_GO_Informativities():
         while toVisit!=[]:
             elt=toVisit.pop()
             InStack=[]
-            vs=acceleratedInsert(GO_structure, accelerationDict, elt, InStack)
-            visited.append(elt)
+            vs=acceleratedInsert(GO_structure, accelerationDict, elt)
             visited=visited+vs
-            visited=list(set(visited))
+        visited=list(set(visited))
         for elt in visited:
             if elt not in TimesReached.keys():
                 TimesReached[elt]=0
@@ -173,16 +178,14 @@ def load_accDict():
     accDict=pickle.load(file('accDict.dump','r'))
     return accDict
 
-def acceleratedInsert(GO_structure,accelerationDict, name, InStack):
-    GO_2_Names=pickle.load(file('GO_names.dump','r'))
+def acceleratedInsert(GO_structure,accelerationDict, name):
     if name in accelerationDict.keys():
         return accelerationDict[name]
     else:
         cumset=set()
+        cumset.add(name)
         for subelt in GO_structure[name][0]:
-            if subelt not in InStack:
-                InStack.append(subelt)
-                cumset.update(acceleratedInsert(GO_structure,accelerationDict, subelt, InStack))
+            cumset.update(acceleratedInsert(GO_structure,accelerationDict, subelt))
         accelerationDict[name]=list(cumset)
         return accelerationDict[name]
 
@@ -203,7 +206,7 @@ def access_GO(UniprotSet):
         EltDict[item]=[]
         for GO in GO_Accesses[item]:
             InStack=[]
-            vs=acceleratedInsert(GO_Structure, accDict, GO, InStack)
+            vs=acceleratedInsert(GO_Structure, accDict, GO)
             EltDict[item]=EltDict[item]+vs
         for GO in EltDict[item]:
             if GO not in Count_Dict.keys():
@@ -213,13 +216,35 @@ def access_GO(UniprotSet):
         print Count_Dict[elt], GO_Informativities[elt]
     return EltDict, Count_Dict
 
-def access_Reactional_Pathways(UniprotSet):
+def access_Reactional_Pathways(Uniprot2Vals_Set):
     # Get the molecules from the reactome attached to the uniprot set
-    SP_ID2ReactNodes={}
-    for SP_ID in UniprotSet:
+    SP_ID2Nodes={}
+    for SP_ID in Uniprot2Vals_Set:
         nodeGen=DatabaseGraph.UNIPORT.index.lookup(ID=SP_ID)
         if nodeGen!=None:
-            SP_ID2ReactNodes=[]
+            for node in nodeGen: # there can only be one
+                SP_ID2Nodes[SP_ID]=node
+    SP_ID2ReactNodes={}
+    for SP_ID, node in SP_ID2Nodes.iteritems():
+        nodeGen=node.bothV("is_same")
+        if nodeGen!=None:
+            SP_ID2ReactNodes[SP_ID]=[]
+            for subnode in nodeGen:
+                SP_ID2ReactNodes[SP_ID].append(subnode)
+    SP_ID2React_ID={}
+    React_ID2React_Names={}
+    for SP_ID, nodeList in SP_ID2ReactNodes:
+        for node in nodeList:
+            gen=node.bothV("is_part_of_pathway")
+            if gen!=None:
+                for subnode in gen:
+                    if subnode.element_type=="Pathway":
+                        ID=str(subnode).split('/')[-1][:-1]
+                        name=subnode.displayName
+                        React_ID2React_Names[ID]=name
+                        SP_ID2React_ID[SP_ID]=ID
+    return SP_ID2React_ID, React_ID2React_Names
+        
     # Get the reactional bindings incoming on those molecules or molecules they are directly related to ()
 
 def convert_SP_to_IDs(SP_List):
@@ -237,10 +262,59 @@ def convert_SP_to_IDs(SP_List):
                 Res_Dict[name]=Res_Dict[name][0]
     return Res_Dict
 
+def get_GO_Term_occurences(Importance_Dict,flat):
+    NamesDict=pickle.load(file('GO_names.dump','r'))
+    GO_access=pickle.load(file('GO.dump','r'))[0]
+    GO_structure=pickle.load(file('GO_structure.dump','r'))
+    GO_Infos = pickle.load(file('GO_Informativities.dump','r'))
+    accelerationDict={}
+    Associated_GOs={}
+    UP_Dict=import_UniprotDict()
+    for key in Importance_Dict.keys():
+        toVisit=[]
+        toVisit=copy.copy(GO_access[UP_Dict[key][0]])
+        visited=[]
+        while toVisit!=[]:
+            elt=toVisit.pop()
+            vs=acceleratedInsert(GO_structure, accelerationDict, elt)
+            visited=visited+vs
+            visited=list(set(visited))
+        Associated_GOs[key]=copy.copy(visited)
+    Counter={}
+    for UP in Importance_Dict.keys():
+        GO_List=Associated_GOs[UP]
+        for GO in GO_List:
+            if GO not in Counter.keys():
+                Counter[GO]=0
+            if flat:
+                Counter[GO]+=1
+            else:
+                Counter[GO]+=Importance_Dict[UP]
+    Definitive={}
+    Definitive_full={}
+    cummulLocal=len(Associated_GOs.keys())
+    cummulTot=len(GO_access.keys())
+    for key, val in Counter.iteritems():
+        if val>2:
+            exp=float(cummulLocal)*float(GO_Infos[key])/float(cummulTot)
+            rat=float(val)/exp
+            Definitive[key]=rat
+            Definitive_full[key]=(rat, exp, val, NamesDict[key])
+        #Confidence estimation?
+    
+    srtd=sorted(Counter.iteritems(), key=operator.itemgetter(1),reverse=True)
+
+    print cummulLocal,cummulTot
+    for key, val in srtd:
+
+        print  rat*100, '%\t', val, '\t', exp, '\t', GO_Infos[key], '\t', NamesDict[key], '\t'
+    return Associated_GOs, Counter
+        
 
 def align_names2SP():
     from Utils.UNIPROT_Parser import names_Dict
-    Fle=file('/home/andrei/workspaces/UCSD/NeflanavirSource.csv','r')
+    from configs import Targets_dict, Targets_File
+    Fle=file(Targets_File,'r')
     FileDict={}
     i=0
     print len(names_Dict)
@@ -251,50 +325,49 @@ def align_names2SP():
             break
         if i>3:
             words=line.split('\t')
-            FileDict[words[0]]=(words[1],words[2],words[3])
+            FileDict[words[0]]=(float(words[1]),float(words[2].strip()),float(words[3].strip()))
     print len(FileDict)
-    LocalDict={}
-    Remainder=[]
-    # TODO: perform a symmetric string "find" over here
-    
-    for name in FileDict.keys():
-        if name.lower().strip() in names_Dict.keys():
-            LocalDict[name.lower().strip()]=names_Dict[name.lower().strip()]
+    Name2SP={}
+    for elt in FileDict.keys():
+        tp=Targets_dict[elt]
+        if type(tp)==list:
+            Name2SP[elt]=tp
         else:
-            Remainder.append(name.lower().strip())
-    print 'Remainder', len(Remainder)
-    PosnameDict={}
-    for name in Remainder:
-        PosnameDict[name]={}
-        for possname in names_Dict.keys():
-            if lv.ratio(name,possname)>80:
-                PosnameDict[name][possname]=lv.ratio(name,possname)
-        if len(PosnameDict)<1:
-            del PosnameDict[name]
-        else:
-            print PosnameDict[name]
-    for name in PosnameDict.keys():
-        print name
-        srt=sorted(PosnameDict[name].iteritems(), key=operator.itemgetter(1))
-        for key, val in srt:
-            print '\t', key, '\t!|!\t', val
- 
- 
+            if len(tp)>1:
+                Name2SP[elt]=[names_Dict[tp]]
+    Uniprot_Dict=import_UniprotDict()
+    i=0
+    j=0
+    final_Dict={}
+    for key, vallist in Name2SP.iteritems():
+        for val in vallist:
+            i+=1
+            if val in Uniprot_Dict.keys():
+                j+=1
+                final_Dict[val]=FileDict[key]
+    secDict={}
+    for key, val in final_Dict.iteritems():
+        secDict[key]=-val[2]
+    print secDict
+    srt=sorted(secDict.iteritems(), key=operator.itemgetter(1))
+    print secDict.keys()
+    for key, val in srt:
+        print key, val
+    return final_Dict, secDict
 
-       
-# TODO: Test on a GO_Terms set from the real Data   
 # TODO: add the modules for matrix operations over the GO annotation
 # TODO: add the propagation of the informativity along different GO Terms
     
 init=time()
-# filtr=['biological_process']
-# RelDict, SeedSet=get_GO_access(filtr)
-# print 1, time()-init
-# get_GO_structure(filtr,SeedSet)
-# print 2, time()-init
-# get_GO_Informativities()
+filtr=['biological_process']
+RelDict, SeedSet=get_GO_access(filtr)
+print 1, time()-init
+get_GO_structure(filtr,SeedSet)
+print 2, time()-init
+get_GO_Informativities()
 align_names2SP()
+FD,SD=align_names2SP()
+get_GO_Term_occurences(SD,True)
 print 3, time()-init
 
-# TODO: check that each unipront points to a GO
 # => Only about 100 uniprots out of 4000 do not point towards the 
