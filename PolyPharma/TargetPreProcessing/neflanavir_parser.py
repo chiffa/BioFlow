@@ -55,7 +55,7 @@ subdict={
 'vascular endothelial growth factor receptor 2' : 'vascular endothelial growth factor receptor 2',
 'fibroblast growth factor receptor 2' : 'fibroblast growth factor receptor 2', #Insure from here
 'pyrroline-5-carboxylate reductase 1':'pyrroline-5-carboxylate reductase 1, mitochondrial',
-'dual specificity mitogen-activated protein  kinase 1':'dual specificity mitogen-activated protein  kinase 1',
+'dual specificity mitogen-activated protein  kinase 1':'dual specificity mitogen-activated protein kinase kinase 1',
 'RAC-beta serine/threonine-protein kinase (AKT2)':'rac-beta serine/threonine-protein kinase',
 'cyclin-dependent protein kinase pho85':'', #Not a human protein
 'tyrosine-protein kinase receptor RET':['RET_HUMAN'],
@@ -92,9 +92,9 @@ subdict={
 'IGF-1 receptor kinase':['IGF1R_HUMAN'],
 'ribosomal protein':'', #Totally unsure from here
 'dihydroxyacetone kinase':['DHAK_HUMAN'],
-'serine threonine kinase endoribonuclease ire1':['ERN1_HUMAN'],
-'3 isopropylmalate dehydrogenase':'', # Does not seem to be human. Isocytrate?
+'serine/threonine-protein kinase/endoribonuclease IRE1':['ERN1_HUMAN'],
+'3-isopropylmalate dehydrogenase':'', # Does not seem to be human. Isocytrate?
 'uropepsin':'', # Does not exists in Uniport. maybe it is urotensin?
-'fgf receptor 1 kinase domain':['FGFR1_HUMAN'],
+'fgf receptor 1, kinase domain':['FGFR1_HUMAN'],
 'ero1p':['ERO1A_HUMAN']
 }
