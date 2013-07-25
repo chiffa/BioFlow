@@ -18,6 +18,15 @@ ReactomeBioPax='/home/andrei/workspaces/UCSD/Parsing_Reactome/Homo sapiens.owl'
 UNIPROT_text='/home/andrei/workspaces/UCSD/uniprot_sprot.dat'
 Hint_csv='/home/andrei/workspaces/UCSD/sapiens_curated-interactome.csv' #attention, for me it is tab-separated
 
+# Targets file is assumed to be tab-separated, with the first column containing fuzzy versions of "names" of "gene names"
+# from uniport and the next three - information relative to binding to this target. 
+Targets_File='/home/andrei/workspaces/UCSD/NeflanavirSource.csv'
+
+# ExactDict is the dictionnary used to perform a precise matching between the fuzzy target names and the SwissProt IDs required
+# for a lookup in the database
+from TargetPreProcessing.neflanavir_parser import subdict
+Targets_dict = subdict
+
 IDFilter=['5379',     # Small_Molecule_Collection Purine nucleotide
           '5298',     # Small_Molecule_Collection ADP, GDP, CDP, UDP
           '816',      # Small_Molecule ATP
