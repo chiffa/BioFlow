@@ -12,7 +12,7 @@ Interesting_TaxIDs=['9606'] #['36329','9606','1773'] #PLAFA taxonomy id is actua
 docu=open(conf.UNIPROT_text,"r")
 
 Interesting_lines=['ID','AC','DE','GN','OX','DR']
-Interesing_xrefs=['EMBL','GO','Pfam']
+Interesing_xrefs=['EMBL','GO','Pfam','Ensembl','KEGG']
 NameIgnore=['Contains','Allergen','EC=','Flags: ','CD_antigen', 'INN=']
 
 Uniprot={}  # {SWISSPROT_ID:{
@@ -26,7 +26,7 @@ Uniprot={}  # {SWISSPROT_ID:{
             #                 'Pfam':[],
             #                 }}
 
-defDict={'Acnum':[],'Names':{'Full':'','AltNames':[]},'GeneRefs':{'Names':[],'OrderedLocusNames':[],'ORFNames':[]},'EMBL':[],'GO':[],'Pfam':[], 'SUPFAM':[]}
+defDict={'Acnum':[],'Names':{'Full':'','AltNames':[]},'GeneRefs':{'Names':[],'OrderedLocusNames':[],'ORFNames':[]},'Ensembl':[],'KEGG':[],'EMBL':[],'GO':[],'Pfam':[], 'SUPFAM':[]}
 
 Ignore=[False,2]
 
@@ -44,6 +44,12 @@ def parse_Xref(Dico,Line):
         Dico['Pfam'].append(Line.split(';')[1].strip())
     if 'SUPFAM; ' in Line:
         Dico['SUPFAM'].append(Line.split(';')[1].strip())
+    if 'Ensembl; ' in Line:
+        Dico['Ensembl'].append(Line.split(';')[1].strip())
+        Dico['Ensembl'].append(Line.split(';')[2].strip())
+        Dico['Ensembl'].append(Line.split(';')[3].strip().strip('.'))
+    if 'KEGG; ' in Line:
+        Dico['KEGG'].append(Line.split(';')[1].strip())
 
 def parse_GeneRefs(Dico,Line):
     words=filter(lambda a:a!='', str(Line.strip()+' ').split('; '))
@@ -135,12 +141,30 @@ def get_Names_dict():
     
     return namesDict
 
-
-# TODO: go to the utils and reformat the fuzzy indexing:
-# Levenshtein distance 
-# parts of the word sequence
-# remove non-informative sequences
+def get_access_dicts():
+    '''
+    Returns an access dictionary that would plot genes names, AcNums or EMBL identifiers to the 
+    Swissprot IDs
+    '''
+    access_dict={}
+    for key in Uniprot.keys():
+        for subelt in Uniprot[key]['KEGG']:
+            access_dict[subelt]=key
+        for subelt in Uniprot[key]['Ensembl']:
+            access_dict[subelt]=key
+        for subelt in Uniprot[key]['EMBL']:
+            access_dict[subelt]=key
+        for subelt in Uniprot[key]['Acnum']:
+            access_dict[subelt]=key
+        for subelt in Uniprot[key]['GeneRefs']['Names']:
+            access_dict[subelt]=key
+        for subelt in Uniprot[key]['GeneRefs']['OrderedLocusNames']:
+            access_dict[subelt]=key
+        for subelt in Uniprot[key]['GeneRefs']['ORFNames']:
+            access_dict[subelt]=key
+    return access_dict
 
 
 Parse_Uniprot()
 names_Dict=get_Names_dict()
+access_dict=get_access_dicts()
