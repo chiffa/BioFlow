@@ -75,7 +75,7 @@ def get_expansion(SubSeed,edge_type_filter):
                         LocalList.append(ID)
                         SuperSeed.add(ID)
                         count+=1
-        if len(LocalList)>1:
+        if len(LocalList)>0:
             Clusters[element]=copy.copy(LocalList)
     return Clusters, SuperSeed, count
 
@@ -461,6 +461,10 @@ def columnSort():
         outf.write(Stri)
     outf.close()
 
+def Compute_circulation_intensity():
+    
+
+
 # getMatrix(DfactorDict, 100)
 #  
 # checkMatrix()
@@ -469,9 +473,9 @@ def columnSort():
 
 # processEigenVectors()
 
-mass_Calibrate(6,10,True)
- 
-treat_Calibration()
+# mass_Calibrate(6,10,True)
+#  
+# treat_Calibration()
 
 # columnSort()
 
