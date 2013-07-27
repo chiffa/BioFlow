@@ -22,14 +22,19 @@ edge_type_filter1_1=["is_Catalysant","is_reaction_particpant"]
 edge_type_filter1_2=["is_part_of_complex", "is_Regulant"]
 edge_type_filter1_3=["is_interacting"]
 edge_type_filter2=["is_possibly_same"]
-val1=0.5
-val2=0.33
-val3=0.10
-DfactorDict={"Group":val1,
+
+DfactorDict={"Group":0.5,
              "Same":1,
-             "Reaction":val2,
-             "Contact_interaction":val2,
-             "possibly_same":val3,
+             "Reaction":0.33,
+             "Contact_interaction":0.33,
+             "possibly_same":0.1,
+             }
+
+ConductanceDict={"Group":20,
+             "Same":100,
+             "Reaction":1,
+             "Contact_interaction":1,
+             "possibly_same":0.1,
              }
 
 # edge_type_filter3=["is_part_of_pathway","is_next_in_pathway"]
@@ -142,9 +147,6 @@ def getMatrix(decreaseFactorDict, numberEigvals):
     print time()-init, time()-t
     t=time()
     
-    loadLen=len(ExpSet)
-    ValueMatrix=lil_matrix((loadLen,loadLen))
-    
     # Fill in the matrix with the values
     # Take an impact vector
     # Continue multiplications as long as needed for convergence
@@ -190,40 +192,83 @@ def getMatrix(decreaseFactorDict, numberEigvals):
     # Group node definintion have to be corrected so they are not all related together but instead are linked towards the central "group" node!!!!
     
     # TODO: update all this element so that it incorporates the new linkage 
+    
+    loadLen=len(ExpSet)
+    ValueMatrix=lil_matrix((loadLen,loadLen))
+    ConductanceMatrix=lil_matrix(loadLen,loadLen)
+    
     for group in ReactLinks:
         for elt in itertools.permutations(group,2):
             element=(NodeID2MatrixNumber[elt[0]],NodeID2MatrixNumber[elt[1]])
             ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Reaction"],1)
+            ConductanceMatrix[element[0],element[1]]=ValueMatrix[element[0],element[1]]-decreaseFactorDict["Reaction"]
+            ConductanceMatrix[element[1],element[1]]=ValueMatrix[element[1],element[1]]+decreaseFactorDict["Reaction"]/2.0
+            ConductanceMatrix[element[0],element[0]]=ValueMatrix[element[0],element[0]]+decreaseFactorDict["Reaction"]/2.0
+            # the 2.0 is there because each symmetrical position will be attained twice 
+            
     for key in GroupLinks.keys():
         for val in GroupLinks[key]:
             element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
             ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Group"],1)
+            ConductanceMatrix[element[0],element[1]]=ValueMatrix[element[0],element[1]]-decreaseFactorDict["Group"]
+            
             element=(NodeID2MatrixNumber[val],NodeID2MatrixNumber[key])
             ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Group"],1)
+            ConductanceMatrix[element[0],element[1]]=ValueMatrix[element[0],element[1]]-decreaseFactorDict["Group"]
+            
+            ConductanceMatrix[element[1],element[1]]=ValueMatrix[element[1],element[1]]+decreaseFactorDict["Group"]
+            ConductanceMatrix[element[0],element[0]]=ValueMatrix[element[0],element[0]]+decreaseFactorDict["Group"]
+            
     for key in SecLinks.keys():
         for val in SecLinks[key]:
             element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
             ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Contact_interaction"],1)
+            ConductanceMatrix[element[0],element[1]]=ValueMatrix[element[0],element[1]]-decreaseFactorDict["Contact_interaction"]
+            
             element=(NodeID2MatrixNumber[val],NodeID2MatrixNumber[key])
             ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Contact_interaction"],1)
+            ConductanceMatrix[element[0],element[1]]=ValueMatrix[element[0],element[1]]-decreaseFactorDict["Contact_interaction"]
+            
+            ConductanceMatrix[element[1],element[1]]=ValueMatrix[element[1],element[1]]+decreaseFactorDict["Contact_interaction"]
+            ConductanceMatrix[element[0],element[0]]=ValueMatrix[element[0],element[0]]+decreaseFactorDict["Contact_interaction"]
+            
     for key in UP_Links.keys():
         for val in UP_Links[key]:
             element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
             ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Same"],1)
+            ConductanceMatrix[element[0],element[1]]=ValueMatrix[element[0],element[1]]-decreaseFactorDict["Same"]
+            
             element=(NodeID2MatrixNumber[val],NodeID2MatrixNumber[key])
             ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Same"],1)
+            ConductanceMatrix[element[0],element[1]]=ValueMatrix[element[0],element[1]]-decreaseFactorDict["Same"]
+            
+            ConductanceMatrix[element[1],element[1]]=ValueMatrix[element[1],element[1]]+decreaseFactorDict["Same"]
+            ConductanceMatrix[element[0],element[0]]=ValueMatrix[element[0],element[0]]+decreaseFactorDict["Same"]
+            
     for key in HiNT_Links.keys():
         for val in HiNT_Links[key]:
             element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
             ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Contact_interaction"],1)
+            ConductanceMatrix[element[0],element[1]]=ValueMatrix[element[0],element[1]]-decreaseFactorDict["Contact_interaction"]
+            
             element=(NodeID2MatrixNumber[val],NodeID2MatrixNumber[key])
             ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Contact_interaction"],1)
+            ConductanceMatrix[element[0],element[1]]=ValueMatrix[element[0],element[1]]-decreaseFactorDict["Contact_interaction"]
+            
+            ConductanceMatrix[element[1],element[1]]=ValueMatrix[element[1],element[1]]+decreaseFactorDict["Contact_interaction"]
+            ConductanceMatrix[element[0],element[0]]=ValueMatrix[element[0],element[0]]+decreaseFactorDict["Contact_interactions"]
+            
     for key in Super_Links.keys():
         for val in Super_Links[key]:
             element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
             ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["possibly_same"],1)
+            ConductanceMatrix[element[0],element[1]]=ValueMatrix[element[0],element[1]]-decreaseFactorDict["possibly_same"]
             element=(NodeID2MatrixNumber[val],NodeID2MatrixNumber[key])
-            ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["possibly_same"],1)    
+            ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["possibly_same"],1)
+            ConductanceMatrix[element[0],element[1]]=ValueMatrix[element[0],element[1]]-decreaseFactorDict["possibly_same"]
+            
+            ConductanceMatrix[element[1],element[1]]=ValueMatrix[element[1],element[1]]+decreaseFactorDict["possibly_same"]
+            ConductanceMatrix[element[0],element[0]]=ValueMatrix[element[0],element[0]]+decreaseFactorDict["possibly_same"]
 
     print "entering eigenvect computation", time()-init, time()-t
     t=time()
@@ -240,7 +285,9 @@ def getMatrix(decreaseFactorDict, numberEigvals):
     pickleDump3=file('pickleDump3.dump','w')
     pickle.dump(ValueMatrix,pickleDump3)
     pickleDump3.close()
-    
+    pickleDump4=file('pickleDump4.dump','w')
+    pickle.dump(ConductanceMatrix,pickleDump4)
+    pickleDump4.close()
     print time()-init, time()-t
 
 def get_Descriptor(MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, index):
@@ -462,6 +509,10 @@ def columnSort():
     outf.close()
 
 def Compute_circulation_intensity():
+    '''
+    performs the information circulation calculation in agreement with the publication by Misiuro et al. 
+    '''
+    conductance_Matrix=pickle.load(file('dump4.dump','r'))
     
 
 
@@ -497,3 +548,8 @@ def Compute_circulation_intensity():
 
 # The problem that a information broadcasting between the elements of the same group is not a good thing, but a direct broadcasting into a reaction is actually
 # what we need in our matrix.
+
+
+# In order to be precise, we should not only take in account the power of bindinb between a molecule and protein and criticality of the protein, but also the abundance of the
+# protein in the reactome
+# => Done with the aboundance retrieval
