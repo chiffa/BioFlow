@@ -9,6 +9,11 @@ import copy
 from time import time
 import pickle
 import operator
+from random import shuffle
+import math
+from scipy.stats.kde import  gaussian_kde
+import numpy as np
+from pylab import plot, hist, show
 
 GOUpTypes=["is_a_go","is_part_of_go"]
 GORegTypes=["is_Regulant"]
@@ -35,6 +40,7 @@ def import_UniprotDict():
         node=DatabaseGraph.UNIPORT.get(elt)
         altID=node.ID
         UniprotDict[altID]=(elt,ID2displayName[elt])
+        UniprotDict[elt]=altID
     return UniprotDict
 
 def get_GO_access(Filtr):
@@ -194,27 +200,6 @@ def unzip(Supset, GO_2_Names):
     for elt in Supset:
         nameList.append(GO_2_Names[elt])
     return nameList
-        
-def access_GO(UniprotSet):
-    GO_Accesses=load_GO_Accesses()
-    GO_Structure=load_GO_Structure()
-    GO_Informativities=load_GO_Informativities()
-    accDict=load_accDict()
-    EltDict={}
-    Count_Dict={}
-    for item in UniprotSet:
-        EltDict[item]=[]
-        for GO in GO_Accesses[item]:
-            InStack=[]
-            vs=acceleratedInsert(GO_Structure, accDict, GO)
-            EltDict[item]=EltDict[item]+vs
-        for GO in EltDict[item]:
-            if GO not in Count_Dict.keys():
-                Count_Dict[GO]=0
-            Count_Dict[GO]+=1
-    for elt in Count_Dict.key():
-        print Count_Dict[elt], GO_Informativities[elt]
-    return EltDict, Count_Dict
 
 def access_Reactional_Pathways(Uniprot2Vals_Set):
     # Get the molecules from the reactome attached to the uniprot set
@@ -269,6 +254,7 @@ def get_GO_Term_occurences(Importance_Dict,flat):
     GO_Infos = pickle.load(file('GO_Informativities.dump','r'))
     accelerationDict={}
     Associated_GOs={}
+    ReverseDict={}
     UP_Dict=import_UniprotDict()
     for key in Importance_Dict.keys():
         toVisit=[]
@@ -280,6 +266,10 @@ def get_GO_Term_occurences(Importance_Dict,flat):
             visited=visited+vs
             visited=list(set(visited))
         Associated_GOs[key]=copy.copy(visited)
+        for elt in visited:
+            if elt not in ReverseDict.keys():
+                ReverseDict[elt]=[]
+            ReverseDict[elt].append(key)
     Counter={}
     for UP in Importance_Dict.keys():
         GO_List=Associated_GOs[UP]
@@ -299,16 +289,14 @@ def get_GO_Term_occurences(Importance_Dict,flat):
             exp=float(cummulLocal)*float(GO_Infos[key])/float(cummulTot)
             rat=float(val)/exp
             Definitive[key]=rat
-            Definitive_full[key]=(rat, exp, val, NamesDict[key])
-        #Confidence estimation?
+            Definitive_full[key]=(rat, val, exp, NamesDict[key], ReverseDict[key])
+            #TODO: Confidence estimation?
+    srtd=sorted(Definitive.iteritems(), key=operator.itemgetter(1),reverse=True)
+    pdf, log_pdf=get_Tirage_stats()
     
-    srtd=sorted(Counter.iteritems(), key=operator.itemgetter(1),reverse=True)
-
-    print cummulLocal,cummulTot
     for key, val in srtd:
-
-        print  rat*100, '%\t', val, '\t', exp, '\t', GO_Infos[key], '\t', NamesDict[key], '\t'
-    return Associated_GOs, Counter
+        print  "{0:.2f}".format(Definitive_full[key][0]*100)+'%','\t',Definitive_full[key][1],'\t', "{0:.2f}".format(Definitive_full[key][2]),'\t', "{0:.2f}".format(float(pdf(Definitive_full[key][0]))*100),'%\t', "{0:.2f}".format(min(float(log_pdf(math.log(Definitive_full[key][0],10))),1.0)*100), '%\t', Definitive_full[key][3], '\t', Definitive_full[key][4]
+    return Associated_GOs, Definitive, Definitive_full
         
 
 def align_names2SP():
@@ -348,26 +336,55 @@ def align_names2SP():
     secDict={}
     for key, val in final_Dict.iteritems():
         secDict[key]=-val[2]
-    print secDict
-    srt=sorted(secDict.iteritems(), key=operator.itemgetter(1))
-    print secDict.keys()
-    for key, val in srt:
-        print key, val
     return final_Dict, secDict
 
+def Tirage(sampleSize, flat, iterations):
+    '''
+    Pulls at random several proteins of a determined size to estimate 
+    the error margins
+    '''
+    GO_Accesses=pickle.load(file('GO.dump','r'))[0]
+    UP_Dict=import_UniprotDict()
+    SP_List=list(GO_Accesses.keys())
+    RestList=[]
+    for i in range(0, iterations):
+        shuffle(SP_List)
+        ImpDict={}
+        for item in SP_List[:sampleSize]:
+            ImpDict[UP_Dict[item]]=1.0
+        RestList.append(get_GO_Term_occurences(ImpDict,flat)[1:2])
+        print '\n<===============================>\n'
+    pickle.dump(RestList,file('CompressedStats.dump','w'))
+    
+def get_Tirage_stats():
+    RestList=pickle.load(file('CompressedStats.dump','r'))
+    dumpFile=file('dumpFile.csv', 'w')
+    ValList=[]
+    LogValList=[]
+    for elt in RestList:
+        for key, val in elt[0].iteritems():
+            dumpFile.write(str(val)+'\t'+str(math.log(val,10))+'\n')
+            ValList.append(val)
+            LogValList.append(math.log(val,10))
+    pdf=gaussian_kde(np.asarray(ValList))
+    log_pdf=gaussian_kde(np.asarray(LogValList))
+    return pdf, log_pdf
+
+
+
+    
 # TODO: add the modules for matrix operations over the GO annotation
 # TODO: add the propagation of the informativity along different GO Terms
-    
-init=time()
-filtr=['biological_process']
-RelDict, SeedSet=get_GO_access(filtr)
-print 1, time()-init
-get_GO_structure(filtr,SeedSet)
-print 2, time()-init
-get_GO_Informativities()
-align_names2SP()
+# filtr=['biological_process']
+# RelDict, SeedSet=get_GO_access(filtr)
+# print 1, time()-init
+# get_GO_structure(filtr,SeedSet)
+# print 2, time()-init
+# get_GO_Informativities()
+# align_names2SP()
 FD,SD=align_names2SP()
 get_GO_Term_occurences(SD,True)
-print 3, time()-init
+# Tirage(48,True,100)
+# get_Tirage_stats()
 
 # => Only about 100 uniprots out of 4000 do not point towards the 
