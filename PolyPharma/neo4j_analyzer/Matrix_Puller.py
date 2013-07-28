@@ -513,8 +513,22 @@ def Compute_circulation_intensity():
     performs the information circulation calculation in agreement with the publication by Misiuro et al. 
     '''
     conductance_Matrix=pickle.load(file('dump4.dump','r'))
+    InformativityDict=[]                                    # Database ID to Informativity
+    # The informativities are calculated only by using the uniprot proteins as the source and extraction points.
+    # This reduces the number of interations from  25k to 5 and the number of LU decompositions in a similar manner
+    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))
+    for SP_Node_ID in Uniprots:
+        SinkList=copy.copy(Uniprots)
+        SinkList.remove(SP_Node_ID)
+        MatrixNodeToCancel=NodeID2MatrixNumber[SP_Node_ID]
+        CurrentMatrix=copy.copy(conductance_Matrix)
+        NonZeros=CurrentMatrix.nonzero()
+        for i in range(0,len(NonZeros[1])):
+            if MatrixNodeToCancel in ( NonZeros[0][i],NonZeros[1][i] ):
+                CurrentMatrix[NonZeros[0][i],NonZeros[1][i]]=0.0
+        # Ok, the current Matrix is done, let's LU the shit out it now!
+                
     
-
 
 # getMatrix(DfactorDict, 100)
 #  

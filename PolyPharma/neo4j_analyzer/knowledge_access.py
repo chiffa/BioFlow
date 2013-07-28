@@ -293,9 +293,12 @@ def get_GO_Term_occurences(Importance_Dict,flat):
             #TODO: Confidence estimation?
     srtd=sorted(Definitive.iteritems(), key=operator.itemgetter(1),reverse=True)
     pdf, log_pdf=get_Tirage_stats()
-    
+    pdf2, log_pdf2=get_Dictionnary_Stats(Definitive)
     for key, val in srtd:
-        print  "{0:.2f}".format(Definitive_full[key][0]*100)+'%','\t',Definitive_full[key][1],'\t', "{0:.2f}".format(Definitive_full[key][2]),'\t', "{0:.2f}".format(float(pdf(Definitive_full[key][0]))*100),'%\t', "{0:.2f}".format(min(float(log_pdf(math.log(Definitive_full[key][0],10))),1.0)*100), '%\t', Definitive_full[key][3], '\t', Definitive_full[key][4]
+        print  "{0:.2f}".format(Definitive_full[key][0]*100)+'%','\t', Definitive_full[key][1],'\t', "{0:.2f}".format(Definitive_full[key][2]),'\t',
+        print  "{0:.2f}".format(float(pdf(Definitive_full[key][0]))*100),'%\t', "{0:.2f}".format(min(float(log_pdf(math.log(Definitive_full[key][0],10))),1.0)*100),
+        print  "{0:.2f}".format(float(pdf2(Definitive_full[key][0]))*100),'%\t', "{0:.2f}".format(min(float(log_pdf2(math.log(Definitive_full[key][0],10))),1.0)*100),
+        print  '%\t', Definitive_full[key][3], '\t', Definitive_full[key][4]
     return Associated_GOs, Definitive, Definitive_full
         
 
@@ -370,7 +373,15 @@ def get_Tirage_stats():
     log_pdf=gaussian_kde(np.asarray(LogValList))
     return pdf, log_pdf
 
-
+def get_Dictionnary_Stats(Dictionary):
+    ValList=[]
+    LogValList=[]
+    for key,val in Dictionary.iteritems():
+        ValList.append(val)
+        LogValList.append(math.log(val,10))
+    pdf=gaussian_kde(np.asarray(ValList))
+    log_pdf=gaussian_kde(np.asarray(LogValList))
+    return pdf, log_pdf
 
     
 # TODO: add the modules for matrix operations over the GO annotation
