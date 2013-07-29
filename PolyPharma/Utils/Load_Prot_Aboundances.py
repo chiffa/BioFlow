@@ -45,7 +45,3 @@ def load_Prot_Aboundances():
 
 # compute_Prot_Aboundances()
 SP2Aboundances=load_Prot_Aboundances()
-
-print len(SP2Aboundances)
-for key, val in SP2Aboundances.iteritems():
-    print key,val
