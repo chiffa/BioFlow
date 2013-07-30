@@ -61,4 +61,5 @@ IDFilter=['5379',     # Small_Molecule_Collection Purine nucleotide
           '2347',     # ('Small_Molecule', u'Pi', 'mitochondrial matrix')
           '1050',     # ('Small_Molecule', u'H+', 'endoplasmic reticulum lumen')
           '2151',     # ('Small_Molecule', u'CO2', 'endoplasmic reticulum lumen')
+          '872',      # H+ 
                ]
