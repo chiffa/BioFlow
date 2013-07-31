@@ -247,6 +247,16 @@ def convert_SP_to_IDs(SP_List):
                 Res_Dict[name]=Res_Dict[name][0]
     return Res_Dict
 
+def specialRatio(Number1,Number2,epsilon=1e-7):
+    if abs(Number1)<epsilon and abs(Number2)>epsilon:
+        return 0.0
+    if abs(Number2)<epsilon and abs(Number1)>epsilon:
+        return 100
+    if abs(Number2)<epsilon and abs(Number2)<epsilon:
+        return 'n.a'
+    else:
+        return abs(float(Number1)/float(Number1+Number2))*100
+
 def get_GO_Term_occurences(Importance_Dict,flat):
     NamesDict=pickle.load(file('GO_names.dump','r'))
     GO_access=pickle.load(file('GO.dump','r'))[0]
@@ -294,11 +304,21 @@ def get_GO_Term_occurences(Importance_Dict,flat):
     srtd=sorted(Definitive.iteritems(), key=operator.itemgetter(1),reverse=True)
     pdf, log_pdf=get_Tirage_stats()
     pdf2, log_pdf2=get_Dictionnary_Stats(Definitive)
+    print  'occurence to expected occurence ratio', '\t', 'occurences','\t', 'expected occurences','\t|\t',
+    print  'kernel PDF in sample','\t', 'log-kernel PDF in sample','\t|\t',
+    print  'kernel PDF in random sets','\t', 'log-kernel PDF in random sets','\t|\t',
+    print  'sample PDF/random set PDF', '\t', 'sample log-PDF/random set log-PDF',
+    print  '\t|\t', 'GO Term', '\t', 'List of Targets'
     for key, val in srtd:
-        print  "{0:.2f}".format(Definitive_full[key][0]*100)+'%','\t', Definitive_full[key][1],'\t', "{0:.2f}".format(Definitive_full[key][2]),'\t',
-        print  "{0:.2f}".format(float(pdf(Definitive_full[key][0]))*100),'%\t', "{0:.2f}".format(min(float(log_pdf(math.log(Definitive_full[key][0],10))),1.0)*100),
-        print  "{0:.2f}".format(float(pdf2(Definitive_full[key][0]))*100),'%\t', "{0:.2f}".format(min(float(log_pdf2(math.log(Definitive_full[key][0],10))),1.0)*100),
-        print  '%\t', Definitive_full[key][3], '\t', Definitive_full[key][4]
+        p1=float(pdf2(Definitive_full[key][0]))*100
+        p2=float(log_pdf2(math.log(Definitive_full[key][0],10))*100)
+        p3=float(pdf(Definitive_full[key][0]))*100
+        p4=float(log_pdf(math.log(Definitive_full[key][0],10))*100)
+        print  "{0:.2f}".format(Definitive_full[key][0]*100)+'%','\t', Definitive_full[key][1],'\t', "{0:.2f}".format(Definitive_full[key][2]),'\t|\t',
+        print  "{0:.2f}".format(p1),'%\t', "{0:.2f}".format(p2),'%\t|\t',
+        print  "{0:.2f}".format(p3),'%\t', "{0:.2f}".format(p4),'%\t|\t',
+        print  "{0:.2f}".format(specialRatio(p1,p3)), '%\t', "{0:.2f}".format(specialRatio(p2,p4)),
+        print  '%\t|\t', Definitive_full[key][3], '\t', Definitive_full[key][4]
     return Associated_GOs, Definitive, Definitive_full
         
 

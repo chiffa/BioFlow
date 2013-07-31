@@ -557,20 +557,29 @@ def Compute_circulation_intensity(epsilon=1e-10):
     @type epsilon: float
     
     '''
-    
+    init=time()
     conductance_Matrix=pickle.load(file('pickleDump4.dump','r'))
     NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))
     InformativityArray=np.zeros((conductance_Matrix.shape[0],1))                                # Database ID to Informativity
     Solver=cholesky(csc_matrix(conductance_Matrix),epsilon)
     # The informativities are calculated only by using the uniprot proteins as the source and extraction points.
     # This reduces the number of interations from  25k to 5 and the number of LU decompositions in a similar manner
+    print 1, time()-init
+    init=time()
     for i in range(0,len(Uniprots)):
+        print 2, time()-init
+        init=time()
+        init2=time()
         for j in range(i,len(Uniprots)):
+            print 3, time()-init2, '*',
+            if j%10==9:
+                init2=time()
+                print 
             J=np.zeros((conductance_Matrix.shape[0],1))
             J[NodeID2MatrixNumber[Uniprots[i]],0]=1.0
             J[NodeID2MatrixNumber[Uniprots[j]],0]=-1.0
             V=Solver(J)
-            Current=get_Current_all(conductance_Matrix,V)
+            Current=get_Current_all(conductance_Matrix,V,J)
             InformativityArray+=Current
     pickle.dump(InformativityArray,file('InfoArray_new.dump','w'))
     
@@ -690,7 +699,7 @@ def Info_circulation_for_Single_Node_classic(Source_MatrixID,sinks_MatrixIDs):
     Solver=cholesky(conductance_Matrix) 
 
 
-
+Compute_circulation_intensity()
 
 # getMatrix(DfactorDict, 100, False)
 
