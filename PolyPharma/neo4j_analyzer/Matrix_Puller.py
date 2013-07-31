@@ -62,10 +62,10 @@ def get_Reaction_blocks():
                             ID=str(elt).split('/')[-1][:-1]
                             if ID not in IDFilter:
                                 LocalList.append(ID)
-                                Seeds.add(ID)
                                 count+=1
                 if len(LocalList)>1:
                     ReagentClusters.append(copy.copy(LocalList))
+                    Seeds.update(LocalList)
     return ReagentClusters, Seeds, count
 
 def get_expansion(SubSeed,edge_type_filter):
@@ -542,52 +542,50 @@ def get_voltages(numpy_array, MatrixNumber2NodeID, InformativityDict):
         InformativityDict[MatrixNumber2NodeID[i]]+=numpy_array[i,0]
     return
         
-        
-
 def create_InfoDict(MatrixNumber2NodeID):
     new_dict={}
     for val in MatrixNumber2NodeID.values():
         new_dict[val]=0.0
     return new_dict
 
-def Compute_circulation_intensity():
+def Compute_circulation_intensity(epsilon=1e-10):
     '''
-    performs the information circulation calculation in agreement with the publication by Misiuro et al. 
+    performs the information circulation calculation in agreement with the publication by Misiuro et al, but with algorithm slightly modified for 
+    more rapid computation of information circulation
+    
+    @param epsilon: corrective factor for the calculation of Cholesky matrix. defaults to 1e-10
+    @type epsilon: float
+    
     '''
+    
     conductance_Matrix=pickle.load(file('pickleDump4.dump','r'))
     NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))
-    InformativityDict=create_InfoDict(MatrixNumber2NodeID)                                 # Database ID to Informativity
+    InformativityArray=np.zeros((conductance_Matrix.shape[0],1))                                # Database ID to Informativity
+    Solver=cholesky(csc_matrix(conductance_Matrix),epsilon)
     # The informativities are calculated only by using the uniprot proteins as the source and extraction points.
     # This reduces the number of interations from  25k to 5 and the number of LU decompositions in a similar manner
-    for SP_Node_ID in Uniprots:
-        SinkList=copy.copy(Uniprots)
-        SinkList.remove(SP_Node_ID)
-        MatrixNodeToCancel=NodeID2MatrixNumber[SP_Node_ID]
-        CurrentMatrix=copy.copy(conductance_Matrix)
-        NonZeros=CurrentMatrix.nonzero()
-        for i in range(0,len(NonZeros[1])):
-            if MatrixNodeToCancel in ( NonZeros[0][i],NonZeros[1][i] ):
-                CurrentMatrix[NonZeros[0][i],NonZeros[1][i]]=0.0
-        # Ok, the current Matrix is done, let's LU the shit out it now!
-        print CurrentMatrix.shape
-        L = np.linalg.cholesky(CurrentMatrix)
-        U = L.T
-        cummulatedVoltages = lil_matrix(conductance_Matrix.shape()[0],1)
-        for NodeID in SinkList:
-            J = lil_matrix(conductance_Matrix.shape()[0],1)
-            J[NodeID2MatrixNumber[NodeID],0] = 1.0
-            Inv_U = np.linalg.inv(U)
-            Inv_L = np.linalg.inv(L)
-            v = np.dot(Inv_U,np.dot(Inv_L,J))
-            cummulatedVoltages += v
-        get_voltages(cummulatedVoltages, MatrixNumber2NodeID, InformativityDict)
-    pickle.dump(InformativityDict,file('NodeInfo.dump','w'))
+    for i in range(0,len(Uniprots)):
+        for j in range(i,len(Uniprots)):
+            J=np.zeros((conductance_Matrix.shape[0],1))
+            J[NodeID2MatrixNumber[Uniprots[i]],0]=1.0
+            J[NodeID2MatrixNumber[Uniprots[j]],0]=-1.0
+            V=Solver(J)
+            Current=get_Current_all(conductance_Matrix,V)
+            InformativityArray+=Current
+    pickle.dump(InformativityArray,file('InfoArray_new.dump','w'))
     
-    return InformativityDict
+    return InformativityArray
     
 def Analyze_relations(Current, number):
     '''
-    Current have to be a numpy array
+    Just a way to print out the nodes making pass the most of the current
+    
+    @param Current: the current
+    @type Current: numpy array
+      
+    @param number: the number of the most important relations one wants to observe
+    @type number: integer
+    
     '''
     NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))
     infos=np.absolute(Current)
@@ -598,12 +596,22 @@ def Analyze_relations(Current, number):
         print ID2displayName[MatrixNumber2NodeID[locmax]]
         infos[locmax]=0.0
 
-def Info_circulation_for_Single_Node(conductance_Matrix,source_MatrixID,sinks_MatrixIDs):
+def Info_circulation_for_Single_Node(conductance_Matrix,source_MatrixID,sinks_MatrixIDs,epsilon=1e-10):
     '''
-    Computes the information circulation for a single node
-    in a matter that seems the most 
+    Computes the information circulation for a single node, according to a slightly improved method compared to the one described by Missiuro
+    @param conductance_Matrix: Conductance matrix
+    @type conductance_Matrix: scipy.sparse lil_matrix
+    
+    @param source_MatrixID: number of the row/line of the source node within the conductance matrix corresponding to the source
+    @type source_MatrixID: int
+    
+    @param sinks_MatrixIDs: list of numbers of the rows/lines within the conductance matrix corresponding to sinks  
+    @type sinks_MatrixIDs: list of ints
+    
+    @param epsilon: corrective factor for the calculation of Cholesky matrix. defaults to 1e-10
+    @type epsilon: float
     '''
-    Solver=cholesky(csc_matrix(conductance_Matrix))
+    Solver=cholesky(csc_matrix(conductance_Matrix),epsilon)
     Cummulative_Informativity=np.zeros((conductance_Matrix.shape[0],0))
     for sink in sinks_MatrixIDs:
         J=np.zeros((conductance_Matrix.shape[0],1))
@@ -616,9 +624,17 @@ def Info_circulation_for_Single_Node(conductance_Matrix,source_MatrixID,sinks_Ma
 
 def get_Current_SingleNode(Matrix_NodeID,Conductance_Matrix,Voltages):
     '''
-    MatrixNodeID is an int
-    Conductance is a lil_matrix
-    Voltages is a numpy array
+    Recovers the current within one single node
+    
+    @param Matrix_NodeID: number of the row/line of the source node within the conductance matrix corresponding to the source
+    @type Matrix_NodeID: int
+    
+    @param Conductance_Matrix: Conductance matrix
+    @type Conducntace_Matrix: scipy.sparse lil_matrix
+    
+    @param Voltages: Informativity gradient in each node obtained by the solution of the matrix equation ConductanceMatrix*Voltage = J
+    @type Voltages: numpy array
+
     '''
     submatrix=Conductance_Matrix[:,Matrix_NodeID].todense()
     submatrix[Matrix_NodeID,0]=0.0
@@ -628,14 +644,39 @@ def get_Current_SingleNode(Matrix_NodeID,Conductance_Matrix,Voltages):
     return Current
 
 def get_Current_NodeSet(NodeSet,Conductance_Matrix,Voltages):
+    '''
+    Recovers the current within a set of Nodes
+    
+    @param NodeSet: number of the row/line of the source node within the conductance matrix corresponding to the source
+    @type NodeSet: list of ints
+    
+    @param Conductance_Matrix: Conductance matrix
+    @type Conducntace_Matrix: scipy.sparse lil_matrix
+    
+    @param Voltages: Informativity gradient in each node obtained by the solution of the matrix equation ConductanceMatrix*Voltage = J
+    @type Voltages: numpy array
+
+    '''    
+    
     Dico={}
     for elt in NodeSet:
         Dico[elt]=get_Current_SingleNode(elt,Conductance_Matrix,Voltages)
     return Dico
 
-def get_Current_all(Conductance_Matrix,Voltages):
-    diag_Voltages=diags(Voltages.T.tolist()[0],0)
-    Currents=np.absolute(np.dot(diag_Voltages,Conductance_Matrix)-np.dot(Conductance_Matrix,diag_Voltages)).sum(axis=0)
+def get_Current_all(Conductance_Matrix, Voltages, J):
+    '''
+    Recovers the current for all the nodes
+    
+    @param Conductance_Matrix: Conductance matrix
+    @type Conducntace_Matrix: scipy.sparse lil_matrix
+    
+    @param Voltages: Informativity gradient in each node obtained by the solution of the matrix equation ConductanceMatrix*Voltage = J
+    @type Voltages: numpy array
+    
+    '''
+    diag_Voltages=lil_matrix(diags(Voltages.T.tolist()[0],0))
+    Corr_Conductance_Matrix=Conductance_Matrix-lil_matrix(diags(Conductance_Matrix.diagonal(),0))
+    Currents=(np.absolute(diag_Voltages*Corr_Conductance_Matrix-Corr_Conductance_Matrix*diag_Voltages).sum(axis=0).T+np.absolute(J))/2.0
     return Currents
 
     
@@ -649,7 +690,10 @@ def Info_circulation_for_Single_Node_classic(Source_MatrixID,sinks_MatrixIDs):
     Solver=cholesky(conductance_Matrix) 
 
 
-getMatrix(DfactorDict, 100, False)
+
+
+# getMatrix(DfactorDict, 100, False)
+
 # Compute_circulation_intensity()
 #  
 # checkMatrix()
