@@ -241,10 +241,10 @@ def convert_SP_to_IDs(SP_List):
             for elt in generator:
                 ID=str(elt).split('/')[-1][:-1]
                 Res_Dict[name].append(ID)
-            if Res_Dict[name]>1:
+            if len(Res_Dict[name])>1:
                 print 'Error: several references!', name, Res_Dict[name]
             else: 
-                Res_Dict[name]=Res_Dict[name][0]
+                Res_Dict[name]=Res_Dict[name][0]          
     return Res_Dict
 
 def specialRatio(Number1,Number2,epsilon=1e-7):
@@ -403,6 +403,9 @@ def get_Dictionnary_Stats(Dictionary):
     log_pdf=gaussian_kde(np.asarray(LogValList))
     return pdf, log_pdf
 
+def get_Uniprot_Subset(List_of_GOs):
+    raise NotImplementedError
+    
     
 # TODO: add the modules for matrix operations over the GO annotation
 # TODO: add the propagation of the informativity along different GO Terms
@@ -413,8 +416,8 @@ def get_Dictionnary_Stats(Dictionary):
 # print 2, time()-init
 # get_GO_Informativities()
 # align_names2SP()
-FD,SD=align_names2SP()
-get_GO_Term_occurences(SD,True)
+# FD,SD=align_names2SP()
+# get_GO_Term_occurences(SD,True)
 # Tirage(48,True,100)
 # get_Tirage_stats()
 
