@@ -197,7 +197,7 @@ def getMatrix(decreaseFactorDict, numberEigvals, FastLoad):
     else:
         DF=file('dump5.dump','r')
 #         ReactLinks, InitSet, GroupLinks, GroupSet, SecLinks, SecSet, UP_Links, UPSet, HiNT_Links, FullSet, Super_Links,ExpSet=pickle.load(DF)
-        ReactLinks, InitSet, GroupLinks, GroupSet, SecLinks, SecSet, UP_Links, UPSet =pickle.load(DF)
+        ReactLinks, InitSet, GroupLinks, GroupSet, SecLinks, SecSet, UP_Links, UPSet = pickle.load(DF)
     
     # Fill in the matrix with the values
     # Take an impact vector
@@ -668,11 +668,11 @@ def Analyze_relations(Current, number, AdditionalInfos=''):
             locmax=np.argmax(infos)
             Buffer=''
             Buffer+=str(MatrixNumber2NodeID[locmax])+'\t'+str(float(infos[locmax]))+'\t'
-            print MatrixNumber2NodeID[locmax], float(infos[locmax]),'\t',
+#             print MatrixNumber2NodeID[locmax], float(infos[locmax]),'\t',
             Buffer+=str(ID2Type[MatrixNumber2NodeID[locmax]])+'\t'
-            print ID2Type[MatrixNumber2NodeID[locmax]], '\t',
+#             print ID2Type[MatrixNumber2NodeID[locmax]], '\t',
             Buffer+=str(ID2displayName[MatrixNumber2NodeID[locmax]])+'\n'
-            print ID2displayName[MatrixNumber2NodeID[locmax]]
+#             print ID2displayName[MatrixNumber2NodeID[locmax]]
             infos[locmax]=0.0
             writer.write(Buffer)
     else:
@@ -680,14 +680,14 @@ def Analyze_relations(Current, number, AdditionalInfos=''):
             locmax=np.argmax(infos)
             Buffer=''
             Buffer+=str(MatrixNumber2NodeID[locmax])+'\t'+str(float(infos[locmax]))+'\t'
-            print MatrixNumber2NodeID[locmax], float(infos[locmax]),'\t',
+#             print MatrixNumber2NodeID[locmax], float(infos[locmax]),'\t',
             Buffer+=str(ID2Type[MatrixNumber2NodeID[locmax]])+'\t'
-            print ID2Type[MatrixNumber2NodeID[locmax]], '\t',
+#             print ID2Type[MatrixNumber2NodeID[locmax]], '\t',
             for elt in AdditionalInfos[locmax,:].tolist():
                 Buffer+=str(elt)+'\t'
-                print elt, '\t',
+#                 print elt, '\t',
             Buffer+=str(ID2displayName[MatrixNumber2NodeID[locmax]])+'\n'
-            print ID2displayName[MatrixNumber2NodeID[locmax]]
+#             print ID2displayName[MatrixNumber2NodeID[locmax]]
             infos[locmax]=0.0
             writer.write(Buffer)
     writer.close()
@@ -708,13 +708,13 @@ def Info_circulation_for_Single_Node(conductance_Matrix,source_MatrixID,sinks_Ma
     @type epsilon: float
     '''
     Solver=cholesky(csc_matrix(conductance_Matrix),epsilon)
-    Cummulative_Informativity=np.zeros((conductance_Matrix.shape[0],0))
+    Cummulative_Informativity=np.zeros((conductance_Matrix.shape[0],1))
     for sink in sinks_MatrixIDs:
         J=np.zeros((conductance_Matrix.shape[0],1))
         J[source_MatrixID,0]=1.0
         J[sink,0]=-1.0
         Voltage=Solver(J)
-        current=get_Current_all(conductance_Matrix,Voltage)
+        current=get_Current_all(conductance_Matrix,Voltage,J)
         Cummulative_Informativity+=current
     return Cummulative_Informativity
 
@@ -779,7 +779,6 @@ def get_Current_all(Conductance_Matrix, Voltages, J):
 def stats_over_random_info_circ_samples(UniProtAttachement=True):
     UPNode_IDs_2Proteins_IDs_List=load_Uniprot_Attachments()
     NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))
-    print len(Uniprots)
     DicList=[]
     FnameList=[]
     Filenames = listdir('.')
@@ -789,9 +788,7 @@ def stats_over_random_info_circ_samples(UniProtAttachement=True):
     for fname in FnameList:
         DicList.append(pickle.load(file(fname,'r')))
     Stats_Mat=np.concatenate(tuple(DicList),axis=1)
-    print Stats_Mat.shape
     MeanInfos=np.mean(Stats_Mat,axis=1).reshape((Stats_Mat.shape[0],1))
-    print MeanInfos.shape
     STDInfos=np.std(Stats_Mat,axis=1).reshape((Stats_Mat.shape[0],1))
     if UniProtAttachement:
         for UP_ID in Uniprots:
@@ -803,28 +800,56 @@ def stats_over_random_info_circ_samples(UniProtAttachement=True):
     pessimist=MeanInfos-1.97*STDInfos
     optimist=MeanInfos+1.97*STDInfos
     aboundances=np.zeros((Stats_Mat.shape[0],1))
+    err_count=0
     for key,val in ID2Aboundances.iteritems():
-        aboundances[NodeID2MatrixNumber[key],0]=val
+        if key in NodeID2MatrixNumber.keys():
+            aboundances[NodeID2MatrixNumber[key],0]=val
+        else:
+            print 'Error on:', key
+            err_count+=1
+    print 'err_count', err_count
     Additional=np.concatenate((STDInfos,pessimist,optimist,aboundances),axis=1)
-    print Additional.shape
     Analyze_relations(MeanInfos, 50000, Additional)
 
-def check_Silverality(Sample_Size):
+def check_Silverality(sample_size,iterations):
     '''
     Checks how rapidly the information passing through the neighbouring proteins decreases
     with the distance between them
     '''
+    from scipy.sparse.csgraph import dijkstra
     conductance_Matrix=pickle.load(file('pickleDump4.dump','r'))
+    value_Matrix=pickle.load(file('pickleDump3.dump','r'))
     NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))
-    Info_circulation_for_Single_Node(conductance_Matrix,source_MatrixID,sinks_MatrixIDs,epsilon=1e-10)
+    cumulative=[]
+    rei_UP=[]
+    for SP in Uniprots:
+        rei_UP.append(NodeID2MatrixNumber[SP])
+    for i in range(0,iterations):
+        random.shuffle(rei_UP)
+        re_UP=rei_UP[:sample_size+1]
+        source_MatrixID=re_UP[0]
+        sinks_MatrixIDs=re_UP[0:]
+        Currents=Info_circulation_for_Single_Node(conductance_Matrix,source_MatrixID,sinks_MatrixIDs,epsilon=1e-10)
+        random.shuffle(rei_UP)
+        targets=rei_UP[:sample_size/10]
+        distances = dijkstra(value_Matrix, indices=source_MatrixID)
+        print Currents.shape
+        for index in targets:
+            cumulative.append((distances[index],Currents[index,0]))
+    pickle.dump(cumulative,file('cumulative.dump','w'))
+    return cumulative
     
-    raise NotImplementedError
-    
 
 
-# TODO: use sparse matrixes routines to calculate the number of connex elements in the graph
+# DONE: use sparse matrixes routines to calculate the number of connex elements in the graph
+#   Problem: there are 58 disconnected sets.
+#   Solution: retrieve the Node Ids of the main connex Set and write them into the neo4j graph, then retrieve only them
 
-# TODO: calculate the distance graph
+# TODO: markup of the major connex graphs
+
+# DONE: calculate the distance graph
+    # seems to work pretty well with Djikistra.
+    # Can we perform a retrieval of specific nodes within distance X of the main component? 
 
 # TODO: buid jump tables to compute the number of reactional transitions
 
@@ -836,20 +861,22 @@ def check_Silverality(Sample_Size):
 
 # TODO: pull in the 300 essential targets from the EBI dude
 
+# TODO: perform a localization factor pull-out for the Uniprots based on their proteins of attachement
 
-getMatrix(DfactorDict, 100, False)
 
+
+
+# getMatrix(DfactorDict, 100, False)
+
+# compute_Uniprot_Attachments()
 
 # Compute_circulation_intensity()
 
 # Compute_random_sample(100,3,1e-10, '3_')
-# compute_Uniprot_Attachments()
 
-# stats_over_random_info_circ_samples(True)
+stats_over_random_info_circ_samples(True)
 
 # this is going to last for a while. Now we need to get it split among several nodes
-
-
 
 # Compute_circulation_intensity()
 #  
@@ -864,6 +891,8 @@ getMatrix(DfactorDict, 100, False)
 # treat_Calibration()
 
 # columnSort()
+
+# check_Silverality(100,100)
 
 # TODO: There might be an error in the module responsible for linkage between the uniprots and the accession numbers: for instance the 20253 has an annotation with an Acnum, but
 # has no Uniprot attached to it within the database
