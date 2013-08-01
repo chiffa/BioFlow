@@ -26,9 +26,14 @@ Targets_File='/home/andrei/workspaces/UCSD/NeflanavirSource.csv'
 # for a lookup in the database
 from TargetPreProcessing.neflanavir_parser import subdict
 Targets_dict = subdict
+from TargetPreProcessing.Overington_parser import subdict2
+Targets_dict2 = subdict2
 
 # File from which to load the protein aboundances in the human organism
 Prot_abound='/home/andrei/workspaces/UCSD/9606-PeptideAtlas'
+
+# File from which to load the names of the 300 most frequent targets 
+Targets_File2='/home/andrei/workspaces/UCSD/Overington_raw'
 
 IDFilter=['5379',     # Small_Molecule_Collection Purine nucleotide
           '5298',     # Small_Molecule_Collection ADP, GDP, CDP, UDP

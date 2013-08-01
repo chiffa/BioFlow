@@ -62,6 +62,7 @@ def Get_Loose_Term_Matching(keySetDict,StrictDict,Fzmatch1,Fzmatch2):
     # TODO: entropy-based algorithm?
     # TODO: abbreviation management?
     # TODO: permutations within the names?
+    # TODO: add greek names conversion
     init1=time()
     init=time()
     FDict={}
@@ -133,7 +134,7 @@ def Get_Loose_Term_Matching(keySetDict,StrictDict,Fzmatch1,Fzmatch2):
 
 def align_names2SP():
     from Utils.UNIPROT_Parser import names_Dict
-    Fle=file(conf.Targets_File,'r')
+    Fle=file(conf.Drug_Targets,'r')
     FileDict={}
     i=0
     print len(names_Dict)
@@ -143,8 +144,8 @@ def align_names2SP():
         if not line:
             break
         if i>3:
-            words=line.split('\t')
-            FileDict[words[0]]=(words[1],words[2],words[3])
+            words=line.strip('\n').split('\t')
+            FileDict[words[0]]=('')
     Ans1, Ans2, Ans2_5, Ans3, Rem3 = Get_Loose_Term_Matching(FileDict,names_Dict,0.80,0.80)
     print len(Ans1.keys()), len(Ans2.keys()), len(Ans2_5.keys()), len(Ans3.keys()), len(Rem3)
     
