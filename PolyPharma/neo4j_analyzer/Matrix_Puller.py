@@ -18,6 +18,10 @@ import random
 from scikits.sparse.cholmod import cholesky
 from scipy.sparse import csc_matrix
 from scipy.sparse import diags
+from math import  sqrt
+from Utils.Prot_Aboundances import ID2Aboundances
+from scipy.sparse.csgraph import connected_components
+from scipy.sparse.csgraph import shortest_path
 
 edge_type_filter0_1=["is_part_of_collection"]
 edge_type_filter0_2=["is_same"]
@@ -88,6 +92,25 @@ def get_expansion(SubSeed,edge_type_filter):
             Clusters[element]=copy.copy(LocalList)
     return Clusters, SuperSeed, count
 
+def compute_Uniprot_Attachments():
+    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))
+    Uniprot_Attach={} #Attaches the Uniprots to the proteins from the reactome, allowing to combine the information circulation values
+    for SP_Node_ID in Uniprots:
+        Vertex=DatabaseGraph.UNIPORT.get(SP_Node_ID)
+        Generator=Vertex.bothV("is_same")
+        if Generator!=None:
+            Uniprot_Attach[SP_Node_ID]=[]
+            for item in Generator:
+                ID=str(item).split('/')[-1][:-1]
+                Uniprot_Attach[SP_Node_ID].append(ID)
+        print SP_Node_ID, 'processed', len(Uniprot_Attach[SP_Node_ID])
+    pickle.dump(Uniprot_Attach,file('UP_Attach.dump','w'))
+    return Uniprot_Attach
+
+def load_Uniprot_Attachments():
+    Uniprot_Attach=pickle.load(file('UP_Attach.dump','r'))
+    return Uniprot_Attach    
+
 def build_correspondances(IDSet,Rapid):
     NodeID2MatrixNumber={}
     MatrixNumber2NodeID={}
@@ -142,10 +165,20 @@ def getMatrix(decreaseFactorDict, numberEigvals, FastLoad):
         print len(GroupLinks), len(GroupSet),c
         print time()-init, time()-t
         t=time()
+        
         SecLinks, SecSet, c = get_expansion(GroupSet,edge_type_filter1_2)
         print len(SecLinks), len(SecSet), c
         print time()-init, time()-t
         t=time()
+        
+        for i in range(0,5):
+            SecLinks2, SecSet2, c = get_expansion(SecSet,edge_type_filter1_2)
+            print len(SecLinks2), len(SecSet2), c
+            print time()-init, time()-t
+            SecSet=SecSet2
+            SecLinks=SecLinks2
+            t=time()
+        
         UP_Links, UPSet, c = get_expansion(SecSet,edge_type_filter0_2)
         print len(UP_Links), len(UPSet), c
         print time()-init, time()-t
@@ -548,6 +581,45 @@ def create_InfoDict(MatrixNumber2NodeID):
         new_dict[val]=0.0
     return new_dict
 
+def compute_sample_circulation_intensity(Sample, epsilon=1e-10, array_v=''):
+    '''
+    performs the information circulation calculation in agreement with the publication by Misiuro et al, but with algorithm slightly modified for 
+    more rapid computation of information circulation
+    
+    @param Sample: List of row/column numbers that are to be used in the computation (~170 for a computation converging in less then an hour)
+    @type: list of ints
+    
+    @param epsilon: corrective factor for the calculation of Cholesky matrix. defaults to 1e-10
+    @type epsilon: float
+    
+    '''
+    init=time()
+    conductance_Matrix=pickle.load(file('pickleDump4.dump','r'))
+    # NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))
+    InformativityArray=np.zeros((conductance_Matrix.shape[0],1))                                # Database ID to Informativity
+    Solver=cholesky(csc_matrix(conductance_Matrix),epsilon)
+    # The informativities are calculated only by using the uniprot proteins as the source and extraction points.
+    # This reduces the number of interations from  25k to 5 and the number of LU decompositions in a similar manner
+    print 1, time()-init
+    init=time()
+    print Sample
+    print len(Sample)
+    for i in range(0,len(Sample)):
+        print '\n', 2, i, time()-init
+        init=time()
+        for j in range(i,len(Sample)):
+            if j%25==24:
+                print '*',
+            J=np.zeros((conductance_Matrix.shape[0],1))
+            J[Sample[i],0]=1.0
+            J[Sample[j],0]=-1.0
+            V=Solver(J)
+            Current=get_Current_all(conductance_Matrix,V,J)
+            InformativityArray+=Current
+            name='InfoArray_new'+str(array_v)+'.dump'
+    pickle.dump(InformativityArray,file(name,'w'))
+    return InformativityArray
+
 def Compute_circulation_intensity(epsilon=1e-10):
     '''
     performs the information circulation calculation in agreement with the publication by Misiuro et al, but with algorithm slightly modified for 
@@ -557,35 +629,25 @@ def Compute_circulation_intensity(epsilon=1e-10):
     @type epsilon: float
     
     '''
-    init=time()
-    conductance_Matrix=pickle.load(file('pickleDump4.dump','r'))
     NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))
-    InformativityArray=np.zeros((conductance_Matrix.shape[0],1))                                # Database ID to Informativity
-    Solver=cholesky(csc_matrix(conductance_Matrix),epsilon)
-    # The informativities are calculated only by using the uniprot proteins as the source and extraction points.
-    # This reduces the number of interations from  25k to 5 and the number of LU decompositions in a similar manner
-    print 1, time()-init
-    init=time()
-    for i in range(0,len(Uniprots)):
-        print 2, time()-init
-        init=time()
-        init2=time()
-        for j in range(i,len(Uniprots)):
-            print 3, time()-init2, '*',
-            if j%10==9:
-                init2=time()
-                print 
-            J=np.zeros((conductance_Matrix.shape[0],1))
-            J[NodeID2MatrixNumber[Uniprots[i]],0]=1.0
-            J[NodeID2MatrixNumber[Uniprots[j]],0]=-1.0
-            V=Solver(J)
-            Current=get_Current_all(conductance_Matrix,V,J)
-            InformativityArray+=Current
-    pickle.dump(InformativityArray,file('InfoArray_new.dump','w'))
+    re_UP=[]
+    for SP in Uniprots:
+        re_UP.append(NodeID2MatrixNumber[SP])
+    return compute_sample_circulation_intensity(re_UP,epsilon,'_Full')
+
+
+def Compute_random_sample(sample_size, iterations, epsilon=1e-10, name_version=''):
+    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))
+    re_UP=[]
+    for SP in Uniprots:
+        re_UP.append(NodeID2MatrixNumber[SP])
+    for i in range(0,iterations):
+        random.shuffle(re_UP)
+        re_UP=re_UP[:sample_size]
+        compute_sample_circulation_intensity(re_UP,epsilon,name_version+str(i))
     
-    return InformativityArray
     
-def Analyze_relations(Current, number):
+def Analyze_relations(Current, number, AdditionalInfos=''):
     '''
     Just a way to print out the nodes making pass the most of the current
     
@@ -596,14 +658,39 @@ def Analyze_relations(Current, number):
     @type number: integer
     
     '''
+    writer=file('Current_Analysis.csv','w')
     NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))
     infos=np.absolute(Current)
-    for i in range(0,number):
-        locmax=np.argmax(infos)
-        print locmax, float(infos[locmax]),'\t',
-        print ID2Type[MatrixNumber2NodeID[locmax]], '\t',
-        print ID2displayName[MatrixNumber2NodeID[locmax]]
-        infos[locmax]=0.0
+    initLine='ID'+'\t'+'Mean Informativity'+'\t'+'Type'+'\t'+'Standard deviation'+'\t'+'Pessimistic Info estimation'+'\t'+'optimistic Info estimation'+'\t'+'Protein Aboundace'+'\t'+'displayName'+'\n'
+    writer.write(initLine)
+    if AdditionalInfos=='':
+        for i in range(0,min(number,len(infos))):
+            locmax=np.argmax(infos)
+            Buffer=''
+            Buffer+=str(MatrixNumber2NodeID[locmax])+'\t'+str(float(infos[locmax]))+'\t'
+            print MatrixNumber2NodeID[locmax], float(infos[locmax]),'\t',
+            Buffer+=str(ID2Type[MatrixNumber2NodeID[locmax]])+'\t'
+            print ID2Type[MatrixNumber2NodeID[locmax]], '\t',
+            Buffer+=str(ID2displayName[MatrixNumber2NodeID[locmax]])+'\n'
+            print ID2displayName[MatrixNumber2NodeID[locmax]]
+            infos[locmax]=0.0
+            writer.write(Buffer)
+    else:
+        for i in range(0,min(number,len(infos))):
+            locmax=np.argmax(infos)
+            Buffer=''
+            Buffer+=str(MatrixNumber2NodeID[locmax])+'\t'+str(float(infos[locmax]))+'\t'
+            print MatrixNumber2NodeID[locmax], float(infos[locmax]),'\t',
+            Buffer+=str(ID2Type[MatrixNumber2NodeID[locmax]])+'\t'
+            print ID2Type[MatrixNumber2NodeID[locmax]], '\t',
+            for elt in AdditionalInfos[locmax,:].tolist():
+                Buffer+=str(elt)+'\t'
+                print elt, '\t',
+            Buffer+=str(ID2displayName[MatrixNumber2NodeID[locmax]])+'\n'
+            print ID2displayName[MatrixNumber2NodeID[locmax]]
+            infos[locmax]=0.0
+            writer.write(Buffer)
+    writer.close()
 
 def Info_circulation_for_Single_Node(conductance_Matrix,source_MatrixID,sinks_MatrixIDs,epsilon=1e-10):
     '''
@@ -689,19 +776,80 @@ def get_Current_all(Conductance_Matrix, Voltages, J):
     return Currents
 
     
-def Info_circulation_for_Single_Node_classic(Source_MatrixID,sinks_MatrixIDs):
+def stats_over_random_info_circ_samples(UniProtAttachement=True):
+    UPNode_IDs_2Proteins_IDs_List=load_Uniprot_Attachments()
+    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))
+    print len(Uniprots)
+    DicList=[]
+    FnameList=[]
+    Filenames = listdir('.')
+    for filename in Filenames:
+        if 'InfoArray_new' in filename:
+            FnameList.append(filename)
+    for fname in FnameList:
+        DicList.append(pickle.load(file(fname,'r')))
+    Stats_Mat=np.concatenate(tuple(DicList),axis=1)
+    print Stats_Mat.shape
+    MeanInfos=np.mean(Stats_Mat,axis=1).reshape((Stats_Mat.shape[0],1))
+    print MeanInfos.shape
+    STDInfos=np.std(Stats_Mat,axis=1).reshape((Stats_Mat.shape[0],1))
+    if UniProtAttachement:
+        for UP_ID in Uniprots:
+            StdBuffer=float(STDInfos[NodeID2MatrixNumber[UP_ID]])**2
+            for Prot_ID in UPNode_IDs_2Proteins_IDs_List[UP_ID]:
+                MeanInfos[NodeID2MatrixNumber[UP_ID],0]+=MeanInfos[NodeID2MatrixNumber[Prot_ID],0]
+                StdBuffer+=float(STDInfos[NodeID2MatrixNumber[Prot_ID],0])**2
+            STDInfos[NodeID2MatrixNumber[UP_ID],0]=sqrt(StdBuffer)
+    pessimist=MeanInfos-1.97*STDInfos
+    optimist=MeanInfos+1.97*STDInfos
+    aboundances=np.zeros((Stats_Mat.shape[0],1))
+    for key,val in ID2Aboundances.iteritems():
+        aboundances[NodeID2MatrixNumber[key],0]=val
+    Additional=np.concatenate((STDInfos,pessimist,optimist,aboundances),axis=1)
+    print Additional.shape
+    Analyze_relations(MeanInfos, 50000, Additional)
+
+def check_Silverality(Sample_Size):
     '''
-    Computes the information circulation for a single node in accordance with the original publication
+    Checks how rapidly the information passing through the neighbouring proteins decreases
+    with the distance between them
     '''
     conductance_Matrix=pickle.load(file('pickleDump4.dump','r'))
-    corrected_Conductances=''
-    J=np.zeros(())
-    Solver=cholesky(conductance_Matrix) 
+    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))
+    Info_circulation_for_Single_Node(conductance_Matrix,source_MatrixID,sinks_MatrixIDs,epsilon=1e-10)
+    
+    raise NotImplementedError
+    
 
 
-Compute_circulation_intensity()
+# TODO: use sparse matrixes routines to calculate the number of connex elements in the graph
 
-# getMatrix(DfactorDict, 100, False)
+# TODO: calculate the distance graph
+
+# TODO: buid jump tables to compute the number of reactional transitions
+
+# TODO: implementation while using Ehit interactions only
+
+# > TODO: retrieve Pamela silver's degradation of the data with the time
+
+# TODO: pull in the annotations regarding the proteins aboundances
+
+# TODO: pull in the 300 essential targets from the EBI dude
+
+
+getMatrix(DfactorDict, 100, False)
+
+
+# Compute_circulation_intensity()
+
+# Compute_random_sample(100,3,1e-10, '3_')
+# compute_Uniprot_Attachments()
+
+# stats_over_random_info_circ_samples(True)
+
+# this is going to last for a while. Now we need to get it split among several nodes
+
+
 
 # Compute_circulation_intensity()
 #  
