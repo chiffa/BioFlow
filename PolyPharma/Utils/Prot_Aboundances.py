@@ -43,5 +43,16 @@ def load_Prot_Aboundances():
     SP2Aboundances=pickle.load(file('SP2Aboundaces.dump','r'))
     return SP2Aboundances
 
+def load_Prot_Aboundances_NodeIDs():
+    SP2Aboundances=pickle.load(file('../Utils/SP2Aboundaces.dump','r'))
+    ID2Aboundances={}
+    from neo4j_analyzer.knowledge_access import convert_SP_to_IDs
+    SP2IDs=convert_SP_to_IDs(SP2Aboundances.keys())
+    for key,val in SP2Aboundances.iteritems():
+        if key in SP2IDs.keys():
+            ID2Aboundances[SP2IDs[key]]=val
+    return ID2Aboundances
+
 # compute_Prot_Aboundances()
-SP2Aboundances=load_Prot_Aboundances()
+# TODO: move the information onto the Uniprot Nodess
+ID2Aboundances=load_Prot_Aboundances_NodeIDs()
