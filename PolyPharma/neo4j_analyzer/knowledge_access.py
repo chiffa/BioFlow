@@ -324,8 +324,8 @@ def get_GO_Term_occurences(Importance_Dict,flat):
 
 def align_names2SP():
     from Utils.UNIPROT_Parser import names_Dict
-    from configs import Targets_dict, Targets_File
-    Fle=file(Targets_File,'r')
+    from configs import Targets_dict2, Targets_File2
+    Fle=file(Targets_File2,'r')
     FileDict={}
     i=0
     print len(names_Dict)
@@ -335,31 +335,53 @@ def align_names2SP():
         if not line:
             break
         if i>3:
-            words=line.split('\t')
-            FileDict[words[0]]=(float(words[1]),float(words[2].strip()),float(words[3].strip()))
+            words=line.strip('\n').split('\t')
+            FileDict[words[0]]=(1,1,1)
+            # FileDict[words[0]]=(float(words[1]),float(words[2].strip()),float(words[3].strip()))
     print len(FileDict)
     Name2SP={}
     for elt in FileDict.keys():
-        tp=Targets_dict[elt]
+        tp=Targets_dict2[elt]
         if type(tp)==list:
             Name2SP[elt]=tp
         else:
             if len(tp)>1:
                 Name2SP[elt]=[names_Dict[tp]]
-    Uniprot_Dict=import_UniprotDict()
-    i=0
-    j=0
-    final_Dict={}
-    for key, vallist in Name2SP.iteritems():
-        for val in vallist:
-            i+=1
-            if val in Uniprot_Dict.keys():
-                j+=1
-                final_Dict[val]=FileDict[key]
-    secDict={}
-    for key, val in final_Dict.iteritems():
-        secDict[key]=-val[2]
-    return final_Dict, secDict
+    return Name2SP
+
+def TouchedIDs():
+    Names2SP=align_names2SP()
+    valuelist=[]
+    for elt in Names2SP.values():
+        valuelist=valuelist+elt
+    SP_to_IDs=convert_SP_to_IDs(valuelist)
+    IDList=[]
+    errcount=0
+    for valLists in Names2SP.values():
+        for val in valLists:
+            if val in SP_to_IDs.keys():
+                IDList.append(SP_to_IDs[val])
+            else:
+                errcount+=1
+    print '444', len(IDList),errcount,len(valuelist)
+    pickle.dump(IDList, file('IDList.dump','w'))
+    return IDList
+    
+#     Uniprot_Dict=import_UniprotDict()
+#     i=0
+#     j=0
+#     final_Dict={}
+#     for key, vallist in Name2SP.iteritems():
+#         for val in vallist:
+#             i+=1
+#             if val in Uniprot_Dict.keys():
+#                 j+=1
+#                 final_Dict[val]=FileDict[key]
+#     secDict={}
+#     for key, val in final_Dict.iteritems():
+#         secDict[key]=-val[2]
+#         
+#     return final_Dict, secDict
 
 def Tirage(sampleSize, flat, iterations):
     '''
@@ -420,5 +442,5 @@ def get_Uniprot_Subset(List_of_GOs):
 # get_GO_Term_occurences(SD,True)
 # Tirage(48,True,100)
 # get_Tirage_stats()
-
+# TouchedIDs()
 # => Only about 100 uniprots out of 4000 do not point towards the 

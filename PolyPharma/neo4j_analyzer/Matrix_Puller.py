@@ -22,6 +22,7 @@ from math import  sqrt
 from Utils.Prot_Aboundances import ID2Aboundances
 from scipy.sparse.csgraph import connected_components
 from scipy.sparse.csgraph import shortest_path
+import pylab
 
 edge_type_filter0_1=["is_part_of_collection"]
 edge_type_filter0_2=["is_same"]
@@ -52,13 +53,18 @@ ConductanceDict={"Group":20,
 
 ReactionsList=[DatabaseGraph.TemplateReaction, DatabaseGraph.Degradation, DatabaseGraph.BiochemicalReaction]
 
-def get_Reaction_blocks():
+def get_Reaction_blocks(Connexity_Aware):
     ReagentClusters=[]
     Seeds=set()
     count=0
     for ReactionType in ReactionsList:
         for Reaction in ReactionType.get_all():
-            if Reaction!=None:
+            Connex=True
+            if Connexity_Aware:
+                Connex=False
+                if 'Main_Connex' in Reaction.custom:
+                    Connex=True 
+            if Connex and Reaction!=None:
                 LocalList=[]
                 for edge_type in edge_type_filter1_1:
                     if Reaction.bothV(edge_type)!=None:
@@ -151,13 +157,13 @@ def request_location(LocationBufferDict,location):
                 return str(elt.displayName)
 
 
-def getMatrix(decreaseFactorDict, numberEigvals, FastLoad):
+def getMatrix(decreaseFactorDict, numberEigvals, FastLoad, ConnexityAwareness=True):
     init=time()
     # Connect the groups of ingredients that share the same reactions1
     # Retrieve seeds for the matrix computation
     ReactLinks, InitSet,GroupLinks, GroupSet,SecLinks, SecSet,UP_Links, UPSet,HiNT_Links, FullSet,Super_Links,ExpSet=({},[],{},[],{},[],{},[],{},[],{},[])
     if not FastLoad:
-        ReactLinks, InitSet, c = get_Reaction_blocks()
+        ReactLinks, InitSet, c = get_Reaction_blocks(ConnexityAwareness)
         print len(ReactLinks), len(InitSet), c
         print time()-init
         t=time()
@@ -661,7 +667,7 @@ def Analyze_relations(Current, number, AdditionalInfos=''):
     writer=file('Current_Analysis.csv','w')
     NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))
     infos=np.absolute(Current)
-    initLine='ID'+'\t'+'Mean Informativity'+'\t'+'Type'+'\t'+'Standard deviation'+'\t'+'Pessimistic Info estimation'+'\t'+'optimistic Info estimation'+'\t'+'Protein Aboundace'+'\t'+'displayName'+'\n'
+    initLine='ID'+'\t'+'Mean Informativity'+'\t'+'Type'+'\t'+'Standard deviation'+'\t'+'Pessimistic Info estimation'+'\t'+'optimistic Info estimation'+'\t'+'Protein Aboundace'+'\t'+'Essential for Overington'+'\t'+'displayName'+'\n'
     writer.write(initLine)
     if AdditionalInfos=='':
         for i in range(0,min(number,len(infos))):
@@ -686,7 +692,7 @@ def Analyze_relations(Current, number, AdditionalInfos=''):
             for elt in AdditionalInfos[locmax,:].tolist():
                 Buffer+=str(elt)+'\t'
 #                 print elt, '\t',
-            Buffer+=str(ID2displayName[MatrixNumber2NodeID[locmax]])+'\n'
+            Buffer+=str(ID2displayName[MatrixNumber2NodeID[locmax]])+'\t'+str(ID2Localization[MatrixNumber2NodeID[locmax]])+'\n'
 #             print ID2displayName[MatrixNumber2NodeID[locmax]]
             infos[locmax]=0.0
             writer.write(Buffer)
@@ -800,15 +806,22 @@ def stats_over_random_info_circ_samples(UniProtAttachement=True):
     pessimist=MeanInfos-1.97*STDInfos
     optimist=MeanInfos+1.97*STDInfos
     aboundances=np.zeros((Stats_Mat.shape[0],1))
-    err_count=0
+    errcount1=0
     for key,val in ID2Aboundances.iteritems():
         if key in NodeID2MatrixNumber.keys():
             aboundances[NodeID2MatrixNumber[key],0]=val
         else:
-            print 'Error on:', key
-            err_count+=1
-    print 'err_count', err_count
-    Additional=np.concatenate((STDInfos,pessimist,optimist,aboundances),axis=1)
+            errcount1+=1
+    Overingtonicitiy=np.zeros((Stats_Mat.shape[0],1))
+    Overington_IDList=pickle.load(file('IDList.dump','r'))
+    errcount2=0
+    for ID in Overington_IDList:
+        if ID in NodeID2MatrixNumber.keys():
+            Overingtonicitiy[NodeID2MatrixNumber[ID],0]=1.0
+        else:
+            errcount2+=1
+    print 'errcount from stats', errcount1, errcount2
+    Additional=np.concatenate((STDInfos,pessimist,optimist,aboundances,Overingtonicitiy),axis=1)
     Analyze_relations(MeanInfos, 50000, Additional)
 
 def check_Silverality(sample_size,iterations):
@@ -832,20 +845,75 @@ def check_Silverality(sample_size,iterations):
         Currents=Info_circulation_for_Single_Node(conductance_Matrix,source_MatrixID,sinks_MatrixIDs,epsilon=1e-10)
         random.shuffle(rei_UP)
         targets=rei_UP[:sample_size/10]
-        distances = dijkstra(value_Matrix, indices=source_MatrixID)
-        print Currents.shape
+        distances = dijkstra(value_Matrix, indices=source_MatrixID, unweighted=True)
         for index in targets:
             cumulative.append((distances[index],Currents[index,0]))
-    pickle.dump(cumulative,file('cumulative.dump','w'))
+        for i in range(0,sample_size/5):
+            index=np.argmin(distances)
+            print distances
+            cumulative.append((distances[index],Currents[index,0]))
+            distances[index]=100
+    pickle.dump(cumulative,file('Silverality.dump','w'))
     return cumulative
+
+def analyze_Silverality():
+    Silverality_List=pickle.dump(file('Silverality.dump','r'))
+    array1=np.zeros((len(Silverality_List),1))
+    array2=np.zeros((len(Silverality_List),1))
+    for i in range(0, len(Silverality_List)):
+        array1[i,0]=Silverality_List[i][0]
+        array2[i,0]=Silverality_List[i][1]
+    pylab.plot(array1, array2)
+    pylab.show()
+    # TODO: perform statistical analysis
+
+def Perform_Loading_Routines():
+    '''
+    @param eigenvals:
+    @type eigenvals:
     
+    @param param:   
+    '''
+    
+    getMatrix(DfactorDict, 100, False, False,)
+    compute_Uniprot_Attachments()
+    
+    Write_Connexity_Infos()
+
+def Perform_Testing_Routines():
+    raise NotImplementedError
+
+def Write_Connexity_Infos():    
+    ValueMatrix = pickle.load(file('pickleDump3.dump','r'))
+    CCOmps = connected_components(ValueMatrix, directed=False)
+    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))
+    
+    counters = np.zeros((CCOmps[0],1))
+    for elt in range(0,len(CCOmps[1])):
+        counters[CCOmps[1][elt],0] += 1
+    major_Index=np.argmax(counters)
+    
+    for i in range(0,len(CCOmps[1])):
+        if CCOmps[1][i]==major_Index:
+            Node=DatabaseGraph.vertices.get(MatrixNumber2NodeID[i])
+            Node.custom=Node.custom+'Main_Connex'
+            Node.save()
+
+def Erase_Additional_Infos():
+    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))
+    
+    for NodeID in NodeID2MatrixNumber.keys():
+        Node=DatabaseGraph.vertices.get(NodeID)
+        Node.custom=''
+        Node.save()
+
 
 
 # DONE: use sparse matrixes routines to calculate the number of connex elements in the graph
 #   Problem: there are 58 disconnected sets.
 #   Solution: retrieve the Node Ids of the main connex Set and write them into the neo4j graph, then retrieve only them
 
-# TODO: markup of the major connex graphs
+# TODO: markup of the major connex graph within neo4j database
 
 # DONE: calculate the distance graph
     # seems to work pretty well with Djikistra.
@@ -859,12 +927,20 @@ def check_Silverality(sample_size,iterations):
 
 # TODO: pull in the annotations regarding the proteins aboundances
 
-# TODO: pull in the 300 essential targets from the EBI dude
+# DONE: pull in the 300 essential targets from the EBI dude (John Overington)
+#     Results aren't so conclusive. It seems that the protein concentration defenitely plays some role in the determining if a protein is a 
+#     Target of an existing drug or not, butthe informativity seems not. Probably this is due to the fact that the targeted proteins are often 
+#     cellular receptors.
 
-# TODO: perform a localization factor pull-out for the Uniprots based on their proteins of attachement
+# DONE: perform a localization factor pull-out for the Uniprots based on their proteins of attachement
+#        Waiting for the execution
 
+stats_over_random_info_circ_samples(True)
 
+check_Silverality(100,100)
+analyze_Silverality()
 
+Write_Connexity_Infos()
 
 # getMatrix(DfactorDict, 100, False)
 
@@ -874,7 +950,7 @@ def check_Silverality(sample_size,iterations):
 
 # Compute_random_sample(100,3,1e-10, '3_')
 
-stats_over_random_info_circ_samples(True)
+# stats_over_random_info_circ_samples(True)
 
 # this is going to last for a while. Now we need to get it split among several nodes
 
@@ -892,7 +968,7 @@ stats_over_random_info_circ_samples(True)
 
 # columnSort()
 
-# check_Silverality(100,100)
+
 
 # TODO: There might be an error in the module responsible for linkage between the uniprots and the accession numbers: for instance the 20253 has an annotation with an Acnum, but
 # has no Uniprot attached to it within the database
