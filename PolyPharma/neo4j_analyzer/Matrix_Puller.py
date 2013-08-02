@@ -1,7 +1,15 @@
 '''
 Created on Jul 11, 2013
-
 @author: andrei
+
+This module contains all the routines that are respojnsible for pulling 
+the matrixes out of the neo4j graph and processing them
+
+The general idea is to build up 
+- a value matrix that references only the connexions between distinct nodes
+- a conductance matrix that refers the conductance between the nodes and the 
+self-referenced conductances
+
 '''
 from neo4j_Declarations.Graph_Declarator import DatabaseGraph
 from configs import IDFilter
@@ -24,13 +32,15 @@ from scipy.sparse.csgraph import connected_components
 from scipy.sparse.csgraph import shortest_path
 import pylab
 
-edge_type_filter0_1=["is_part_of_collection"]
-edge_type_filter0_2=["is_same"]
-edge_type_filter1_1=["is_Catalysant","is_reaction_particpant"]
-edge_type_filter1_2=["is_part_of_complex", "is_Regulant"]
-edge_type_filter1_3=["is_interacting"]
-edge_type_filter2=["is_possibly_same"]
+# Refers to the groups of links between the nodes that should be treated in the same manner 
+edge_type_filter0_1=["is_part_of_collection"]                   # Group relation group
+edge_type_filter0_2=["is_same"]                                 # Same relation group
+edge_type_filter1_1=["is_Catalysant","is_reaction_particpant"]  # Reaction relation group
+edge_type_filter1_2=["is_part_of_complex", "is_Regulant"]       # Contact_interaction relation group
+edge_type_filter1_3=["is_interacting"]                          # Contact_interaction relation group
+edge_type_filter2=["is_possibly_same"]                          # possibly_same relation group
 
+# Coefficients values for the value_Matrix
 DfactorDict={"Group":0.5,
              "Same":1,
              "Reaction":0.33,
@@ -38,6 +48,7 @@ DfactorDict={"Group":0.5,
              "possibly_same":0.1,
              }
 
+# Coefficients values for the conductance_Matrix
 ConductanceDict={"Group":20,
              "Same":100,
              "Reaction":1,
@@ -45,15 +56,34 @@ ConductanceDict={"Group":20,
              "possibly_same":0.1,
              }
 
-# edge_type_filter3=["is_part_of_pathway","is_next_in_pathway"]
-
-# Matrix filled with 0 (full dissipation, no connection), 1 (no dissipation, aliases) or r in [0,1] for partial dissipations
-
-
-
+# List of all the reaction types present in the DatabaseGraph that will be 
+# used as roots to build the interaction network (not all nodes are necessary
+# within the connex part of the graph)
 ReactionsList=[DatabaseGraph.TemplateReaction, DatabaseGraph.Degradation, DatabaseGraph.BiochemicalReaction]
 
 def get_Reaction_blocks(Connexity_Aware):
+    '''
+    Recovers the blocks if interaction that are due to a common set of reactions
+    for the elements. They will be used as roots to build the complete interaction
+    tree later on.
+    
+    @param Connexity_Aware: if this parameter is set for true, only the elements
+                            that are within the major connexity graph will be loaded
+    @type Connexity_Aware: boolean  
+    
+    @attention: do not set Connexity_Aware to True on the first run or before 
+                performing the Write_Connexity_Infos routine
+    
+    @return Reagent_Clusters: Clusters of reagents that interact together through a common reaction 
+    @rtype: list of lists of NodeIDs
+    
+    @return Seeds: NodeIDs of the nodes that were encountered, used to perform a further expansion regarding
+                    the other links (Complex participation, contact, etc...)
+    @rtype: List of NodeIDs
+    
+    @return count: number of interaction clusters
+    @rtype count: int
+    '''
     ReagentClusters=[]
     Seeds=set()
     count=0
@@ -76,9 +106,26 @@ def get_Reaction_blocks(Connexity_Aware):
                 if len(LocalList)>1:
                     ReagentClusters.append(copy.copy(LocalList))
                     Seeds.update(LocalList)
+    
     return ReagentClusters, Seeds, count
 
 def get_expansion(SubSeed,edge_type_filter):
+    '''
+    Recovers all the nodes reached from the SubSeed according to a the relations listed
+    in edge_type_filter
+    
+    @param SubSeed: List of NodeIDs that serve as a root for searching further relations
+    @type SubSeed: List of NodeIDs
+    
+    @param edge_type_filter: type of relations according to which the graph will be explored
+    @type edge_type_filter: relations of the type bulbsGraph.Relationtype (these are well python objects)
+    
+    @return Clusters: Dictionary of lists, where key is the NodeID from the SubSeed and the list of 
+    @rtype Clusters: 
+    
+    @return SuperSet: List of NodeIDs attained from the SubSet by the relation types from the edge_type_filter 
+    @rtype SuperSet: List of NodeIDs
+    '''
     Clusters={}
     SuperSeed=set()
     SuperSeed.update(SubSeed)
