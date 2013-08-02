@@ -653,7 +653,7 @@ def Compute_random_sample(sample_size, iterations, epsilon=1e-10, name_version='
         compute_sample_circulation_intensity(re_UP,epsilon,name_version+str(i))
     
     
-def Analyze_relations(Current, number, AdditionalInfos=''):
+def Analyze_relations(Current, number,MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization,AdditionalInfos=''):
     '''
     Just a way to print out the nodes making pass the most of the current
     
@@ -665,9 +665,8 @@ def Analyze_relations(Current, number, AdditionalInfos=''):
     
     '''
     writer=file('Current_Analysis.csv','w')
-    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))
     infos=np.absolute(Current)
-    initLine='ID'+'\t'+'Mean Informativity'+'\t'+'Type'+'\t'+'Standard deviation'+'\t'+'Pessimistic Info estimation'+'\t'+'optimistic Info estimation'+'\t'+'Protein Aboundace'+'\t'+'Essential for Overington'+'\t'+'displayName'+'\n'
+    initLine='ID'+'\t'+'Mean Informativity'+'\t'+'Type'+'\t'+'Standard deviation'+'\t'+'Pessimistic Info estimation'+'\t'+'optimistic Info estimation'+'\t'+'Protein Aboundace'+'\t'+'Essential for Overington'+'\t'+'displayName'+'\t'+'localization'+'\n'
     writer.write(initLine)
     if AdditionalInfos=='':
         for i in range(0,min(number,len(infos))):
@@ -692,7 +691,10 @@ def Analyze_relations(Current, number, AdditionalInfos=''):
             for elt in AdditionalInfos[locmax,:].tolist():
                 Buffer+=str(elt)+'\t'
 #                 print elt, '\t',
-            Buffer+=str(ID2displayName[MatrixNumber2NodeID[locmax]])+'\t'+str(ID2Localization[MatrixNumber2NodeID[locmax]])+'\n'
+            Buffer+=str(ID2displayName[MatrixNumber2NodeID[locmax]])
+            if MatrixNumber2NodeID[locmax] in ID2Localization.keys():
+                Buffer+='\t'+str(ID2Localization[MatrixNumber2NodeID[locmax]])
+            Buffer+='\n'
 #             print ID2displayName[MatrixNumber2NodeID[locmax]]
             infos[locmax]=0.0
             writer.write(Buffer)
@@ -802,6 +804,7 @@ def stats_over_random_info_circ_samples(UniProtAttachement=True):
             for Prot_ID in UPNode_IDs_2Proteins_IDs_List[UP_ID]:
                 MeanInfos[NodeID2MatrixNumber[UP_ID],0]+=MeanInfos[NodeID2MatrixNumber[Prot_ID],0]
                 StdBuffer+=float(STDInfos[NodeID2MatrixNumber[Prot_ID],0])**2
+                ID2Localization[UP_ID]=ID2Localization[Prot_ID]
             STDInfos[NodeID2MatrixNumber[UP_ID],0]=sqrt(StdBuffer)
     pessimist=MeanInfos-1.97*STDInfos
     optimist=MeanInfos+1.97*STDInfos
@@ -822,7 +825,7 @@ def stats_over_random_info_circ_samples(UniProtAttachement=True):
             errcount2+=1
     print 'errcount from stats', errcount1, errcount2
     Additional=np.concatenate((STDInfos,pessimist,optimist,aboundances,Overingtonicitiy),axis=1)
-    Analyze_relations(MeanInfos, 50000, Additional)
+    Analyze_relations(MeanInfos, 50000, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Additional)
 
 def check_Silverality(sample_size,iterations):
     '''
@@ -857,14 +860,50 @@ def check_Silverality(sample_size,iterations):
     return cumulative
 
 def analyze_Silverality():
-    Silverality_List=pickle.dump(file('Silverality.dump','r'))
-    array1=np.zeros((len(Silverality_List),1))
-    array2=np.zeros((len(Silverality_List),1))
-    for i in range(0, len(Silverality_List)):
-        array1[i,0]=Silverality_List[i][0]
-        array2[i,0]=Silverality_List[i][1]
-    pylab.plot(array1, array2)
+    Silverality_List=pickle.load(file('Silverality.dump','r'))
+    SuperDict={}
+    for distance, value in Silverality_List:
+        if distance not in SuperDict.keys():
+            SuperDict[distance]=[]
+        SuperDict[distance].append(value)
+    
+    for key, val in SuperDict.iteritems():
+        print key, val
+    
+    ArrayDict={}
+    StatsDict={}
+    x=np.zeros((10,1))
+    y1=np.zeros((10,1))
+    y2=np.zeros((10,1))
+    y3=np.zeros((10,1))
+    i=0
+    Srtd=sorted(SuperDict.iteritems(),key=operator.itemgetter(0))
+    for key, val in Srtd:
+        if i>9:
+            break
+        ArrayDict[key]=np.array(val)
+        StatsDict[key]=(np.mean(ArrayDict[key]),np.std(ArrayDict[key]))
+        x[i,0]=key
+        y1[i,0]=StatsDict[key][0]
+        y2[i,0]=StatsDict[key][0]+StatsDict[key][1]
+        y3[i,0]=StatsDict[key][0]-StatsDict[key][1]
+        i+=1
+
+    
+    pylab.plot(x, y1, '-k', label='mean')
+    pylab.plot(x, y2, '-r', label='mean+std')
+    pylab.plot(x, y3, '-b', label='mean-std')
+    pylab.legend(loc='upper right')
     pylab.show()
+
+#     array1=np.zeros((len(Silverality_List),1))
+#     array2=np.zeros((len(Silverality_List),1))
+#     
+#     for i in range(0, len(Silverality_List)):
+#         array1[i,0]=Silverality_List[i][0]
+#         array2[i,0]=Silverality_List[i][1]
+#     pylab.plot(array1, array2)
+#     pylab.show()
     # TODO: perform statistical analysis
 
 def Perform_Loading_Routines():
@@ -893,10 +932,12 @@ def Write_Connexity_Infos():
         counters[CCOmps[1][elt],0] += 1
     major_Index=np.argmax(counters)
     
+    ln=len(CCOmps[1])
     for i in range(0,len(CCOmps[1])):
+        print 'running,',i,ln
         if CCOmps[1][i]==major_Index:
             Node=DatabaseGraph.vertices.get(MatrixNumber2NodeID[i])
-            Node.custom=Node.custom+'Main_Connex'
+            Node.custom='Main_Connex'
             Node.save()
 
 def Erase_Additional_Infos():
@@ -908,39 +949,15 @@ def Erase_Additional_Infos():
         Node.save()
 
 
-
-# DONE: use sparse matrixes routines to calculate the number of connex elements in the graph
-#   Problem: there are 58 disconnected sets.
-#   Solution: retrieve the Node Ids of the main connex Set and write them into the neo4j graph, then retrieve only them
-
-# TODO: markup of the major connex graph within neo4j database
-
-# DONE: calculate the distance graph
-    # seems to work pretty well with Djikistra.
-    # Can we perform a retrieval of specific nodes within distance X of the main component? 
-
-# TODO: buid jump tables to compute the number of reactional transitions
-
-# TODO: implementation while using Ehit interactions only
-
-# > TODO: retrieve Pamela silver's degradation of the data with the time
-
-# TODO: pull in the annotations regarding the proteins aboundances
-
-# DONE: pull in the 300 essential targets from the EBI dude (John Overington)
-#     Results aren't so conclusive. It seems that the protein concentration defenitely plays some role in the determining if a protein is a 
-#     Target of an existing drug or not, butthe informativity seems not. Probably this is due to the fact that the targeted proteins are often 
-#     cellular receptors.
-
-# DONE: perform a localization factor pull-out for the Uniprots based on their proteins of attachement
-#        Waiting for the execution
+# TODO: reverse GO_Access: provided the Uniprots find the proteins carrying over the most information
 
 stats_over_random_info_circ_samples(True)
-
-check_Silverality(100,100)
-analyze_Silverality()
-
-Write_Connexity_Infos()
+# 
+# check_Silverality(100,100)
+# 
+# analyze_Silverality()
+# 
+# Write_Connexity_Infos()
 
 # getMatrix(DfactorDict, 100, False)
 
@@ -977,6 +994,9 @@ Write_Connexity_Infos()
 # Calibrate the values so that after ~ 3 transitions the correlation vanishes on average (Follow Pamela Silver Approach) => this is actually the cumulated perturbation of
 # two targets that shoudl vanish totally 
 
+# TODO: implementation while using Ehit interactions only
+
+
 # Shut down HiNT analysis => Slightly improves the result
 
 # Synchronious eigenvectors approach: protect agains entering into a forbidden list the target node
@@ -995,4 +1015,39 @@ Write_Connexity_Infos()
 
 # In order to be precise, we should not only take in account the power of bindinb between a molecule and protein and criticality of the protein, but also the abundance of the
 # protein in the reactome
+
 # => Done with the aboundance retrieval
+
+# DONE: use sparse matrixes routines to calculate the number of connex elements in the graph
+#   Problem: there are 58 disconnected sets.
+#   Solution: retrieve the Node Ids of the main connex Set and write them into the neo4j graph, then retrieve only them
+
+# DONE: markup of the major connex graph within neo4j database
+#    Waiting for the execution
+
+
+# DONE: calculate the distance graph
+    # seems to work pretty well with Djikistra.
+    # Can we perform a retrieval of specific nodes within distance X of the main component? 
+
+# DONE: buid jump tables to compute the number of reactional transitions
+#    Implemented by using djikstra algo from scipy.sparse.csgraph
+#
+
+# DONE: retrieve Pamela silver's degradation of the data with the time
+#    Waiting for the execution
+#    
+
+# DONE: pull in the annotations regarding the proteins aboundances
+#    
+#    
+
+# DONE: pull in the 300 essential targets from the EBI dude (John Overington)
+#     Results aren't so conclusive. It seems that the protein concentration defenitely plays some role in the determining if a protein is a 
+#     Target of an existing drug or not, butthe informativity seems not. Probably this is due to the fact that the targeted proteins are often 
+#     cellular receptors.
+
+# DONE: perform a localization factor pull-out for the Uniprots based on their proteins of attachement
+#        Waiting for the execution
+
+# DONE: broadcast to uniprots for the localization of the pointed proteins
