@@ -89,18 +89,18 @@ def get_Reaction_blocks(Connexity_Aware):
     count=0
     for ReactionType in ReactionsList:
         for Reaction in ReactionType.get_all():
-            Connex=True
-            if Connexity_Aware:
-                Connex=False
-                if 'Main_Connex' in Reaction.custom:
-                    Connex=True 
-            if Connex and Reaction!=None:
+            if Reaction!=None:
                 LocalList=[]
                 for edge_type in edge_type_filter1_1:
                     if Reaction.bothV(edge_type)!=None:
                         for elt in Reaction.bothV(edge_type):
+                            Connex=True
+                            if Connexity_Aware:
+                                Connex=False
+                                if  elt.custom!=None and "Main_Connex" in elt.custom:
+                                    Connex=True 
                             ID=str(elt).split('/')[-1][:-1]
-                            if ID not in IDFilter:
+                            if ID not in IDFilter and Connex:
                                 LocalList.append(ID)
                                 count+=1
                 if len(LocalList)>1:
@@ -204,7 +204,7 @@ def request_location(LocationBufferDict,location):
                 return str(elt.displayName)
 
 
-def getMatrix(decreaseFactorDict, numberEigvals, FastLoad, ConnexityAwareness=True):
+def getMatrix(decreaseFactorDict, numberEigvals, FastLoad, ConnexityAwareness):
     init=time()
     # Connect the groups of ingredients that share the same reactions1
     # Retrieve seeds for the matrix computation
@@ -847,12 +847,13 @@ def stats_over_random_info_circ_samples(UniProtAttachement=True):
     STDInfos=np.std(Stats_Mat,axis=1).reshape((Stats_Mat.shape[0],1))
     if UniProtAttachement:
         for UP_ID in Uniprots:
-            StdBuffer=float(STDInfos[NodeID2MatrixNumber[UP_ID]])**2
-            for Prot_ID in UPNode_IDs_2Proteins_IDs_List[UP_ID]:
-                MeanInfos[NodeID2MatrixNumber[UP_ID],0]+=MeanInfos[NodeID2MatrixNumber[Prot_ID],0]
-                StdBuffer+=float(STDInfos[NodeID2MatrixNumber[Prot_ID],0])**2
+            if len(UPNode_IDs_2Proteins_IDs_List[UP_ID])>1:
+                print UP_ID, 'problem!!!!'
+            else:
+                Prot_ID=UPNode_IDs_2Proteins_IDs_List[UP_ID][0]
+                MeanInfos[NodeID2MatrixNumber[UP_ID],0]=MeanInfos[NodeID2MatrixNumber[Prot_ID],0]
                 ID2Localization[UP_ID]=ID2Localization[Prot_ID]
-            STDInfos[NodeID2MatrixNumber[UP_ID],0]=sqrt(StdBuffer)
+                STDInfos[NodeID2MatrixNumber[UP_ID],0]=STDInfos[NodeID2MatrixNumber[Prot_ID],0]
     pessimist=MeanInfos-1.97*STDInfos
     optimist=MeanInfos+1.97*STDInfos
     aboundances=np.zeros((Stats_Mat.shape[0],1))
@@ -961,10 +962,11 @@ def Perform_Loading_Routines():
     @param param:   
     '''
     
-    getMatrix(DfactorDict, 100, False, False,)
-    compute_Uniprot_Attachments()
-    
+    getMatrix(DfactorDict, 10, False, False)
+    Erase_Additional_Infos()
     Write_Connexity_Infos()
+    getMatrix(DfactorDict, 1000, False, True)
+    compute_Uniprot_Attachments()
 
 def Perform_Testing_Routines():
     raise NotImplementedError
@@ -997,24 +999,31 @@ def Erase_Additional_Infos():
 
 
 # TODO: reverse GO_Access: provided the Uniprots find the proteins carrying over the most information
+# TODO: mount a PyMongo data store in order to be able to save and retrieve the programming objects easily
+#         How is it done: - picket to string
+#        Store an object in a collection defined by it's Id and computation number
+#        If requested, retrieve by ID or else
+#         Index on the GO ID and belonging UNIPROTs (If same set of uniprots, it is the same) => store as sets
+#         Pickles of sets with the same elements are always the same
 
-stats_over_random_info_circ_samples(True)
+
+# Perform_Loading_Routines()
+# 
+# stats_over_random_info_circ_samples(True)
 # 
 # check_Silverality(100,100)
 # 
 # analyze_Silverality()
 # 
-# Write_Connexity_Infos()
-
-# getMatrix(DfactorDict, 100, False)
-
-# compute_Uniprot_Attachments()
-
+# getMatrix(DfactorDict, 100, False, True)
+# 
 # Compute_circulation_intensity()
-
+# 
 # Compute_random_sample(100,3,1e-10, '3_')
-
+# 
 # stats_over_random_info_circ_samples(True)
+
+
 
 # this is going to last for a while. Now we need to get it split among several nodes
 

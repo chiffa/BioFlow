@@ -429,6 +429,9 @@ def get_Uniprot_Subset(List_of_GOs):
     raise NotImplementedError
     
     
+# TODO: add UniprotLists Accessed for different GOs
+    
+    
 # TODO: add the modules for matrix operations over the GO annotation
 # TODO: add the propagation of the informativity along different GO Terms
 # filtr=['biological_process']
