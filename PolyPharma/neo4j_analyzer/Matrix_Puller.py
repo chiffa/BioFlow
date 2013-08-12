@@ -27,10 +27,11 @@ from scikits.sparse.cholmod import cholesky
 from scipy.sparse import csc_matrix
 from scipy.sparse import diags
 from math import  sqrt
-from Utils.Prot_Aboundances import ID2Aboundances
+ID2Aboundances = {}
 from scipy.sparse.csgraph import connected_components
 from scipy.sparse.csgraph import shortest_path
 import pylab
+import math
 
 # Refers to the groups of links between the nodes that should be treated in the same manner 
 edge_type_filter0_1=["is_part_of_collection"]                   # Group relation group
@@ -49,7 +50,7 @@ DfactorDict={"Group":0.5,
              }
 
 # Coefficients values for the conductance_Matrix
-ConductanceDict={"Group":20,
+ConductanceDict={"Group":0.5,
              "Same":100,
              "Reaction":1,
              "Contact_interaction":1,
@@ -162,7 +163,7 @@ def compute_Uniprot_Attachments():
 
 def load_Uniprot_Attachments():
     Uniprot_Attach=pickle.load(file('UP_Attach.dump','r'))
-    return Uniprot_Attach    
+    return Uniprot_Attach
 
 def build_correspondances(IDSet,Rapid):
     NodeID2MatrixNumber={}
@@ -235,22 +236,22 @@ def getMatrix(decreaseFactorDict, numberEigvals, FastLoad, ConnexityAwareness):
         UP_Links, UPSet, c = get_expansion(SecSet,edge_type_filter0_2)
         print len(UP_Links), len(UPSet), c
         print time()-init, time()-t
-#         t=time()
-#         HiNT_Links, FullSet, c = get_expansion(UPSet,edge_type_filter1_3)
-#         print len(HiNT_Links), len(FullSet), c
-#         print time()-init, time()-t
-#         t=time()
-#         Super_Links, ExpSet, c = get_expansion(FullSet,edge_type_filter2)
-#         print len(Super_Links), len(ExpSet), c
-#         print time()-init, time()-t
+        t=time()
+        HiNT_Links, FullSet, c = get_expansion(UPSet,edge_type_filter1_3)
+        print len(HiNT_Links), len(FullSet), c
+        print time()-init, time()-t
+        t=time()
+        Super_Links, ExpSet, c = get_expansion(FullSet,edge_type_filter2)
+        print len(Super_Links), len(ExpSet), c
+        print time()-init, time()-t
         t=time()
         DF=file('dump5.dump','w')
-#         pickle.dump((ReactLinks, InitSet, GroupLinks, GroupSet, SecLinks, SecSet, UP_Links, UPSet, HiNT_Links, FullSet, Super_Links, ExpSet),DF)
-        pickle.dump((ReactLinks, InitSet,GroupLinks, GroupSet, SecLinks, SecSet, UP_Links, UPSet),DF)
+        pickle.dump((ReactLinks, InitSet, GroupLinks, GroupSet, SecLinks, SecSet, UP_Links, UPSet, HiNT_Links, FullSet, Super_Links, ExpSet),DF)
+#         pickle.dump((ReactLinks, InitSet,GroupLinks, GroupSet, SecLinks, SecSet, UP_Links, UPSet),DF)
     else:
         DF=file('dump5.dump','r')
-#         ReactLinks, InitSet, GroupLinks, GroupSet, SecLinks, SecSet, UP_Links, UPSet, HiNT_Links, FullSet, Super_Links,ExpSet=pickle.load(DF)
-        ReactLinks, InitSet, GroupLinks, GroupSet, SecLinks, SecSet, UP_Links, UPSet = pickle.load(DF)
+        ReactLinks, InitSet, GroupLinks, GroupSet, SecLinks, SecSet, UP_Links, UPSet, HiNT_Links, FullSet, Super_Links,ExpSet=pickle.load(DF)
+#         ReactLinks, InitSet, GroupLinks, GroupSet, SecLinks, SecSet, UP_Links, UPSet = pickle.load(DF)
     
     # Fill in the matrix with the values
     # Take an impact vector
@@ -288,7 +289,7 @@ def getMatrix(decreaseFactorDict, numberEigvals, FastLoad, ConnexityAwareness):
     print "building correspondances", time()-init,
     t=time()
     # In_Case of the full impact: replace UPSet by ExpSet
-    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = build_correspondances(UPSet,FastLoad)
+    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = build_correspondances(ExpSet,FastLoad)
     
     
     print "building the ValMatrix", time()-init, time()-t
@@ -299,7 +300,7 @@ def getMatrix(decreaseFactorDict, numberEigvals, FastLoad, ConnexityAwareness):
     # TODO: update all this element so that it incorporates the new linkage 
     
     # In_Case of the full impact: replace UPSet by ExpSet
-    loadLen=len(UPSet)
+    loadLen=len(ExpSet)
     ValueMatrix=lil_matrix((loadLen,loadLen))
     ConductanceMatrix=lil_matrix((loadLen,loadLen))
     for group in ReactLinks:
@@ -350,31 +351,31 @@ def getMatrix(decreaseFactorDict, numberEigvals, FastLoad, ConnexityAwareness):
             ConductanceMatrix[element[1],element[1]]=ConductanceMatrix[element[1],element[1]]+decreaseFactorDict["Same"]
             ConductanceMatrix[element[0],element[0]]=ConductanceMatrix[element[0],element[0]]+decreaseFactorDict["Same"]
             
-#     for key in HiNT_Links.keys():
-#         for val in HiNT_Links[key]:
-#             element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
-#             ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Contact_interaction"],1)
-#             ConductanceMatrix[element[0],element[1]]=ConductanceMatrix[element[0],element[1]]-decreaseFactorDict["Contact_interaction"]
-#             
-#             element=(NodeID2MatrixNumber[val],NodeID2MatrixNumber[key])
-#             ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Contact_interaction"],1)
-#             ConductanceMatrix[element[0],element[1]]=ConductanceMatrix[element[0],element[1]]-decreaseFactorDict["Contact_interaction"]
-#             
-#             ConductanceMatrix[element[1],element[1]]=ConductanceMatrix[element[1],element[1]]+decreaseFactorDict["Contact_interaction"]
-#             ConductanceMatrix[element[0],element[0]]=ConductanceMatrix[element[0],element[0]]+decreaseFactorDict["Contact_interaction"]
-#             
-#     for key in Super_Links.keys():
-#         for val in Super_Links[key]:
-#             element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
-#             ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["possibly_same"],1)
-#             ConductanceMatrix[element[0],element[1]]=ConductanceMatrix[element[0],element[1]]-decreaseFactorDict["possibly_same"]
-#             
-#             element=(NodeID2MatrixNumber[val],NodeID2MatrixNumber[key])
-#             ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["possibly_same"],1)
-#             ConductanceMatrix[element[0],element[1]]=ConductanceMatrix[element[0],element[1]]-decreaseFactorDict["possibly_same"]
-#             
-#             ConductanceMatrix[element[1],element[1]]=ConductanceMatrix[element[1],element[1]]+decreaseFactorDict["possibly_same"]
-#             ConductanceMatrix[element[0],element[0]]=ConductanceMatrix[element[0],element[0]]+decreaseFactorDict["possibly_same"]
+    for key in HiNT_Links.keys():
+        for val in HiNT_Links[key]:
+            element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
+            ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Contact_interaction"],1)
+            ConductanceMatrix[element[0],element[1]]=ConductanceMatrix[element[0],element[1]]-decreaseFactorDict["Contact_interaction"]
+             
+            element=(NodeID2MatrixNumber[val],NodeID2MatrixNumber[key])
+            ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Contact_interaction"],1)
+            ConductanceMatrix[element[0],element[1]]=ConductanceMatrix[element[0],element[1]]-decreaseFactorDict["Contact_interaction"]
+             
+            ConductanceMatrix[element[1],element[1]]=ConductanceMatrix[element[1],element[1]]+decreaseFactorDict["Contact_interaction"]
+            ConductanceMatrix[element[0],element[0]]=ConductanceMatrix[element[0],element[0]]+decreaseFactorDict["Contact_interaction"]
+             
+    for key in Super_Links.keys():
+        for val in Super_Links[key]:
+            element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
+            ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["possibly_same"],1)
+            ConductanceMatrix[element[0],element[1]]=ConductanceMatrix[element[0],element[1]]-decreaseFactorDict["possibly_same"]
+             
+            element=(NodeID2MatrixNumber[val],NodeID2MatrixNumber[key])
+            ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["possibly_same"],1)
+            ConductanceMatrix[element[0],element[1]]=ConductanceMatrix[element[0],element[1]]-decreaseFactorDict["possibly_same"]
+             
+            ConductanceMatrix[element[1],element[1]]=ConductanceMatrix[element[1],element[1]]+decreaseFactorDict["possibly_same"]
+            ConductanceMatrix[element[0],element[0]]=ConductanceMatrix[element[0],element[0]]+decreaseFactorDict["possibly_same"]
 
     print "entering eigenvect computation", time()-init, time()-t
     t=time()
@@ -634,7 +635,7 @@ def create_InfoDict(MatrixNumber2NodeID):
         new_dict[val]=0.0
     return new_dict
 
-def compute_sample_circulation_intensity(Sample, epsilon=1e-10, array_v=''):
+def compute_sample_circulation_intensity_minimal(Sample, epsilon=1e-10):
     '''
     performs the information circulation calculation in agreement with the publication by Misiuro et al, but with algorithm slightly modified for 
     more rapid computation of information circulation
@@ -669,7 +670,23 @@ def compute_sample_circulation_intensity(Sample, epsilon=1e-10, array_v=''):
             V=Solver(J)
             Current=get_Current_all(conductance_Matrix,V,J)
             InformativityArray+=Current
-            name='InfoArray_new'+str(array_v)+'.dump'
+    return InformativityArray
+
+def compute_sample_circulation_intensity(Sample, epsilon=1e-10, array_v=''):
+    '''
+    performs the information circulation calculation in agreement with the publication by Misiuro et al, but with algorithm slightly modified for 
+    more rapid computation of information circulation
+    
+    @param Sample: List of row/column numbers that are to be used in the computation (~170 for a computation converging in less then an hour)
+    @type: list of ints
+    
+    @param epsilon: corrective factor for the calculation of Cholesky matrix. defaults to 1e-10
+    @type epsilon: float
+    
+    '''
+    # NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))
+    InformativityArray=compute_sample_circulation_intensity_minimal(Sample, epsilon)
+    name='InfoArray_new'+str(array_v)+'.dump'
     pickle.dump(InformativityArray,file(name,'w'))
     return InformativityArray
 
@@ -698,9 +715,50 @@ def Compute_random_sample(sample_size, iterations, epsilon=1e-10, name_version='
         random.shuffle(re_UP)
         re_UP=re_UP[:sample_size]
         compute_sample_circulation_intensity(re_UP,epsilon,name_version+str(i))
-    
-    
-def Analyze_relations(Current, number,MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization,AdditionalInfos=''):
+
+def Compute_truly_random_sample(rounds,iterations,epsilon,name_version=''):
+    conductance_Matrix=pickle.load(file('pickleDump4.dump','r'))
+    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))
+    Solver=cholesky(csc_matrix(conductance_Matrix),epsilon)
+    re_UP=[]
+    for SP in Uniprots:
+        re_UP.append(NodeID2MatrixNumber[SP])
+    init=time()
+    for i in range(0,iterations):
+        InformativityArray=np.zeros((conductance_Matrix.shape[0],1))
+        print 'iteration', i, time()-init
+        init=time()
+        List_of_pairs=[]
+        for j in range(0,rounds):
+            Lst=copy.copy(re_UP)
+            random.shuffle(Lst)
+            while len(Lst)>2:
+                elt1=Lst.pop()
+                elt2=Lst.pop()
+                List_of_pairs.append((elt1,elt2))
+        j=0
+        init2=time()
+        for pair in List_of_pairs:
+            j+=1
+            if j%100==99:
+                print '*', time()-init2,
+                init2=time()
+            J=np.zeros((conductance_Matrix.shape[0],1))
+            J[pair[0],0]=1.0
+            J[pair[1],0]=-1.0
+            V=Solver(J)
+            Current=get_Current_all(conductance_Matrix,V,J)
+            InformativityArray+=Current
+        CorrInf=np.zeros((conductance_Matrix.shape[0],1))
+        CorrInf[:]=rounds
+        InformativityArray=InformativityArray-CorrInf
+        name='InfoArray_new'+str(name_version)+str(i)+'.dump'
+        Fle=file(name,'w')
+        pickle.dump(InformativityArray,Fle)
+        Fle.close()
+        
+
+def Analyze_relations(Current, number,MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization,AdditionalInfos=None):
     '''
     Just a way to print out the nodes making pass the most of the current
     
@@ -713,9 +771,9 @@ def Analyze_relations(Current, number,MatrixNumber2NodeID, ID2displayName, ID2Ty
     '''
     writer=file('Current_Analysis.csv','w')
     infos=np.absolute(Current)
-    initLine='ID'+'\t'+'Mean Informativity'+'\t'+'Type'+'\t'+'Standard deviation'+'\t'+'Pessimistic Info estimation'+'\t'+'optimistic Info estimation'+'\t'+'Protein Aboundace'+'\t'+'Essential for Overington'+'\t'+'displayName'+'\t'+'localization'+'\n'
+    initLine='ID'+'\t'+'Mean Informativity'+'\t'+'Type'+'\t'+'Standard deviation'+'\t'+'Pessimistic Info estimation'+'\t'+'optimistic Info estimation'+'\t'+'Protein Aboundace'+'\t'+'Essential for Overington'+'\t'+'GO Name'+'\t'+'GO ID'+'\t'+'Score'+'\t'+'displayName'+'\t'+'localization'+'\n'
     writer.write(initLine)
-    if AdditionalInfos=='':
+    if AdditionalInfos==None:
         for i in range(0,min(number,len(infos))):
             locmax=np.argmax(infos)
             Buffer=''
@@ -736,8 +794,11 @@ def Analyze_relations(Current, number,MatrixNumber2NodeID, ID2displayName, ID2Ty
             Buffer+=str(ID2Type[MatrixNumber2NodeID[locmax]])+'\t'
 #             print ID2Type[MatrixNumber2NodeID[locmax]], '\t',
             for elt in AdditionalInfos[locmax,:].tolist():
-                Buffer+=str(elt)+'\t'
-#                 print elt, '\t',
+                if str(elt)!=str(0.0):
+                    Buffer+=str(elt)+'\t'
+    #                 print elt, '\t',
+                else:
+                    Buffer+='\t'
             Buffer+=str(ID2displayName[MatrixNumber2NodeID[locmax]])
             if MatrixNumber2NodeID[locmax] in ID2Localization.keys():
                 Buffer+='\t'+str(ID2Localization[MatrixNumber2NodeID[locmax]])
@@ -773,47 +834,6 @@ def Info_circulation_for_Single_Node(conductance_Matrix,source_MatrixID,sinks_Ma
         Cummulative_Informativity+=current
     return Cummulative_Informativity
 
-def get_Current_SingleNode(Matrix_NodeID,Conductance_Matrix,Voltages):
-    '''
-    Recovers the current within one single node
-    
-    @param Matrix_NodeID: number of the row/line of the source node within the conductance matrix corresponding to the source
-    @type Matrix_NodeID: int
-    
-    @param Conductance_Matrix: Conductance matrix
-    @type Conducntace_Matrix: scipy.sparse lil_matrix
-    
-    @param Voltages: Informativity gradient in each node obtained by the solution of the matrix equation ConductanceMatrix*Voltage = J
-    @type Voltages: numpy array
-
-    '''
-    submatrix=Conductance_Matrix[:,Matrix_NodeID].todense()
-    submatrix[Matrix_NodeID,0]=0.0
-    basevoltage=np.ones(submatrix.shape)
-    basevoltage=Voltages[Matrix_NodeID,0]*basevoltage
-    Current=float(np.sum(np.absolute(np.multiply(basevoltage,submatrix)-np.multiply(Voltages,submatrix)))/2.0)
-    return Current
-
-def get_Current_NodeSet(NodeSet,Conductance_Matrix,Voltages):
-    '''
-    Recovers the current within a set of Nodes
-    
-    @param NodeSet: number of the row/line of the source node within the conductance matrix corresponding to the source
-    @type NodeSet: list of ints
-    
-    @param Conductance_Matrix: Conductance matrix
-    @type Conducntace_Matrix: scipy.sparse lil_matrix
-    
-    @param Voltages: Informativity gradient in each node obtained by the solution of the matrix equation ConductanceMatrix*Voltage = J
-    @type Voltages: numpy array
-
-    '''    
-    
-    Dico={}
-    for elt in NodeSet:
-        Dico[elt]=get_Current_SingleNode(elt,Conductance_Matrix,Voltages)
-    return Dico
-
 def get_Current_all(Conductance_Matrix, Voltages, J):
     '''
     Recovers the current for all the nodes
@@ -832,6 +852,7 @@ def get_Current_all(Conductance_Matrix, Voltages, J):
 
     
 def stats_over_random_info_circ_samples(UniProtAttachement=True):
+    from Utils.Prot_Aboundances import ID2Aboundances
     UPNode_IDs_2Proteins_IDs_List=load_Uniprot_Attachments()
     NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))
     DicList=[]
@@ -845,15 +866,25 @@ def stats_over_random_info_circ_samples(UniProtAttachement=True):
     Stats_Mat=np.concatenate(tuple(DicList),axis=1)
     MeanInfos=np.mean(Stats_Mat,axis=1).reshape((Stats_Mat.shape[0],1))
     STDInfos=np.std(Stats_Mat,axis=1).reshape((Stats_Mat.shape[0],1))
+    # Check if STD>MEANInfos
+    for LineID in range(0,Stats_Mat.shape[0]):
+        if MeanInfos[LineID,0] < STDInfos[LineID,0]:
+            print LineID, MatrixNumber2NodeID[LineID],'|',MeanInfos[LineID,0], STDInfos[LineID,0]
+            print Stats_Mat[LineID,:]
+            print '<==============================>'
     if UniProtAttachement:
-        for UP_ID in Uniprots:
+        # @attention: this is a temporary patch. 
+        # TODO: A full implementation would require several iterations of eHiT propagation and then 
+        # several more iterations of Reactome.org propagation.
+        for UP_ID in UPNode_IDs_2Proteins_IDs_List.keys():
             if len(UPNode_IDs_2Proteins_IDs_List[UP_ID])>1:
                 print UP_ID, 'problem!!!!'
             else:
                 Prot_ID=UPNode_IDs_2Proteins_IDs_List[UP_ID][0]
-                MeanInfos[NodeID2MatrixNumber[UP_ID],0]=MeanInfos[NodeID2MatrixNumber[Prot_ID],0]
-                ID2Localization[UP_ID]=ID2Localization[Prot_ID]
-                STDInfos[NodeID2MatrixNumber[UP_ID],0]=STDInfos[NodeID2MatrixNumber[Prot_ID],0]
+                if Prot_ID in NodeID2MatrixNumber.keys():
+                    MeanInfos[NodeID2MatrixNumber[UP_ID],0]+=MeanInfos[NodeID2MatrixNumber[Prot_ID],0]
+                    ID2Localization[UP_ID]=ID2Localization[Prot_ID]
+                    STDInfos[NodeID2MatrixNumber[UP_ID],0]=math.sqrt(STDInfos[NodeID2MatrixNumber[UP_ID],0]**2+STDInfos[NodeID2MatrixNumber[Prot_ID],0]**2)
     pessimist=MeanInfos-1.97*STDInfos
     optimist=MeanInfos+1.97*STDInfos
     aboundances=np.zeros((Stats_Mat.shape[0],1))
@@ -866,13 +897,15 @@ def stats_over_random_info_circ_samples(UniProtAttachement=True):
     Overingtonicitiy=np.zeros((Stats_Mat.shape[0],1))
     Overington_IDList=pickle.load(file('IDList.dump','r'))
     errcount2=0
+    finmatrix=pickle.load(file('finmatrix.dump','r'))
     for ID in Overington_IDList:
         if ID in NodeID2MatrixNumber.keys():
             Overingtonicitiy[NodeID2MatrixNumber[ID],0]=1.0
         else:
             errcount2+=1
     print 'errcount from stats', errcount1, errcount2
-    Additional=np.concatenate((STDInfos,pessimist,optimist,aboundances,Overingtonicitiy),axis=1)
+    print STDInfos.shape, pessimist.shape, optimist.shape, aboundances.shape, Overingtonicitiy.shape, finmatrix.shape
+    Additional=np.concatenate((STDInfos,pessimist,optimist,aboundances,Overingtonicitiy,finmatrix),axis=1)
     Analyze_relations(MeanInfos, 50000, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Additional)
 
 def check_Silverality(sample_size,iterations):
@@ -962,10 +995,10 @@ def Perform_Loading_Routines():
     @param param:   
     '''
     
-    getMatrix(DfactorDict, 10, False, False)
+    getMatrix(DfactorDict, 1, False, False)
     Erase_Additional_Infos()
     Write_Connexity_Infos()
-    getMatrix(DfactorDict, 1000, False, True)
+    getMatrix(DfactorDict, 100, False, True)
     compute_Uniprot_Attachments()
 
 def Perform_Testing_Routines():
@@ -997,50 +1030,91 @@ def Erase_Additional_Infos():
         Node.custom=''
         Node.save()
 
+def Compute_and_Store_circulation(handle, List_of_UPs, mongo_db_collection):
+    print 'entering computation for: ', handle, 'with', len(List_of_UPs), 'UPs'
+    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))
+    re_UP_List=[]
+    for elt in List_of_UPs:
+        if elt in NodeID2MatrixNumber.keys():
+            re_UP_List.append(NodeID2MatrixNumber[elt])
+    Informativity_Array=compute_sample_circulation_intensity_minimal(re_UP_List)
+    UPs_Set=pickle.dumps(set(List_of_UPs))
+    post={'GO_ID':handle,'UP_Set':UPs_Set,'Info_Array':pickle.dumps(Informativity_Array)}
+    mongo_db_collection.insert(post)
+    return Informativity_Array
 
-# TODO: reverse GO_Access: provided the Uniprots find the proteins carrying over the most information
-# TODO: mount a PyMongo data store in order to be able to save and retrieve the programming objects easily
+def Compute_ponderated_info_circulation(UPs_2Binding_Affs):
+    raise NotImplementedError
+
+# TODO: compute the whole ensemble of the nodes perturbed by the protein
+        # segment them with the voltage-based interaction
+        # retrieve segments
+        # for each segment compute the most critical protein (hidden variable)
+        # compute the annotation ponderated by hte importance for all of the proteins significantly affectd by the conductance calculation 
+        # (don't forget to divide by n each node), where n is the 
+        # compare the significance of the protein affected to the information circulation in the whole interactome
+
+
+
+
+# TODO: compute the ponderated Information circulation: use protein aboundances. The other one is assumed to be inhibition power biasis
+        # then extract summary GO terms based on the Uniprot affection data
+
+# TODO: along with Overingtonicity integrate the list of essential genes in human diseases from the PLoS 2011 publication
+
+# DONE: reverse GO_Access: provided the Uniprots find the proteins carrying over the most information
+# DONE: mount a PyMongo data store in order to be able to save and retrieve the programming objects easily
 #         How is it done: - picket to string
 #        Store an object in a collection defined by it's Id and computation number
 #        If requested, retrieve by ID or else
 #         Index on the GO ID and belonging UNIPROTs (If same set of uniprots, it is the same) => store as sets
 #         Pickles of sets with the same elements are always the same
 
+# Importance of complementation of the information with the Reactome.org data with the EHiT data: otherwise the information circulation completely sucks
+# Reactome.org: the interactions due to kinases aren't explicitly shown. Instead a broadcasting through the secondary features that perform the modification
+# Is needed. Which is completely stupid, because it doesn't show the specific action on the proteins due to the conformation modification. Thus Reactome.org
+# is more of a ressource for human experts then for truly machine-learning tasks.
+
+# TODO:
+# Compute the voltages during the computation to determine what would be the current between two nodes at a given current. 
+# Compute the currents at a given voltage for each GO term pair.
+# Create GO_Term - specific proximity matrix, and store it with the others for the later clustering
+
+# TODO: compute the purities of main action: 3 most important contibutions to GO terms, then pull them into a correct position and comprare
+# - Importance
+# - purity
+# - possible clustering => use the BEA algo from the Part 1 of the internship
 
 # Perform_Loading_Routines()
 # 
-# stats_over_random_info_circ_samples(True)
+stats_over_random_info_circ_samples(True)
 # 
 # check_Silverality(100,100)
 # 
 # analyze_Silverality()
-# 
-# getMatrix(DfactorDict, 100, False, True)
-# 
-# Compute_circulation_intensity()
-# 
-# Compute_random_sample(100,3,1e-10, '3_')
+# Compute_truly_random_sample(2,3,1e-10, '1_')
 # 
 # stats_over_random_info_circ_samples(True)
-
-
-
+# 
 # this is going to last for a while. Now we need to get it split among several nodes
-
-# Compute_circulation_intensity()
-#  
+'''
+<================================================>
+'''
 # checkMatrix()
 # 
 # get_eigenvect_Stats()
-
+# 
 # processEigenVectors()
-
+# 
 # mass_Calibrate(6,10,True)
 #  
 # treat_Calibration()
-
+# 
 # columnSort()
 
+
+# DONE: remake the sampling so it is efficiently 170**2/2 one to one randomly chosen pairs that are calculated, and not the whole 170 ensemble, so that the 
+# Informativities actually follow a gaussian distribution
 
 
 # TODO: There might be an error in the module responsible for linkage between the uniprots and the accession numbers: for instance the 20253 has an annotation with an Acnum, but
