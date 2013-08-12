@@ -31,7 +31,7 @@ def import_RelMatrix():
     pickleDump3.close()
     return ValueMatrix
 
-def import_UniprotDict():
+def compute_UniprotDict():
     pickleDump2=file('pickleDump2.dump','r')
     NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots=pickle.load(pickleDump2)
     pickleDump2.close()
@@ -41,6 +41,12 @@ def import_UniprotDict():
         altID=node.ID
         UniprotDict[altID]=(elt,ID2displayName[elt])
         UniprotDict[elt]=altID
+    Fle=file('Uniprot_Dict.dump','w')
+    pickle.dump(UniprotDict,Fle)
+    return UniprotDict
+
+def import_UniprotDict():
+    UniprotDict=pickle.load(file('Uniprot_Dict.dump','r'))
     return UniprotDict
 
 def get_GO_access(Filtr):
@@ -91,6 +97,8 @@ def get_GO_structure(Filtr,seedSet):
     VisitedSet=set()
     seedList=list(seedSet)
     GO_Names={}
+    GO_IDs={}
+    rev_GO_IDs={}
     while seedList!=[]:
         ID=seedList.pop()
         VisitedSet.add(ID)
@@ -98,6 +106,8 @@ def get_GO_structure(Filtr,seedSet):
         LocRegList=[]
         GONode=DatabaseGraph.GOTerm.get(ID)
         GO_Names[ID]=str(GONode.displayName)
+        GO_IDs[ID]=str(GONode.ID)
+        rev_GO_IDs[str(GONode.ID)]=ID
         for Typ in GOUpTypes:
             generator=GONode.outV(Typ)
             if generator!=None:
@@ -123,6 +133,10 @@ def get_GO_structure(Filtr,seedSet):
     pickle.dump(GeneralDict,Fle)
     Fle2=file('GO_names.dump','w')
     pickle.dump(GO_Names,Fle2)
+    Fle3=file('GO_IDs.dump','w')
+    pickle.dump(GO_IDs,Fle3)
+    Fle4=file('rev_GO_IDs.dump','w')
+    pickle.dump(rev_GO_IDs,Fle4)
     return GeneralDict
 
 def get_GO_Informativities():
@@ -136,6 +150,7 @@ def get_GO_Informativities():
     i=0
     l=len(GO_access)
     accelerationDict={}
+    Reverse_Dict={}
     for key in GO_access.keys():
         i+=1
         print 'entering',float(i)/float(l),time()-init
@@ -151,12 +166,16 @@ def get_GO_Informativities():
         visited=list(set(visited))
         for elt in visited:
             if elt not in TimesReached.keys():
+                Reverse_Dict[elt]=[]
                 TimesReached[elt]=0
+            Reverse_Dict[elt].append(key)
             TimesReached[elt]+=1
     Fle=file('GO_Informativities.dump','w')
     pickle.dump(TimesReached,Fle)
     Fle2=file('accDict.dump','w')
     pickle.dump(accelerationDict,Fle2)
+    Fle3=file('Reverse_dict.dump','w')
+    pickle.dump(Reverse_Dict,Fle3)
 
 def analyze_GO_Informativities():
     GO_Infos = pickle.load(file('GO_Informativities.dump','r'))
@@ -262,7 +281,7 @@ def get_GO_Term_occurences(Importance_Dict,flat):
     GO_access=pickle.load(file('GO.dump','r'))[0]
     GO_structure=pickle.load(file('GO_structure.dump','r'))
     GO_Infos = pickle.load(file('GO_Informativities.dump','r'))
-    accelerationDict={}
+    accelerationDict=load_accDict()
     Associated_GOs={}
     ReverseDict={}
     UP_Dict=import_UniprotDict()
@@ -300,32 +319,48 @@ def get_GO_Term_occurences(Importance_Dict,flat):
             rat=float(val)/exp
             Definitive[key]=rat
             Definitive_full[key]=(rat, val, exp, NamesDict[key], ReverseDict[key])
-            #TODO: Confidence estimation?
+            # DONE: Confidence estimation?
     srtd=sorted(Definitive.iteritems(), key=operator.itemgetter(1),reverse=True)
     pdf, log_pdf=get_Tirage_stats()
     pdf2, log_pdf2=get_Dictionnary_Stats(Definitive)
+    Fle=file('GO_Terms_Aboundance_estimation.csv','w')
     print  'occurence to expected occurence ratio', '\t', 'occurences','\t', 'expected occurences','\t|\t',
+    Fle.write('occurence to expected occurence ratio \t occurences \t expected occurences \t ')
     print  'kernel PDF in sample','\t', 'log-kernel PDF in sample','\t|\t',
+    Fle.write('kernel PDF in sample \t log-kernel PDF in sample \t')
     print  'kernel PDF in random sets','\t', 'log-kernel PDF in random sets','\t|\t',
+    Fle.write('kernel PDF in random sets \t log-kernel PDF in random sets \t ')
     print  'sample PDF/random set PDF', '\t', 'sample log-PDF/random set log-PDF',
+    Fle.write('sample PDF/random set PDF \t sample log-PDF/random set log-PDF ')
     print  '\t|\t', 'GO Term', '\t', 'List of Targets'
+    Fle.write('\t GO Term \t List of Targets \n')
     for key, val in srtd:
         p1=float(pdf2(Definitive_full[key][0]))*100
         p2=float(log_pdf2(math.log(Definitive_full[key][0],10))*100)
         p3=float(pdf(Definitive_full[key][0]))*100
         p4=float(log_pdf(math.log(Definitive_full[key][0],10))*100)
-        print  "{0:.2f}".format(Definitive_full[key][0]*100)+'%','\t', Definitive_full[key][1],'\t', "{0:.2f}".format(Definitive_full[key][2]),'\t|\t',
+        print  key, '\t', "{0:.2f}".format(Definitive_full[key][0]*100)+'%','\t', Definitive_full[key][1],'\t', "{0:.2f}".format(Definitive_full[key][2]),'\t|\t',
+        Sstring="{0:.4f}".format(Definitive_full[key][0])+'\t'+str(Definitive_full[key][1])+'\t'+"{0:.2f}".format(Definitive_full[key][2])+'\t'
         print  "{0:.2f}".format(p1),'%\t', "{0:.2f}".format(p2),'%\t|\t',
+        Sstring=Sstring+"{0:.4f}".format(p1/100.0)+'\t'+"{0:.4f}".format(p2/100.0)+'\t'
         print  "{0:.2f}".format(p3),'%\t', "{0:.2f}".format(p4),'%\t|\t',
+        Sstring=Sstring+"{0:.4f}".format(p3/100.0)+'\t'+"{0:.4f}".format(p4/100.0)+'\t'
         print  "{0:.2f}".format(specialRatio(p1,p3)), '%\t', "{0:.2f}".format(specialRatio(p2,p4)),
+        Sstring=Sstring+"{0:.4f}".format(specialRatio(p1,p3)/100.0)+'\t'+"{0:.4f}".format(specialRatio(p2,p4)/100.0)
         print  '%\t|\t', Definitive_full[key][3], '\t', Definitive_full[key][4]
+        Sstring=Sstring+'\t'+str(Definitive_full[key][3])+'\t'+str(Definitive_full[key][4])+'\n'
+        Fle.write(Sstring)
+    Fle.close()
     return Associated_GOs, Definitive, Definitive_full
         
 
 def align_names2SP():
     from Utils.UNIPROT_Parser import names_Dict
-    from configs import Targets_dict2, Targets_File2
-    Fle=file(Targets_File2,'r')
+    # If overington, switch comments on the two next lines
+    # from configs import Targets_dict2 as Targets_dict
+    # from congigs import Targets_File2 as Targets_File
+    from configs import Targets_dict, Targets_File
+    Fle=file(Targets_File,'r')
     FileDict={}
     i=0
     print len(names_Dict)
@@ -336,18 +371,33 @@ def align_names2SP():
             break
         if i>3:
             words=line.strip('\n').split('\t')
-            FileDict[words[0]]=(1,1,1)
-            # FileDict[words[0]]=(float(words[1]),float(words[2].strip()),float(words[3].strip()))
+            # FileDict[words[0]]=(1,1,1)
+            FileDict[words[0]]=(float(words[1]),float(words[2].strip()),float(words[3].strip()))
     print len(FileDict)
     Name2SP={}
     for elt in FileDict.keys():
-        tp=Targets_dict2[elt]
+        tp=Targets_dict[elt]
         if type(tp)==list:
             Name2SP[elt]=tp
         else:
             if len(tp)>1:
                 Name2SP[elt]=[names_Dict[tp]]
-    return Name2SP
+    # Comment Out if used with Overinton's data
+    Uniprot_Dict=import_UniprotDict()
+    i=0
+    j=0
+    final_Dict={}
+    for key, vallist in Name2SP.iteritems():
+        for val in vallist:
+            i+=1
+            if val in Uniprot_Dict.keys():
+                j+=1
+                final_Dict[val]=FileDict[key]
+    secDict={}
+    for key, val in final_Dict.iteritems():
+        secDict[key]=-val[2]
+    return final_Dict, secDict
+#     return Name2SP
 
 def TouchedIDs():
     Names2SP=align_names2SP()
@@ -425,25 +475,230 @@ def get_Dictionnary_Stats(Dictionary):
     log_pdf=gaussian_kde(np.asarray(LogValList))
     return pdf, log_pdf
 
-def get_Uniprot_Subset(List_of_GOs):
-    raise NotImplementedError
+def rebuild():
+    filtr=['biological_process']
+    RelDict, SeedSet=get_GO_access(filtr)
+    get_GO_structure(filtr,SeedSet)
+    get_GO_Informativities()
+    compute_UniprotDict()
+
+def get_Reference_Flow(GO_Node_ID,GO_ID,py_mongo_collection, GOs2UP_Node_IDs):
+    if py_mongo_collection.find({'GO_ID': GO_ID}).count()>0:
+        for pointer in py_mongo_collection.find({'GO_ID': GO_ID}):
+            Ref_Flow=pickle.loads(pointer['Info_Array'])
+            return Ref_Flow
+    UPs=GOs2UP_Node_IDs[GO_Node_ID]
+    serUPs=pickle.dumps(set(UPs))
+    if py_mongo_collection.find({'UP_Set':serUPs}).count()>0:
+        for pointer in  py_mongo_collection.find({'UP_Set':serUPs}):
+            Ref_Flow=pickle.loads(pointer['Info_Array'])
+            post={'GO_ID':GO_ID,'UP_Set':serUPs,'Info_Array':pickle.dumps(Ref_Flow)}
+            py_mongo_collection.insert(post)
+            return Ref_Flow
+    from Matrix_Puller import Compute_and_Store_circulation
+    Ref_Flow=Compute_and_Store_circulation(GO_ID,UPs,py_mongo_collection)
+    return Ref_Flow
+
+def get_Local_Flow(UP_List,py_mongo_collection):
+    serUPs=pickle.dumps(set(UP_List))
+    if py_mongo_collection.find({'UP_Set':serUPs}).count()>0:
+        for pointer in  py_mongo_collection.find({'UP_Set':serUPs}):
+            local_Flow=pickle.loads(pointer['Info_Array'])
+            return local_Flow
+    from Matrix_Puller import Compute_and_Store_circulation
+    local_Flow=Compute_and_Store_circulation('',UP_List,py_mongo_collection)
+    return local_Flow
+
+def compare_Local_Info_to_Ref(Go,UP_List):
+    '''
+    GO is the Node # of the associated GO term
     
+    UP_List is a list of Swissprot_IDs reached by a GO term in a particular configuration
+    '''
+    from configs import ref_coll
+    from configs import data_coll
+    Go2Node_IDs=pickle.load(file('GO_IDs.dump','r'))
+    GOs2UP_Node_IDs=pickle.load(file('Reverse_dict.dump','r'))
+    SP_ID2Node_ID=import_UniprotDict()
+    re_UP_List=[]
+    for elt in UP_List:
+        re_UP_List.append(SP_ID2Node_ID[elt])
+    refFlow=get_Reference_Flow(Go, Go2Node_IDs[Go], ref_coll, GOs2UP_Node_IDs)
+    locFlow=get_Local_Flow(re_UP_List,data_coll)
+    print refFlow
+    print locFlow
+
+def Compute_GO_sp_InfoCirc(Under_N,Over_N):
+    GO_UnderN=[]
+    GOs2UP_Node_IDs=pickle.load(file('Reverse_dict.dump','r'))
+    Go2Node_IDs=pickle.load(file('GO_IDs.dump','r'))
+    for GO, val in GOs2UP_Node_IDs.iteritems():
+        if len(val)<Under_N and len(val)>Over_N:
+            GO_UnderN.append(GO)
+    from configs import ref_coll
+    i=0
+    l=len(GO_UnderN)
+    for GO in GO_UnderN:
+        i+=1
+        print 'processing :', i, 'out of', l 
+        get_Reference_Flow(GO, Go2Node_IDs[GO], ref_coll, GOs2UP_Node_IDs)
+
+def broadcaset_Uniports(Uniprots,UPNode_IDs_2Proteins_IDs_List,NodeID2MatrixNumber,MeanInfos):
+    for UP_ID in UPNode_IDs_2Proteins_IDs_List.keys():
+        # @attention: patch over here too.
+        # TODO: correct the matrix retrieval implementation
+        if len(UPNode_IDs_2Proteins_IDs_List[UP_ID])>1:
+            print UP_ID, 'problem!!!!'
+        else:
+            Prot_ID=UPNode_IDs_2Proteins_IDs_List[UP_ID][0]
+            if Prot_ID in NodeID2MatrixNumber.keys(): 
+                MeanInfos[NodeID2MatrixNumber[UP_ID],0]=MeanInfos[NodeID2MatrixNumber[Prot_ID],0]
+    return MeanInfos
+
+def get_Max_Informativities(FilteringAbsolute, FilteringFraction):
+    '''
+    For each term, computes the set of GO Terms for which a Uniprot term have a maximal informativity
+    '''
+    from configs import ref_coll
+    from Matrix_Puller import load_Uniprot_Attachments
+    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))
+    UPNode_IDs_2Proteins_IDs_List=load_Uniprot_Attachments()
+    print len(NodeID2MatrixNumber.keys()) 
+    # Broadcast the uniprot attachments:
+    GO2Column={}
+    Column2GO={}
+    Lst=[]
+    Lst2=[]
+    GO2TotalFlow={}
+    i=0
+    for InfArrayDict in ref_coll.find():
+        print 'trating:', InfArrayDict['GO_ID'], i
+        TrueArray = broadcaset_Uniports(Uniprots,UPNode_IDs_2Proteins_IDs_List,NodeID2MatrixNumber,pickle.loads(InfArrayDict['Info_Array']))
+        TrueSet = (InfArrayDict['GO_ID'],pickle.loads(InfArrayDict['UP_Set']),TrueArray)
+        GO2Column[TrueSet[0]] = i
+        Column2GO[i] = TrueSet[0]
+        GO2TotalFlow[TrueSet[0]] = len(TrueSet[1])
+        Lst.append(TrueSet[2]/len(TrueSet[1]))
+        Lst2.append(TrueSet[2]/float(len(TrueSet[1])**2/2.0))
+        i+=1
+    # Use term informativity to compute the basis of flow
+    Mat1=np.concatenate(tuple(Lst),axis=1)
+    Mat2=np.concatenate(tuple(Lst2),axis=1)
+    print Mat1.shape
+    print Mat2.shape
+    # For each Uniprot, get the highest absolute Flow
+    # and highest percentage flow
+    HighestAbsolute_Dict={}
+    HighestRelative_Dict={}
     
-# TODO: add UniprotLists Accessed for different GOs
+    for UP_ID in Uniprots:
+        row_Num=NodeID2MatrixNumber[UP_ID]
+        besthit1=np.argmax(Mat1[row_Num,:])
+        besthit1_val=Mat1[row_Num,besthit1]
+        besthit2=np.argmax(Mat2[row_Num,:])
+        besthit2_val=Mat2[row_Num,besthit2]
+
+        if besthit1_val>FilteringAbsolute:
+            HighestAbsolute_Dict[UP_ID]=(Column2GO[besthit2],besthit1_val)
+        if besthit2_val>FilteringFraction:
+            HighestRelative_Dict[UP_ID]=(Column2GO[besthit1],besthit2_val)
     
+    print len(Uniprots), len(HighestAbsolute_Dict.keys()), len(HighestRelative_Dict.keys())
     
-# TODO: add the modules for matrix operations over the GO annotation
-# TODO: add the propagation of the informativity along different GO Terms
-# filtr=['biological_process']
-# RelDict, SeedSet=get_GO_access(filtr)
-# print 1, time()-init
-# get_GO_structure(filtr,SeedSet)
-# print 2, time()-init
-# get_GO_Informativities()
-# align_names2SP()
-# FD,SD=align_names2SP()
-# get_GO_Term_occurences(SD,True)
+    NamesDict=pickle.load(file('GO_names.dump','r'))
+    Rev_GO_IDs=pickle.load(file('rev_GO_IDs.dump','r'))
+    
+    for key,val in HighestRelative_Dict.iteritems():
+        print ID2displayName[key],'\t', val[0],'\t', NamesDict[Rev_GO_IDs[val[0]]],'\t', val[1]
+    
+    print '\n\n\n<===========================================================>\n\n\n'
+    
+    for key,val in HighestAbsolute_Dict.iteritems():
+        print ID2displayName[key],'\t', val[0],'\t', NamesDict[Rev_GO_IDs[val[0]]],'\t', val[1]
+    
+    # Reincode as arrays
+    
+    Max_GOs = np.chararray((len(MatrixNumber2NodeID.keys()),1),itemsize=200)
+    Max_GOs[:]=''
+    Max_GO_Names = np.zeros((len(MatrixNumber2NodeID.keys()),1))
+    Max_GO_val = np.zeros((len(MatrixNumber2NodeID.keys()),1))
+    
+    for key,val in HighestRelative_Dict.iteritems():
+        index=NodeID2MatrixNumber[key]
+        Max_GOs[index,0]=str(NamesDict[Rev_GO_IDs[val[0]]])
+        Max_GO_Names[index,0]=val[0]
+        Max_GO_val[index,0]=val[1]
+    
+    for key,val in HighestAbsolute_Dict.iteritems():
+        index=NodeID2MatrixNumber[key]
+        Max_GOs[index,0]=str(NamesDict[Rev_GO_IDs[val[0]]])+' *'
+        Max_GO_Names[index,0]=val[0]
+        Max_GO_val[index,0]=val[1]/float(GO2TotalFlow[val[0]])*2.0
+    
+    finmatrix=np.concatenate((Max_GOs,Max_GO_Names,Max_GO_val),axis=1)
+    Fle=file('finmatrix.dump','w')
+    pickle.dump(finmatrix,Fle)
+    return HighestAbsolute_Dict, HighestRelative_Dict, finmatrix
+        
+                
+        
+    
+# rebuild()
 # Tirage(48,True,100)
+# FD,SD = align_names2SP()
+# get_GO_Term_occurences(SD,True)
 # get_Tirage_stats()
 # TouchedIDs()
-# => Only about 100 uniprots out of 4000 do not point towards the 
+# Compute_GO_sp_InfoCirc(10,3)
+# get_Max_Informativities(1.5,0.35)
+
+
+
+
+
+
+
+# => Only about 100 uniprots out of 4000 do not point towards the GOs
+
+
+    # Step 1: 
+    
+    # if any given uniprot routes over 30% of information related to this flow 
+            
+    # In fact we are only interested in the General Reference computation. 
+    # The only reason we limit ourselfs to N terms is because we cannot afford computation of all the GO terms.
+    # => Can we recover all the GO terms that have < 50 affected uniprots in our set and if there are not too much of them, compute the highest impact ones?
+    # the use here is for the Overingtonicity.
+    
+    # Then, we can take all the targets affected by a drug and perform a computation ponderated by the 
+    
+    
+    
+    # recover the absolute value of the difference between the two in percentage of the original value
+    #    => Euh... ce sera egale a la valeur de nombre des uniprots de difference, non?
+    
+    # recover the most important terms for the flow (optionally)
+    
+    
+    # check the availability of the existing reference GO, if not of the UP Set associated to it
+        # Lookup by GO ID
+        # If fails, lookup by Protein association
+        
+        # If fails, compute and insert
+        
+    # for the imported GO
+        # check the availability of the Prot_Set
+        # If fails, compute and insert, by using only Prot_Set as key
+    
+# DONE: add UniprotLists Accessed for different GOs
+    
+    
+# CANCEL: add the modules for matrix operations over the GO annotation
+# DONE: add the propagation of the informativity along different GO Terms
+
+# CANCEL: possible acceleration with by using the reverse_dicitonary filter: count how many targets are present in the filter.
+# However the use of a fully accelerated Dict is pretty much as efficient.
+
+
+# Now, it is pretty interesting to notice that anything even remotedly related to the central neural system is really badly treated by this method.
+# Same thing for the 
