@@ -284,7 +284,7 @@ class GOFlowSystem:
     def buildTopology(self):
         
         # For the sake of method stability we have to eliminate all the proteins without
-        # annotation within the set of the GO terms we consider as "common"
+        # annotation within the set of the GO terms common between two groups
         
         UnannotatedProts=[]
         

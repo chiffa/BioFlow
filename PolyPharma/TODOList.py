@@ -4,6 +4,11 @@ Created on Jun 25, 2013
 @author: andrei
 '''
 
+# TODO: reimplement the whole GO program based on the matrixes and the correct information circulation attributes
+# TODO: do clustering by the method suggested by Misiuro: we might want clusters that contain a particular target
+    # several times, since it might contribute to several different targets
+
+
 # Cancelled: Include mappings to the EC numbers from UNIPROT
 
 # TODO: possible extensions to the organ specificity
