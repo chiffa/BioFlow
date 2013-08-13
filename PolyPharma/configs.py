@@ -13,6 +13,8 @@ Holds all the configurations of the environmental variables for the whole projec
 # If Linux filesystem on Asus:
 dbLocation='sqlite:////media/andrei/OS/Users/Andrei/Documents/UCSD/DB/initdb'
 
+secEffFileName='/home/akucahravy/Downloads/meddra_adverse_effects.tsv'
+
 GeneOntology='/home/andrei/workspaces/UCSD/gene_ontology.1_0.obo'
 ReactomeBioPax='/home/andrei/workspaces/UCSD/Parsing_Reactome/Homo sapiens.owl'
 UNIPROT_text='/home/andrei/workspaces/UCSD/uniprot_sprot.dat'

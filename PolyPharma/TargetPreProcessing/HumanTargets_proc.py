@@ -20,7 +20,7 @@ session=Session()
 infile='/home/akucahravy/Downloads/interaction.dat'
 outfile='/home/akucahravy/Downloads/interaction_corr.dat'
 
-secEffFile=open('/home/akucahravy/Downloads/meddra_adverse_effects.tsv','r')
+secEffFile=open(Conf.secEffFileName,'r')
 
 inf=open(infile,'r')
 outf=open(outfile,'w')
