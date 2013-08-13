@@ -20,6 +20,7 @@ Scipy (latest x86_64 build of LAPACK, ATLAS and BLAS + pip-install)
 bulbs (via pip)
 python-Levenshtein (via pip)
 scikit.sparse (for the cholesky decomposition of a symetric matrix)
+pymongo (and mongodb database running on the default port)
 
 Documentation Build:
 Sphinx-1.1.3
