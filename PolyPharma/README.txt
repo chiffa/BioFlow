@@ -3,7 +3,7 @@ EclipseMylin-Polypharma
 
 Non-documented code under development.
 This library is meant to predict the systemic effect of multiple gene perturbation,
-be it triggered by a drug or by multiple mutations (as encountered in cancer).
+be it triggered by a drug or by multiple mutations (such as encountered in cancer).
 
 This code is a part of experimental project and is shipped as-is, without any warranties
 or support. Use it at your own risk.
@@ -20,6 +20,7 @@ Scipy (latest x86_64 build of LAPACK, ATLAS and BLAS + pip-install)
 bulbs (via pip)
 python-Levenshtein (via pip)
 scikit.sparse (for the cholesky decomposition of a symetric matrix)
+Cython
 pymongo (and mongodb database running on the default port)
 
 Documentation Build:
