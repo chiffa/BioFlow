@@ -13,7 +13,7 @@ from pprint import PrettyPrinter
 def parse_configs():
     ''' parses all the relevant configs '''
 
-    def improved_read(path):
+    def improved_read(path,):
         '''
         Parses a config file on given path, in case of failure raises an IOError, 
         '''
@@ -23,13 +23,15 @@ def parse_configs():
             raise IOError('cannot load '+path)
         MainDict={}
         for section in cfg.sections():
-            section_name="_".join([elt.lower() for elt in section.split('_')])
+            section_name="_".join([elt for elt in section.split('_')])
             MainDict[section_name]={}
             for option in cfg.options(section):
-                MainDict[section_name][option]=cfg.get(section, option).lower()
+                MainDict[section_name][option]=cfg.get(section, option)
         return MainDict
     
-    return improved_read(configsfiles[0]), improved_read(configsfiles[1])
+    return improved_read(configsfiles[0]),\
+           improved_read(configsfiles[1]),\
+           improved_read(configsfiles[2])
 
 
 if __name__ == "__main__":
