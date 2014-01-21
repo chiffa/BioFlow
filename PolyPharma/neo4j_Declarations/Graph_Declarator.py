@@ -9,7 +9,11 @@ from bulbs.neo4jserver import Graph as Neo4jGraph
 import Neo4j_typeDec_new as DDT
 
 
+# noinspection PyTypeChecker
 class Graph(Neo4jGraph):
+    '''
+    The interface with the neo4j graph database
+    '''
 
     def __init__(self, config=None):
         super(Graph, self).__init__(config)
@@ -69,7 +73,7 @@ class Graph(Neo4jGraph):
         
         #And contribute to reactions
         self.is_catalysant = self.build_proxy(DDT.is_catalysant)
-        self.is_regulant = self.build_proxy(DDT.is_regulant) # regulates not a reaction, but a compound activity
+        self.is_regulant = self.build_proxy(DDT.is_regulant)  # regulates not a reaction, but a compound activity
         self.is_reaction_participant = self.build_proxy(DDT.is_reaction_participant)
         
         #GOAnnotationTypes:
