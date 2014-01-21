@@ -1,8 +1,7 @@
 PolyPharma
 =======================
 
-This code is currently under development and thus it might not be stable and isn't necessary as well documented
-as it should.
+This code is currently under development and thus it isn't always stable, thoroughly tested or well documented.
 
 This project's goal is to predict systemic effect of multiple gene perturbation, wherther trigered by a drug or by
 a disease (such as cancer or disease with complex genetic background). It's main intended uses are prediction of
@@ -13,11 +12,10 @@ It's main advantage is integration of quantitative computational predictions wit
 ability to integrate such diverse source of knowledge as databases, simulation, publication data (currently in dev)
 and expert knowledge.
 
-Currently this application is an experimental prject and is provided as-is, without any warranties or support.
-Use it at your onw risk
+This application is provided as-is, without any warranties or support. Use it at your onw risk
 
-However, if you are willing to test it and encounter problems with it or have further suggestions, please fill in
-an issue ticket and I will be glad to assist you in the measure of my possibilities.
+However, if you are willing to test it and encounter problems or are willing to provide feedback, please fill in
+an issue ticket on GitHub and I will be glad to assist you in the measure of my possibilities.
 
 Project dependencies:
 
