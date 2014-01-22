@@ -4,18 +4,20 @@ Created on Jun 26, 2013
 @author: andrei
 '''
 
-import configs as conf
+import PolyPharma.configs as conf
 import copy
 
-Interesting_TaxIDs=['9606'] #['36329','9606','1773'] #PLAFA taxonomy id is actually 5833
 
-docu=open(conf.UNIPROT_text,"r")
+source_file = open(conf.UNIPROT_source, "r")
 
-Interesting_lines=['ID','AC','DE','GN','OX','DR']
-Interesing_xrefs=['EMBL','GO','Pfam','Ensembl','KEGG']
-NameIgnore=['Contains','Allergen','EC=','Flags: ','CD_antigen', 'INN=']
+Interesting_TaxIDs = [TaxID.strip() for TaxID in conf.Sources['UNIPROT']['load'].split(',') if TaxID not in ('',' ')]
+Interesting_lines = ['ID', 'AC', 'DE', 'GN', 'OX', 'DR']
+Interesing_xrefs = ['EMBL', 'GO', 'Pfam', 'Ensembl', 'KEGG']
+NameIgnore = ['Contains', 'Allergen', 'EC=', 'Flags: ', 'CD_antigen', 'INN=']
+defDict = {'Acnum':[], 'Names':{'Full':'', 'AltNames':[]}, 'GeneRefs':{'Names':[], 'OrderedLocusNames':[], 'ORFNames':[]},
+           'Ensembl':[], 'KEGG':[], 'EMBL':[], 'GO':[], 'Pfam':[], 'SUPFAM':[]}
 
-Uniprot={}  # {SWISSPROT_ID:{
+Uniprot = {}  # {SWISSPROT_ID:{
             #                 'Acnum':[],
             #                 'RecName':RecordName,
             #                 'ORFNames': [],
@@ -26,17 +28,15 @@ Uniprot={}  # {SWISSPROT_ID:{
             #                 'Pfam':[],
             #                 }}
 
-defDict={'Acnum':[],'Names':{'Full':'','AltNames':[]},'GeneRefs':{'Names':[],'OrderedLocusNames':[],'ORFNames':[]},'Ensembl':[],'KEGG':[],'EMBL':[],'GO':[],'Pfam':[], 'SUPFAM':[]}
-
-Ignore=[False,2]
+Ignore = [False, 2]
 
 # TODO: define Aligne
 # TODO: define softDict
 
 def parse_Xref(Dico,Line):
     if 'EMBL; ' in Line and 'ChEMBL' not in Line:
-        splt=Line.split(';')
-        package=(splt[1].strip(),splt[2].strip(),splt[3].strip())
+        splt = Line.split(';')
+        package = (splt[1].strip(),splt[2].strip(),splt[3].strip())
         Dico['EMBL'].append(package)
     if 'GO; GO:' in Line:
         Dico['GO'].append(Line.split(';')[1].split(':')[1].strip())
@@ -52,7 +52,7 @@ def parse_Xref(Dico,Line):
         Dico['KEGG'].append(Line.split(';')[1].strip())
 
 def parse_GeneRefs(Dico,Line):
-    words=filter(lambda a:a!='', str(Line.strip()+' ').split('; '))
+    words = filter(lambda a:a != '', str(Line.strip() + ' ').split('; '))
     for word in words[1:]:
         if 'ORFNames' in word:
             for subword in word.split('=')[1].strip().split(','):
@@ -67,7 +67,7 @@ def parse_GeneRefs(Dico,Line):
 
 def parse_Name(Dico,Line):
     if 'RecName: Full=' in Line:
-        Dico['Names']['Full']=Line.split('RecName: Full=')[1].split(';')[0]
+        Dico['Names']['Full'] = Line.split('RecName: Full=')[1].split(';')[0]
         return ''
     if 'AltName: Full=' in Line:
         Dico['Names']['AltNames'].append(Line.split('AltName: Full=')[1].split(';')[0])
@@ -76,57 +76,57 @@ def parse_Name(Dico,Line):
         Dico['Names']['AltNames'].append(Line.split('Short=')[1].split(';')[0])
         return ''
     if Ignore[0]:
-        if Ignore[1]==0:
-            Ignore[0]=False
-            Ignore[1]=2
+        if Ignore[1] == 0:
+            Ignore[0] = False
+            Ignore[1] = 2
             return ''
         else:
             return ''
     if ' Includes:' in Line:
-        Ignore[0]=True
+        Ignore[0] = True
         return ''
     if any(x in Line for x in NameIgnore):
         return ''         
                 
 def process_line(Dico, Line, keyword):
-    if keyword=='ID':
-        words=filter(lambda a:a!='', Line.split(' '))
-        Dico['ID']=words[1]
-    if keyword=='AC':
-        words=filter(lambda a:a!='', Line.split(' '))
+    if keyword == 'ID':
+        words = filter(lambda a:a != '', Line.split(' '))
+        Dico['ID'] = words[1]
+    if keyword == 'AC':
+        words = filter(lambda a:a != '', Line.split(' '))
         for word in words[1:]:
             Dico['Acnum'].append(word.split(';')[0])
-    if keyword=='OX':
+    if keyword == 'OX':
         Dico['TaxID']=Line.split('NCBI_TaxID=')[1].split(';')[0]
-    if keyword=='DE':
+    if keyword == 'DE':
         parse_Name(Dico,Line)
-    if keyword=='GN':
+    if keyword == 'GN':
         parse_GeneRefs(Dico,Line)
-    if keyword=='DR' and any(x in Line for x in Interesing_xrefs):
+    if keyword == 'DR' and any(x in Line for x in Interesing_xrefs):
         parse_Xref(Dico,Line)
 
 def end_Block(Dico):
     if Dico['TaxID'] in Interesting_TaxIDs:
-        Ignore[0]=False
-        Uniprot[Dico['ID']]=Dico
+        Ignore[0] = False
+        Uniprot[Dico['ID']] = Dico
     return copy.deepcopy(defDict)
 
 def Parse_Uniprot():
-    LocalDictionary=copy.deepcopy(defDict)
+    LocalDictionary = copy.deepcopy(defDict)
     while True:
-        line = docu.readline()
+        line = source_file.readline()
         if not line:
             break
-        keyword=line[0:2]
-        if keyword=='//':
-            LocalDictionary=end_Block(LocalDictionary)
+        keyword = line[0:2]
+        if keyword == '//':
+            LocalDictionary = end_Block(LocalDictionary)
         if  keyword in Interesting_lines:
             process_line(LocalDictionary, line, keyword)
 
 def get_Names_dict():
-    namesDict={}
+    namesDict = {}
     for elt in Uniprot.keys():
-        NameList=[Uniprot[elt]['Names']['Full'].lower().strip()]
+        NameList = [Uniprot[elt]['Names']['Full'].lower().strip()]
         for subelt in Uniprot[elt]['Names']['AltNames']:
             NameList.append(subelt.lower().strip())
         for subelt in Uniprot[elt]['GeneRefs']['Names']:
@@ -137,7 +137,7 @@ def get_Names_dict():
             NameList.append(subelt.lower().strip())
         
         for subelt in NameList:
-            namesDict[subelt]=elt
+            namesDict[subelt] = elt
     
     return namesDict
 
@@ -149,19 +149,19 @@ def get_access_dicts():
     access_dict={}
     for key in Uniprot.keys():
         for subelt in Uniprot[key]['KEGG']:
-            access_dict[subelt]=key
+            access_dict[subelt]= key
         for subelt in Uniprot[key]['Ensembl']:
-            access_dict[subelt]=key
+            access_dict[subelt]= key
         for subelt in Uniprot[key]['EMBL']:
-            access_dict[subelt]=key
+            access_dict[subelt]= key
         for subelt in Uniprot[key]['Acnum']:
-            access_dict[subelt]=key
+            access_dict[subelt]= key
         for subelt in Uniprot[key]['GeneRefs']['Names']:
-            access_dict[subelt]=key
+            access_dict[subelt]= key
         for subelt in Uniprot[key]['GeneRefs']['OrderedLocusNames']:
-            access_dict[subelt]=key
+            access_dict[subelt]= key
         for subelt in Uniprot[key]['GeneRefs']['ORFNames']:
-            access_dict[subelt]=key
+            access_dict[subelt]= key
     return access_dict
 
 

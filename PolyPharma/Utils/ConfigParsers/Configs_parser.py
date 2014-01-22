@@ -8,7 +8,7 @@ from __future__ import print_function
 import ConfigParser
 from Configs_common import configsfiles
 from pprint import PrettyPrinter
-
+import os
 
 def parse_configs():
     ''' parses all the relevant configs '''
@@ -31,7 +31,19 @@ def parse_configs():
     
     return improved_read(configsfiles[0]),\
            improved_read(configsfiles[1]),\
-           improved_read(configsfiles[2])
+           improved_read(configsfiles[2]),\
+           improved_read(configsfiles[3]),
+
+def sourcefile_compilator(Sources_dict):
+    finalPathdict={}
+    for ext_DB_type, ext_DB_args in Sources_dict.iteritems():
+        currentPath = ext_DB_args['location']
+        if os.path.isdir(currentPath):
+            for fle in [f for f in os.listdir(currentPath) if os.path.isfile(os.path.join(currentPath,f))]:
+                if ext_DB_args['load'] in fle:
+                    currentPath=os.path.join(currentPath,fle)
+        finalPathdict[ext_DB_type]=currentPath
+    return finalPathdict
 
 
 if __name__ == "__main__":

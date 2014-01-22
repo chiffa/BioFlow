@@ -8,6 +8,7 @@ Created on Jul 2, 2013
 from bulbs.neo4jserver import Graph as Neo4jGraph
 import Neo4j_typeDec_new as DDT
 
+#TODO: insert a reference to the config file from here
 
 # noinspection PyTypeChecker
 class Graph(Neo4jGraph):
@@ -16,6 +17,8 @@ class Graph(Neo4jGraph):
     '''
 
     def __init__(self, config=None):
+        if config != None:
+            config = config + '/db/data/'
         super(Graph, self).__init__(config)
         
         #Annotations
