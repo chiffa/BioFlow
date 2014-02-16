@@ -18,7 +18,7 @@ def generate_configs():
         config = ConfigParser.SafeConfigParser()
         config.set('DEFAULT', "servers_are_local", "True")
         config.set('DEFAULT', "server_neo4j", "http://localhost:7474")
-        config.set('DEFAULT', "local_sqlite",db_root+"Data_store/sqlite")
+        config.set('DEFAULT', "local_sqlite", db_root+"Data_store/sqlite")
         config.set('DEFAULT', "mongoDB_server","mongodb://localhost:27017/")
         config.add_section('TEST')
         config.set('TEST', "local_neo4j", db_root+"Data_store/neo4j")
@@ -90,6 +90,7 @@ def generate_configs():
     generate_options_config()
     generate_servers_config()
     generate_source_database_config()
+    generate_source_predictions_config()
 
 if __name__ == "__main__":
     generate_configs()

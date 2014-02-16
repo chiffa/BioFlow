@@ -10,6 +10,7 @@ from pprint import PrettyPrinter
 Servers, Options, Sources, Predictions = parse_configs()
 
 SQLite_location = Servers['PRODUCTION']['local_sqlite']
+MongoDB_url = Servers['PRODUCTION']['mongodb_server']
 ReadSourceDBs = sourcefile_compilator(Sources)
 
 GeneOntology = ReadSourceDBs['GO']
@@ -27,20 +28,6 @@ Targets_File = ReadSourcePredictions['NEFLANAVIR']
 # File from which to load the names of the 300 most frequent targets
 Targets_File2 = ReadSourcePredictions['OVERINGTON']
 
-
-# File from which to load the protein aboundances in the human organism
-# Prot_abound='/home/andrei/workspaces/UCSD/9606-PeptideAtlas'
-Prot_abound='/home/andrei/workspaces/UCSD/9606-integrated'
-GeneOntology='/home/andrei/workspaces/UCSD/gene_ontology.1_0.obo'
-ReactomeBioPax='/home/andrei/workspaces/UCSD/Parsing_Reactome/Homo sapiens.owl'
-UNIPROT_text='/home/andrei/workspaces/UCSD/uniprot_sprot.dat'
-Hint_csv='/home/andrei/workspaces/UCSD/sapiens_curated-interactome.csv'
-secEffFileName='/home/akucahravy/Downloads/meddra_adverse_effects.tsv'
-
-# Targets file is assumed to be tab-separated, with the first column containing fuzzy versions of "names" of "gene names"
-# from uniport and the next three - information relative to binding to this target.
-Targets_File='/home/andrei/workspaces/UCSD/NeflanavirSource.csv'
-
 # ExactDict is the dictionnary used to perform a precise matching between the fuzzy target names and the SwissProt IDs required
 # for a lookup in the database
 from TargetPreProcessing.neflanavir_parser import subdict
@@ -48,12 +35,10 @@ Targets_dict = subdict
 from TargetPreProcessing.Overington_parser import subdict2
 Targets_dict2 = subdict2
 
-
-#TODO: call a servers configuration file to detect Mongod configurations
-
 from pymongo import MongoClient
-client = MongoClient('localhost',27017)
+client = MongoClient(MongoDB_url)
 db = client.PolyPharma_database
+# TODO: see what we are going to do with versionning
 ref_coll = db.refrence_v_0_3
 data_coll = db.data_v_0_3
 

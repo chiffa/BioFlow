@@ -32,6 +32,7 @@ Ignore = [False, 2]
 
 # TODO: define Aligne
 # TODO: define softDict
+# They both might need to be moved to a matching module
 
 def parse_Xref(Dico,Line):
     if 'EMBL; ' in Line and 'ChEMBL' not in Line:
