@@ -1,0 +1,23 @@
+This file regroups the TODOs for the project in the future.
+***********************************************************
+
+Add additional Sources/Dimensioins
+==================================
+
+# TODO: we might want to parse the traceability of the all the compouunds and link by adding the xref parsed
+#       information to them. This might be critical to adress the issues imposed by the difference in the database
+#       versions
+
+# TODO: perform a search in the UNIPROT Database in order to imoprove the annotation based on the DisplayNames
+#           => this is done separately by a matching/lookup module
+
+# TODO: perform a recovery of important domains from PDB
+
+# TODO: perform a recovery of post-translational modification sites in the normal proteins
+
+# TODO: Perform a recovery of a larger array of the RNA, both as protein transcription elements and as regulatory
+#       elements
+
+# TODO: Import the DNA / epigenetic annotation ontology into the database to account for the DNA (un)-availability
+#       and for the DNA transport towards specific (activation or repression regions)
+
