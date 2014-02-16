@@ -11,6 +11,7 @@ Servers, Options, Sources, Predictions = parse_configs()
 
 SQLite_location = Servers['PRODUCTION']['local_sqlite']
 MongoDB_url = Servers['PRODUCTION']['mongodb_server']
+neo4j_server = Servers['PRODUCTION']['server_neo4j']
 ReadSourceDBs = sourcefile_compilator(Sources)
 
 GeneOntology = ReadSourceDBs['GO']

@@ -5,8 +5,13 @@ Created on Jul 2, 2013
 '''
 
 
-from bulbs.neo4jserver import Graph as Neo4jGraph
+from bulbs.neo4jserver import Graph as Neo4jGraph, Config
 import Neo4j_typeDec_new as DDT
+from PolyPharma.configs import neo4j_server
+
+if neo4j_server != 'http://localhost:7474':
+    neo4j_server_local = Config(neo4j_server+ '/db/data/')
+else: neo4j_server_local = None
 
 #TODO: insert a reference to the config file from here
 
@@ -16,9 +21,7 @@ class Graph(Neo4jGraph):
     The interface with the neo4j graph database
     '''
 
-    def __init__(self, config=None):
-        if config != None:
-            config = config + '/db/data/'
+    def __init__(self, config=neo4j_server_local):
         super(Graph, self).__init__(config)
         
         #Annotations

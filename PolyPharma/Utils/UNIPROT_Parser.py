@@ -10,7 +10,7 @@ import copy
 
 source_file = open(conf.UNIPROT_source, "r")
 
-Interesting_TaxIDs = [TaxID.strip() for TaxID in conf.Sources['UNIPROT']['load'].split(',') if TaxID not in ('',' ')]
+Interesting_TaxIDs = [TaxID.strip() for TaxID in conf.Sources['UNIPROT']['tax_ids'].split(',') if TaxID not in ('',' ')]
 Interesting_lines = ['ID', 'AC', 'DE', 'GN', 'OX', 'DR']
 Interesing_xrefs = ['EMBL', 'GO', 'Pfam', 'Ensembl', 'KEGG']
 NameIgnore = ['Contains', 'Allergen', 'EC=', 'Flags: ', 'CD_antigen', 'INN=']
