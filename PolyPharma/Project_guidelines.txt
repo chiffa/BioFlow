@@ -25,3 +25,5 @@ Improve crosslinking between different databases
 # TODO: we might want to parse the traceability of the all the compounds and link by adding the xref parsed
 #       information to them. This might be critical to adress the issues imposed by the difference in the database
 #       versions
+
+# TODO: import modification feature insertion from the reactome database to account for post-translational modifications
