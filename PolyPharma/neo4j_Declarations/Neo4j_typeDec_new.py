@@ -4,12 +4,11 @@ Created on Jun 13, 2013
 @author: andrei
 '''
 
-# @attention: DO NOT WRITE "element_type" or "label" differently from the name of hte calss, they are used in the indexes and it could be very hard to remember what is what after some time
-# TODO: correct the element types and re-import the graph
+# @attention: DO NOT WRITE "element_type" or "label" differently from the name of the calss, they are used
+# in the indexes and it could be very hard to remember what is what after some time
 
 from bulbs.model import Node, Relationship
-from bulbs.property import String, Integer, Float, Dictionary, List
-from bulbs.utils import current_datetime
+from bulbs.property import String, Integer, Float
 
 class CostumNode(Node):             # Serves as a basis for the annotation
     element_type="CostumNode"
@@ -89,13 +88,13 @@ class Complex_Collection(Meta):
     element_type="Complex_Collection"
 
 class is_catalysant(CostumLink):
-    label="is_Catalysant"
+    label="is_catalysant" # correct here!
     controlType=String()
     ID=String(nullable=False)
     displayName=String()
     
 class is_regulant(CostumLink):
-    label="is_Regulant"
+    label="is_regulant" # correct here!
     controlType=String()
     ID=String(nullable=False)
     displayName=String()
@@ -131,20 +130,20 @@ class Protein_Collection(Meta):
     element_type="Protein_Collection"
 
 class SmallMolecule(Meta):
-    element_type="Small_Molecule"
+    element_type="SmallMolecule" # correct here!
 
 class SmallMolecule_Collection(Meta):
-    element_type="Small_Molecule_Collection"
+    element_type="SmallMolecule_Collection" # correct here!
 
 class BiochemicalReaction(Reaction):
-    element_type="Biochemical_Reaction"
+    element_type="BiochemicalReaction" # correct here!
     
 class is_reaction_participant(CostumLink):
     label="is_reaction_particpant"
     side=String()
 
 class ModificationFeature(Instantiation_Type):
-    element_type="Modification_Feature"
+    element_type="ModificationFeature" # correct here!
     location=String()
 
 class is_modified_to(CostumLink):

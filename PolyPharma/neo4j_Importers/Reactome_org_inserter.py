@@ -4,7 +4,6 @@ Created on Jun 15, 2013
 @author: andrei
 '''
 import logging
-import Reactome_org_parser as DG
 from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
 
 ####################################################################################
@@ -28,9 +27,10 @@ logging.getLogger('').addHandler(console)
 
 LocalDict={} # accelerated access pointer to the objects
 
-def InsertCellLocations():
-    for Loc in DG.CellularLocations.keys():
-        LocalDict[Loc]=DatabaseGraph.Location.create(ID=Loc, displayName=DG.CellularLocations[Loc])
+def InsertCellLocations(Cell_locations_dict):
+    for Loc in Cell_locations_dict.keys():
+        LocalDict[Loc] = DatabaseGraph.Location.create(ID = Loc,
+                                                     displayName = Cell_locations_dict[Loc])
 
 def MinimalAnnotInsert(annotated_node, payload_list):
     """
@@ -40,14 +40,21 @@ def MinimalAnnotInsert(annotated_node, payload_list):
     for Type in payload_list.keys():
         if Type!='name' and payload_list[Type]!='' and payload_list[Type]!=[]:
             if type(Type)!=list:
-                secondary=DatabaseGraph.AnnotNode.create(ptype=Type,payload=payload_list[Type])
+                secondary=DatabaseGraph.AnnotNode.create(ptype=Type,
+                                                         payload=payload_list[Type])
                 print annotated_node, secondary, annotated_node.ID
-                DatabaseGraph.is_annotated.create(annotated_node, secondary, costum_from=annotated_node.ID,costum_to='Annotation')
+                DatabaseGraph.is_annotated.create(annotated_node,
+                                                  secondary,
+                                                  costum_from=annotated_node.ID,
+                                                  costum_to='Annotation')
             else:
                 for subelt in payload_list[Type]:
                     secondary=DatabaseGraph.AnnotNode.create(ptype=Type,payload=subelt)
                     print annotated_node, secondary, annotated_node.ID
-                    DatabaseGraph.is_annotated.create(annotated_node, secondary, costum_from=annotated_node.ID,costum_to='Annotation')
+                    DatabaseGraph.is_annotated.create(annotated_node,
+                                                      secondary,
+                                                      costum_from=annotated_node.ID,
+                                                      costum_to='Annotation')
 
 def MetaInsert(bulbs_graph_class, property_source_dict):
     """
@@ -59,18 +66,29 @@ def MetaInsert(bulbs_graph_class, property_source_dict):
     for key in property_source_dict.keys():
         counter+=1
         print '\n',counter,'/',length,'\n'
-        primary=bulbs_graph_class.create(ID=key, displayName=property_source_dict[key]['displayName'], localization=property_source_dict[key]['cellularLocation'])
+        primary=bulbs_graph_class.create(ID=key,
+                                         displayName=property_source_dict[key]['displayName'],
+                                         localization=property_source_dict[key]['cellularLocation'])
         LocalDict[key]=primary
         MinimalAnnotInsert(LocalDict[key], property_source_dict[key]['references'])
         if 'cellularLocation' in property_source_dict[key].keys():
             secondary=LocalDict[property_source_dict[key]['cellularLocation']]
-            DatabaseGraph.is_localized.create(primary, secondary,costum_from=primary.ID,costum_to=secondary.ID)
+            DatabaseGraph.is_localized.create(primary,
+                                              secondary,
+                                              costum_from=primary.ID,
+                                              costum_to=secondary.ID)
             # TODO add ModificationFeature insertion
         if 'modification' in property_source_dict[key].keys():
             for modification in property_source_dict[key]['modification']:
                 if 'location' in modification.keys() and 'modification' in modification.keys():
-                    LocMod=DatabaseGraph.ModificationFeature.create(ID = modification['ID'], type="post-translational_Mod", location=modification['location'], displayName=modification['modification'])
-                    DatabaseGraph.is_able_to_modify.create(primary,LocMod,costum_from=primary.ID,costum_to=LocMod.ID)
+                    LocMod=DatabaseGraph.ModificationFeature.create(ID = modification['ID'],
+                                                                    type="post-translational_Mod",
+                                                                    location=modification['location'],
+                                                                    displayName=modification['modification'])
+                    DatabaseGraph.is_able_to_modify.create(primary,
+                                                           LocMod,
+                                                           costum_from=primary.ID,
+                                                           costum_to=LocMod.ID)
 
 def CollectionRefsInsert(primaryCollection):
     """
@@ -78,16 +96,22 @@ def CollectionRefsInsert(primaryCollection):
     """
     for key in primaryCollection.keys():
         for ref in primaryCollection[key]['collectionMembers']:
-            DatabaseGraph.is_part_of_collection.create(LocalDict[key],LocalDict[ref],costum_from=LocalDict[key].ID,costum_to=LocalDict[ref].ID)
+            DatabaseGraph.is_part_of_collection.create(LocalDict[key],
+                                                       LocalDict[ref],
+                                                       costum_from=LocalDict[key].ID,
+                                                       costum_to=LocalDict[ref].ID)
 
-def ComplexPartsInsert():
+def ComplexPartsInsert(complexes_dict):
     """
     Links part of a complex to the complex
     """
-    for key in DG.Complexes.keys():
-        for part in DG.Complexes[key]['parts']:
+    for key in complexes_dict.keys():
+        for part in complexes_dict[key]['parts']:
             if 'Stoichiometry' not in part:
-                DatabaseGraph.is_part_of_complex.create(LocalDict[key],LocalDict[part],costum_from=LocalDict[key].ID,costum_to=LocalDict[part].ID)
+                DatabaseGraph.is_part_of_complex.create(LocalDict[key],
+                                                        LocalDict[part],
+                                                        costum_from=LocalDict[key].ID,
+                                                        costum_to=LocalDict[part].ID)
 
 def ReactionInsert(bulbs_graph_class, property_source_dict):
     """
@@ -95,73 +119,113 @@ def ReactionInsert(bulbs_graph_class, property_source_dict):
     source information from the property source
     """
     for key in property_source_dict.keys():
-        LocalDict[key]=bulbs_graph_class.create(ID=key,displayName=property_source_dict[key]['displayName'])
+        LocalDict[key]=bulbs_graph_class.create(ID=key,
+                                                displayName=property_source_dict[key]['displayName'])
         MinimalAnnotInsert(LocalDict[key], property_source_dict[key]['references'])
         for subkey in property_source_dict[key].keys():
             if subkey in ['left','right']:
                 for elt in property_source_dict[key][subkey]:
-                    DatabaseGraph.is_reaction_participant.create(LocalDict[key],LocalDict[elt],side=subkey,costum_from=LocalDict[key].ID,costum_to=LocalDict[elt].ID) 
+                    DatabaseGraph.is_reaction_participant.create(LocalDict[key],
+                                                                 LocalDict[elt],
+                                                                 side = subkey,
+                                                                 costum_from = LocalDict[key].ID,
+                                                                 costum_to = LocalDict[elt].ID)
             if subkey=='product':
-                DatabaseGraph.is_reaction_participant.create(LocalDict[key],LocalDict[property_source_dict[key][subkey]],costum_from=LocalDict[key].ID,costum_to=LocalDict[property_source_dict[key][subkey]].ID)
+                DatabaseGraph.is_reaction_participant.create(LocalDict[key],
+                                                             LocalDict[property_source_dict[key][subkey]],
+                                                             costum_from = LocalDict[key].ID,
+                                                             costum_to = LocalDict[property_source_dict[key][subkey]].ID)
 
-def CatalysisInsert():
+def CatalysisInsert(catalysises_dict):
     """
     Inserts all the catalysis links from one meta-element to an another
     """
-    for key in DG.Catalysises.keys():
-        if 'controller' in DG.Catalysises[key].keys() and 'controlled' in DG.Catalysises[key].keys():
-            if DG.Catalysises[key]['controlled'] in LocalDict.keys() and DG.Catalysises[key]['controller'] in LocalDict.keys():
-                if 'ControlType' in DG.Catalysises[key].keys():
-                    primary=LocalDict[DG.Catalysises[key]['controller']]
-                    secondary=LocalDict[DG.Catalysises[key]['controlled']]
-                    LocalDict[key]=DatabaseGraph.is_catalysant.create(primary, secondary, ID=key, controlType=DG.Catalysises[key]['ControlType'],costum_from=primary.ID,costum_to=secondary.ID)
+    for key in catalysises_dict.keys():
+        if 'controller' in catalysises_dict[key].keys() and 'controlled' in catalysises_dict[key].keys():
+            if catalysises_dict[key]['controlled'] in LocalDict.keys() and catalysises_dict[key]['controller'] in LocalDict.keys():
+                if 'ControlType' in catalysises_dict[key].keys():
+                    primary=LocalDict[catalysises_dict[key]['controller']]
+                    secondary=LocalDict[catalysises_dict[key]['controlled']]
+                    LocalDict[key]=DatabaseGraph.is_catalysant.create(primary,
+                                                                      secondary,
+                                                                      ID=key,
+                                                                      controlType=catalysises_dict[key]['ControlType'],
+                                                                      costum_from=primary.ID,
+                                                                      costum_to=secondary.ID)
                 else:
-                    primary=LocalDict[DG.Catalysises[key]['controller']]
-                    secondary=LocalDict[DG.Catalysises[key]['controlled']]
-                    LocalDict[key]=DatabaseGraph.is_catalysant.create(primary, secondary, ID=key, controlType='UNKNOWN',costum_from=primary.ID,costum_to=secondary.ID)
+                    primary=LocalDict[catalysises_dict[key]['controller']]
+                    secondary=LocalDict[catalysises_dict[key]['controlled']]
+                    LocalDict[key]=DatabaseGraph.is_catalysant.create(primary,
+                                                                      secondary,
+                                                                      ID=key,
+                                                                      controlType='UNKNOWN',
+                                                                      costum_from=primary.ID,
+                                                                      costum_to=secondary.ID)
             else: 
-                logging.debug("\t%s : %s, %s, %s", key, DG.Catalysises[key],DG.Catalysises[key]['controlled'] in LocalDict.keys(),DG.Catalysises[key]['controller'] in LocalDict.keys())
+                logging.debug("\t%s : %s, %s, %s", key, catalysises_dict[key],
+                              catalysises_dict[key]['controlled'] in LocalDict.keys(),
+                              catalysises_dict[key]['controller'] in LocalDict.keys())
         else: 
-            logging.debug("%s : %s, %s, %s,", key, DG.Catalysises[key],'controller' in DG.Catalysises[key].keys(),'controlled' in DG.Catalysises[key].keys())
+            logging.debug("%s : %s, %s, %s,", key, catalysises_dict[key],
+                          'controller' in catalysises_dict[key].keys(),
+                          'controlled' in catalysises_dict[key].keys())
 
-def ModulationInsert():
+def ModulationInsert(modulations_dict):
     """
     Inserts all the Modulation links from one meta-element to an another
     """
-    for key in DG.Modulations.keys():
-        primary=LocalDict[DG.Modulations[key]['controller']]
-        secondary=LocalDict[DG.Modulations[key]['controlled']]
-        LocalDict[key]=DatabaseGraph.is_regulant.create(primary, secondary, ID=key,controlType=DG.Modulations[key]['controlType'],costum_from=primary.ID,costum_to=secondary.ID)
+    for key in modulations_dict.keys():
+        primary=LocalDict[modulations_dict[key]['controller']]
+        secondary=LocalDict[modulations_dict[key]['controlled']]
+        LocalDict[key]=DatabaseGraph.is_regulant.create(primary,
+                                                        secondary,
+                                                        ID = key,
+                                                        controlType = modulations_dict[key]['controlType'],
+                                                        costum_from = primary.ID,
+                                                        costum_to = secondary.ID)
 
-def Pathways_Insert():
+def Pathways_Insert(pathway_steps, pathways):
     """
     Inserts all the Pathways, linking and chaining subpathways
     Attention, it have to be imported at the same time as the reactions.
     """
-    for key in DG.PathwaySteps.keys():
+    for key in pathway_steps.keys():
         primary=DatabaseGraph.PathwayStep.create(ID=key)
         LocalDict[key]=primary
-    for key in DG.Pathways.keys():
-        primary=DatabaseGraph.Pathway.create(ID=key, displayName=DG.Pathways[key]['displayName'])
+    for key in pathways.keys():
+        primary=DatabaseGraph.Pathway.create(ID=key,
+                                             displayName=pathways[key]['displayName'])
         LocalDict[key]=primary
-    for key in DG.PathwaySteps.keys():
-        for component in DG.PathwaySteps[key]['components']:
+    for key in pathway_steps.keys():
+        for component in pathway_steps[key]['components']:
             primary=LocalDict[key]
             secondary=LocalDict[component]
-            DatabaseGraph.is_part_of_pathway.create(primary,secondary,costum_from=key,costum_to=component)
-        for nextStep in DG.PathwaySteps[key]['nextStep']:
+            DatabaseGraph.is_part_of_pathway.create(primary,
+                                                    secondary,
+                                                    costum_from=key,
+                                                    costum_to=component)
+        for nextStep in pathway_steps[key]['nextStep']:
             primary=LocalDict[key]
             secondary=LocalDict[nextStep]
-            DatabaseGraph.is_next_in_pathway.create(primary,secondary,costum_from=key,costum_to=nextStep)
-    for key in DG.Pathways.keys():
-        for pathwayStep in DG.Pathways[key]['PathwayStep']:
+            DatabaseGraph.is_next_in_pathway.create(primary,
+                                                    secondary,
+                                                    costum_from=key,
+                                                    costum_to=nextStep)
+    for key in pathways.keys():
+        for pathwayStep in pathways[key]['PathwayStep']:
             primary=LocalDict[key]
             secondary=LocalDict[pathwayStep]
-            DatabaseGraph.is_part_of_pathway.create(primary,secondary,costum_from=key,costum_to=pathwayStep)
-        for Sub_Pathway in DG.Pathways[key]['components']:
+            DatabaseGraph.is_part_of_pathway.create(primary,
+                                                    secondary,
+                                                    costum_from=key,
+                                                    costum_to=pathwayStep)
+        for Sub_Pathway in pathways[key]['components']:
             primary=LocalDict[key]
             secondary=LocalDict[Sub_Pathway]
-            DatabaseGraph.is_part_of_pathway.create(primary,secondary,costum_from=key,costum_to=Sub_Pathway)
+            DatabaseGraph.is_part_of_pathway.create(primary,
+                                                    secondary,
+                                                    costum_from=key,
+                                                    costum_to=Sub_Pathway)
 
 
 def getOneMetaSet(function):
@@ -188,33 +252,55 @@ def getAllMetaSets():
                   DatabaseGraph.Complex,
                   DatabaseGraph.Complex_Collection,
                   DatabaseGraph.PhysicalEntity,
-                  DatabaseGraph.PhysicalEntity_Collection
+                  DatabaseGraph.PhysicalEntity_Collection,
                   ]
     
     for function in functionList:
         getOneMetaSet(function)
 
-# Attention, thuis function has to be redifined regularly, since it is mediated by the
-def clean():
+
+def clear_all(instruction_dict):
     """
-    Serves to clear a specific set and nodes in case an insertion went awry
+    empties the whole BioPax-bound node set.
     """
-    for PathStep in DatabaseGraph.PathwayStep.get_all():
-        ID=str(PathStep).split('/')[-1][:-1]
-        DatabaseGraph.PathwayStep.delete(ID)
+    for name, bulbs_class in instruction_dict.iteritems():
+        counter = 0
+        if bulbs_class.get_all():
+            for bulbs_class_instance in bulbs_class.get_all():
+                counter += 1
+                ID = str(bulbs_class_instance).split('/')[-1][:-1]
+                DatabaseGraph.PathwayStep.delete(ID)
+                if counter % 100 == 0:
+                    print name, ':', counter
+
+def run_diagnostics(instruction_dict):
+    """
+    Checks the number of nodes of each type.
+    """
+    supercounter = 0
+    for name, bulbs_class in instruction_dict.iteritems():
+        counter = 0
+        if bulbs_class.get_all():
+            for bulbs_class_instance in bulbs_class.get_all():
+                counter += 1
+        print name, ':', counter
+        supercounter += counter
+    print 'Total: ', supercounter
 
 
-def insert(Skip):
+def insert_all(Skip='N'):
     """
     Performs the massive import of the Reactome database into the local neo4j database.
     :parameter Skip:
     * N => will skip nothing and implement the import once and for all.
     * M => skips meta import, recovers the metas and resumes from the Reactions import.
     """
-    # TODO: implement the skipping behavior
+    import Reactome_org_parser as DG
 
     if Skip=='N':
-        InsertCellLocations()
+        InsertCellLocations(DG.CellularLocations)
+
+        #TODO: replace by a factory of insertions for meta and collection assemblies
 
         MetaInsert(DatabaseGraph.DNA, DG.Dnas)
         MetaInsert(DatabaseGraph.DNA_Collection, DG.Dna_Collections)
@@ -235,9 +321,7 @@ def insert(Skip):
         CollectionRefsInsert(DG.Complex_Collections)
         CollectionRefsInsert(DG.PhysicalEntity_Collections)
 
-        ComplexPartsInsert()
-
-
+        ComplexPartsInsert(DG.Complexes)
 
     if Skip == 'M':
         getAllMetaSets()
@@ -249,9 +333,34 @@ def insert(Skip):
     ReactionInsert(DatabaseGraph.BiochemicalReaction, DG.BiochemicalReactions)
 
     ## Reaction insert finished
-    CatalysisInsert()
-    ModulationInsert()
-    Pathways_Insert()
+    CatalysisInsert(DG.Catalysises)
+    ModulationInsert(DG.Modulations)
+    Pathways_Insert(DG.PathwaySteps, DG.Pathways)
+
+
+full_dict = {'DNA':DatabaseGraph.DNA,
+              'DNA Collection':DatabaseGraph.DNA_Collection,
+              'RNA':DatabaseGraph.RNA,
+              'RNA Collection':DatabaseGraph.RNA_Collection,
+              'Small Molecule':DatabaseGraph.SmallMolecule,
+              'Small Molecule Collection':DatabaseGraph.SmallMolecule_Collection,
+              'Protein':DatabaseGraph.Protein,
+              'Protein Collection':DatabaseGraph.Protein_Collection,
+              'Complex':DatabaseGraph.Complex,
+              'Complex Collection':DatabaseGraph.Complex_Collection,
+              'Physical Entity':DatabaseGraph.PhysicalEntity,
+              'Physical Entity Collection':DatabaseGraph.PhysicalEntity_Collection,
+              'TemplateReaction':DatabaseGraph.TemplateReaction,
+              'Degradation':DatabaseGraph.Degradation,
+              'BiochemicalReaction':DatabaseGraph.BiochemicalReaction,
+              'Pathway Step':DatabaseGraph.PathwayStep,
+              'Pathway':DatabaseGraph.Pathway,
+              'Cell Locations':DatabaseGraph.Location,
+              'Annotations':DatabaseGraph.AnnotNode,
+              'Modification Feature':DatabaseGraph.ModificationFeature
+            }
 
 if __name__ == "__main__":
-    insert('N')
+    # insert_all()
+    run_diagnostics(full_dict)
+    # clear_all(full_dict)

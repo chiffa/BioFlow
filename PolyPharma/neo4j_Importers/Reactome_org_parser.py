@@ -6,7 +6,7 @@ Created on Jun 17, 2013
 '''
 
 # TODO: enclose the computation-intesive part in a function that can be called externally; adapt the inserter to use it
-
+0
 import logging
 import xml.etree.ElementTree as ET
 from random import shuffle
