@@ -5,7 +5,14 @@ Created on Jun 15, 2013
 '''
 import logging
 import Reactome_org_parser as DG
-from neo4j_Declarations.Graph_Declarator import DatabaseGraph
+from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
+
+####################################################################################
+#
+# Logger behavior definition (most of the time it fails to function due to the)
+# logs collision with neo4j
+#
+####################################################################################
 
 logging.basicConfig(level=logging.DEBUG,
                     format='%(levelname)-8s %(message)s',
@@ -19,70 +26,88 @@ formatter = logging.Formatter('%(levelname)-8s %(message)s')
 console.setFormatter(formatter)
 logging.getLogger('').addHandler(console)
 
-
-
 LocalDict={} # accelerated access pointer to the objects
 
 def InsertCellLocations():
     for Loc in DG.CellularLocations.keys():
         LocalDict[Loc]=DatabaseGraph.Location.create(ID=Loc, displayName=DG.CellularLocations[Loc])
 
-def MinimalAnnotInsert(primary,reflist):
-    for Type in reflist.keys():
-        if Type!='name' and reflist[Type]!='' and reflist[Type]!=[]:
+def MinimalAnnotInsert(annotated_node, payload_list):
+    """
+    Inserts a minimal annotation provided the annotated_node Node (it requires the direct, local DB ID and thus)
+    needs to be inserted at the same time as the annotated object
+    """
+    for Type in payload_list.keys():
+        if Type!='name' and payload_list[Type]!='' and payload_list[Type]!=[]:
             if type(Type)!=list:
-                secondary=DatabaseGraph.AnnotNode.create(ptype=Type,payload=reflist[Type])
-                print primary, secondary, primary.ID
-                DatabaseGraph.is_annotated.create(primary, secondary, costum_from=primary.ID,costum_to='Annotation')
+                secondary=DatabaseGraph.AnnotNode.create(ptype=Type,payload=payload_list[Type])
+                print annotated_node, secondary, annotated_node.ID
+                DatabaseGraph.is_annotated.create(annotated_node, secondary, costum_from=annotated_node.ID,costum_to='Annotation')
             else:
-                for subelt in reflist[Type]:
+                for subelt in payload_list[Type]:
                     secondary=DatabaseGraph.AnnotNode.create(ptype=Type,payload=subelt)
-                    print primary, secondary, primary.ID
-                    DatabaseGraph.is_annotated.create(primary, secondary, costum_from=primary.ID,costum_to='Annotation')
+                    print annotated_node, secondary, annotated_node.ID
+                    DatabaseGraph.is_annotated.create(annotated_node, secondary, costum_from=annotated_node.ID,costum_to='Annotation')
 
-def MetaInsert(function,dico):
-    length=len(dico)
+def MetaInsert(bulbs_graph_class, property_source_dict):
+    """
+    Inserst a Meta-Object (I.e. any physical entity or collection thereof) as a member of a bulbs class and pumping the
+    source information from the property source
+    """
+    length=len(property_source_dict)
     counter=0
-    for key in dico.keys():
+    for key in property_source_dict.keys():
         counter+=1
         print '\n',counter,'/',length,'\n'
-        primary=function.create(ID=key, displayName=dico[key]['displayName'], localization=dico[key]['cellularLocation'])
+        primary=bulbs_graph_class.create(ID=key, displayName=property_source_dict[key]['displayName'], localization=property_source_dict[key]['cellularLocation'])
         LocalDict[key]=primary
-        MinimalAnnotInsert(LocalDict[key], dico[key]['references'])
-        if 'cellularLocation' in dico[key].keys():
-            secondary=LocalDict[dico[key]['cellularLocation']]
+        MinimalAnnotInsert(LocalDict[key], property_source_dict[key]['references'])
+        if 'cellularLocation' in property_source_dict[key].keys():
+            secondary=LocalDict[property_source_dict[key]['cellularLocation']]
             DatabaseGraph.is_localized.create(primary, secondary,costum_from=primary.ID,costum_to=secondary.ID)
             # TODO add ModificationFeature insertion
-        if 'modification' in dico[key].keys():
-            for modification in dico[key]['modification']:
+        if 'modification' in property_source_dict[key].keys():
+            for modification in property_source_dict[key]['modification']:
                 if 'location' in modification.keys() and 'modification' in modification.keys():
                     LocMod=DatabaseGraph.ModificationFeature.create(ID = modification['ID'], type="post-translational_Mod", location=modification['location'], displayName=modification['modification'])
                     DatabaseGraph.is_able_to_modify.create(primary,LocMod,costum_from=primary.ID,costum_to=LocMod.ID)
 
-
 def CollectionRefsInsert(primaryCollection):
+    """
+    Links a collection object reference to the members of the collection.
+    """
     for key in primaryCollection.keys():
         for ref in primaryCollection[key]['collectionMembers']:
             DatabaseGraph.is_part_of_collection.create(LocalDict[key],LocalDict[ref],costum_from=LocalDict[key].ID,costum_to=LocalDict[ref].ID)
 
 def ComplexPartsInsert():
+    """
+    Links part of a complex to the complex
+    """
     for key in DG.Complexes.keys():
         for part in DG.Complexes[key]['parts']:
             if 'Stoichiometry' not in part:
                 DatabaseGraph.is_part_of_complex.create(LocalDict[key],LocalDict[part],costum_from=LocalDict[key].ID,costum_to=LocalDict[part].ID)
 
-def ReactionInsert(function,dico):
-    for key in dico.keys():
-        LocalDict[key]=function.create(ID=key,displayName=dico[key]['displayName'])
-        MinimalAnnotInsert(LocalDict[key], dico[key]['references'])
-        for subkey in dico[key].keys():
+def ReactionInsert(bulbs_graph_class, property_source_dict):
+    """
+    Inserst a Reaction-Object (I.e. any reaction or type of reactions) as a member of a bulbs class and pumping the
+    source information from the property source
+    """
+    for key in property_source_dict.keys():
+        LocalDict[key]=bulbs_graph_class.create(ID=key,displayName=property_source_dict[key]['displayName'])
+        MinimalAnnotInsert(LocalDict[key], property_source_dict[key]['references'])
+        for subkey in property_source_dict[key].keys():
             if subkey in ['left','right']:
-                for elt in dico[key][subkey]:
+                for elt in property_source_dict[key][subkey]:
                     DatabaseGraph.is_reaction_participant.create(LocalDict[key],LocalDict[elt],side=subkey,costum_from=LocalDict[key].ID,costum_to=LocalDict[elt].ID) 
             if subkey=='product':
-                DatabaseGraph.is_reaction_participant.create(LocalDict[key],LocalDict[dico[key][subkey]],costum_from=LocalDict[key].ID,costum_to=LocalDict[dico[key][subkey]].ID)
+                DatabaseGraph.is_reaction_participant.create(LocalDict[key],LocalDict[property_source_dict[key][subkey]],costum_from=LocalDict[key].ID,costum_to=LocalDict[property_source_dict[key][subkey]].ID)
 
 def CatalysisInsert():
+    """
+    Inserts all the catalysis links from one meta-element to an another
+    """
     for key in DG.Catalysises.keys():
         if 'controller' in DG.Catalysises[key].keys() and 'controlled' in DG.Catalysises[key].keys():
             if DG.Catalysises[key]['controlled'] in LocalDict.keys() and DG.Catalysises[key]['controller'] in LocalDict.keys():
@@ -100,12 +125,19 @@ def CatalysisInsert():
             logging.debug("%s : %s, %s, %s,", key, DG.Catalysises[key],'controller' in DG.Catalysises[key].keys(),'controlled' in DG.Catalysises[key].keys())
 
 def ModulationInsert():
+    """
+    Inserts all the Modulation links from one meta-element to an another
+    """
     for key in DG.Modulations.keys():
         primary=LocalDict[DG.Modulations[key]['controller']]
         secondary=LocalDict[DG.Modulations[key]['controlled']]
         LocalDict[key]=DatabaseGraph.is_regulant.create(primary, secondary, ID=key,controlType=DG.Modulations[key]['controlType'],costum_from=primary.ID,costum_to=secondary.ID)
 
 def Pathways_Insert():
+    """
+    Inserts all the Pathways, linking and chaining subpathways
+    Attention, it have to be imported at the same time as the reactions.
+    """
     for key in DG.PathwaySteps.keys():
         primary=DatabaseGraph.PathwayStep.create(ID=key)
         LocalDict[key]=primary
@@ -131,18 +163,19 @@ def Pathways_Insert():
             secondary=LocalDict[Sub_Pathway]
             DatabaseGraph.is_part_of_pathway.create(primary,secondary,costum_from=key,costum_to=Sub_Pathway)
 
-def clean():
-    for PathStep in DatabaseGraph.PathwayStep.get_all():
-        ID=str(PathStep).split('/')[-1][:-1]
-        DatabaseGraph.PathwayStep.delete(ID)
-
 
 def getOneMetaSet(function):
+    """
+    In case a MetaObject was already inserted, reloads it to the local dictionary for futher annoation
+    """
     for MetaKey in function.get_all():
         if MetaKey!=None:
             LocalDict[MetaKey.ID]=MetaKey
         
 def getAllMetaSets():
+    """
+    In case the MetaObjects were already inserted, reloads them all to the local dictionary for futher annoation
+    """
     functionList=[
                   DatabaseGraph.DNA,
                   DatabaseGraph.DNA_Collection,
@@ -161,40 +194,64 @@ def getAllMetaSets():
     for function in functionList:
         getOneMetaSet(function)
 
-#
-# InsertCellLocations()
-# 
-# MetaInsert(DatabaseGraph.DNA, DG.Dnas)
-# MetaInsert(DatabaseGraph.DNA_Collection, DG.Dna_Collections)
-# MetaInsert(DatabaseGraph.RNA, DG.Rnas)
-# MetaInsert(DatabaseGraph.RNA_Collection, DG.Rna_Collections)
-# MetaInsert(DatabaseGraph.SmallMolecule, DG.SmallMolecules)
-# MetaInsert(DatabaseGraph.SmallMolecule_Collection, DG.SmallMolecule_Collections)
-# MetaInsert(DatabaseGraph.Protein, DG.Proteins)
-# MetaInsert(DatabaseGraph.Protein_Collection, DG.Protein_Collections)
-# MetaInsert(DatabaseGraph.Complex, DG.Complexes)
-# MetaInsert(DatabaseGraph.Complex_Collection, DG.Complex_Collections)
-# MetaInsert(DatabaseGraph.PhysicalEntity, DG.PhysicalEntities)
-# MetaInsert(DatabaseGraph.PhysicalEntity_Collection, DG.PhysicalEntity_Collections)
-# CollectionRefsInsert(DG.Dna_Collections)
-# CollectionRefsInsert(DG.Rna_Collections)
-# CollectionRefsInsert(DG.SmallMolecule_Collections)
-# CollectionRefsInsert(DG.Protein_Collections)
-# CollectionRefsInsert(DG.Complex_Collections)
-# CollectionRefsInsert(DG.PhysicalEntity_Collections)
-#
-# ComplexPartsInsert()
-# 
-# ## Meta insert finished
-# ReactionInsert(DatabaseGraph.TemplateReaction, DG.TemplateReactions)
-# ReactionInsert(DatabaseGraph.Degradation, DG.Degradations)
-# ReactionInsert(DatabaseGraph.BiochemicalReaction, DG.BiochemicalReactions)
-# 
-# ## Reaction insert finished
-# CatalysisInsert()
-# ModulationInsert()
-# clean()
-# getAllMetaSets() 
-# Pathways_Insert()
-#
+# Attention, thuis function has to be redifined regularly, since it is mediated by the
+def clean():
+    """
+    Serves to clear a specific set and nodes in case an insertion went awry
+    """
+    for PathStep in DatabaseGraph.PathwayStep.get_all():
+        ID=str(PathStep).split('/')[-1][:-1]
+        DatabaseGraph.PathwayStep.delete(ID)
 
+
+def insert(Skip):
+    """
+    Performs the massive import of the Reactome database into the local neo4j database.
+    :parameter Skip:
+    * N => will skip nothing and implement the import once and for all.
+    * M => skips meta import, recovers the metas and resumes from the Reactions import.
+    """
+    # TODO: implement the skipping behavior
+
+    if Skip=='N':
+        InsertCellLocations()
+
+        MetaInsert(DatabaseGraph.DNA, DG.Dnas)
+        MetaInsert(DatabaseGraph.DNA_Collection, DG.Dna_Collections)
+        MetaInsert(DatabaseGraph.RNA, DG.Rnas)
+        MetaInsert(DatabaseGraph.RNA_Collection, DG.Rna_Collections)
+        MetaInsert(DatabaseGraph.SmallMolecule, DG.SmallMolecules)
+        MetaInsert(DatabaseGraph.SmallMolecule_Collection, DG.SmallMolecule_Collections)
+        MetaInsert(DatabaseGraph.Protein, DG.Proteins)
+        MetaInsert(DatabaseGraph.Protein_Collection, DG.Protein_Collections)
+        MetaInsert(DatabaseGraph.Complex, DG.Complexes)
+        MetaInsert(DatabaseGraph.Complex_Collection, DG.Complex_Collections)
+        MetaInsert(DatabaseGraph.PhysicalEntity, DG.PhysicalEntities)
+        MetaInsert(DatabaseGraph.PhysicalEntity_Collection, DG.PhysicalEntity_Collections)
+        CollectionRefsInsert(DG.Dna_Collections)
+        CollectionRefsInsert(DG.Rna_Collections)
+        CollectionRefsInsert(DG.SmallMolecule_Collections)
+        CollectionRefsInsert(DG.Protein_Collections)
+        CollectionRefsInsert(DG.Complex_Collections)
+        CollectionRefsInsert(DG.PhysicalEntity_Collections)
+
+        ComplexPartsInsert()
+
+
+
+    if Skip == 'M':
+        getAllMetaSets()
+
+    ## Meta insert/retrieval finished
+
+    ReactionInsert(DatabaseGraph.TemplateReaction, DG.TemplateReactions)
+    ReactionInsert(DatabaseGraph.Degradation, DG.Degradations)
+    ReactionInsert(DatabaseGraph.BiochemicalReaction, DG.BiochemicalReactions)
+
+    ## Reaction insert finished
+    CatalysisInsert()
+    ModulationInsert()
+    Pathways_Insert()
+
+if __name__ == "__main__":
+    insert('N')
