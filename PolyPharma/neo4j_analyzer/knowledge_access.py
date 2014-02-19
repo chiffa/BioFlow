@@ -4,7 +4,7 @@ Created on Jul 16, 2013
 @author: andrei
 '''
 
-from neo4j_Declarations.Graph_Declarator import DatabaseGraph
+from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
 import copy
 from time import time
 import pickle
@@ -355,11 +355,11 @@ def get_GO_Term_occurences(Importance_Dict,flat):
         
 
 def align_names2SP():
-    from Utils.UNIPROT_Parser import names_Dict
+    from PolyPharma.Utils.UNIPROT_Parser import names_Dict
     # If overington, switch comments on the two next lines
     # from configs import Targets_dict2 as Targets_dict
     # from congigs import Targets_File2 as Targets_File
-    from configs import Targets_dict, Targets_File
+    from PolyPharma.configs import Targets_dict, Targets_File
     Fle=file(Targets_File,'r')
     FileDict={}
     i=0
@@ -515,8 +515,7 @@ def compare_Local_Info_to_Ref(Go,UP_List):
     
     UP_List is a list of Swissprot_IDs reached by a GO term in a particular configuration
     '''
-    from configs import ref_coll
-    from configs import data_coll
+    from PolyPharma.configs import ref_coll,data_coll
     Go2Node_IDs=pickle.load(file('GO_IDs.dump','r'))
     GOs2UP_Node_IDs=pickle.load(file('Reverse_dict.dump','r'))
     SP_ID2Node_ID=import_UniprotDict()
@@ -535,7 +534,7 @@ def Compute_GO_sp_InfoCirc(Under_N,Over_N):
     for GO, val in GOs2UP_Node_IDs.iteritems():
         if len(val)<Under_N and len(val)>Over_N:
             GO_UnderN.append(GO)
-    from configs import ref_coll
+    from PolyPharma.configs import ref_coll
     i=0
     l=len(GO_UnderN)
     for GO in GO_UnderN:
@@ -559,7 +558,7 @@ def get_Max_Informativities(FilteringAbsolute, FilteringFraction):
     '''
     For each term, computes the set of GO Terms for which a Uniprot term have a maximal informativity
     '''
-    from configs import ref_coll
+    from PolyPharma.configs import ref_coll
     from Matrix_Puller import load_Uniprot_Attachments
     NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))
     UPNode_IDs_2Proteins_IDs_List=load_Uniprot_Attachments()

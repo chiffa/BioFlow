@@ -49,7 +49,7 @@ Project dependencies:
 * python-Levenshtein (via pip)
 * pymongo
 * requests
-* Sphinx-1.1.3 (documentation build)
+* Sphinx (documentation build)
 * scikits.sparse (for the cholesky decomposition of a symetric matrix)
 
 
@@ -59,5 +59,5 @@ This last step is best done via package manager:
 
 On *Debian*:   ```  $ sudo apt-get install suitesparse suitesparse-dev ```
 
-On *Fedora* / *RHCP* / *CentOS*    ```  $ sudo yum install suitesparse suitesparse_devel ```
+On *Fedora* / *RHCP* / *CentOS*:    ```  $ sudo yum install suitesparse suitesparse_devel ```
 

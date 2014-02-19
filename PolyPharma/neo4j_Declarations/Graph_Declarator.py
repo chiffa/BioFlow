@@ -13,8 +13,6 @@ if neo4j_server != 'http://localhost:7474':
     neo4j_server_local = Config(neo4j_server+ '/db/data/')
 else: neo4j_server_local = None
 
-#TODO: insert a reference to the config file from here
-
 # noinspection PyTypeChecker
 class Graph(Neo4jGraph):
     '''

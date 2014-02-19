@@ -13,10 +13,12 @@ from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
 #
 ####################################################################################
 
+# TODO: export logs location to the configs file
+
 logging.basicConfig(level=logging.DEBUG,
                     format='%(levelname)-8s %(message)s',
                     datefmt='%m-%d %H:%M',
-                    filename='dynamics_full.log',
+                    filename='../logs/dynamics_full.log',
                     filemode='w')
 
 console = logging.StreamHandler()

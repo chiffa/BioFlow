@@ -5,8 +5,6 @@ Created on Jun 17, 2013
 #Put it into the a Reactome parser package later on
 '''
 
-# TODO: enclose the computation-intesive part in a function that can be called externally; adapt the inserter to use it
-0
 import logging
 import xml.etree.ElementTree as ET
 from random import shuffle
@@ -19,10 +17,12 @@ import PolyPharma.configs as conf
 #
 ####################################################################################
 
+# TODO: export logs location to the configs file
+
 logging.basicConfig(level=logging.DEBUG,
                     format='%(levelname)-8s %(message)s',
                     datefmt='%m-%d %H:%M',
-                    filename='dynamics_full.log',
+                    filename='../logs/dynamics_full_2.log',
                     filemode='w')
 
 console = logging.StreamHandler()

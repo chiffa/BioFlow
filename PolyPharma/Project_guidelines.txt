@@ -14,6 +14,8 @@ Add additional Sources/Dimensioins
 # TODO: Import the DNA / epigenetic annotation ontology into the database to account for the DNA (un)-availability
 #       and for the DNA transport towards specific (activation or repression regions)
 
+# TODO: Cast in the database Protein Aboundances so that it becomes one-and-for-all import
+#       Problem: what are we to do in case we are willing to use a specific organ and not a general database?
 
 
 Improve crosslinking between different databases
@@ -36,6 +38,13 @@ From the mathematical point of view
 # TODO: Get rid of Cholesky decomposition: it is not appliable in our case because of presence of null eigenvalues
 # In fact there are as many eigenvalues as there are connex segments in the graph
 
+# TODO: replace pickling by JSON wherever appliable
+
+# TODO: add the clustering of proteins according to the GO annotation similarity
+
+# TODO: add the evaluations of Zipf-ittude for the proteins
+
+# TODO: add random matrix filtering-out for the "too noizy" conductions
 
 Utils module
 ============
