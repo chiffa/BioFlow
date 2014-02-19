@@ -41,7 +41,6 @@ def run_xml_Doctor(ReadabilityDict):
     tree = ET.parse(ReactomeBioPax)
     root = tree.getroot()
 
-    #TODO: perform the dictionnaries linking the subtypes of grouping nodes
     #TODO: correlation between presences?
 
     def make_readable(stree):

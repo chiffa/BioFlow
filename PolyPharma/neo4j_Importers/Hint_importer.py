@@ -51,10 +51,3 @@ def cross_ref_HiNT(flush):
                         DatabaseGraph.is_interacting.create(UniProtRefDict[key], UniProtRefDict[subkey])
     print i, len(Treated)
 
-def clean(ObjectType):
-    i=0
-    for elt in ObjectType.get_all():
-        ID=str(elt).split('/')[-1][:-1]
-        i+=1
-        ObjectType.delete(ID)
-

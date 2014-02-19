@@ -4,7 +4,7 @@ Created on Jul 5, 2013
 @author: andrei
 '''
 
-from PolyPharma.Utils.GO_Structure_Parser import GO_Terms, GO_Terms_Structure
+from PolyPharma.Utils.GO_Structure_Parser import fill_GO_Terms
 from PolyPharma.Utils.UNIPROT_Parser import Uniprot
 from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
 import logging
@@ -25,6 +25,8 @@ GODict={} # Stores relations between GO IDs and the objects in the neo4j databas
 UniprotDict={} # Stores relations between the SWISSPROT UNIPROT IDs and the neo4j database objects
 
 def import_GOs():
+    # generate terms:
+    GO_Terms, GO_Terms_Structure = fill_GO_Terms()
     # Create Terms
     leng=len(GO_Terms.keys())
     i=0
@@ -132,15 +134,6 @@ def import_UNIPROTS():
                         secondary=prot
                         DatabaseGraph.is_same.create(primary,secondary)
                         j+=1
-
-        
-def clean(ObjectType):  # TODO: <= Move to a general "Operations class"
-    i=0
-    for elt in ObjectType.get_all():
-        ID=str(elt).split('/')[-1][:-1]
-        i+=1
-        logging.debug('del %s', i)
-        ObjectType.delete(ID)
 
 
 def getGOs(ObjectType):

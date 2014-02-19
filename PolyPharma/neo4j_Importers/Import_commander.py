@@ -19,4 +19,4 @@ from Hint_importer import cross_ref_HiNT
 # import_UNIPROTS()
 # # clean(DatabaseGraph.UNIPORT)
 # # clean(DatabaseGraph.GOTerm)
-cross_ref_HiNT(True)
+# cross_ref_HiNT(True)

@@ -1,5 +1,8 @@
 PolyPharma
-=======================
+**********
+
+Description:
+============
 
 This code is currently under development and thus it isn't always stable, thoroughly tested or well documented.
 
@@ -18,6 +21,7 @@ However, if you are willing to test it and encounter problems or are willing to 
 an issue ticket on GitHub and I will be glad to assist you in the measure of my possibilities.
 
 Project dependencies:
+=====================
 
 Python 2.7.3 (x86_64 build)
 SQLAlchemy 0.8.0b2
@@ -34,11 +38,13 @@ requests
 
 Please note that scikits.sparse requires:
  - Cython installation via pip
- - suitesparse-dev install and CHOLMOD .so files linked and referenced by the compiler.
+ - suitesparse-dev(el) installation
 
- Currently the only reasonably easy way to get scikits to compile agains suitesparse is on Debian Linux and
- relies on issuing an:
+This last step is best done via package manager:
+On Debian:
   $ sudo apt-get install suitesparse suitesparse-dev
+On Fedora / RHCP / CentOS
+  $ sudo yum install suitesparse suitesparse_devel
 
 
 Documentation Build:
