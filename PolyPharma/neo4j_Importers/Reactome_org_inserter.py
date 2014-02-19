@@ -362,5 +362,6 @@ full_dict = {'DNA':DatabaseGraph.DNA,
 
 if __name__ == "__main__":
     # insert_all()
-    run_diagnostics(full_dict)
+    # run_diagnostics(full_dict)
     # clear_all(full_dict)
+    pass

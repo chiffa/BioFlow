@@ -27,3 +27,12 @@ Improve crosslinking between different databases
 #       versions
 
 # TODO: import modification feature insertion from the reactome database to account for post-translational modifications
+
+
+From the mathematical point of view
+===================================
+
+# TODO: Get rid of Cholesky decomposition: it is not appliable in our case because of presence of null eigenvalues
+# In fact there are as many eigenvalues as there are connex segments in the graph
+
+#

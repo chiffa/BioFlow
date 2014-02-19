@@ -167,5 +167,5 @@ def get_access_dicts():
 
 
 Parse_Uniprot()
-names_Dict=get_Names_dict()
-access_dict=get_access_dicts()
+names_Dict = get_Names_dict()
+access_dict = get_access_dicts()

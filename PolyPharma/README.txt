@@ -30,6 +30,7 @@ bulbs (via pip)
 python-Levenshtein (via pip)
 scikits.sparse (for the cholesky decomposition of a symetric matrix)
 pymongo (and mongodb database running on the default port)
+requests
 
 Please note that scikits.sparse requires:
  - Cython installation via pip

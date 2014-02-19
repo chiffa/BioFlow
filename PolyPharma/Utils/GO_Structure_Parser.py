@@ -4,45 +4,44 @@ Created on Jul 2, 2013
 @author: andrei
 '''
 
-import configs as conf
+import PolyPharma.configs as conf
 
-GO_Terms={}
-    # {id:
-    # {'id':''
-    # 'name':''
-    # 'def':''
-    # 'namespace':''}}
-    #
-    # Ignored
-    # ['subset', => ignore
-    # 'comment', => ignore
-    # 'exact_synonym',=> Ignore
-    # 'consider', => ignore
-    # 'related_synonym', => ignore
-    # 'narrow_synonym', => ignore
-    # 'broad_synonym', => ignore
-    # 'replaced_by', => ignore
-    # 'alt_id', => ignore
-    # 'xref_analog'] => ignore
-
-GO_Terms_Structure=[] # [(Node1,relation,Node2)]
-    #  Where relation in:
-    # 'is_a'
-    # 'relationship',
-    #    'part_of'
-    #    'regulates'
-    #    'positively_regulates'
-    #    'negatively_regulates'
-
-'''
-Parse dictionary is of the type GO_Term_ID: {}
-'''
 
 def fill_GO_Terms():
+    """
+    Parse dictionary is of the type GO_Term_ID: {}
+    """
+    GO_Terms={}
+        # {id:
+        # {'id':''
+        # 'name':''
+        # 'def':''
+        # 'namespace':''}}
+        #
+        # Ignored
+        # ['subset', => ignore
+        # 'comment', => ignore
+        # 'exact_synonym',=> Ignore
+        # 'consider', => ignore
+        # 'related_synonym', => ignore
+        # 'narrow_synonym', => ignore
+        # 'broad_synonym', => ignore
+        # 'replaced_by', => ignore
+        # 'alt_id', => ignore
+        # 'xref_analog'] => ignore
+
+    GO_Terms_Structure=[] # [(Node1,relation,Node2)]
+        #  Where relation in:
+        # 'is_a'
+        # 'relationship',
+        #    'part_of'
+        #    'regulates'
+        #    'positively_regulates'
+        #    'negatively_regulates'
+
     docu=open(conf.GeneOntology,"r")
     localDictionary={}
     LocalRelations=[]
-    GO_Terms_Structure=[]
     blocks=0
     Block=False
     Obsolete=False
@@ -87,8 +86,8 @@ def fill_GO_Terms():
                         header=str(payload.split()[0].strip())
                         payload=str(payload.split()[1].strip().split(':')[1])
                         LocalRelations.append((localDictionary['id'],header,payload))
-    return GO_Terms_Structure
+    return GO_Terms, GO_Terms_Structure
 
     
-GO_Terms_Structure=fill_GO_Terms()
+GO_Terms, GO_Terms_Structure = fill_GO_Terms()
 

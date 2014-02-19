@@ -4,9 +4,9 @@ Created on Jul 5, 2013
 @author: andrei
 '''
 
-from Utils.GO_Structure_Parser import GO_Terms, GO_Terms_Structure
-from Utils.UNIPROT_Parser import Uniprot
-from neo4j_Declarations.Graph_Declarator import DatabaseGraph
+from PolyPharma.Utils.GO_Structure_Parser import GO_Terms, GO_Terms_Structure
+from PolyPharma.Utils.UNIPROT_Parser import Uniprot
+from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
 import logging
 
 logging.basicConfig(level=logging.DEBUG,
@@ -134,24 +134,22 @@ def import_UNIPROTS():
                         j+=1
 
         
-def clean(ObjectType):
+def clean(ObjectType):  # TODO: <= Move to a general "Operations class"
     i=0
     for elt in ObjectType.get_all():
         ID=str(elt).split('/')[-1][:-1]
         i+=1
         logging.debug('del %s', i)
         ObjectType.delete(ID)
-        
+
+
 def getGOs(ObjectType):
     for elt in ObjectType.get_all():
-        ID=str(elt).split('/')[-1][:-1]
-        primary=ObjectType.get(ID)
-        GODict[primary.ID]=primary
+        ID = str(elt).split('/')[-1][:-1]
+        primary = ObjectType.get(ID)
+        GODict[primary.ID] = primary
     logging.debug('GO Loaded')
     
 
 
-# clean(DatabaseGraph.UNIPORT)                                                                                                                                                                                                                                                                                                                                                                                                                    
-# getGOs(DatabaseGraph.GOTerm)
-# import_GOs()
-#import_UNIPROTS()
+

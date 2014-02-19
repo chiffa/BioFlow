@@ -35,7 +35,7 @@ def get_Uniprots():
         UPDict[str(primary.ID).split('_')[0]]=primary
     return UPDict
 
-def cross_ref_HiNT():
+def cross_ref_HiNT(flush):
     RelationDict=get_Prot2ProtRels()
     UniProtRefDict=get_Uniprots()
     Treated=set()
@@ -47,7 +47,8 @@ def cross_ref_HiNT():
                 if subkey in UniProtRefDict.keys() and subkey not in Treated:
                     i+=1
                     print key, subkey
-                    # DatabaseGraph.is_interacting.create(UniProtRefDict[key], UniProtRefDict[subkey])
+                    if flush:
+                        DatabaseGraph.is_interacting.create(UniProtRefDict[key], UniProtRefDict[subkey])
     print i, len(Treated)
 
 def clean(ObjectType):
@@ -57,4 +58,3 @@ def clean(ObjectType):
         i+=1
         ObjectType.delete(ID)
 
-cross_ref_HiNT()
