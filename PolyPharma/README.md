@@ -20,41 +20,48 @@ This application is provided as-is, without any warranties or support. Use it at
 However, if you are willing to test it and encounter problems or are willing to provide feedback, please fill in
 an issue ticket on GitHub and I will be glad to assist you in the measure of my possibilities.
 
-The license is BSD, but in case of academic usage, please cite the url (publication is to come).
+The license is BSD, but in case of academic usage, please cite the *url* (publication is to come).
+
+
 
 Project dependencies:
 =====================
 
 **System-level packages:**
 
-* Python 2.7.3 (x86_64 build)
-* Java JDK 1.6.0_24 (x86_64 build)
+* Python 2.7.x (x86_64 )
+* Java JDK 1.6/1.7
 * MongoDB
 * Neo4j 1.xx (Note: if you need to install a 2.xx series, please install [gremlin parser engine](https://github.com/neo4j-contrib/gremlin-plugin) too)
+* suitesparese & suitesparse-dev
 * LAPACK, ATLAS, BLAS (only if you are installing Scipy manually)
+
 
 **Packages installed via Pip:**
 
-* SQLAlchemy 0.8.0b2
-* JPype-0.5.4.2 (x86_64 build)
-* neo4j-embedded 1.6 (x86_64 build)
-* numpy (latest x86_64 build)
-* Scipy (latest x86_64 build of LAPACK, ATLAS and BLAS + pip-install)
+* JPype (x86_64 build)
+* Cython
+* neo4j-embedded (x86_64 build)
+* SQLAlchemy (latests x86_64 build)
+* NumPy (latest x86_64)
+* SciPy (latest x86_64)
 * bulbs (via pip)
 * python-Levenshtein (via pip)
 * pymongo
 * requests
-* scikits.sparse (for the cholesky decomposition of a symetric matrix)
 * Sphinx-1.1.3 (documentation build)
+* scikits.sparse (for the cholesky decomposition of a symetric matrix)
 
 
-Please note that scikits.sparse requires:
- - Cython installation via pip
- - suitesparse-dev(el) installation
+Please note that scikits.sparse requires Cython installation via pip and suitesparse-dev(el) installation.
 
 This last step is best done via package manager:
-On Debian:
+
+On **Debian**:
+
 ```  $ sudo apt-get install suitesparse suitesparse-dev ```
-On Fedora / RHCP / CentOS
+
+On **Fedora** / **RHCP** / **CentOS**
+
 ```  $ sudo yum install suitesparse suitesparse_devel ```
 
