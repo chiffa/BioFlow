@@ -31,8 +31,8 @@ Project dependencies:
 
 * Python 2.7.x (x86_64 )
 * Java JDK 1.6/1.7
-* MongoDB
 * Neo4j 1.xx (Note: if you need to install a 2.xx series, please install [gremlin parser engine](https://github.com/neo4j-contrib/gremlin-plugin) too)
+* MongoDB
 * suitesparese & suitesparse-dev
 * LAPACK, ATLAS, BLAS (only if you are installing Scipy manually)
 
@@ -57,11 +57,7 @@ Please note that scikits.sparse requires Cython installation via pip and suitesp
 
 This last step is best done via package manager:
 
-On **Debian**:
+On *Debian*:   ```  $ sudo apt-get install suitesparse suitesparse-dev ```
 
-```  $ sudo apt-get install suitesparse suitesparse-dev ```
-
-On **Fedora** / **RHCP** / **CentOS**
-
-```  $ sudo yum install suitesparse suitesparse_devel ```
+On *Fedora* / *RHCP* / *CentOS*    ```  $ sudo yum install suitesparse suitesparse_devel ```
 
