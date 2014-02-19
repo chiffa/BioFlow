@@ -54,7 +54,7 @@ Please note that scikits.sparse requires:
 
 This last step is best done via package manager:
 On Debian:
-```  $ sudo apt-get install suitesparse suitesparse-dev
+```  $ sudo apt-get install suitesparse suitesparse-dev ```
 On Fedora / RHCP / CentOS
-```  $ sudo yum install suitesparse suitesparse_devel
+```  $ sudo yum install suitesparse suitesparse_devel ```
 
