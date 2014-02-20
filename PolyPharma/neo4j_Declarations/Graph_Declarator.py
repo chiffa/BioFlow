@@ -25,6 +25,7 @@ class Graph(Neo4jGraph):
         #Annotations
         self.Location = self.build_proxy(DDT.Location)
         self.AnnotNode = self.build_proxy(DDT.AnnotNode)
+        self.AccessNode = self.build_proxy(DDT.AccessNode)
         self.Originating_Organism = self.build_proxy(DDT.Originating_Organism)
         self.Pathway = self.build_proxy(DDT.Pathway)
         self.PathwayStep = self.build_proxy(DDT.Pathway_Step)
@@ -61,6 +62,7 @@ class Graph(Neo4jGraph):
         #Pointers from the Simple Compounds to their annotations
         self.is_localized = self.build_proxy(DDT.is_localized)
         self.is_annotated = self.build_proxy(DDT.is_annotated)
+        self.is_accessible_as = self.build_proxy(DDT.is_accessible_as)
         self.is_originating_in_organism = self.build_proxy(DDT.is_originating_in_organism)
         self.is_part_of_pathway = self.build_proxy(DDT.is_part_of_pathway)
         self.is_next_in_pathway = self.build_proxy(DDT.is_next_in_pathway)

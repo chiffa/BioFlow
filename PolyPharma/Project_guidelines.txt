@@ -17,6 +17,8 @@ Add additional Sources/Dimensioins
 # TODO: Cast in the database Protein Aboundances so that it becomes one-and-for-all import
 #       Problem: what are we to do in case we are willing to use a specific organ and not a general database?
 
+# TODO: Add ENSEMBL idnetifiers and gene names indexing
+
 
 Improve crosslinking between different databases
 ================================================
@@ -32,6 +34,8 @@ Improve crosslinking between different databases
 
 # TODO: verify if GO_Terms analysis conserves the "regulation relations or not.
 
+# TODO: add fulltext indexes to the nodes
+
 From the mathematical point of view
 ===================================
 
@@ -45,6 +49,7 @@ From the mathematical point of view
 # TODO: add the evaluations of Zipf-ittude for the proteins
 
 # TODO: add random matrix filtering-out for the "too noizy" conductions
+
 
 Utils module
 ============

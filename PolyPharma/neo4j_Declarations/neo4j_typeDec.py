@@ -11,183 +11,189 @@ from bulbs.model import Node, Relationship
 from bulbs.property import String, Integer, Float
 
 class CostumNode(Node):             # Serves as a basis for the annotation
-    element_type="CostumNode"
-    ID=String(nullable=False)       # Reactome import heritage
-    displayName=String()            # To see what it is, for the human operator
-    custom=String()                 # Just in case
-    load=Float()                    # To freeze information transmission score (Dict should be better?)
+    element_type = "CostumNode"
+    ID = String(nullable = False)       # Reactome import heritage
+    displayName = String()            # To see what it is, for the human operator
+    custom = String()                 # Just in case
+    load = Float()                    # To freeze information transmission score (Dict should be better?)
 
 class AnnotNode(Node):                  # Used mainly the simplest annotation basis annotation
-    element_type="AnnotNode"   
-    ptype=String(nullable=False)  # Payload type          
-    payload=String(nullable=False)     # Indexed payload
+    element_type = "AnnotNode"   
+    ptype = String(nullable = False)    # Payload type
+    payload = String(nullable = False)  # Indexed payload
  
 class CostumLink(Relationship):
-    label="CostumLink"
-    costum_from=String()
-    costum_to=String()
-    linkType=String()
-    custom=String()
-    load=Float()
+    label = "CostumLink"
+    costum_from = String()
+    costum_to = String()
+    linkType = String()
+    custom = String()
+    load = Float()
 
-#<====================================>
+#< ======================================================================= >
     
 class Meta(CostumNode):
-    element_type="Meta"
-    localization=String()
+    element_type = "Meta"
+    localization = String()
     
 class Fragment(CostumNode):
-    element_type="Fragment"
-    locationType=String()           # SPAN or POINT
-    location=String(nullable=False) # Location is protein-relative
+    element_type = "Fragment"
+    locationType = String()           # SPAN or POINT
+    location = String(nullable = False) # Location is protein-relative
 
 class Instantiation_Type(CostumNode):
-    element_type="Instantiation_Type"
-    type=String()                   # Instantiation type: 
+    element_type = "Instantiation_Type"
+    type = String()                   # Instantiation type: 
 
 class Instance(CostumNode):
-    element_type="Instance"
+    element_type = "Instance"
     
 class Collection(CostumNode):
-    element_type="Collection"
+    element_type = "Collection"
 
 class Reaction(CostumNode):
-    element_type="Reaction"
-    frequency=Float()
+    element_type = "Reaction"
+    frequency = Float()
+
+class AccessNode(AnnotNode):      # For now it is Exact-indexed, but this will be moved to Full-text indexing
+    element_type  =  "AccessNode"   # In case of need
     
-#<=====================================>
+#< ========================================================================= >
 
 class DNA(Meta):
-    element_type="DNA"
+    element_type = "DNA"
 
 class Location(Instantiation_Type):
-    element_type="Location"
+    element_type = "Location"
 
 class is_localized(CostumLink):
-    label="is_localized"
+    label = "is_localized"
 
 class DNA_Collection(Meta):
-    element_type="DNA_Collection"
+    element_type = "DNA_Collection"
 
 class is_part_of_collection(CostumLink):
-    label="is_part_of_collection"
+    label = "is_part_of_collection"
 
 class is_annotated(CostumLink):
-    label="is_annotated"
+    label = "is_annotated"
 
 class is_possibly_same(CostumLink):
-    label="is_possibly_same"
+    label = "is_possibly_same"
 
 class Complex(Meta):
-    element_type="Complex"
+    element_type = "Complex"
 
 class is_part_of_complex(CostumLink):
-    label="is_part_of_complex"
+    label = "is_part_of_complex"
 
 class Complex_Collection(Meta):
-    element_type="Complex_Collection"
+    element_type = "Complex_Collection"
 
 class is_catalysant(CostumLink):
-    label="is_catalysant" # correct here!
-    controlType=String()
-    ID=String(nullable=False)
-    displayName=String()
+    label = "is_catalysant" # correct here!
+    controlType = String()
+    ID = String(nullable = False)
+    displayName = String()
     
 class is_regulant(CostumLink):
-    label="is_regulant" # correct here!
-    controlType=String()
-    ID=String(nullable=False)
-    displayName=String()
+    label = "is_regulant" # correct here!
+    controlType = String()
+    ID = String(nullable = False)
+    displayName = String()
 
 class PhysicalEntity(Meta):
-    element_type="PhysicalEntity"
+    element_type = "PhysicalEntity"
     
 class PhysicalEntity_Collection(Meta):
-    element_type="PhysicalEntity_Collection"
+    element_type = "PhysicalEntity_Collection"
 
 class TemplateReaction(Reaction):
-    element_type="Template_Reaction"
+    element_type = "Template_Reaction"
     
 class Degradation(Reaction):
-    element_type="Degradation"
+    element_type = "Degradation"
 
 class RNA(Meta):
-    element_type="RNA"
+    element_type = "RNA"
     
 class RNA_Collection(Meta):
-    element_type="RNA_Collection"
+    element_type = "RNA_Collection"
 
 class Originating_Organism(Instantiation_Type):
-    element_type="Originating_Organism"
+    element_type = "Originating_Organism"
 
 class is_originating_in_organism(Relationship):
-    label="is_originating_in_organism"
+    label = "is_originating_in_organism"
     
 class Protein(Meta):    
-    element_type="Protein"
+    element_type = "Protein"
 
 class Protein_Collection(Meta):
-    element_type="Protein_Collection"
+    element_type = "Protein_Collection"
 
 class SmallMolecule(Meta):
-    element_type="SmallMolecule" # correct here!
+    element_type = "SmallMolecule" # correct here!
 
 class SmallMolecule_Collection(Meta):
-    element_type="SmallMolecule_Collection" # correct here!
+    element_type = "SmallMolecule_Collection" # correct here!
 
 class BiochemicalReaction(Reaction):
-    element_type="BiochemicalReaction" # correct here!
+    element_type = "BiochemicalReaction" # correct here!
     
 class is_reaction_participant(CostumLink):
-    label="is_reaction_particpant"
-    side=String()
+    label = "is_reaction_particpant"
+    side = String()
 
 class ModificationFeature(Instantiation_Type):
-    element_type="ModificationFeature" # correct here!
-    location=String()
+    element_type = "ModificationFeature" # correct here!
+    location = String()
 
 class is_modified_to(CostumLink):
-    label="is_modified_to "
+    label = "is_modified_to "
 
 class is_modified_by(CostumLink):
-    label="is_modified_by "
+    label = "is_modified_by "
 
 class is_able_to_modify(CostumLink):
-    label="is_able_to_modify"
+    label = "is_able_to_modify"
 
 class Pathway(CostumNode):
-    element_type="Pathway"
+    element_type = "Pathway"
 
 class Pathway_Step(CostumNode):
-    element_type="Pathway_Step"
+    element_type = "Pathway_Step"
 
 class is_part_of_pathway(CostumLink):
-    label="is_part_of_pathway"
+    label = "is_part_of_pathway"
 
 class is_next_in_pathway(CostumLink):
-    label="is_next_in_pathway"
+    label = "is_next_in_pathway"
     
 class UNIPROT(Meta):
-    element_type="UNIPROT"
-    involved=Integer() # 1 / 0 -> if it is involved in the Reactome.org interactions or not.
+    element_type = "UNIPROT"
+    involved = Integer() # 1 / 0 -> if it is involved in the Reactome.org interactions or not.
 
 class GOTerm(CostumNode):
-    element_type="GOTerm"
-    Name=String()
-    Namespace=String()
-    Definition=String()
+    element_type = "GOTerm"
+    Name = String()
+    Namespace = String()
+    Definition = String()
 
 class is_go_annotation(CostumLink):
-    label="is_go_annotation"
+    label = "is_go_annotation"
 
 class is_a_go(CostumLink):
-    label="is_a_go"
+    label = "is_a_go"
 
 class is_part_of_go(CostumLink):
-    label="is_part_of_go"
+    label = "is_part_of_go"
 
 class is_same(CostumLink):
-    label="is_same"
+    label = "is_same"
+
+class is_accessible_as(CostumLink):
+    label = "is_accessible_as"
     
 class is_interacting(CostumLink):   # According to the Yu lab hint database for humans there is one-to-one interaction
-    label="is_interacting"
+    label = "is_interacting"
