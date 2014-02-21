@@ -40,7 +40,7 @@ From the mathematical point of view
 ===================================
 
 # TODO: Get rid of Cholesky decomposition: it is not appliable in our case because of presence of null eigenvalues
-# In fact there are as many eigenvalues as there are connex segments in the graph
+# In fact there are as many null eigenvalues as there are connex segments in the graph
 
 # TODO: replace pickling by JSON wherever appliable
 
@@ -50,6 +50,22 @@ From the mathematical point of view
 
 # TODO: add random matrix filtering-out for the "too noizy" conductions
 
+# TODO: for the computation of the relevant computational values, normalize the connections
+#       Graph. Use a laplacian instead of the default graph for the decorrelation
+
+# TODO: add derivatives to analyse scaling factors on for element participation in a complex:
+#       Is this complex a limiting factor for this complex or not?. In case of level variation
+#       derivative will be the measure for the amount of the trafficked information, whereas
+#       in case of substantial modification (mutation silencing catalytical factor, this will)
+#       be the only available one.
+
+# TODO: add negative/positive potentials for the linkages to the GO terms for true
+#       Up/Down regulation
+
+# TODO: orient Zipf-central concepts for different environements
+#       (yeah, but this is direct biasis, isn't it?) => Better deduce your own Zipf-distribution
+
+# TODO: analyse the sign-connexity of the GO terms analysis tools
 
 Utils module
 ============

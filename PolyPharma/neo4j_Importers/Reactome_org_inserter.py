@@ -359,7 +359,9 @@ full_dict = {'DNA':DatabaseGraph.DNA,
               'Pathway':DatabaseGraph.Pathway,
               'Cell Locations':DatabaseGraph.Location,
               'Annotations':DatabaseGraph.AnnotNode,
-              'Modification Feature':DatabaseGraph.ModificationFeature
+              'Modification Feature':DatabaseGraph.ModificationFeature,
+              'UNIPROT':DatabaseGraph.UNIPORT,
+              'GO Term':DatabaseGraph.GOTerm,
             }
 
 if __name__ == "__main__":

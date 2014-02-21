@@ -18,7 +18,10 @@ class CostumNode(Node):             # Serves as a basis for the annotation
     load = Float()                    # To freeze information transmission score (Dict should be better?)
 
 class AnnotNode(Node):                  # Used mainly the simplest annotation basis annotation
-    element_type = "AnnotNode"   
+    """
+    Available AnnotNode Types are listed in AnnotNode_ptypes
+    """
+    element_type = "AnnotNode"
     ptype = String(nullable = False)    # Payload type
     payload = String(nullable = False)  # Indexed payload
  
@@ -55,9 +58,6 @@ class Reaction(CostumNode):
     element_type = "Reaction"
     frequency = Float()
 
-class AccessNode(AnnotNode):      # For now it is Exact-indexed, but this will be moved to Full-text indexing
-    element_type  =  "AccessNode"   # In case of need
-    
 #< ========================================================================= >
 
 class DNA(Meta):
@@ -192,8 +192,23 @@ class is_part_of_go(CostumLink):
 class is_same(CostumLink):
     label = "is_same"
 
-class is_accessible_as(CostumLink):
-    label = "is_accessible_as"
-    
 class is_interacting(CostumLink):   # According to the Yu lab hint database for humans there is one-to-one interaction
     label = "is_interacting"
+
+Anot_Node_ptypes = [    'name',
+                        'eCNumber',
+                        'ENSEMBL',
+                        'PathwayStep',
+                        'UniProt',
+                        'UNIPROT_Acnum',
+                        'UNIPROT_Name',
+                        'UNIPROT_GeneName',
+                        'UNIPROT_GeneRefs',
+                        'UNIPROT_GeneOL',
+                        'UNIPROT_GeneORF',
+                        'UNIPROT_Ensembl',
+                        'UNIPROT_EMBL_AC',
+                        'UNIPROT_EMBL_ID',
+                        'UNIPROT_PDB',
+
+        ]

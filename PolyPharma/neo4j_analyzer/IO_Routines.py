@@ -11,9 +11,9 @@ def lookup_by_ID(Domain, req):
             print item
 
 def count_items(Domain):
-    i=0
+    i = 0
     for elt in Domain.get_all():
-        i+=1
+        i += 1
     return i
 
 def Look_up_by_ID_for_a_set(Domain, ID_set):
@@ -23,9 +23,46 @@ def Look_up_by_ID_for_a_set(Domain, ID_set):
         print "=================="
 
 
-Tamara_analist = ["CK2N2_HUMAN", "NPTX1_HUMAN", "PGS2_HUMAN", "CO8A1_HUMAN", "MALL_HUMAN", "EMAL1_HUMAN"]
+def Look_up_Annot_Node(p_load, p_type=''):
+    """
+    return format: node type, node's displayName, node's db_ID, node's legacy ID
+    """
+
+    def run_through(node_generator):
+        """
+        Gets the nodes that are referenced by the annot_nodes in the generator
+        """
+        retset = []
+        for node in node_generator:
+            gen_2 = node.inV("is_annotated")
+            if not node_generator:
+                raise Warning(str(node)+"is floating alone in the wild. He feels lonely.")
+            for rel_node in gen_2:
+                node_db_ID = str(rel_node).split('/')[-1][:-1]
+                node_ID = rel_node.ID
+                node_type = rel_node.element_type
+                node_display = rel_node.displayName
+                retset.append((node_type, node_display, node_db_ID, node_ID))
+
+    from PolyPharma.neo4j_Declarations.neo4j_typeDec import Anot_Node_ptypes
+    if p_type == '':
+        node_generator = DatabaseGraph.AnnotNode.index.lookup(payload = p_load)
+        if not node_generator:
+            return []
+        return run_through(node_generator)
+
+    if p_type in Anot_Node_ptypes:
+        node_generator =  DatabaseGraph.AnnotNode.index.lookup(payload = p_load, ptype = p_type)
+        if not node_generator:
+            return []
+        return run_through(node_generator)
+
+    raise Exception(p_type + "is unsupported. Please refer to Anot_Node_ptypes in neo4j_typeDec for supported types")
+
+
 
 if __name__ == "__main__":
     # print count_items(DatabaseGraph.UNIPORT)
     # lookup_by_ID(DatabaseGraph.UNIPORT,"CK2N2_HUMAN")
-    Look_up_by_ID_for_a_set(DatabaseGraph.UNIPORT, Tamara_analist)
+
+    Look_up_Annot_Node('UNIPROT_Accnum','Q9Y624')
