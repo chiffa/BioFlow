@@ -12,10 +12,10 @@ source_file = open(conf.UNIPROT_source, "r")
 
 Interesting_TaxIDs = [TaxID.strip() for TaxID in conf.Sources['UNIPROT']['tax_ids'].split(',') if TaxID not in ('',' ')]
 Interesting_lines = ['ID', 'AC', 'DE', 'GN', 'OX', 'DR']
-Interesing_xrefs = ['EMBL', 'GO', 'Pfam', 'Ensembl', 'KEGG']
+Interesing_xrefs = ['EMBL', 'GO', 'Pfam', 'Ensembl', 'KEGG', 'PDB']
 NameIgnore = ['Contains', 'Allergen', 'EC=', 'Flags: ', 'CD_antigen', 'INN=']
 defDict = {'Acnum':[], 'Names':{'Full':'', 'AltNames':[]}, 'GeneRefs':{'Names':[], 'OrderedLocusNames':[], 'ORFNames':[]},
-           'Ensembl':[], 'KEGG':[], 'EMBL':[], 'GO':[], 'Pfam':[], 'SUPFAM':[]}
+           'Ensembl':[], 'KEGG':[], 'EMBL':[], 'GO':[], 'Pfam':[], 'SUPFAM':[], 'PDB':[]}
 
 # TODO: add the PDB cross-reference
 
@@ -49,14 +49,13 @@ def parse_Xref(Dico,Line):
     if 'SUPFAM; ' in Line:
         Dico['SUPFAM'].append(Line.split(';')[1].strip())
     if 'Ensembl; ' in Line:
-        # TODO: treat differently the protein, transcript and gene X-reference
-        # TODO: remove redundancies in the gene X-ref
-        # TODO: check if there are redundancies in the transcript -> protein (normally yes, because of the supra-introns)
         Dico['Ensembl'].append(Line.split(';')[1].strip())
         Dico['Ensembl'].append(Line.split(';')[2].strip())
         Dico['Ensembl'].append(Line.split(';')[3].strip().strip('.'))
     if 'KEGG; ' in Line:
         Dico['KEGG'].append(Line.split(';')[1].strip())
+    if 'PDB; ' in Line:
+        Dico['PDB'].append(Line.split(';')[1].strip())
 
 def parse_GeneRefs(Dico,Line):
     words = filter(lambda a:a != '', str(Line.strip() + ' ').split('; '))

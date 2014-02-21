@@ -149,7 +149,7 @@ def import_UNIPROTS():
                     pass
                 for name in dico['ORFNames']:
                     pass
-            for elt in Uniprot[CH_PROT_ID]['Ensembl']:
+            for elt in set(Uniprot[CH_PROT_ID]['Ensembl']):
                 pass
             for dico in Uniprot[CH_PROT_ID]['EMBL']:
                 print 'Accession', 'ID', 'status', 'type'
