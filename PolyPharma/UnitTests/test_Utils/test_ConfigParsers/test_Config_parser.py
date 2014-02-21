@@ -5,7 +5,6 @@ Checks if all the relevant information is in the ConfigParser-defined files
 '''
 import unittest
 from PolyPharma.Utils.ConfigParsers import Configs_common,Configs_parser
-# from PolyPharma.Utils.ConfigParsers.Configs_parser import rootdir,configsfiles,shortnames
 import os
 from pprint import PrettyPrinter
 
@@ -26,16 +25,10 @@ class ConfigsParser_TestSuite(unittest.TestCase):
         pp = PrettyPrinter(indent = 4)
         pp.pprint(parsedConfs)
 
-        for ext_DB_type, ext_DB_args in parsedConfs[2].iteritems():
-            currentPath = ext_DB_args['location']
-            if os.path.isdir(currentPath):
-                for fle in [f for f in os.listdir(currentPath) if os.path.isfile(os.path.join(currentPath,f))]:
-                    if ext_DB_args['load'] in fle:
-                        currentPath=os.path.join(currentPath,fle)
-            print ext_DB_type, currentPath
-            echo_read(currentPath)
-
-
+        ReadFiles=Configs_parser.sourcefile_compilator(parsedConfs[2])
+        pp.pprint(ReadFiles)
+        for path in ReadFiles.values():
+            echo_read(path)
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

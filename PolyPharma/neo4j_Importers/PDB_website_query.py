@@ -8,6 +8,8 @@ import requests, json, logging
 import xml.etree.ElementTree as ET
 
 
+# TODO: this section is still to be written
+
 logging.basicConfig(level=logging.DEBUG,
                     format='%(levelname)-8s %(message)s',
                     datefmt='%m-%d %H:%M',

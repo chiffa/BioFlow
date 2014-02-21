@@ -4,21 +4,25 @@ Created on Jun 17, 2013
 @author: andrei
 #Put it into the a Reactome parser package later on
 '''
-# TODO: we might want to parse the traceability of the all the compouunds and link by adding the xref parsed information to them
-# TODO: perform a search in the UNIPROT Database in order to imoprove the annotation based on the DisplayNames
-# TODO: perform GO terms parsing and linking of their structure to the neo4j database
-# TODO: perform a recovery of important domains from PDB
-# TODO: perform a recovery of post-translational modification sites in the normal proteins
 
 import logging
 import xml.etree.ElementTree as ET
 from random import shuffle
-import configs as conf
+import PolyPharma.configs as conf
+
+####################################################################################
+#
+# Logger behavior definition (most of the time it fails to function due to the)
+# logs collision with neo4j
+#
+####################################################################################
+
+# TODO: export logs location to the configs file
 
 logging.basicConfig(level=logging.DEBUG,
                     format='%(levelname)-8s %(message)s',
                     datefmt='%m-%d %H:%M',
-                    filename='dynamics_full.log',
+                    filename='../logs/dynamics_full_2.log',
                     filemode='w')
 
 console = logging.StreamHandler()
@@ -27,9 +31,20 @@ formatter = logging.Formatter('%(levelname)-8s %(message)s')
 console.setFormatter(formatter)
 logging.getLogger('').addHandler(console)
 
+####################################################################################
+#
+# Initial parse of all the elements in the Reactome BioPax package
+#
+####################################################################################
 
 tree = ET.parse(conf.ReactomeBioPax)
 root = tree.getroot()
+
+####################################################################################
+#
+# We define here the containers for all the values we are going to be interested in
+#
+####################################################################################
 
 BioSources={} #{ID:name}
 CellularLocations={} #{Id:name}
@@ -66,7 +81,11 @@ Modulations={} #{ID:{modulator, modulated} # This is essentially a compressed re
 
 
 def shDic(dico, entries=10):
-    EntryList=dico.items()
+    """
+    A supporting debug function.
+    Extracts a random subset of a dictionary and prints it
+    """
+    EntryList = dico.items()
     shuffle(EntryList)
     print 'length:', len(EntryList)
     for elt in EntryList[0:entries]:
@@ -79,15 +98,17 @@ def zipDicts(dict1,dict2):
     '''
     for key in dict2.keys():
         if key not in dict1.keys():
-            dict1[key]=dict2[key]
+            dict1[key] = dict2[key]
         else:
             assert isinstance(dict2[key],(list,tuple))
             dict1[key]=dict1[key]+dict2[key]
     return dict1
 
-
-################################################################3
+####################################################################################
+#
 # Simplest, pre-compression parses
+#
+####################################################################################
 
 def parse_BioSource():
     BioSourcesXml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}BioSource')
@@ -122,8 +143,11 @@ def parse_SeqSite():
             if '}sequencePosition' in site_ref.tag:
                 SeqSite[key]=site_ref.text
 
-##################################################################
+####################################################################################
+#
 # a little bit more complicated reference parses
+#
+####################################################################################
 
 def parse_DnaRefs():
     DnaRefsXml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}DnaReference')
@@ -222,8 +246,12 @@ def parse_ModificationFeatures():
             if '}modificationType' in modification_property.tag:
                 ModificationFeatures[key]['modification']=SeqModVoc[modification_property.attrib.values()[0][1:]]
 
-####################################################################
+####################################################################################
+#
 # Core parses : parsing at the same time objects and their collections
+#
+####################################################################################
+
 
 def MetaParser_SecLoop(LocDic,local_property,CollectionMarker):
     '''
@@ -490,8 +518,6 @@ def parse_all():
     parse_Modulations()
     parse_Pathways()
     parse_Pathway_Steps()
-    
+
+
 parse_all()
-    
-
-

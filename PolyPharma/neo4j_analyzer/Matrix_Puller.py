@@ -11,8 +11,8 @@ The general idea is to build up
 self-referenced conductances
 
 '''
-from neo4j_Declarations.Graph_Declarator import DatabaseGraph
-from configs import IDFilter
+from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
+from PolyPharma.configs import IDFilter
 import copy
 from scipy.sparse import lil_matrix
 from scipy.sparse.linalg import eigsh
@@ -852,7 +852,7 @@ def get_Current_all(Conductance_Matrix, Voltages, J):
 
     
 def stats_over_random_info_circ_samples(UniProtAttachement=True):
-    from Utils.Prot_Aboundances import ID2Aboundances
+    from PolyPharma.Utils.Prot_Aboundances import ID2Aboundances
     UPNode_IDs_2Proteins_IDs_List=load_Uniprot_Attachments()
     NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))
     DicList=[]
