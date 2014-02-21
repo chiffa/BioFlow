@@ -17,6 +17,8 @@ NameIgnore = ['Contains', 'Allergen', 'EC=', 'Flags: ', 'CD_antigen', 'INN=']
 defDict = {'Acnum':[], 'Names':{'Full':'', 'AltNames':[]}, 'GeneRefs':{'Names':[], 'OrderedLocusNames':[], 'ORFNames':[]},
            'Ensembl':[], 'KEGG':[], 'EMBL':[], 'GO':[], 'Pfam':[], 'SUPFAM':[]}
 
+# TODO: add the PDB cross-reference
+
 Uniprot = {}  # {SWISSPROT_ID:{
             #                 'Acnum':[],
             #                 'RecName':RecordName,
@@ -34,7 +36,11 @@ Ignore = [False, 2]
 def parse_Xref(Dico,Line):
     if 'EMBL; ' in Line and 'ChEMBL' not in Line:
         splt = Line.split(';')
-        package = (splt[1].strip(),splt[2].strip(),splt[3].strip())
+        if len(splt)>4:
+            package = { 'Accession': splt[1].strip(), 'ID':splt[2].strip(), 'status':splt[3].strip(), 'type':splt[4].strip().strip('.')}
+        else:
+            package = { 'Accession': splt[1].strip(), 'ID':splt[2].strip(), 'status':splt[3].strip(), 'type':''}
+
         Dico['EMBL'].append(package)
     if 'GO; GO:' in Line:
         Dico['GO'].append(Line.split(';')[1].split(':')[1].strip())
@@ -43,6 +49,9 @@ def parse_Xref(Dico,Line):
     if 'SUPFAM; ' in Line:
         Dico['SUPFAM'].append(Line.split(';')[1].strip())
     if 'Ensembl; ' in Line:
+        # TODO: treat differently the protein, transcript and gene X-reference
+        # TODO: remove redundancies in the gene X-ref
+        # TODO: check if there are redundancies in the transcript -> protein (normally yes, because of the supra-introns)
         Dico['Ensembl'].append(Line.split(';')[1].strip())
         Dico['Ensembl'].append(Line.split(';')[2].strip())
         Dico['Ensembl'].append(Line.split(';')[3].strip().strip('.'))
@@ -151,7 +160,8 @@ def get_access_dicts():
         for subelt in Uniprot[key]['Ensembl']:
             access_dict[subelt]= key
         for subelt in Uniprot[key]['EMBL']:
-            access_dict[subelt]= key
+            access_dict[subelt['Accession']] = key
+            access_dict[subelt['ID']] = key
         for subelt in Uniprot[key]['Acnum']:
             access_dict[subelt]= key
         for subelt in Uniprot[key]['GeneRefs']['Names']:

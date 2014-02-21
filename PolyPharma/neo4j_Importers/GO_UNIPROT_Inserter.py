@@ -112,14 +112,14 @@ def import_UNIPROTS():
     j=0
     leng=len(Acnums2RProts.keys())
     for CH_PROT_ID in Uniprot.keys():
-        set1=set(Uniprot[CH_PROT_ID]['Acnum'])
-        set2=set(Acnums2RProts.keys())
+        set1=set(Uniprot[CH_PROT_ID]['Acnum'])  # Filtering of Uniprots on insertion is done here:
+        set2=set(Acnums2RProts.keys())          # TODO: replace hard filtering by marking as cross-linked for the
         if not set1.isdisjoint(set2):
             print set1
             i+=1
             logging.debug('UNIPROT %s', str("{0:.2f}".format(float(i)/float(leng)*100)))
             #Create uniprot terms
-            primary=DatabaseGraph.UNIPORT.create(ID=CH_PROT_ID,displayName=Uniprot[CH_PROT_ID]['Names']['Full'])
+            primary=DatabaseGraph.UNIPORT.create(ID=CH_PROT_ID, displayName=Uniprot[CH_PROT_ID]['Names']['Full'])
             UniprotDict[CH_PROT_ID]=primary
             # Insert references to GOs
             for GO_Term in Uniprot[CH_PROT_ID]['GO']:
@@ -134,6 +134,25 @@ def import_UNIPROTS():
                         secondary=prot
                         DatabaseGraph.is_same.create(primary,secondary)
                         j+=1
+            # Insert an AccessNodes array
+            for elt in Uniprot[CH_PROT_ID]['Acnum']:
+                pass
+            for dico in Uniprot[CH_PROT_ID]['Names']:
+                # dico['Full']
+                for name in dico['AltNames']:
+                    pass
+                pass
+            for dico in Uniprot[CH_PROT_ID]['GeneRefs']:
+                for name in dico['Names']:
+                    pass
+                for name in dico['OrderedLocusNames']:
+                    pass
+                for name in dico['ORFNames']:
+                    pass
+            for elt in Uniprot[CH_PROT_ID]['Ensembl']:
+                pass
+            for dico in Uniprot[CH_PROT_ID]['EMBL']:
+                print 'Accession', 'ID', 'status', 'type'
 
 
 def getGOs(ObjectType):
