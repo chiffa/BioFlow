@@ -5,6 +5,7 @@ Created on Jun 25, 2013
 '''
 
 # TODO: reimplement the whole GO program based on the matrixes and the correct information circulation attributes
+
 # TODO: do clustering by the method suggested by Misiuro: we might want clusters that contain a particular target
     # several times, since it might contribute to several different targets
 
@@ -19,7 +20,6 @@ Created on Jun 25, 2013
     # - Molecular functions
     # - cellular locations
 
-# TODO: add pdb references to all the indexed proteins from uniprot
 
 # TODO: for each uniprot gene iserted add a DNA reference to the gene that was actually concerned.
 # That sucks, because we will also need to insert all the names references and check for the possible collisions with the UNIPROT identifiers
