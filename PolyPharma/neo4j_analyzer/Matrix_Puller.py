@@ -23,6 +23,7 @@ import numpy as np
 import operator
 from os import listdir
 import random
+# noinspection PyUnresolvedReferences
 from scikits.sparse.cholmod import cholesky
 from scipy.sparse import csc_matrix
 from scipy.sparse import diags
@@ -33,13 +34,16 @@ from scipy.sparse.csgraph import shortest_path
 import pylab
 import math
 
+
+# TODO: dissociate
+
 # Refers to the groups of links between the nodes that should be treated in the same manner 
-edge_type_filter0_1=["is_part_of_collection"]                   # Group relation group
-edge_type_filter0_2=["is_same"]                                 # Same relation group
-edge_type_filter1_1=["is_Catalysant","is_reaction_particpant"]  # Reaction relation group
-edge_type_filter1_2=["is_part_of_complex", "is_Regulant"]       # Contact_interaction relation group
-edge_type_filter1_3=["is_interacting"]                          # Contact_interaction relation group
-edge_type_filter2=["is_possibly_same"]                          # possibly_same relation group
+edge_type_filter0_1=["is_part_of_collection"]                    # Group relation group
+edge_type_filter0_2=["is_same"]                                  # Same relation group
+edge_type_filter1_1=["is_Catalysant", "is_reaction_particpant"]  # Reaction relation group
+edge_type_filter1_2=["is_part_of_complex", "is_Regulant"]        # Contact_interaction relation group
+edge_type_filter1_3=["is_interacting"]                           # Contact_interaction relation group
+edge_type_filter2=["is_possibly_same"]                           # possibly_same relation group
 
 # Coefficients values for the value_Matrix
 DfactorDict={"Group":0.5,
@@ -1001,9 +1005,11 @@ def Perform_Loading_Routines():
     getMatrix(DfactorDict, 100, False, True)
     compute_Uniprot_Attachments()
 
+
 def Perform_Testing_Routines():
     raise NotImplementedError
 
+#TODO: redirect to the de-novo matrix import
 def Write_Connexity_Infos():    
     ValueMatrix = pickle.load(file('pickleDump3.dump','r'))
     CCOmps = connected_components(ValueMatrix, directed=False)

@@ -4,7 +4,7 @@ Created on Jun 24, 2013
 @author: andrei
 '''
 
-from neo4j_Declarations.Graph_Declarator import DatabaseGraph
+from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
 import copy
 import operator
 import pickle

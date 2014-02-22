@@ -33,6 +33,8 @@ edge_type_filter1_2 = ["is_part_of_complex", "is_Regulant"]        # Contact_int
 edge_type_filter1_3 = ["is_interacting"]                           # Contact_interaction relation group
 edge_type_filter2 = ["is_possibly_same"]                           # possibly_same relation group
 
+#TODO: move the coefficients to the configs file
+
 # Coefficients values for the value_Matrix
 DfactorDict = {"Group":0.5,
              "Same":1,
@@ -57,6 +59,13 @@ ReactionsList = [DatabaseGraph.TemplateReaction, DatabaseGraph.Degradation, Data
 class Dumps(object):
     matrix_LS = 'dump5.dump'
     matrix_corrs = 'dump2.dump'
+    eigen_VaMat = 'eigen_valmat.csv'
+    eigen_ConMat = 'eigen_conmat.csv'
+    val_eigen = 'pickleDump.dump'
+    cond_eigen = 'pickleDump_0_5.dump'
+    ValMat = 'pickleDump3.dump'
+    ConMat = 'pickleDump4.dump'
+    UniP_att = 'UP_Attach.dump'
 
 
 def getMatrix(decreaseFactorDict, numberEigvals, FastLoad, ConnexityAwareness, full_impact):
@@ -220,6 +229,16 @@ def getMatrix(decreaseFactorDict, numberEigvals, FastLoad, ConnexityAwareness, f
 
         return ReactLinks, InitSet, GroupLinks, GroupSet, SecLinks, SecSet, UP_Links, UPSet, HiNT_Links, FullSet, Super_Links, ExpSet
 
+    def fast_insert(element, index_type):
+        # TODO: improve to pump from two different dictionnaries for ValueMatrix and ConductanceMatrix.
+        ValueMatrix[element[0], element[1]] = min(ValueMatrix[element[0], element[1]] + decreaseFactorDict[index_type], 1)
+        ValueMatrix[element[1], element[0]] = min(ValueMatrix[element[1], element[0]] + decreaseFactorDict[index_type], 1)
+        ConductanceMatrix[element[0], element[1]] = ConductanceMatrix[element[0], element[1]] - decreaseFactorDict[index_type]
+        ConductanceMatrix[element[1], element[0]] = ConductanceMatrix[element[1], element[0]] - decreaseFactorDict[index_type]
+        ConductanceMatrix[element[1], element[1]] = ConductanceMatrix[element[1], element[1]] + decreaseFactorDict[index_type]
+        ConductanceMatrix[element[0], element[0]] = ConductanceMatrix[element[0], element[0]] + decreaseFactorDict[index_type]
+
+
     init_time = time()
 
     ReactLinks, InitSet, GroupLinks, GroupSet, SecLinks,\
@@ -235,21 +254,16 @@ def getMatrix(decreaseFactorDict, numberEigvals, FastLoad, ConnexityAwareness, f
         DF = file(Dumps.matrix_LS, 'r')
         ReactLinks, InitSet, GroupLinks, GroupSet, SecLinks, SecSet, UP_Links, UPSet, HiNT_Links, FullSet, Super_Links, ExpSet = json.load(DF)
 
-    # TODO: manage super_ imnport behavior by creating variable "Highest Links", Highest Set
-
-    Highest_Links = HiNT_Links
     Highest_Set = FullSet
 
     if full_impact:
-        Highest_Links = Super_Links
         Highest_Set = ExpSet
 
-    print "building correspondances", time()-init_time
+    print "building correspondances", time() - init_time
 
     NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = build_correspondances(Highest_Set, FastLoad)
 
-    print "building the ValMatrix", time()-init_time
-
+    print "building the ValMatrix", time() - init_time
 
     loadLen = len(Highest_Set)
     ValueMatrix = lil_matrix((loadLen, loadLen))
@@ -257,89 +271,47 @@ def getMatrix(decreaseFactorDict, numberEigvals, FastLoad, ConnexityAwareness, f
 
     # the difference between ReactLinks and all the others are that React_Links are eqally conected groups,
     # whereath all the other are made by performing inclusion into an existing element and are of form dict[root]=[leaves]
-    # And thus we can actually perform the cor
+    # And thus we can actually perform the correlation isertion through the same function, as long as we iterate on non-
+    # repeated pairs.
+
+    t = time()
 
     for group in ReactLinks:
         for elt in itertools.combinations(group, 2):
             element = (NodeID2MatrixNumber[elt[0]], NodeID2MatrixNumber[elt[1]])
-            ValueMatrix[element[0], element[1]] = min(ValueMatrix[element[0], element[1]] + decreaseFactorDict["Reaction"], 1)
-            ValueMatrix[element[1], element[0]] = min(ValueMatrix[element[1], element[0]] + decreaseFactorDict["Reaction"], 1)
-            ConductanceMatrix[element[0], element[1]] = ConductanceMatrix[element[0], element[1]] - decreaseFactorDict["Reaction"]
-            ConductanceMatrix[element[1], element[0]] = ConductanceMatrix[element[1], element[0]] - decreaseFactorDict["Reaction"]
-            ConductanceMatrix[element[1], element[1]] = ConductanceMatrix[element[1], element[1]] + decreaseFactorDict["Reaction"]
-            ConductanceMatrix[element[0], element[0]] = ConductanceMatrix[element[0], element[0]] + decreaseFactorDict["Reaction"]
+            fast_insert(element, "Reaction")
 
     for key in GroupLinks.keys():
         for val in GroupLinks[key]:
             element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
-            ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Group"], 1)
-            ConductanceMatrix[element[0],element[1]]=ConductanceMatrix[element[0],element[1]]-decreaseFactorDict["Group"]
-            # Why did i do this? Well, if I din't use combination before:
-            element=(NodeID2MatrixNumber[val],NodeID2MatrixNumber[key])
-            ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Group"],1)
-            ConductanceMatrix[element[0],element[1]]=ConductanceMatrix[element[0],element[1]]-decreaseFactorDict["Group"]
-
-            ConductanceMatrix[element[1],element[1]]=ConductanceMatrix[element[1],element[1]]+decreaseFactorDict["Group"]
-            ConductanceMatrix[element[0],element[0]]=ConductanceMatrix[element[0],element[0]]+decreaseFactorDict["Group"]
+            fast_insert(element, "Group")
 
     for key in SecLinks.keys():
         for val in SecLinks[key]:
             element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
-            ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Contact_interaction"],1)
-            ConductanceMatrix[element[0],element[1]]=ConductanceMatrix[element[0],element[1]]-decreaseFactorDict["Contact_interaction"]
-
-            element=(NodeID2MatrixNumber[val],NodeID2MatrixNumber[key])
-            ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Contact_interaction"],1)
-            ConductanceMatrix[element[0],element[1]]=ConductanceMatrix[element[0],element[1]]-decreaseFactorDict["Contact_interaction"]
-
-            ConductanceMatrix[element[1],element[1]]=ConductanceMatrix[element[1],element[1]]+decreaseFactorDict["Contact_interaction"]
-            ConductanceMatrix[element[0],element[0]]=ConductanceMatrix[element[0],element[0]]+decreaseFactorDict["Contact_interaction"]
+            fast_insert(element, "Contact_interaction")
 
     for key in UP_Links.keys():
         for val in UP_Links[key]:
             element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
-            ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Same"],1)
-            ConductanceMatrix[element[0],element[1]]=ConductanceMatrix[element[0],element[1]]-decreaseFactorDict["Same"]
-
-            element=(NodeID2MatrixNumber[val],NodeID2MatrixNumber[key])
-            ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Same"],1)
-            ConductanceMatrix[element[0],element[1]]=ConductanceMatrix[element[0],element[1]]-decreaseFactorDict["Same"]
-
-            ConductanceMatrix[element[1],element[1]]=ConductanceMatrix[element[1],element[1]]+decreaseFactorDict["Same"]
-            ConductanceMatrix[element[0],element[0]]=ConductanceMatrix[element[0],element[0]]+decreaseFactorDict["Same"]
+            fast_insert(element, "Same")
 
     for key in HiNT_Links.keys():
         for val in HiNT_Links[key]:
             element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
-            ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Contact_interaction"],1)
-            ConductanceMatrix[element[0],element[1]]=ConductanceMatrix[element[0],element[1]]-decreaseFactorDict["Contact_interaction"]
-
-            element=(NodeID2MatrixNumber[val],NodeID2MatrixNumber[key])
-            ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Contact_interaction"],1)
-            ConductanceMatrix[element[0],element[1]]=ConductanceMatrix[element[0],element[1]]-decreaseFactorDict["Contact_interaction"]
-
-            ConductanceMatrix[element[1],element[1]]=ConductanceMatrix[element[1],element[1]]+decreaseFactorDict["Contact_interaction"]
-            ConductanceMatrix[element[0],element[0]]=ConductanceMatrix[element[0],element[0]]+decreaseFactorDict["Contact_interaction"]
+            fast_insert(element, "Contact_interaction")
 
     if full_impact:
         for key in Super_Links.keys():
             for val in Super_Links[key]:
                 element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
-                ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["possibly_same"],1)
-                ConductanceMatrix[element[0],element[1]]=ConductanceMatrix[element[0],element[1]]-decreaseFactorDict["possibly_same"]
+                fast_insert(element, "possibly_same")
 
-                element=(NodeID2MatrixNumber[val],NodeID2MatrixNumber[key])
-                ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["possibly_same"],1)
-                ConductanceMatrix[element[0],element[1]]=ConductanceMatrix[element[0],element[1]]-decreaseFactorDict["possibly_same"]
-
-                ConductanceMatrix[element[1],element[1]]=ConductanceMatrix[element[1],element[1]]+decreaseFactorDict["possibly_same"]
-                ConductanceMatrix[element[0],element[0]]=ConductanceMatrix[element[0],element[0]]+decreaseFactorDict["possibly_same"]
 
     print "entering eigenvect computation", time()-init_time, time()-t
-    t=time()
 
-    eigenvals, eigenvects = eigsh(ValueMatrix,numberEigvals)
-    eigenvals2, eigenvects2 = eigsh(ConductanceMatrix,numberEigvals)
+    eigenvals, eigenvects = eigsh(ValueMatrix, numberEigvals)
+    eigenvals2, eigenvects2 = eigsh(ConductanceMatrix, numberEigvals)
 
     print eigenvals
     print '<======================>'
@@ -347,65 +319,99 @@ def getMatrix(decreaseFactorDict, numberEigvals, FastLoad, ConnexityAwareness, f
     print '<======================>'
     print np.all(eigsh(ConductanceMatrix)[0] > 0)
 
-    output = file('eigenvals.csv','w')
-    output.write(eigenvals)
-    output.close()
+    DF = file(Dumps.eigen_VaMat, 'w')
+    DF.write(eigenvals)
+    DF.close()
 
-    output2 = file('eigenvals.csv','w')
-    output2.write(eigenvals2)
-    output2.close()
+    DF = file(Dumps.eigen_ConMat, 'w')
+    DF.write(eigenvals2)
+    DF.close()
 
-    pickleDump=file('pickleDump.dump','w')
-    pickle.dump((eigenvals, eigenvects), pickleDump)
-    pickleDump.close()
+    DF = file(Dumps.val_eigen, 'w')
+    json.dump((eigenvals, eigenvects), DF)
+    DF.close()
 
-    pickleDump_0_5=file('pickleDump_0_5.dump','w')
-    pickle.dump((eigenvals2,eigenvects2),pickleDump_0_5)
-    pickleDump_0_5.close()
+    DF = file(Dumps.cond_eigen, 'w')
+    json.dump((eigenvals2,eigenvects2), DF)
+    DF.close()
 
-    pickleDump3=file('pickleDump3.dump','w')
-    pickle.dump(ValueMatrix,pickleDump3)
-    pickleDump3.close()
+    DF = file(Dumps.ValMat, 'w')
+    json.dump(ValueMatrix, DF)
+    DF.close()
 
-    pickleDump4=file('pickleDump4.dump','w')
-    pickle.dump(ConductanceMatrix,pickleDump4)
-    pickleDump4.close()
+    DF=file(Dumps.ConMat, 'w')
+    json.dump(ConductanceMatrix, DF)
+    DF.close()
 
     print time()-init_time, time()-t
 
 
-
 def Write_Connexity_Infos():
-    ValueMatrix = pickle.load(file('pickleDump3.dump','r'))
-    CCOmps = connected_components(ValueMatrix, directed=False)
-    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))
+    """
+        Writes the infos about connexity of different components of a graph. This execution is the main
+        reason for the existance of the "Value" Matrix.
+    """
+    #TODO: build unittest to see if it works correctly.
+    ValueMatrix = json.load(file(Dumps.ValMat, 'r'))
+    CCOmps = connected_components(ValueMatrix, directed = False)
+    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = json.load(file(Dumps.matrix_corrs,'r'))
 
-    counters = np.zeros((CCOmps[0],1))
-    for elt in range(0,len(CCOmps[1])):
-        counters[CCOmps[1][elt],0] += 1
-    major_Index=np.argmax(counters)
+    counters = np.zeros((CCOmps[0], 1))
+    for elt in range(0, len(CCOmps[1])):
+        counters[CCOmps[1][elt], 0] += 1
+    major_Index = np.argmax(counters)
 
-    ln=len(CCOmps[1])
-    for i in range(0,len(CCOmps[1])):
-        print 'running,',i,ln
-        if CCOmps[1][i]==major_Index:
-            Node=DatabaseGraph.vertices.get(MatrixNumber2NodeID[i])
-            Node.custom='Main_Connex'
+    ln = len(CCOmps[1])
+    for i in range(0, len(CCOmps[1])):
+        print 'running,', i, ln
+        if CCOmps[1][i] == major_Index:
+            Node = DatabaseGraph.vertices.get(MatrixNumber2NodeID[i])
+            Node.custom = 'Main_Connex'
             Node.save()
+
+def Erase_Additional_Infos():
+    """
+        Resets the .costum field of all the Nodes on which we have iterated here. Usefull to perform
+        After node set or node connectivity were modfied.
+    """
+    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = json.load(file(Dumps.matrix_corrs,'r'))
+
+    for NodeID in NodeID2MatrixNumber.keys():
+        Node = DatabaseGraph.vertices.get(NodeID)
+        Node.custom = ''
+        Node.save()
+
+def compute_Uniprot_Attachments():
+    """
+        Attaches the Uniprots to the proteins from the reactome, allowing to combine the information circulation values
+    """
+    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = json.load(file(Dumps.matrix_corrs,'r'))
+    Uniprot_Attach = {}
+    #TODO: Build a test to see if this one is still truly required
+
+    for SP_Node_ID in Uniprots:
+        Vertex = DatabaseGraph.UNIPORT.get(SP_Node_ID)
+        Generator = Vertex.bothV("is_same")
+        if Generator != None:
+            Uniprot_Attach[SP_Node_ID] = []
+            for item in Generator:
+                ID = str(item).split('/')[-1][:-1]
+                Uniprot_Attach[SP_Node_ID].append(ID)
+        print SP_Node_ID, 'processed', len(Uniprot_Attach[SP_Node_ID])
+    json.dump(Uniprot_Attach,file(Dumps.UniP_att,'w'))
+    return Uniprot_Attach
 
 
 def Perform_Loading_Routines():
     '''
-    @param eigenvals:
-    @type eigenvals:
-
-    @param param:
+    Performs the initial loading routines that set up in place the sytem of dump files and co
+    for the main algorithms to kick in seamlessly
     '''
 
-    getMatrix(DfactorDict, 1, False, False)
+    getMatrix(DfactorDict, 1, False, False, False)
     Erase_Additional_Infos()
     Write_Connexity_Infos()
-    getMatrix(DfactorDict, 100, False, True)
+    getMatrix(DfactorDict, 100, False, True, False)
     compute_Uniprot_Attachments()
 
 if __name__ == "__main__":
