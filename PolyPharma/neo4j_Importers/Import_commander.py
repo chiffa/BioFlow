@@ -1,5 +1,8 @@
 __author__ = 'ank'
-
+"""
+Note: on a clean database, we should be able to load everything in ~ 6-7 hours.
+Currently the bottleneck is on the UNIPROT indexation nodes
+"""
 ####################################################################################
 #
 # Family of scripts regulating the whole import behavior
@@ -16,10 +19,10 @@ from Hint_importer import cross_ref_HiNT
 # run_diagnostics(full_dict)
 # # clear_all(full_dict)
 # import_GOs()
-# getGOs()
-# clean(DatabaseGraph.UNIPORT)
+# # getGOs()
+# # clean(DatabaseGraph.UNIPORT)
 # import_UNIPROTS()
 # # clean(DatabaseGraph.GOTerm)
 # cross_ref_HiNT(True)
 
-run_diagnostics(full_dict)
+## run_diagnostics(full_dict)

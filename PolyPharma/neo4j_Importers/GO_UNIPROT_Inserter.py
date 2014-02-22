@@ -25,55 +25,48 @@ GODict = {} # Stores relations between GO IDs and the objects in the neo4j datab
 UniprotDict = {} # Stores relations between the SWISSPROT UNIPROT IDs and the neo4j database objects
 
 def import_GOs():
+    """
+    Imports GOs by loading GO_Terms and GO_Terms structure from Utils.GO_Structure_Parser
+    """
     # generate terms:
     GO_Terms, GO_Terms_Structure = fill_GO_Terms()
     # Create Terms
-    leng=len(GO_Terms.keys())
-    i=0
+    leng = len(GO_Terms.keys())
+    i = 0
     for GO_Term in GO_Terms.keys():
-        i+=1
-        logging.debug('GO %s', str("{0:.2f}".format(float(i)/float(leng)*100)))
-        primary=DatabaseGraph.GOTerm.create(ID=GO_Terms[GO_Term]['id'],Name=GO_Terms[GO_Term]['name'],displayName=GO_Terms[GO_Term]['name'],Namespace=GO_Terms[GO_Term]['namespace'],Definition=GO_Terms[GO_Term]['def'])
-        GODict[GO_Term]=primary
+        i += 1
+        logging.debug('GO %s', str("{0:.2f}".format(float(i) / float(leng) * 100)))
+        primary = DatabaseGraph.GOTerm.create(ID = GO_Terms[GO_Term]['id'],
+                                              Name = GO_Terms[GO_Term]['name'],
+                                              displayName = GO_Terms[GO_Term]['name'],
+                                              Namespace = GO_Terms[GO_Term]['namespace'],
+                                              Definition = GO_Terms[GO_Term]['def'])
+        GODict[GO_Term] = primary
     # Create the structure between them:
-    leng=len(GO_Terms_Structure)
-    i=0
+    leng = len(GO_Terms_Structure)
+    i = 0
     for relation in GO_Terms_Structure:
-        i+=1
-        logging.debug('rel %s', str("{0:.2f}".format(float(i)/float(leng)*100)))
-        primary=GODict[relation[0]]
-        secondary=GODict[relation[2]]
-        Type=relation[1]
-        if Type=='is_a':
-            DatabaseGraph.is_a_go.create(primary,secondary)
-        if Type=='part_of':
-            DatabaseGraph.is_part_of_go.create(primary,secondary)
+        i += 1
+        logging.debug('rel %s', str("{0:.2f}".format(float(i) / float(leng) * 100)))
+        primary = GODict[relation[0]]
+        secondary = GODict[relation[2]]
+        Type = relation[1]
+        if Type == 'is_a':
+            DatabaseGraph.is_a_go.create(primary, secondary)
+        if Type == 'part_of':
+            DatabaseGraph.is_part_of_go.create(primary, secondary)
         if 'regul' in Type:
-            if Type=='positively_regulates':
-                DatabaseGraph.is_regulant.create(primary,secondary,controlType='ACTIVATES',ID=str('GO'+primary.ID+secondary.ID))
-            if Type=='negatively_regulates':
-                DatabaseGraph.is_regulant.create(primary,secondary,controlType='INHIBITS',ID=str('GO'+primary.ID+secondary.ID))
+            if Type == 'positively_regulates':
+                DatabaseGraph.is_regulant.create(primary, secondary,
+                                                 controlType = 'ACTIVATES',
+                                                 ID = str('GO' + primary.ID + secondary.ID))
+            if Type == 'negatively_regulates':
+                DatabaseGraph.is_regulant.create(primary, secondary,
+                                                 controlType = 'INHIBITS',
+                                                 ID = str('GO' + primary.ID + secondary.ID))
             else:
-                DatabaseGraph.is_regulant.create(primary,secondary,ID=str('GO'+primary.ID+secondary.ID))
-
-def _depr_loadAcnumDecs():
-    raise Exception("Deprecated method accessed!")
-    # import Reactome_org_parser as RP
-    # RP_pID={}
-    # for proteinID in RP.Proteins.keys():
-    #     if 'UniProt' in RP.Proteins[proteinID]['references'].keys():
-    #         RP_pID[RP.Proteins[proteinID]['references']['UniProt']]=proteinID
-    # Acnu2ProtObj={}
-    # for key in RP_pID.keys():
-    #     Acnu2ProtObj[key]=[]
-    #     generator=DatabaseGraph.Protein.index.lookup(ID=RP_pID[key])
-    #     if generator!=None:
-    #         for elt in generator:
-    #             ID=str(elt).split('/')[-1][:-1]
-    #             ProtObj=DatabaseGraph.vertices.get(ID)
-    #             Acnu2ProtObj[key].append(ProtObj)
-    # logging.debug('2 %s', len(Acnu2ProtObj))
-    # return Acnu2ProtObj
+                DatabaseGraph.is_regulant.create(primary, secondary,
+                                                 ID = str('GO' + primary.ID + secondary.ID))
 
 
 def getExistingAcnums():
@@ -144,27 +137,27 @@ def import_UNIPROTS():
                         j += 1
             for acc_num in Uniprot[CH_PROT_ID]['Acnum']: # Already linked via reactome, but with a different identifier
                 link_annotation(CH_PROT_ID, 'UNIPROT_Accnum', acc_num)
-            # ACHTUNG! Add mandatory casting to lowercase of the
+            # TODO: Add mandatory casting to lowercase of the value here
             link_annotation(CH_PROT_ID, 'UNIPROT_Name', Uniprot[CH_PROT_ID]['Names']['Full'])
             for name in Uniprot[CH_PROT_ID]['Names']['AltNames']:
-                link_annotation(CH_PROT_ID, 'UNIPROT_Name', name)
+                link_annotation(CH_PROT_ID, 'UNIPROT_Name', name.upper())
 
             for name in Uniprot[CH_PROT_ID]['GeneRefs']['Names']:
-                link_annotation(CH_PROT_ID, 'UNIPROT_GeneName', name)
+                link_annotation(CH_PROT_ID, 'UNIPROT_GeneName', name.upper())
             for name in Uniprot[CH_PROT_ID]['GeneRefs']['OrderedLocusNames']:
-                link_annotation(CH_PROT_ID, 'UNIPROT_GeneOL', name)
+                link_annotation(CH_PROT_ID, 'UNIPROT_GeneOL', name.upper())
             for name in Uniprot[CH_PROT_ID]['GeneRefs']['ORFNames']:
-                link_annotation(CH_PROT_ID, 'UNIPROT_GeneORF', name)
+                link_annotation(CH_PROT_ID, 'UNIPROT_GeneORF', name.upper())
 
             for name in set(Uniprot[CH_PROT_ID]['Ensembl']):
-                link_annotation(CH_PROT_ID, 'UNIPROT_Ensembl', name)
+                link_annotation(CH_PROT_ID, 'UNIPROT_Ensembl', name.upper())
 
             for dico in Uniprot[CH_PROT_ID]['EMBL']:
-                link_annotation(CH_PROT_ID, 'UNIPROT_EMBL_AC|'+dico['status']+'|'+dico['type'], dico['Accession'])
-                link_annotation(CH_PROT_ID, 'UNIPROT_EMBL_ID|'+dico['status']+'|'+dico['type'], dico['ID'])
+                link_annotation(CH_PROT_ID, 'UNIPROT_EMBL_AC|'+dico['status']+'|'+dico['type'], dico['Accession'].upper())
+                link_annotation(CH_PROT_ID, 'UNIPROT_EMBL_ID|'+dico['status']+'|'+dico['type'], dico['ID'].upper())
 
             for name in Uniprot[CH_PROT_ID]['PDB']:
-                link_annotation(CH_PROT_ID, 'UNIPROT_PDB', name)
+                link_annotation(CH_PROT_ID, 'UNIPROT_PDB', name.upper())
 
 
 

@@ -224,7 +224,7 @@ def access_Reactional_Pathways(Uniprot2Vals_Set):
     # Get the molecules from the reactome attached to the uniprot set
     SP_ID2Nodes={}
     for SP_ID in Uniprot2Vals_Set:
-        nodeGen=DatabaseGraph.UNIPORT.index.lookup(ID=SP_ID)
+        nodeGen=DatabaseGraph.UNIPORT.index.lookup(ID=SP_ID)  # TODO: refactor to rely on a second filtration
         if nodeGen!=None:
             for node in nodeGen: # there can only be one
                 SP_ID2Nodes[SP_ID]=node
@@ -396,23 +396,24 @@ def align_names2SP():
     secDict={}
     for key, val in final_Dict.iteritems():
         secDict[key]=-val[2]
+    #TODO: Attention, it is really f####d up here
     return final_Dict, secDict
 #     return Name2SP
 
 def TouchedIDs():
-    Names2SP=align_names2SP()
-    valuelist=[]
+    Names2SP = align_names2SP()
+    valuelist = []
     for elt in Names2SP.values():
-        valuelist=valuelist+elt
-    SP_to_IDs=convert_SP_to_IDs(valuelist)
-    IDList=[]
-    errcount=0
+        valuelist = valuelist+elt
+    SP_to_IDs = convert_SP_to_IDs(valuelist)
+    IDList = []
+    errcount = 0
     for valLists in Names2SP.values():
         for val in valLists:
             if val in SP_to_IDs.keys():
                 IDList.append(SP_to_IDs[val])
             else:
-                errcount+=1
+                errcount += 1
     print '444', len(IDList),errcount,len(valuelist)
     pickle.dump(IDList, file('IDList.dump','w'))
     return IDList
