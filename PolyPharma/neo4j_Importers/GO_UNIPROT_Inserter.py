@@ -137,27 +137,27 @@ def import_UNIPROTS():
                         j += 1
             for acc_num in Uniprot[CH_PROT_ID]['Acnum']: # Already linked via reactome, but with a different identifier
                 link_annotation(CH_PROT_ID, 'UNIPROT_Accnum', acc_num)
-            # ACHTUNG! Add mandatory casting to lowercase of the
+            # TODO: Add mandatory casting to lowercase of the value here
             link_annotation(CH_PROT_ID, 'UNIPROT_Name', Uniprot[CH_PROT_ID]['Names']['Full'])
             for name in Uniprot[CH_PROT_ID]['Names']['AltNames']:
-                link_annotation(CH_PROT_ID, 'UNIPROT_Name', name)
+                link_annotation(CH_PROT_ID, 'UNIPROT_Name', name.upper())
 
             for name in Uniprot[CH_PROT_ID]['GeneRefs']['Names']:
-                link_annotation(CH_PROT_ID, 'UNIPROT_GeneName', name)
+                link_annotation(CH_PROT_ID, 'UNIPROT_GeneName', name.upper())
             for name in Uniprot[CH_PROT_ID]['GeneRefs']['OrderedLocusNames']:
-                link_annotation(CH_PROT_ID, 'UNIPROT_GeneOL', name)
+                link_annotation(CH_PROT_ID, 'UNIPROT_GeneOL', name.upper())
             for name in Uniprot[CH_PROT_ID]['GeneRefs']['ORFNames']:
-                link_annotation(CH_PROT_ID, 'UNIPROT_GeneORF', name)
+                link_annotation(CH_PROT_ID, 'UNIPROT_GeneORF', name.upper())
 
             for name in set(Uniprot[CH_PROT_ID]['Ensembl']):
-                link_annotation(CH_PROT_ID, 'UNIPROT_Ensembl', name)
+                link_annotation(CH_PROT_ID, 'UNIPROT_Ensembl', name.upper())
 
             for dico in Uniprot[CH_PROT_ID]['EMBL']:
-                link_annotation(CH_PROT_ID, 'UNIPROT_EMBL_AC|'+dico['status']+'|'+dico['type'], dico['Accession'])
-                link_annotation(CH_PROT_ID, 'UNIPROT_EMBL_ID|'+dico['status']+'|'+dico['type'], dico['ID'])
+                link_annotation(CH_PROT_ID, 'UNIPROT_EMBL_AC|'+dico['status']+'|'+dico['type'], dico['Accession'].upper())
+                link_annotation(CH_PROT_ID, 'UNIPROT_EMBL_ID|'+dico['status']+'|'+dico['type'], dico['ID'].upper())
 
             for name in Uniprot[CH_PROT_ID]['PDB']:
-                link_annotation(CH_PROT_ID, 'UNIPROT_PDB', name)
+                link_annotation(CH_PROT_ID, 'UNIPROT_PDB', name.upper())
 
 
 

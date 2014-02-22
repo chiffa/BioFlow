@@ -22,7 +22,7 @@ def Look_up_by_ID_for_a_set(Domain, ID_set):
         lookup_by_ID(Domain, ID)
         print "=================="
 
-
+# TODO: reset all the values to convert to the uppercase convetion.
 def Look_up_Annot_Node(p_load, p_type=''):
     """
     return format: node type, node's displayName, node's db_ID, node's legacy ID
@@ -47,15 +47,16 @@ def Look_up_Annot_Node(p_load, p_type=''):
         return retset
 
     def double_index_search(pload, ptype):
-        node_generator = DatabaseGraph.AnnotNode.index.lookup(payload = p_load)
+        node_generator = DatabaseGraph.AnnotNode.index.lookup(payload = pload)
         retset = []
         if node_generator:
             for node in node_generator:
-                if node.ptype == ptype:
+                if ptype in node.ptype:
                     retset.append(node)
         return retset
 
     from PolyPharma.neo4j_Declarations.neo4j_typeDec import Anot_Node_ptypes
+    p_load = p_load.upper()
     if p_type == '':
         node_generator = DatabaseGraph.AnnotNode.index.lookup(payload = p_load)
         if not node_generator:

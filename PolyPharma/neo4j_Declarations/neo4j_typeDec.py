@@ -207,8 +207,8 @@ Anot_Node_ptypes = [    'name',
                         'UNIPROT_GeneOL',
                         'UNIPROT_GeneORF',
                         'UNIPROT_Ensembl',
-                        'UNIPROT_EMBL_AC',
-                        'UNIPROT_EMBL_ID',
+                        'UNIPROT_EMBL_AC|~',
+                        'UNIPROT_EMBL_ID|~',
                         'UNIPROT_PDB',
 
         ]
