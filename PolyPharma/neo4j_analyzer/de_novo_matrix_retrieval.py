@@ -15,15 +15,13 @@ from copy import copy
 from time import time
 import itertools
 import numpy as np
-# TODO: remove the sadistic line below !!!!!!!!!!!!!!!!!!!!
-import json
-# TODO: remove the sadistic line above !!!!!!!!!!!!!!!!!!!!
+import pickle
 from scipy.sparse import lil_matrix
 from scipy.sparse.linalg import eigsh
 from scipy.sparse.csgraph import connected_components
 
 # TODO: switch from filtering to annotating as part of Cross-ref set
-
+# TODO: write more intelligeable names for the import timing messages
 
 # Refers to the groups of links between the nodes that should be treated in the same manner
 edge_type_filter0_1 = ["is_part_of_collection"]                    # Group relation group
@@ -85,14 +83,17 @@ def getMatrix(decreaseFactorDict, numberEigvals, FastLoad, ConnexityAwareness, f
                         LocationBufferDict[location] = str(elt.displayName)
                         return str(elt.displayName)
 
+        ######################################################################################################################
+
         NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, Uniprots, ID2Localization = ({},{},{},{},[],{})
-        counter = 0
-        LocationBufferDict = {}
 
         if Rapid:
             DF = file(Dumps.matrix_corrs, 'r')
-            NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = json.load(DF)
+            NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(DF)
             return NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots
+
+        counter = 0
+        LocationBufferDict = {}
 
         for ID in IDSet:
             NodeID2MatrixNumber[ID] = counter
@@ -106,7 +107,7 @@ def getMatrix(decreaseFactorDict, numberEigvals, FastLoad, ConnexityAwareness, f
                 ID2Localization[ID] = request_location(LocationBufferDict, Vertex.localization)
             counter += 1
         DF = file(Dumps.matrix_corrs,'w')
-        json.dump((NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots), DF)
+        pickle.dump((NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots), DF)
         DF.close()
         return NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots
 
@@ -201,6 +202,8 @@ def getMatrix(decreaseFactorDict, numberEigvals, FastLoad, ConnexityAwareness, f
             print time() - init_time, time() - t_time
             return time()
 
+        ################################################################################################################
+
         t = time()
 
         ReactLinks, InitSet, c = get_Reaction_blocks(ConnexityAwareness)
@@ -229,15 +232,79 @@ def getMatrix(decreaseFactorDict, numberEigvals, FastLoad, ConnexityAwareness, f
 
         return ReactLinks, InitSet, GroupLinks, GroupSet, SecLinks, SecSet, UP_Links, UPSet, HiNT_Links, FullSet, Super_Links, ExpSet
 
-    def fast_insert(element, index_type):
-        # TODO: improve to pump from two different dictionnaries for ValueMatrix and ConductanceMatrix.
-        ValueMatrix[element[0], element[1]] = min(ValueMatrix[element[0], element[1]] + decreaseFactorDict[index_type], 1)
-        ValueMatrix[element[1], element[0]] = min(ValueMatrix[element[1], element[0]] + decreaseFactorDict[index_type], 1)
-        ConductanceMatrix[element[0], element[1]] = ConductanceMatrix[element[0], element[1]] - decreaseFactorDict[index_type]
-        ConductanceMatrix[element[1], element[0]] = ConductanceMatrix[element[1], element[0]] - decreaseFactorDict[index_type]
-        ConductanceMatrix[element[1], element[1]] = ConductanceMatrix[element[1], element[1]] + decreaseFactorDict[index_type]
-        ConductanceMatrix[element[0], element[0]] = ConductanceMatrix[element[0], element[0]] + decreaseFactorDict[index_type]
+    def create_val_matrix(Rapid, init_time):
+        """
+        Creates the Value and Conductance matrices
+        """
 
+        def fast_insert(element, index_type):
+            """
+            performs an correct insertion of an edge to the matrix.
+            """
+            # TODO: improve to pump from two different dictionnaries for ValueMatrix and ConductanceMatrix.
+            ValueMatrix[element[0], element[1]] = min(ValueMatrix[element[0], element[1]] + decreaseFactorDict[index_type], 1)
+            ValueMatrix[element[1], element[0]] = min(ValueMatrix[element[1], element[0]] + decreaseFactorDict[index_type], 1)
+            ConductanceMatrix[element[0], element[1]] = ConductanceMatrix[element[0], element[1]] - decreaseFactorDict[index_type]
+            ConductanceMatrix[element[1], element[0]] = ConductanceMatrix[element[1], element[0]] - decreaseFactorDict[index_type]
+            ConductanceMatrix[element[1], element[1]] = ConductanceMatrix[element[1], element[1]] + decreaseFactorDict[index_type]
+            ConductanceMatrix[element[0], element[0]] = ConductanceMatrix[element[0], element[0]] + decreaseFactorDict[index_type]
+
+        ##########################################################################################################################
+
+        Highest_Set = FullSet
+
+        if full_impact:
+            Highest_Set = ExpSet
+
+        print "building correspondances", time() - init_time
+
+        NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = build_correspondances(Highest_Set, Rapid)
+
+        print "building the ValMatrix", time() - init_time
+
+        loadLen = len(Highest_Set)
+        ValueMatrix = lil_matrix((loadLen, loadLen))
+        ConductanceMatrix = lil_matrix((loadLen, loadLen))
+
+        for group in ReactLinks:
+            for elt in itertools.combinations(group, 2):
+                element = (NodeID2MatrixNumber[elt[0]], NodeID2MatrixNumber[elt[1]])
+                fast_insert(element, "Reaction")
+
+        for key in GroupLinks.keys():
+            for val in GroupLinks[key]:
+                element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
+                fast_insert(element, "Group")
+
+        for key in SecLinks.keys():
+            for val in SecLinks[key]:
+                element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
+                fast_insert(element, "Contact_interaction")
+
+        for key in UP_Links.keys():
+            for val in UP_Links[key]:
+                element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
+                fast_insert(element, "Same")
+
+        for key in HiNT_Links.keys():
+            for val in HiNT_Links[key]:
+                element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
+                fast_insert(element, "Contact_interaction")
+
+        if full_impact:
+            for key in Super_Links.keys():
+                for val in Super_Links[key]:
+                    element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
+                    fast_insert(element, "possibly_same")
+
+        return  ValueMatrix,ConductanceMatrix
+
+    def dump(location, Object):
+        DF = file(location, 'w')
+        DF.write(Object)
+        DF.close()
+
+    ####################################################################################################################
 
     init_time = time()
 
@@ -247,66 +314,15 @@ def getMatrix(decreaseFactorDict, numberEigvals, FastLoad, ConnexityAwareness, f
     if not FastLoad:
         ReactLinks, InitSet, GroupLinks, GroupSet, SecLinks, SecSet, UP_Links, UPSet, HiNT_Links, FullSet, Super_Links, ExpSet = Full_load(ConnexityAwareness, init_time)
         DF = file(Dumps.matrix_LS, 'w') # previously 'dump5.dump', 'w'
-        json.dump((ReactLinks, InitSet, GroupLinks, GroupSet, SecLinks, SecSet, UP_Links, UPSet, HiNT_Links, FullSet, Super_Links, ExpSet),DF)
+        pickle.dump((ReactLinks, InitSet, GroupLinks, GroupSet, SecLinks, SecSet, UP_Links, UPSet, HiNT_Links, FullSet, Super_Links, ExpSet),DF)
         DF.close()
 
     else:
         DF = file(Dumps.matrix_LS, 'r')
-        ReactLinks, InitSet, GroupLinks, GroupSet, SecLinks, SecSet, UP_Links, UPSet, HiNT_Links, FullSet, Super_Links, ExpSet = json.load(DF)
+        ReactLinks, InitSet, GroupLinks, GroupSet, SecLinks, SecSet, UP_Links, UPSet, HiNT_Links, FullSet, Super_Links, ExpSet = pickle.load(DF)
 
-    Highest_Set = FullSet
-
-    if full_impact:
-        Highest_Set = ExpSet
-
-    print "building correspondances", time() - init_time
-
-    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = build_correspondances(Highest_Set, FastLoad)
-
-    print "building the ValMatrix", time() - init_time
-
-    loadLen = len(Highest_Set)
-    ValueMatrix = lil_matrix((loadLen, loadLen))
-    ConductanceMatrix = lil_matrix((loadLen, loadLen))
-
-    # the difference between ReactLinks and all the others are that React_Links are eqally conected groups,
-    # whereath all the other are made by performing inclusion into an existing element and are of form dict[root]=[leaves]
-    # And thus we can actually perform the correlation isertion through the same function, as long as we iterate on non-
-    # repeated pairs.
-
+    ValueMatrix,ConductanceMatrix = create_val_matrix(FastLoad, init_time)
     t = time()
-
-    for group in ReactLinks:
-        for elt in itertools.combinations(group, 2):
-            element = (NodeID2MatrixNumber[elt[0]], NodeID2MatrixNumber[elt[1]])
-            fast_insert(element, "Reaction")
-
-    for key in GroupLinks.keys():
-        for val in GroupLinks[key]:
-            element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
-            fast_insert(element, "Group")
-
-    for key in SecLinks.keys():
-        for val in SecLinks[key]:
-            element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
-            fast_insert(element, "Contact_interaction")
-
-    for key in UP_Links.keys():
-        for val in UP_Links[key]:
-            element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
-            fast_insert(element, "Same")
-
-    for key in HiNT_Links.keys():
-        for val in HiNT_Links[key]:
-            element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
-            fast_insert(element, "Contact_interaction")
-
-    if full_impact:
-        for key in Super_Links.keys():
-            for val in Super_Links[key]:
-                element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
-                fast_insert(element, "possibly_same")
-
 
     print "entering eigenvect computation", time()-init_time, time()-t
 
@@ -319,31 +335,15 @@ def getMatrix(decreaseFactorDict, numberEigvals, FastLoad, ConnexityAwareness, f
     print '<======================>'
     print np.all(eigsh(ConductanceMatrix)[0] > 0)
 
-    DF = file(Dumps.eigen_VaMat, 'w')
-    DF.write(eigenvals)
-    DF.close()
-
-    DF = file(Dumps.eigen_ConMat, 'w')
-    DF.write(eigenvals2)
-    DF.close()
-
-    DF = file(Dumps.val_eigen, 'w')
-    json.dump((eigenvals, eigenvects), DF)
-    DF.close()
-
-    DF = file(Dumps.cond_eigen, 'w')
-    json.dump((eigenvals2,eigenvects2), DF)
-    DF.close()
-
-    DF = file(Dumps.ValMat, 'w')
-    json.dump(ValueMatrix, DF)
-    DF.close()
-
-    DF=file(Dumps.ConMat, 'w')
-    json.dump(ConductanceMatrix, DF)
-    DF.close()
+    dump(Dumps.eigen_VaMat, eigenvals)
+    dump(Dumps.eigen_ConMat, eigenvals2)
+    dump(Dumps.val_eigen, (eigenvals, eigenvects))
+    dump(Dumps.cond_eigen, (eigenvals2,eigenvects2))
+    dump(Dumps.ValMat, ValueMatrix)
+    dump(Dumps.ConMat, ConductanceMatrix)
 
     print time()-init_time, time()-t
+
 
 
 def Write_Connexity_Infos():
@@ -352,9 +352,9 @@ def Write_Connexity_Infos():
         reason for the existance of the "Value" Matrix.
     """
     #TODO: build unittest to see if it works correctly.
-    ValueMatrix = json.load(file(Dumps.ValMat, 'r'))
+    ValueMatrix = pickle.load(file(Dumps.ValMat, 'r'))
     CCOmps = connected_components(ValueMatrix, directed = False)
-    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = json.load(file(Dumps.matrix_corrs,'r'))
+    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file(Dumps.matrix_corrs,'r'))
 
     counters = np.zeros((CCOmps[0], 1))
     for elt in range(0, len(CCOmps[1])):
@@ -374,7 +374,7 @@ def Erase_Additional_Infos():
         Resets the .costum field of all the Nodes on which we have iterated here. Usefull to perform
         After node set or node connectivity were modfied.
     """
-    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = json.load(file(Dumps.matrix_corrs,'r'))
+    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file(Dumps.matrix_corrs,'r'))
 
     for NodeID in NodeID2MatrixNumber.keys():
         Node = DatabaseGraph.vertices.get(NodeID)
@@ -384,29 +384,32 @@ def Erase_Additional_Infos():
 def compute_Uniprot_Attachments():
     """
         Attaches the Uniprots to the proteins from the reactome, allowing to combine the information circulation values
+        Is used to map from a single Uniprot to all the nodes that  can be attained through that node.
+
+        Modst likely was rendered obsolete by the introduction of the HiNT database
     """
-    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = json.load(file(Dumps.matrix_corrs,'r'))
+    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file(Dumps.matrix_corrs,'r'))
     Uniprot_Attach = {}
-    #TODO: Build a test to see if this one is still truly required
 
     for SP_Node_ID in Uniprots:
         Vertex = DatabaseGraph.UNIPORT.get(SP_Node_ID)
         Generator = Vertex.bothV("is_same")
-        if Generator != None:
-            Uniprot_Attach[SP_Node_ID] = []
-            for item in Generator:
-                ID = str(item).split('/')[-1][:-1]
-                Uniprot_Attach[SP_Node_ID].append(ID)
+        if Generator == None:
+            continue
+        Uniprot_Attach[SP_Node_ID] = []
+        for item in Generator:
+            ID = str(item).split('/')[-1][:-1]
+            Uniprot_Attach[SP_Node_ID].append(ID)
         print SP_Node_ID, 'processed', len(Uniprot_Attach[SP_Node_ID])
-    json.dump(Uniprot_Attach,file(Dumps.UniP_att,'w'))
+    pickle.dump(Uniprot_Attach,file(Dumps.UniP_att,'w'))
     return Uniprot_Attach
 
 
 def Perform_Loading_Routines():
-    '''
+    """
     Performs the initial loading routines that set up in place the sytem of dump files and co
     for the main algorithms to kick in seamlessly
-    '''
+    """
 
     getMatrix(DfactorDict, 1, False, False, False)
     Erase_Additional_Infos()
@@ -415,4 +418,4 @@ def Perform_Loading_Routines():
     compute_Uniprot_Attachments()
 
 if __name__ == "__main__":
-    pass
+    Perform_Loading_Routines()
