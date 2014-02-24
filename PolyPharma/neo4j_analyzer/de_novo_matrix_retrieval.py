@@ -301,7 +301,7 @@ def getMatrix(decreaseFactorDict, numberEigvals, FastLoad, ConnexityAwareness, f
 
     def dump(location, Object):
         DF = file(location, 'w')
-        DF.write(Object)
+        pickle.dump(Object, DF)
         DF.close()
 
     ####################################################################################################################
