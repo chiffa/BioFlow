@@ -23,36 +23,6 @@ from scipy.sparse.csgraph import connected_components
 # TODO: switch from filtering to annotating as part of Cross-ref set
 # TODO: write more intelligeable names for the import timing messages
 
-# Refers to the groups of links between the nodes that should be treated in the same manner
-edge_type_filter0_1 = ["is_part_of_collection"]                    # Group relation group
-edge_type_filter0_2 = ["is_same"]                                  # Same relation group
-edge_type_filter1_1 = ["is_Catalysant", "is_reaction_particpant"]  # Reaction relation group
-edge_type_filter1_2 = ["is_part_of_complex", "is_Regulant"]        # Contact_interaction relation group
-edge_type_filter1_3 = ["is_interacting"]                           # Contact_interaction relation group
-edge_type_filter2 = ["is_possibly_same"]                           # possibly_same relation group
-
-#TODO: move the coefficients to the configs file
-
-# Coefficients values for the value_Matrix
-DfactorDict = {"Group":0.5,
-             "Same":1,
-             "Reaction":0.33,
-             "Contact_interaction":0.33,
-             "possibly_same":0.1,
-             }
-
-# Coefficients values for the conductance_Matrix
-ConductanceDict = {"Group":0.5,
-             "Same":100,
-             "Reaction":1,
-             "Contact_interaction":1,
-             "possibly_same":0.1,
-             }
-
-# List of all the reaction types present in the DatabaseGraph that will be
-# used as roots to build the interaction network (not all nodes are necessary
-# within the connex part of the graph)
-ReactionsList = [DatabaseGraph.TemplateReaction, DatabaseGraph.Degradation, DatabaseGraph.BiochemicalReaction]
 
 class Dumps(object):
     matrix_LS = 'dump5.dump'
@@ -64,6 +34,49 @@ class Dumps(object):
     ValMat = 'pickleDump3.dump'
     ConMat = 'pickleDump4.dump'
     UniP_att = 'UP_Attach.dump'
+
+
+class MatrixGetter(object):
+
+
+    # Refers to the groups of links between the nodes that should be treated in the same manner
+    edge_type_filter0_1 = ["is_part_of_collection"]                    # Group relation group
+    edge_type_filter0_2 = ["is_same"]                                  # Same relation group
+    edge_type_filter1_1 = ["is_Catalysant", "is_reaction_particpant"]  # Reaction relation group
+    edge_type_filter1_2 = ["is_part_of_complex", "is_Regulant"]        # Contact_interaction relation group
+    edge_type_filter1_3 = ["is_interacting"]                           # Contact_interaction relation group
+    edge_type_filter2 = ["is_possibly_same"]                           # possibly_same relation group
+
+    #TODO: move the coefficients to the configs file
+
+    # Coefficients values for the value_Matrix
+    DfactorDict = {"Group":0.5,
+                 "Same":1,
+                 "Reaction":0.33,
+                 "Contact_interaction":0.33,
+                 "possibly_same":0.1,
+                 }
+
+    # Coefficients values for the conductance_Matrix
+    ConductanceDict = {"Group":0.5,
+                 "Same":100,
+                 "Reaction":1,
+                 "Contact_interaction":1,
+                 "possibly_same":0.1,
+                 }
+
+    # List of all the reaction types present in the DatabaseGraph that will be
+    # used as roots to build the interaction network (not all nodes are necessary
+    # within the connex part of the graph)
+    ReactionsList = [DatabaseGraph.TemplateReaction, DatabaseGraph.Degradation, DatabaseGraph.BiochemicalReaction]
+
+    def __init__(self, decreaseFactorDict, numberEigvals, FastLoad, ConnexityAwareness, full_impact):
+        self.decreaseFactorDict = decreaseFactorDict
+        self.EigValNum = numberEigvals
+        self.FastLoad = FastLoad
+        self.ConnexityAwareness = ConnexityAwareness
+        self.full_impact = full_impact
+
 
 
 def getMatrix(decreaseFactorDict, numberEigvals, FastLoad, ConnexityAwareness, full_impact):
@@ -351,7 +364,6 @@ def Write_Connexity_Infos():
         Writes the infos about connexity of different components of a graph. This execution is the main
         reason for the existance of the "Value" Matrix.
     """
-    #TODO: build unittest to see if it works correctly.
     ValueMatrix = pickle.load(file(Dumps.ValMat, 'r'))
     CCOmps = connected_components(ValueMatrix, directed = False)
     NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file(Dumps.matrix_corrs,'r'))
