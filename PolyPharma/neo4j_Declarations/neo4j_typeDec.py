@@ -14,8 +14,9 @@ class CostumNode(Node):             # Serves as a basis for the annotation
     element_type = "CostumNode"
     ID = String(nullable = False)       # Reactome import heritage
     displayName = String()            # To see what it is, for the human operator
+    # main_connex = String()
     custom = String()                 # Just in case
-    load = Float()                    # To freeze information transmission score (Dict should be better?)
+    load = Float()                    # Deprecated. To freeze information transmission score (Dict should be better?)
 
 class AnnotNode(Node):                  # Used mainly the simplest annotation basis annotation
     """

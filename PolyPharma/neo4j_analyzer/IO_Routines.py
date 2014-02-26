@@ -56,15 +56,15 @@ def Look_up_Annot_Node(p_load, p_type=''):
         return retset
 
     from PolyPharma.neo4j_Declarations.neo4j_typeDec import Anot_Node_ptypes
-    p_load = p_load.upper()
+    pload = p_load.upper()
     if p_type == '':
-        node_generator = DatabaseGraph.AnnotNode.index.lookup(payload = p_load)
+        node_generator = DatabaseGraph.AnnotNode.index.lookup(payload = pload)
         if not node_generator:
             return []
         return run_through(node_generator)
 
     if p_type in Anot_Node_ptypes:
-        node_generator =  double_index_search(p_load, p_type)
+        node_generator =  double_index_search(pload, p_type)
         if not node_generator:
             return []
         return run_through(node_generator)
@@ -72,9 +72,26 @@ def Look_up_Annot_Node(p_load, p_type=''):
     raise Exception(p_type + "is unsupported. Please refer to Anot_Node_ptypes in neo4j_typeDec for supported types")
 
 
+def Erase_custom_fields():
+    """
+        Resets the .costum field of all the Nodes on which we have iterated here. Usefull to perform
+        after node set or node connectivity were modfied.
+    """
+
+    # TODO: reconfigure to erase connexity infos later on.
+    Node_set = Matrix.get_total_coverable
+
+
+    for NodeID in NodeID2MatrixNumber.keys():
+        Node = DatabaseGraph.vertices.get(NodeID)
+        Node.custom = ''
+        Node.save()
+
+
 
 if __name__ == "__main__":
     # print count_items(DatabaseGraph.UNIPORT)
     # lookup_by_ID(DatabaseGraph.UNIPORT,"CK2N2_HUMAN")
+    # Erase_custom_fields()
 
     print Look_up_Annot_Node('ENSG00000131981', 'UNIPROT_Ensembl')
