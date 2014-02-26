@@ -2,6 +2,7 @@ __author__ = 'ank'
 
 from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
 
+
 def lookup_by_ID(Domain, req):
     retset = Domain.index.lookup( ID = req )
     if not retset:
@@ -10,11 +11,13 @@ def lookup_by_ID(Domain, req):
         for item in retset:
             print item
 
+
 def count_items(Domain):
     i = 0
     for elt in Domain.get_all():
         i += 1
     return i
+
 
 def Look_up_by_ID_for_a_set(Domain, ID_set):
     for ID in ID_set:
@@ -22,10 +25,14 @@ def Look_up_by_ID_for_a_set(Domain, ID_set):
         lookup_by_ID(Domain, ID)
         print "=================="
 
-# TODO: reset all the values to convert to the uppercase convetion.
-def Look_up_Annot_Node(p_load, p_type=''):
+
+def Look_up_Annot_Node(p_load, p_type = ''):
     """
     return format: node type, node's displayName, node's db_ID, node's legacy ID
+
+    .. code-block: python
+    >>> print Look_up_Annot_Node('ENSG00000131981', 'UNIPROT_Ensembl')
+    >>> # TODO: add the result here
     """
 
     def run_through(node_generator):
@@ -36,7 +43,7 @@ def Look_up_Annot_Node(p_load, p_type=''):
         for node in node_generator:
             gen_2 = node.inV("is_annotated")
             if not node_generator:
-                raise Warning(str(node)+"is floating alone in the wild. He feels lonely.")
+                raise Warning(str(node) + "is floating alone in the wild. He feels lonely.")
             for rel_node in gen_2:
                 node_db_ID = str(rel_node).split('/')[-1][:-1]
                 node_ID = rel_node.ID
@@ -76,14 +83,15 @@ def Erase_custom_fields():
     """
         Resets the .costum field of all the Nodes on which we have iterated here. Usefull to perform
         after node set or node connectivity were modfied.
+
+        Unlike the method in the Matrix_retrieval cluster, this method is very time-consuming, since it iterates
+        on all the elements of all the classes susceptible to have the costum field.
     """
 
     # TODO: reconfigure to erase connexity infos later on.
-    Node_set = Matrix.get_total_coverable
+    Node_gen = DatabaseGraph.Node.get(costum = 'Main_Connex')
 
-
-    for NodeID in NodeID2MatrixNumber.keys():
-        Node = DatabaseGraph.vertices.get(NodeID)
+    for Node in Node_gen:
         Node.custom = ''
         Node.save()
 
@@ -91,7 +99,7 @@ def Erase_custom_fields():
 
 if __name__ == "__main__":
     # print count_items(DatabaseGraph.UNIPORT)
-    # lookup_by_ID(DatabaseGraph.UNIPORT,"CK2N2_HUMAN")
+    # lookup_by_ID(DatabaseGraph.UNIPORT, "CK2N2_HUMAN")
     # Erase_custom_fields()
 
     print Look_up_Annot_Node('ENSG00000131981', 'UNIPROT_Ensembl')

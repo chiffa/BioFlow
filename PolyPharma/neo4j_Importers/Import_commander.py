@@ -1,7 +1,9 @@
 __author__ = 'ank'
 """
 Note: on a clean database, we should be able to load everything in ~ 6-7 hours.
-Currently the bottleneck is on the UNIPROT indexation nodes
+Currently the bottleneck is on the UNIPROT indexation nodes, since it creates a new node
+for each instance of annotation. This precise part might be better done by directel using
+Lucene/... search engine
 """
 ####################################################################################
 #

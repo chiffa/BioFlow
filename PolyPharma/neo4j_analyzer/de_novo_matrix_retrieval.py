@@ -33,6 +33,7 @@ class Dumps(object):
     ValMat = 'pickleDump3.dump'
     ConMat = 'pickleDump4.dump'
     UniP_att = 'UP_Attach.dump'
+    Main_Connex_group = 'Connex_group.dump'
 
 
 class MatrixGetter(object):
@@ -174,6 +175,14 @@ class MatrixGetter(object):
         self.NodeID2MatrixNumber, self.MatrixNumber2NodeID, self.ID2displayName, self.ID2Type, self.ID2Localization, self.Uniprots = self.undump_object(Dumps.matrix_corrs)
 
 
+    def dump_Main_connex_set(self):
+        self.dump_object(Dumps.Main_Connex_group,self.main_connexity_set_IDs)
+
+
+    def undump_Main_connex_set(self):
+        self.main_connexity_set_IDs = self.undump_object(Dumps.Main_Connex_group)
+
+
     def time(self):
         it, pt = (round(time() - self.init_time), round(time() - self.partial_time))
         pload = 'total: %s m %s s, \t partial: %s m %s s' % (int(it) / 60, it % 60, int(pt) / 60, pt % 60)
@@ -293,6 +302,7 @@ class MatrixGetter(object):
 
         self.dump_object('fixture.dump',(self.ReactLinks,self.InitSet,self.GroupLinks, self.GroupSet, self.SecLinks, self.SecSet, self.UP_Links, self.UPSet, self.HiNT_Links, self.FullSet, self.Super_Links, self.ExpSet))
 
+
     def map_rows_to_names(self,):
         """ Maps Node IDs to matrix row/column indexes; """
 
@@ -398,7 +408,7 @@ class MatrixGetter(object):
                     self.fast_row_insert(element, "possibly_same")
 
 
-    def getEigens(self, numberEigvals):
+    def get_eigenspectrum(self, numberEigvals):
 
         # TODO: erase the if/else loop below
 
@@ -432,12 +442,7 @@ class MatrixGetter(object):
             Writes the infos about connexity of different components of a graph. This execution is the main
             reason for the existance of the "Value" Matrix.
         """
-
-        # add a reference to all the IDs marked as connex graphs
-
-        ValueMatrix = pickle.load(file(Dumps.ValMat, 'r'))
-        CCOmps = connected_components(ValueMatrix, directed = False)
-        NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file(Dumps.matrix_corrs,'r'))
+        CCOmps = connected_components(self.Ajacency_Matrix, directed = False)
 
         counters = np.zeros((CCOmps[0], 1))
         for elt in range(0, len(CCOmps[1])):
@@ -446,28 +451,32 @@ class MatrixGetter(object):
 
         ln = len(CCOmps[1])
         for i in range(0, len(CCOmps[1])):
-            print 'marking graph main connex elements: %s done' % str("{0:.2f}".format(float(i)/float(ln)*100))
+            print 'Marking graph main connex elements: %s done' % str("{0:.2f}".format(float(i)/float(ln)*100))
             if CCOmps[1][i] == major_Index:
-                Node = DatabaseGraph.vertices.get(MatrixNumber2NodeID[i])
+                self.main_connexity_set_IDs.append(self.MatrixNumber2NodeID[i])
+                Node = DatabaseGraph.vertices.get(self.MatrixNumber2NodeID[i])
                 Node.custom = 'Main_Connex'
                 Node.save()
+        print "Marking of %s nodes for connexity was done in %s" % (str(ln), str(self.time()))
+
 
     def full_rebuild(self):
         """
         Performs the initial loading routines that set up in place the sytem of dump files and co
         """
-
         FL = self.FastLoad
         self.FastLoad = False
         CA  = self.Connexity_Aware
         self.Connexity_Aware = False
 
-        self.getEigens(1)
-        Erase_Additional_Infos()   # PORT TO IO_ROUTINES
+        self.get_eigenspectrum(1)
+        self.undump_Main_connex_set()
+        self.reset_Connexity_Infos()
         self.Write_Connexity_Infos()
+        self.dump_Main_connex_set()
 
         self.Connexity_Aware = CA
-        self.getEigens(100)
+        self.get_eigenspectrum(100)
 
         self.FastLoad = FL
 
@@ -484,10 +493,9 @@ class MatrixGetter(object):
 
         # TODO: this have to be ported back to the routines
 
-        NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file(Dumps.matrix_corrs,'r'))
         Uniprot_Attach = {}
 
-        for SP_Node_ID in Uniprots:
+        for SP_Node_ID in self.Uniprots:
             Vertex = DatabaseGraph.UNIPORT.get(SP_Node_ID)
             Generator = Vertex.bothV("is_same")
             if Generator == None:
@@ -497,25 +505,22 @@ class MatrixGetter(object):
                 ID = str(item).split('/')[-1][:-1]
                 Uniprot_Attach[SP_Node_ID].append(ID)
             print 'attached %s cross-refs to Reactome from Node number %s in database' % (len(Uniprot_Attach[SP_Node_ID]), SP_Node_ID)
-        pickle.dump(Uniprot_Attach,file(Dumps.UniP_att,'w'))
+        self.dump_object(Dumps.UniP_att, Uniprot_Attach)
         return Uniprot_Attach
 
 
-
-def Erase_Additional_Infos():
-    """
+    def reset_Connexity_Infos(self):
+        """
         Resets the .costum field of all the Nodes on which we have iterated here. Usefull to perform
         After node set or node connectivity were modfied.
-    """
+        """
 
-    # TODO: port into the IO_routines
+        for NodeID in self.main_connexity_set_IDs:
+            Node = DatabaseGraph.vertices.get(NodeID)
+            Node.save()
 
-    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file(Dumps.matrix_corrs,'r'))
+        print "has resetted "
 
-    for NodeID in NodeID2MatrixNumber.keys():
-        Node = DatabaseGraph.vertices.get(NodeID)
-        Node.custom = ''
-        Node.save()
 
 if __name__ == "__main__":
     Mat_gter = MatrixGetter(True, True, True)
