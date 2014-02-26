@@ -470,7 +470,7 @@ class MatrixGetter(object):
         self.Connexity_Aware = False
 
         self.get_eigenspectrum(1)
-        self.undump_Main_connex_set()
+        # self.undump_Main_connex_set()
         self.reset_Connexity_Infos()
         self.Write_Connexity_Infos()
         self.dump_Main_connex_set()
@@ -519,7 +519,7 @@ class MatrixGetter(object):
             Node = DatabaseGraph.vertices.get(NodeID)
             Node.save()
 
-        print "has resetted "
+        print "has resetted xconnexity over %s nodes in %s"
 
 
 if __name__ == "__main__":
