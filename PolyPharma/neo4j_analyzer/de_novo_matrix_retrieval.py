@@ -506,6 +506,7 @@ class MatrixGetter(object):
                 Uniprot_Attach[SP_Node_ID].append(ID)
             print 'attached %s cross-refs to Reactome from Node number %s in database' % (len(Uniprot_Attach[SP_Node_ID]), SP_Node_ID)
         self.dump_object(Dumps.UniP_att, Uniprot_Attach)
+        print "Linking of %s nodes for UP attachment was done in %s" % (str(len(self.Uniprots)), str(self.time()))
         return Uniprot_Attach
 
 
@@ -519,7 +520,7 @@ class MatrixGetter(object):
             Node = DatabaseGraph.vertices.get(NodeID)
             Node.save()
 
-        print "has resetted xconnexity over %s nodes in %s"
+        print "has resetted xconnexity over %s nodes in %s" % (len(self.main_connexity_set_IDs), self.time())
 
 
 if __name__ == "__main__":
