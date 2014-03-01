@@ -15,46 +15,13 @@ from copy import copy
 from time import time
 import itertools
 import numpy as np
-# TODO: remove the sadistic line below !!!!!!!!!!!!!!!!!!!!
-import json
-# TODO: remove the sadistic line above !!!!!!!!!!!!!!!!!!!!
+import pickle
 from scipy.sparse import lil_matrix
 from scipy.sparse.linalg import eigsh
 from scipy.sparse.csgraph import connected_components
 
-# TODO: switch from filtering to annotating as part of Cross-ref set
+# TODO: switch from filtering to annotating as part of Cross-ref (main_connex) set
 
-
-# Refers to the groups of links between the nodes that should be treated in the same manner
-edge_type_filter0_1 = ["is_part_of_collection"]                    # Group relation group
-edge_type_filter0_2 = ["is_same"]                                  # Same relation group
-edge_type_filter1_1 = ["is_Catalysant", "is_reaction_particpant"]  # Reaction relation group
-edge_type_filter1_2 = ["is_part_of_complex", "is_Regulant"]        # Contact_interaction relation group
-edge_type_filter1_3 = ["is_interacting"]                           # Contact_interaction relation group
-edge_type_filter2 = ["is_possibly_same"]                           # possibly_same relation group
-
-#TODO: move the coefficients to the configs file
-
-# Coefficients values for the value_Matrix
-DfactorDict = {"Group":0.5,
-             "Same":1,
-             "Reaction":0.33,
-             "Contact_interaction":0.33,
-             "possibly_same":0.1,
-             }
-
-# Coefficients values for the conductance_Matrix
-ConductanceDict = {"Group":0.5,
-             "Same":100,
-             "Reaction":1,
-             "Contact_interaction":1,
-             "possibly_same":0.1,
-             }
-
-# List of all the reaction types present in the DatabaseGraph that will be
-# used as roots to build the interaction network (not all nodes are necessary
-# within the connex part of the graph)
-ReactionsList = [DatabaseGraph.TemplateReaction, DatabaseGraph.Degradation, DatabaseGraph.BiochemicalReaction]
 
 class Dumps(object):
     matrix_LS = 'dump5.dump'
@@ -66,87 +33,189 @@ class Dumps(object):
     ValMat = 'pickleDump3.dump'
     ConMat = 'pickleDump4.dump'
     UniP_att = 'UP_Attach.dump'
+    Main_Connex_group = 'Connex_group.dump'
 
 
-def getMatrix(decreaseFactorDict, numberEigvals, FastLoad, ConnexityAwareness, full_impact):
+class MatrixGetter(object):
 
-    def build_correspondances(IDSet, Rapid):
-        """ Maps Node IDs to matrix row/column indexes; """
+    # Refers to the groups of links between the nodes that should be treated in the same manner
+    edge_type_filter0_1 = ["is_part_of_collection"]                    # Group relation group
+    edge_type_filter0_2 = ["is_same"]                                  # Same relation group
+    edge_type_filter1_1 = ["is_Catalysant", "is_reaction_particpant"]  # Reaction relation group
+    edge_type_filter1_2 = ["is_part_of_complex", "is_Regulant"]        # Contact_interaction relation group
+    edge_type_filter1_3 = ["is_interacting"]                           # Contact_interaction relation group
+    edge_type_filter2 = ["is_possibly_same"]                           # possibly_same relation group
 
-        def request_location(LocationBufferDict, location):
-            """Buffered lookup of location"""
-            location = str(location)
-            if location in LocationBufferDict.keys():
-                return LocationBufferDict[location]
-            else:
-                generator = DatabaseGraph.Location.index.lookup(ID = location)
-                if generator != None:
-                    for elt in generator:
-                        LocationBufferDict[location] = str(elt.displayName)
-                        return str(elt.displayName)
+    #TODO: move the coefficients to the configs file
 
-        NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, Uniprots, ID2Localization = ({},{},{},{},[],{})
-        counter = 0
-        LocationBufferDict = {}
+    # Coefficients values for the value_Matrix
+    Adjacency_Martix_Dict = {"Group":0.5,
+                 "Same":1,
+                 "Reaction":0.33,
+                 "Contact_interaction":0.33,
+                 "possibly_same":0.1,
+                 }
 
-        if Rapid:
-            DF = file(Dumps.matrix_corrs, 'r')
-            NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = json.load(DF)
-            return NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots
+    # Coefficients values for the conductance_Matrix
+    Conductance_Matrix_Dict = {"Group":0.5,
+                 "Same":100,
+                 "Reaction":1,
+                 "Contact_interaction":1,
+                 "possibly_same":0.1,
+                 }
 
-        for ID in IDSet:
-            NodeID2MatrixNumber[ID] = counter
-            MatrixNumber2NodeID[counter] = ID
-            Vertex = DatabaseGraph.vertices.get(ID)
-            ID2displayName[ID] = Vertex.displayName
-            ID2Type[ID] = Vertex.element_type
-            if Vertex.element_type == "UNIPROT":
-                Uniprots.append(ID)
-            if Vertex.localization != None:
-                ID2Localization[ID] = request_location(LocationBufferDict, Vertex.localization)
-            counter += 1
-        DF = file(Dumps.matrix_corrs,'w')
-        json.dump((NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots), DF)
+    # List of all the reaction types present in the DatabaseGraph that will be
+    # used as roots to build the interaction network (not all nodes are necessary
+    # within the connex part of the graph)
+    ReactionsList = [DatabaseGraph.TemplateReaction, DatabaseGraph.Degradation, DatabaseGraph.BiochemicalReaction]
+
+
+    def __init__(self, FastLoad, Connexity_Aware, full_impact):
+        """
+        .. code-block:: python
+        >>> data=['some cool stuff']
+        """
+
+        self.FastLoad = FastLoad
+        self.Connexity_Aware = Connexity_Aware
+        self.full_impact = full_impact
+
+        self.init_time = time()
+        self.partial_time = time()
+
+        self.Ajacency_Matrix = np.zeros((4,4))
+        self.Conductance_Matrix = np.zeros((4,4))    # This is just non-normalized laplacian matrix
+
+        self.adj_eigenvects = np.zeros((4,4))
+        self.adj_eigenvals = np.zeros((4,4))
+        self.cond_eigenvects = np.zeros((4,4))
+        self.cond_eigenvals = np.zeros((4,4))
+
+        self.NodeID2MatrixNumber = {}
+        self.MatrixNumber2NodeID = {}
+        self.ID2displayName = {}
+        self.ID2Type = {}
+        self.ID2Localization ={}
+        self.Uniprots = []
+
+        self.ReactLinks = []
+        self.InitSet = []
+        self.GroupLinks = {}
+        self.GroupSet = []
+        self.SecLinks = {}
+        self.SecSet = []
+        self.UP_Links = {}
+        self.UPSet = []
+        self.HiNT_Links = {}
+        self.FullSet = []
+        self.Super_Links = {}
+        self.ExpSet = []
+
+        self.main_connexity_set_IDs = []
+
+        self.Matrix_reality = Dumps.matrix_corrs
+
+
+    def write_to_csv(self, filename, array):
+        DF = file(filename, 'w')
+        DF.write(array)
         DF.close()
-        return NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots
 
-    # noinspection PyTypeChecker
-    def Full_load(Connexity_Aware, init_time):
 
-        def get_Reaction_blocks(Connexity_Aware):
+    def dump_object(self, dump_filename, object_to_dump):
+        """
+        Shorcut for pickling & dumping behavior
+
+        :param dump_filename: filename where the object will be dumped
+        :type dump_filename: str
+
+        :param object_to_dump: object to be pickled and dumped
+        :type object_to_dump: pickable object
+        """
+        DF = file(dump_filename, 'w')
+        pickle.dump(object_to_dump, DF)
+        DF.close()
+
+
+    def undump_object(self, dump_filename):
+        DF = file(dump_filename, 'r')
+        return pickle.load(DF)
+
+
+    def dump_Matrices(self):
+        self.dump_object(Dumps.ValMat, self.Ajacency_Matrix)
+        self.dump_object(Dumps.ConMat, self.Conductance_Matrix)
+
+
+    def undump_Matrices(self):
+        self.ValueMatrix = self.undump_object(Dumps.ValMat)
+        self.Conductance_Matrix = self.undump_object(Dumps.ConMat)
+
+
+    def dump_Eigens(self):
+        self.write_to_csv(Dumps.eigen_VaMat, self.adj_eigenvals)
+        self.write_to_csv(Dumps.eigen_ConMat, self.cond_eigenvals)
+        self.dump_object(Dumps.val_eigen, (self.adj_eigenvals, self.adj_eigenvects))
+        self.dump_object(Dumps.cond_eigen, (self.cond_eigenvals, self.cond_eigenvects))
+
+
+    def undump_Eigens(self):
+        self.adj_eigenvals, self.adj_eigenvects = self.undump_object(Dumps.val_eigen)
+        self.cond_eigenvals, self.cond_eigenvects = self.undump_object(Dumps.cond_eigen)
+
+
+
+    def dump_Maps(self):
+        self.dump_object(Dumps.matrix_corrs,
+                         (self.NodeID2MatrixNumber, self.MatrixNumber2NodeID,
+                          self.ID2displayName, self.ID2Type, self.ID2Localization, self.Uniprots))
+
+
+    def undump_Maps(self):
+        self.NodeID2MatrixNumber, self.MatrixNumber2NodeID, self.ID2displayName, self.ID2Type, self.ID2Localization, self.Uniprots = self.undump_object(Dumps.matrix_corrs)
+
+
+    def dump_Main_connex_set(self):
+        self.dump_object(Dumps.Main_Connex_group,self.main_connexity_set_IDs)
+
+
+    def undump_Main_connex_set(self):
+        self.main_connexity_set_IDs = self.undump_object(Dumps.Main_Connex_group)
+
+
+    def time(self):
+        it, pt = (round(time() - self.init_time), round(time() - self.partial_time))
+        pload = 'total: %s m %s s, \t partial: %s m %s s' % (int(it) / 60, it % 60, int(pt) / 60, pt % 60)
+        self.partial_time = time()
+        return pload
+
+
+    def full_load_LS(self):
+
+        def get_Reaction_blocks():
             '''
             Recovers the blocks if interaction that are due to a common set of reactions
             for the elements. They will be used as roots to build the complete interaction
             tree later on.
 
-            :param Connexity_Aware: if this parameter is set for true, only the elemets that are within the major connexity
-                                    graph will be loaded
-            :type Connexity_Aware: boolean
-
-            .. warning::
-            Do not set Connexity_Aware to True on the first run or before performing the Write_Connexity_Infos routine
-
-            :returns: list of lists of NodeIDs -- Reagent_Clusters: Clusters of reagents that interact together through
-                            a common reaction
-            :returns: List of NodeIDs -- Seeds: NodeIDs of the nodes that were encountered, used to perform a further
-                            expansion regarding the other links (Complex participation, contact, etc...)
-            :returns: int -- count: number of interaction clusters
             '''
             ReagentClusters = []
             Seeds = set()
             count = 0
-            for ReactionType in ReactionsList:
+            for ReactionType in self.ReactionsList:
                 for Reaction in ReactionType.get_all():
                     if Reaction == None:
                         continue
+
+                    #TODO: export this to the IO_Routines as "Reaction_participant_getter" and "connexity aware"
                     LocalList = []
-                    for edge_type in edge_type_filter1_1:
+                    for edge_type in self.edge_type_filter1_1:
                         if Reaction.bothV(edge_type) == None:
                             continue
                         for elt in Reaction.bothV(edge_type):
                             Connex = True
 
-                            if Connexity_Aware:
+                            if self.Connexity_Aware:
                                 Connex = False
                                 if  elt.custom != None and "Main_Connex" in elt.custom:
                                     Connex = True
@@ -167,8 +236,8 @@ def getMatrix(decreaseFactorDict, numberEigvals, FastLoad, ConnexityAwareness, f
             Recovers all the nodes reached from the SubSeed according to a the relations listed
             in edge_type_filter
 
-            :param SubSeed: List of NodeIDs that serve as a root for searching further relations
-            :type SubSeed: List of NodeIDs
+            :param SubSeed: set of NodeIDs that serve as a root for searching further relations
+            :type SubSeed: set of NodeIDs
 
             :param edge_type_filter: type of relations according to which the graph will be explored
             :type edge_type_filter: relations of the type bulbsGraph.Relationtype (these are well python objects)
@@ -184,6 +253,9 @@ def getMatrix(decreaseFactorDict, numberEigvals, FastLoad, ConnexityAwareness, f
             for element in SubSeed:
                 SeedNode = DatabaseGraph.vertices.get(element)
                 LocalList = []
+
+                #TODO: export this to the IO_Routines. In fact, all of this should belong to the IO_Routines
+
                 for edge_type in edge_type_filter:
                     if SeedNode.bothV(edge_type) != None:
                         for elt in SeedNode.bothV(edge_type):
@@ -196,223 +268,261 @@ def getMatrix(decreaseFactorDict, numberEigvals, FastLoad, ConnexityAwareness, f
                     Clusters[element] = copy(LocalList)
             return Clusters, SuperSeed, count
 
-        def characterise(Links, Group, c, init_time, t_time):
+
+        def characterise(name, Links, Group, c):
+            print '===========>', name, '<==========='
             print len(Links), len(Group), c
-            print time() - init_time, time() - t_time
-            return time()
+            print self.time()
 
-        t = time()
+        ################################################################################################################
 
-        ReactLinks, InitSet, c = get_Reaction_blocks(ConnexityAwareness)
-        t = characterise(ReactLinks, InitSet, c, init_time, t)
+        self.ReactLinks, self.InitSet, c = get_Reaction_blocks()
+        characterise('Reactions', self.ReactLinks, self.InitSet, c)
 
-        GroupLinks, GroupSet, c = get_expansion(InitSet, edge_type_filter0_1)
-        t = characterise(GroupLinks, GroupSet, c, init_time, t)
+        self.GroupLinks, self.GroupSet, c = get_expansion(self.InitSet, self.edge_type_filter0_1)
+        characterise('Groups', self.GroupLinks, self.GroupSet, c)
 
-        SecLinks, SecSet, c = get_expansion(GroupSet, edge_type_filter1_2)
-        t = characterise(SecLinks, SecSet, c, init_time, t)
+        self.SecLinks, self.SecSet, c = get_expansion(self.GroupSet, self.edge_type_filter1_2)
+        characterise('Secondary Links', self.SecLinks, self.SecSet, c)
 
         for i in range(0,5):
-            SecLinks2, SecSet2, c = get_expansion(SecSet, edge_type_filter1_2)
-            t = characterise(SecLinks2, SecSet2, c, init_time, t)
-            SecSet = SecSet2
-            SecLinks = SecLinks2
+            SecLinks2, SecSet2, c = get_expansion(self.SecSet, self.edge_type_filter1_2)
+            self.SecSet = SecSet2
+            self.SecLinks = SecLinks2
+            characterise('Secondary Links '+str(i)+' ', self.SecLinks, self.SecSet, c)
 
-        UP_Links, UPSet, c = get_expansion(SecSet, edge_type_filter0_2)
-        t = characterise(UP_Links, UPSet, c, init_time, t)
+        self.UP_Links, self.UPSet, c = get_expansion(self.SecSet, self.edge_type_filter0_2)
+        characterise('Uniprot Links', self.UP_Links, self.UPSet, c)
 
-        HiNT_Links, FullSet, c = get_expansion(UPSet, edge_type_filter1_3)
-        t = characterise(HiNT_Links, FullSet, c, init_time, t)
+        self.HiNT_Links, self.FullSet, c = get_expansion(self.UPSet, self.edge_type_filter1_3)
+        characterise('HiNT Links', self.HiNT_Links, self.FullSet, c)
 
-        Super_Links, ExpSet, c = get_expansion(FullSet, edge_type_filter2)
-        characterise(Super_Links, ExpSet, c, init_time, t)
+        self.Super_Links, self.ExpSet, c = get_expansion(self.FullSet, self.edge_type_filter2)
+        characterise('Looks_similar Links', self.Super_Links, self.ExpSet, c)
 
-        return ReactLinks, InitSet, GroupLinks, GroupSet, SecLinks, SecSet, UP_Links, UPSet, HiNT_Links, FullSet, Super_Links, ExpSet
-
-    def fast_insert(element, index_type):
-        # TODO: improve to pump from two different dictionnaries for ValueMatrix and ConductanceMatrix.
-        ValueMatrix[element[0], element[1]] = min(ValueMatrix[element[0], element[1]] + decreaseFactorDict[index_type], 1)
-        ValueMatrix[element[1], element[0]] = min(ValueMatrix[element[1], element[0]] + decreaseFactorDict[index_type], 1)
-        ConductanceMatrix[element[0], element[1]] = ConductanceMatrix[element[0], element[1]] - decreaseFactorDict[index_type]
-        ConductanceMatrix[element[1], element[0]] = ConductanceMatrix[element[1], element[0]] - decreaseFactorDict[index_type]
-        ConductanceMatrix[element[1], element[1]] = ConductanceMatrix[element[1], element[1]] + decreaseFactorDict[index_type]
-        ConductanceMatrix[element[0], element[0]] = ConductanceMatrix[element[0], element[0]] + decreaseFactorDict[index_type]
+        self.dump_object('fixture.dump',(self.ReactLinks,self.InitSet,self.GroupLinks, self.GroupSet, self.SecLinks, self.SecSet, self.UP_Links, self.UPSet, self.HiNT_Links, self.FullSet, self.Super_Links, self.ExpSet))
 
 
-    init_time = time()
+    def map_rows_to_names(self,):
+        """ Maps Node IDs to matrix row/column indexes; """
 
-    ReactLinks, InitSet, GroupLinks, GroupSet, SecLinks,\
-    SecSet, UP_Links, UPSet, HiNT_Links, FullSet, Super_Links, ExpSet = ({},[],{},[],{},[],{},[],{},[],{},[])
+        def request_location(LocationBufferDict, location):
+            """Just a Buffered lookup of location"""
+            location = str(location)
+            if location in LocationBufferDict.keys():
+                return LocationBufferDict[location]
+            else:
+                generator = DatabaseGraph.Location.index.lookup(ID = location)
+                if generator != None:
+                    for elt in generator:
+                        LocationBufferDict[location] = str(elt.displayName)
+                        return str(elt.displayName)
 
-    if not FastLoad:
-        ReactLinks, InitSet, GroupLinks, GroupSet, SecLinks, SecSet, UP_Links, UPSet, HiNT_Links, FullSet, Super_Links, ExpSet = Full_load(ConnexityAwareness, init_time)
-        DF = file(Dumps.matrix_LS, 'w') # previously 'dump5.dump', 'w'
-        json.dump((ReactLinks, InitSet, GroupLinks, GroupSet, SecLinks, SecSet, UP_Links, UPSet, HiNT_Links, FullSet, Super_Links, ExpSet),DF)
-        DF.close()
+        ######################################################################################################################
 
-    else:
-        DF = file(Dumps.matrix_LS, 'r')
-        ReactLinks, InitSet, GroupLinks, GroupSet, SecLinks, SecSet, UP_Links, UPSet, HiNT_Links, FullSet, Super_Links, ExpSet = json.load(DF)
+        if self.FastLoad:
+            self.undump_Maps()
 
-    Highest_Set = FullSet
+        else:
+            counter = 0
+            LocationBufferDict = {}
 
-    if full_impact:
-        Highest_Set = ExpSet
-
-    print "building correspondances", time() - init_time
-
-    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = build_correspondances(Highest_Set, FastLoad)
-
-    print "building the ValMatrix", time() - init_time
-
-    loadLen = len(Highest_Set)
-    ValueMatrix = lil_matrix((loadLen, loadLen))
-    ConductanceMatrix = lil_matrix((loadLen, loadLen))
-
-    # the difference between ReactLinks and all the others are that React_Links are eqally conected groups,
-    # whereath all the other are made by performing inclusion into an existing element and are of form dict[root]=[leaves]
-    # And thus we can actually perform the correlation isertion through the same function, as long as we iterate on non-
-    # repeated pairs.
-
-    t = time()
-
-    for group in ReactLinks:
-        for elt in itertools.combinations(group, 2):
-            element = (NodeID2MatrixNumber[elt[0]], NodeID2MatrixNumber[elt[1]])
-            fast_insert(element, "Reaction")
-
-    for key in GroupLinks.keys():
-        for val in GroupLinks[key]:
-            element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
-            fast_insert(element, "Group")
-
-    for key in SecLinks.keys():
-        for val in SecLinks[key]:
-            element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
-            fast_insert(element, "Contact_interaction")
-
-    for key in UP_Links.keys():
-        for val in UP_Links[key]:
-            element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
-            fast_insert(element, "Same")
-
-    for key in HiNT_Links.keys():
-        for val in HiNT_Links[key]:
-            element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
-            fast_insert(element, "Contact_interaction")
-
-    if full_impact:
-        for key in Super_Links.keys():
-            for val in Super_Links[key]:
-                element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
-                fast_insert(element, "possibly_same")
+            for ID in self.Highest_Set:
+                self.NodeID2MatrixNumber[ID] = counter
+                self.MatrixNumber2NodeID[counter] = ID
+                Vertex = DatabaseGraph.vertices.get(ID)
+                self.ID2displayName[ID] = Vertex.displayName
+                self.ID2Type[ID] = Vertex.element_type
+                if Vertex.element_type == "UNIPROT":
+                    self.Uniprots.append(ID)
+                if Vertex.localization != None:
+                    self.ID2Localization[ID] = request_location(LocationBufferDict, Vertex.localization)
+                counter += 1
 
 
-    print "entering eigenvect computation", time()-init_time, time()-t
+    def fast_row_insert(self, element, index_type):
+        """
+        performs an correct insertion of an edge to the matrix.
+        """
 
-    eigenvals, eigenvects = eigsh(ValueMatrix, numberEigvals)
-    eigenvals2, eigenvects2 = eigsh(ConductanceMatrix, numberEigvals)
+        self.Ajacency_Matrix[element[0], element[1]] = min(self.Ajacency_Matrix[element[0], element[1]] + self.Adjacency_Martix_Dict[index_type], 1)
+        self.Ajacency_Matrix[element[1], element[0]] = min(self.Ajacency_Matrix[element[1], element[0]] + self.Adjacency_Martix_Dict[index_type], 1)
 
-    print eigenvals
-    print '<======================>'
-    print eigenvals2
-    print '<======================>'
-    print np.all(eigsh(ConductanceMatrix)[0] > 0)
-
-    DF = file(Dumps.eigen_VaMat, 'w')
-    DF.write(eigenvals)
-    DF.close()
-
-    DF = file(Dumps.eigen_ConMat, 'w')
-    DF.write(eigenvals2)
-    DF.close()
-
-    DF = file(Dumps.val_eigen, 'w')
-    json.dump((eigenvals, eigenvects), DF)
-    DF.close()
-
-    DF = file(Dumps.cond_eigen, 'w')
-    json.dump((eigenvals2,eigenvects2), DF)
-    DF.close()
-
-    DF = file(Dumps.ValMat, 'w')
-    json.dump(ValueMatrix, DF)
-    DF.close()
-
-    DF=file(Dumps.ConMat, 'w')
-    json.dump(ConductanceMatrix, DF)
-    DF.close()
-
-    print time()-init_time, time()-t
+        self.Conductance_Matrix[element[0], element[1]] -= self.Conductance_Matrix_Dict[index_type]
+        self.Conductance_Matrix[element[1], element[0]] -= self.Conductance_Matrix_Dict[index_type]
+        self.Conductance_Matrix[element[1], element[1]] += self.Conductance_Matrix_Dict[index_type]
+        self.Conductance_Matrix[element[0], element[0]] += self.Conductance_Matrix_Dict[index_type]
 
 
-def Write_Connexity_Infos():
-    """
-        Writes the infos about connexity of different components of a graph. This execution is the main
-        reason for the existance of the "Value" Matrix.
-    """
-    #TODO: build unittest to see if it works correctly.
-    ValueMatrix = json.load(file(Dumps.ValMat, 'r'))
-    CCOmps = connected_components(ValueMatrix, directed = False)
-    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = json.load(file(Dumps.matrix_corrs,'r'))
+    def create_val_matrix(self):
+        """
+        Creates the Value and Conductance matrices
+        """
 
-    counters = np.zeros((CCOmps[0], 1))
-    for elt in range(0, len(CCOmps[1])):
-        counters[CCOmps[1][elt], 0] += 1
-    major_Index = np.argmax(counters)
+        self.full_load_LS()
 
-    ln = len(CCOmps[1])
-    for i in range(0, len(CCOmps[1])):
-        print 'running,', i, ln
-        if CCOmps[1][i] == major_Index:
-            Node = DatabaseGraph.vertices.get(MatrixNumber2NodeID[i])
-            Node.custom = 'Main_Connex'
-            Node.save()
+        self.Highest_Set = self.FullSet
 
-def Erase_Additional_Infos():
-    """
-        Resets the .costum field of all the Nodes on which we have iterated here. Usefull to perform
-        After node set or node connectivity were modfied.
-    """
-    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = json.load(file(Dumps.matrix_corrs,'r'))
+        if self.full_impact:
+            self.Highest_Set = self.ExpSet
 
-    for NodeID in NodeID2MatrixNumber.keys():
-        Node = DatabaseGraph.vertices.get(NodeID)
-        Node.custom = ''
-        Node.save()
+        print "building correspondances", self.time()
 
-def compute_Uniprot_Attachments():
-    """
-        Attaches the Uniprots to the proteins from the reactome, allowing to combine the information circulation values
-    """
-    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = json.load(file(Dumps.matrix_corrs,'r'))
-    Uniprot_Attach = {}
-    #TODO: Build a test to see if this one is still truly required
+        self.map_rows_to_names()
 
-    for SP_Node_ID in Uniprots:
-        Vertex = DatabaseGraph.UNIPORT.get(SP_Node_ID)
-        Generator = Vertex.bothV("is_same")
-        if Generator != None:
+        print "building the ValMatrix", self.time()
+
+        loadLen = len(self.Highest_Set)
+        self.Ajacency_Matrix = lil_matrix((loadLen, loadLen))
+        self.Conductance_Matrix = lil_matrix((loadLen, loadLen))
+
+        for group in self.ReactLinks:
+            for elt in itertools.combinations(group, 2):
+                element = (self.NodeID2MatrixNumber[elt[0]], self.NodeID2MatrixNumber[elt[1]])
+                self.fast_row_insert(element, "Reaction")
+
+        for key in self.GroupLinks.keys():
+            for val in self.GroupLinks[key]:
+                element = (self.NodeID2MatrixNumber[key], self.NodeID2MatrixNumber[val])
+                self.fast_row_insert(element, "Group")
+
+        for key in self.SecLinks.keys():
+            for val in self.SecLinks[key]:
+                element = (self.NodeID2MatrixNumber[key], self.NodeID2MatrixNumber[val])
+                self.fast_row_insert(element, "Contact_interaction")
+
+        for key in self.UP_Links.keys():
+            for val in self.UP_Links[key]:
+                element = (self.NodeID2MatrixNumber[key], self.NodeID2MatrixNumber[val])
+                self.fast_row_insert(element, "Same")
+
+        for key in self.HiNT_Links.keys():
+            for val in self.HiNT_Links[key]:
+                element = (self.NodeID2MatrixNumber[key], self.NodeID2MatrixNumber[val])
+                self.fast_row_insert(element, "Contact_interaction")
+
+        if self.full_impact:
+            for key in self.Super_Links.keys():
+                for val in self.Super_Links[key]:
+                    element = (self.NodeID2MatrixNumber[key], self.NodeID2MatrixNumber[val])
+                    self.fast_row_insert(element, "possibly_same")
+
+
+    def get_eigenspectrum(self, numberEigvals):
+
+        # TODO: erase the if/else loop below
+
+        if not self.FastLoad:
+            self.create_val_matrix()
+
+        else:
+            self.undump_Maps()
+
+        print "entering eigenvect computation", self.time()
+
+        self.adj_eigenvals, self.adj_eigenvects = eigsh(self.Ajacency_Matrix, numberEigvals)
+        self.cond_eigenvals, self.cond_eigenvects = eigsh(self.Conductance_Matrix, numberEigvals)
+
+        print self.adj_eigenvals
+        print '<======================>'
+        print self.cond_eigenvals
+        print '<======================>'
+        print np.all(eigsh(self.Conductance_Matrix)[0] > 0)
+
+        print self.time()
+
+    def get_normalized_laplacian(self, fudge = 1E-18):
+        d, V = np.linalg.eigh(self.Conductance_Matrix)
+        D = np.diag(1./np.sqrt(d + fudge))
+        return np.dot(np.dot(V, D), V.T)
+
+
+    def Write_Connexity_Infos(self):
+        """
+            Writes the infos about connexity of different components of a graph. This execution is the main
+            reason for the existance of the "Value" Matrix.
+        """
+        CCOmps = connected_components(self.Ajacency_Matrix, directed = False)
+
+        counters = np.zeros((CCOmps[0], 1))
+        for elt in range(0, len(CCOmps[1])):
+            counters[CCOmps[1][elt], 0] += 1
+        major_Index = np.argmax(counters)
+
+        ln = len(CCOmps[1])
+        for i in range(0, len(CCOmps[1])):
+            print 'Marking graph main connex elements: %s done' % str("{0:.2f}".format(float(i)/float(ln)*100))
+            if CCOmps[1][i] == major_Index:
+                self.main_connexity_set_IDs.append(self.MatrixNumber2NodeID[i])
+                Node = DatabaseGraph.vertices.get(self.MatrixNumber2NodeID[i])
+                Node.custom = 'Main_Connex'
+                Node.save()
+        print "Marking of %s nodes for connexity was done in %s" % (str(ln), str(self.time()))
+
+
+    def full_rebuild(self):
+        """
+        Performs the initial loading routines that set up in place the sytem of dump files and co
+        """
+        FL = self.FastLoad
+        self.FastLoad = False
+        CA  = self.Connexity_Aware
+        self.Connexity_Aware = False
+
+        self.get_eigenspectrum(1)
+        # self.undump_Main_connex_set()
+        self.reset_Connexity_Infos()
+        self.Write_Connexity_Infos()
+        self.dump_Main_connex_set()
+
+        self.Connexity_Aware = CA
+        self.get_eigenspectrum(100)
+
+        self.FastLoad = FL
+
+        self.compute_Uniprot_Attachments()  # ACHTUNG
+
+
+    def compute_Uniprot_Attachments(self):
+        """
+            Attaches the Uniprots to the proteins from the reactome, allowing to combine the information circulation values
+            Is used to map from a single Uniprot to all the nodes that  can be attained through that node.
+
+            Modst likely was rendered obsolete by the introduction of the HiNT database
+        """
+
+        # TODO: this have to be ported back to the routines
+
+        Uniprot_Attach = {}
+
+        for SP_Node_ID in self.Uniprots:
+            Vertex = DatabaseGraph.UNIPORT.get(SP_Node_ID)
+            Generator = Vertex.bothV("is_same")
+            if Generator == None:
+                continue
             Uniprot_Attach[SP_Node_ID] = []
             for item in Generator:
                 ID = str(item).split('/')[-1][:-1]
                 Uniprot_Attach[SP_Node_ID].append(ID)
-        print SP_Node_ID, 'processed', len(Uniprot_Attach[SP_Node_ID])
-    json.dump(Uniprot_Attach,file(Dumps.UniP_att,'w'))
-    return Uniprot_Attach
+            print 'attached %s cross-refs to Reactome from Node number %s in database' % (len(Uniprot_Attach[SP_Node_ID]), SP_Node_ID)
+        self.dump_object(Dumps.UniP_att, Uniprot_Attach)
+        print "Linking of %s nodes for UP attachment was done in %s" % (str(len(self.Uniprots)), str(self.time()))
+        return Uniprot_Attach
 
 
-def Perform_Loading_Routines():
-    '''
-    Performs the initial loading routines that set up in place the sytem of dump files and co
-    for the main algorithms to kick in seamlessly
-    '''
+    def reset_Connexity_Infos(self):
+        """
+        Resets the .costum field of all the Nodes on which we have iterated here. Usefull to perform
+        After node set or node connectivity were modfied.
+        """
 
-    getMatrix(DfactorDict, 1, False, False, False)
-    Erase_Additional_Infos()
-    Write_Connexity_Infos()
-    getMatrix(DfactorDict, 100, False, True, False)
-    compute_Uniprot_Attachments()
+        for NodeID in self.main_connexity_set_IDs:
+            Node = DatabaseGraph.vertices.get(NodeID)
+            Node.save()
+
+        print "has resetted xconnexity over %s nodes in %s" % (len(self.main_connexity_set_IDs), self.time())
+
 
 if __name__ == "__main__":
-    pass
+    Mat_gter = MatrixGetter(True, True, True)
+    Mat_gter.full_rebuild()
