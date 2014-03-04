@@ -4,6 +4,11 @@ from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
 from PolyPharma.configs import IDFilter, edge_type_filters
 
 def lookup_by_ID(Domain, req):
+    """
+    Looks up a node by legacy ID and prints it's access url. The lookup is a case-sensitive strict match.
+    :param Domain: Node type of the form of DatabaseGraph.Object
+    :param req: requested legacy ID
+    """
     retset = Domain.index.lookup( ID = req )
     if not retset:
         print "nothing found"
@@ -20,6 +25,12 @@ def count_items(Domain):
 
 
 def Look_up_by_ID_for_a_set(Domain, ID_set):
+    """
+    Looks up nodes by legacy IDs from an ID_set list and prints their access url. The lookup is a case-sensitive strict match.
+    :param Domain: Node type of the form of DatabaseGraph.Object
+    :param Domain: Node type of the form of DatabaseGraph.Object
+    :param ID_set: list of requested legacy ID
+    """
     for ID in ID_set:
         print "scanning for:", ID
         lookup_by_ID(Domain, ID)
@@ -28,16 +39,27 @@ def Look_up_by_ID_for_a_set(Domain, ID_set):
 
 def Look_up_Annot_Node(p_load, p_type = ''):
     """
-    return format: node type, node's displayName, node's db_ID, node's legacy ID
+    Looks up nodes accessible via the annotation nodes with a given annotation and given annotation type.
+    The lookup strict match, but case-insensitive.
 
     .. code-block: python
     >>> print Look_up_Annot_Node('ENSG00000131981', 'UNIPROT_Ensembl')
-    >>> # TODO: add the result here
+    >>> # TODO: add the results here when implementing the doctests
+
+    :param p_load: payload
+    :param p_type: payload type
+    :return: node type, node's displayName, node's db_ID, node's legacy ID
+    :rtype: 4- tuple
+    :raise Exception: "p_type unsupported", in case a p_type is not on the supported list specified in the neo4j_Declarations.neo4j_typeDec
     """
 
     def run_through(node_generator):
         """
-        Gets the nodes that are referenced by the annot_nodes in the generator
+        Supporting function. Gets the nodes that are referenced by the annot_nodes in the generator
+        :param node_generator: iterator over annot_nodes
+        :return: the list of object nodes accessible from this set of annot_nodes
+        :raise Warning: if an annotation node is not bound to a real node. This might happen if some object nodes were manually
+                        deleted, but not their annotation nodes. Tu curb this a full database reload is required
         """
         retset = []
         for node in node_generator:
@@ -54,6 +76,12 @@ def Look_up_Annot_Node(p_load, p_type = ''):
         return retset
 
     def double_index_search(pload, ptype):
+        """
+        Supporting fucntion. Performs a search in the annotation nodes over both a payload and a ptype
+        :param pload: payload
+        :param ptype: payload type
+        :return: list of found annotation nodes satisfying both payload content and payload type conditions
+        """
         node_generator = DatabaseGraph.AnnotNode.index.lookup(payload = pload)
         retset = []
         if node_generator:
@@ -97,6 +125,14 @@ def Erase_custom_fields():
 
 
 def reaction_participant_getter(Reaction, main_connex_only):
+    """
+    Recovers all the participants of the reaction
+    :param Reaction: Reaction node for which we are willing to get the participants
+    :param main_connex_only: If set to true, will only pull elements from the reaction that are in the main connex_set
+    :type main_connex_only: bool
+    :return: List of found nodes, number of found nodes
+    :rtype: 2- tuple
+    """
     edge_type_filter = edge_type_filters["Reaction"]
     LocalList = []
     count = 0
@@ -119,6 +155,14 @@ def reaction_participant_getter(Reaction, main_connex_only):
 
 
 def expand_from_seed(Seed_Node_ID, edge_filter):
+    """
+    Recovers all the nodes accessible in one jump from a seed_node with a given database ID by jumping only via the relations
+        of type specified in the edge_filter
+    :param Seed_Node_ID: the database ID of the initial node from which we are observing accessibility
+    :param edge_filter: the list of relation types for which the jumps are authorised
+    :return: List of found nodes database ID, number of found nodes
+    :rtype: 2- tuple
+    """
     Seed_Node = DatabaseGraph.vertices.get(Seed_Node_ID)
     LocalList = []
     count = 0

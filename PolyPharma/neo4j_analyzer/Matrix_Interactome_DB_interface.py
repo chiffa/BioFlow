@@ -34,10 +34,14 @@ class MatrixGetter(object):
 
     def __init__(self, FastLoad, Connexity_Aware, full_impact):
         """
-        .. code-block:: python
-        >>> data=['some cool stuff']
+        :param FastLoad: if set to True, all the parameters normally retrieved from the database will be undumped
+        :type FastLoad: bool
+        :param Connexity_Aware: if set to True, loads only the elements of the main connex set of the database
+        :type Connexity_Aware: bool
+        :param full_impact: if set to True, will compare the names of entities and link the entities that has the same \
+                    name with the "Possibily the same" relation
+        :type full_impact: bool
         """
-
         self.FastLoad = FastLoad
         self.Connexity_Aware = Connexity_Aware
         self.full_impact = full_impact
@@ -79,6 +83,13 @@ class MatrixGetter(object):
 
 
     def write_to_csv(self, filename, array):
+        """
+        Dumps a numpy array to csv
+        :param filename: location of dumping
+        :type filename: str
+        :param array: array to dump
+        :type array: numpy.array
+        """
         DF = file(filename, 'w')
         DF.write(array)
         DF.close()
@@ -100,52 +111,88 @@ class MatrixGetter(object):
 
 
     def undump_object(self, dump_filename):
+        """
+        Undumps a pickled object
+        :param dump_filename: filename from which undump
+        :type dump_filename: str
+        :return: the undumped object
+        :rtype: object
+        """
         DF = file(dump_filename, 'r')
         return pickle.load(DF)
 
 
     def dump_Matrices(self):
+        """
+        dumps self.Ajacency_Matrix and self.Conductance_Matrix
+        """
         self.dump_object(Dumps.ValMat, self.Ajacency_Matrix)
         self.dump_object(Dumps.ConMat, self.Conductance_Matrix)
 
 
     def undump_Matrices(self):
+        """
+        undumps self.Ajacency_Matrix and self.Conductance_Matrix
+        """
         self.ValueMatrix = self.undump_object(Dumps.ValMat)
         self.Conductance_Matrix = self.undump_object(Dumps.ConMat)
 
 
     def dump_Eigens(self):
+        """
+        dumps self.adj_eigenvals and self.Conductance_Matrix and writes them to csv
+        """
         self.write_to_csv(Dumps.eigen_VaMat, self.adj_eigenvals)
-        self.write_to_csv(Dumps.eigen_ConMat, self.cond_eigenvals)
+        self.write_to_csv(Dumps.eigen_ConMat, self.Conductance_Matrix)
         self.dump_object(Dumps.val_eigen, (self.adj_eigenvals, self.adj_eigenvects))
         self.dump_object(Dumps.cond_eigen, (self.cond_eigenvals, self.cond_eigenvects))
 
 
     def undump_Eigens(self):
+        """
+        undumps self.adj_eigenvals and self.Conductance_Matrix
+        """
         self.adj_eigenvals, self.adj_eigenvects = self.undump_object(Dumps.val_eigen)
         self.cond_eigenvals, self.cond_eigenvects = self.undump_object(Dumps.cond_eigen)
 
 
 
     def dump_Maps(self):
+        """
+        dumps all the elements required for the mapping between the types and ids of database entries and matrix columns
+        """
         self.dump_object(Dumps.matrix_corrs,
                          (self.NodeID2MatrixNumber, self.MatrixNumber2NodeID,
                           self.ID2displayName, self.ID2Type, self.ID2Localization, self.Uniprots))
 
 
     def undump_Maps(self):
+        """
+        undumps all the elements required for the mapping between the types and ids of database entries and matrix columns
+        """
         self.NodeID2MatrixNumber, self.MatrixNumber2NodeID, self.ID2displayName, self.ID2Type, self.ID2Localization, self.Uniprots = self.undump_object(Dumps.matrix_corrs)
 
 
     def dump_Main_connex_set(self):
+        """
+        dumps the IDs of objects in the main connex set
+        """
         self.dump_object(Dumps.Main_Connex_group,self.main_connexity_set_IDs)
 
 
     def undump_Main_connex_set(self):
+        """
+        undumps the IDs of objects in the main connex set
+        """
         self.main_connexity_set_IDs = self.undump_object(Dumps.Main_Connex_group)
 
 
     def time(self):
+        """
+        Times the execution
+        :return: tuple containing the time since the creation of the Matrix_getter object and since the last cal of function formatted as string
+        :rtype: str
+        """
         it, pt = (round(time() - self.init_time), round(time() - self.partial_time))
         pload = 'total: %s m %s s, \t partial: %s m %s s' % (int(it) / 60, it % 60, int(pt) / 60, pt % 60)
         self.partial_time = time()
@@ -154,13 +201,38 @@ class MatrixGetter(object):
 
     def full_load_LS(self):
 
+        """
+        Performs the loading of all the objects and the relations in the database according to the following algorithm:
+            - get all the reaction nodes, i.e. reactions specified in the self.Reaction_List.
+            - For each reaction, add the participants to the "seeds" list and create a set of groups linking them all
+                together
+            - for each element of hte "seeds" list, crawl the objects reachable from this seed by specific relations,
+            add those new elements to the list and remember as reachable from the current element of the seed list.
+
+            The relations are crawled in the following order:
+                * "Group"
+                * "Same"
+                * "Contact_interaction" (repeated 5 times to increase as much as possible the main connex size, even
+                 for the knowledge groups that are badly represented in the interactome database)
+                * "HiNT Contact_interaction"
+                * "possibly_same"
+            The exact relations in each group of relation abbreviations are specified in the configs.py file,
+
+        This function fills in the *Set and *Links elements of the Matrix_getter object/
+        """
+
         def get_Reaction_blocks():
-            '''
+            """
             Recovers the blocks if interaction that are due to a common set of reactions
             for the elements. They will be used as roots to build the complete interaction
             tree later on.
 
-            '''
+            :return:* Reagent Clusters (list of lists, where each list represents a set of
+                    reagents participating to the same reaction),
+                    * Seeds list,
+                    * number of elements in the seeds list
+            :rtype: 3- tuple
+            """
             ReagentClusters = []
             Seeds = set()
             count = 0
@@ -188,8 +260,10 @@ class MatrixGetter(object):
             :param edge_type_filter: type of relations according to which the graph will be explored
             :type edge_type_filter: relations of the type bulbsGraph.Relationtype (these are well python objects)
 
-            :return Clusters: Dictionary of lists, where key is the NodeID from the SubSeed
-            :return SuperSet: List of NodeIDs attained from the SubSet by the relation types from the edge_type_filter
+            :return Clusters: * Clusters (Dictionary of lists, where key is the NodeID from the SubSeed)
+                              * SuperSeed (List of NodeIDs attained from the SubSet by the relation types from the edge_type_filter)
+                              * count (number of elements added to the SuperSeed compared to the SubSeed)
+            :rtype: 3- tuple
             '''
             Clusters = {}
             SuperSeed = set()
@@ -205,6 +279,16 @@ class MatrixGetter(object):
 
 
         def characterise(name, Links, Group, c):
+            """
+            Prints a charectristics of a return object from the get_Reaction_blocks or get_expansion
+            :param name: name of the object characterised
+            :type name: str
+            :param Links: element 1 of the return tuple (Links between objects)
+            :param Group: element 2 of the return tuple (SuperSeed)
+            :type Group: set or list
+            :param c: element 3 of the return tuple (count)
+            :type c: int
+            """
             print '===========>', name, '<==========='
             print len(Links), len(Group), c
             print self.time()
@@ -235,14 +319,21 @@ class MatrixGetter(object):
         self.Super_Links, self.ExpSet, c = get_expansion(self.FullSet, edge_type_filters["possibly_same"])
         characterise('Looks_similar Links', self.Super_Links, self.ExpSet, c)
 
-        self.dump_object('fixture.dump',(self.ReactLinks,self.InitSet,self.GroupLinks, self.GroupSet, self.SecLinks, self.SecSet, self.UP_Links, self.UPSet, self.HiNT_Links, self.FullSet, self.Super_Links, self.ExpSet))
+        # self.dump_object('fixture.dump',(self.ReactLinks,self.InitSet,self.GroupLinks, self.GroupSet, self.SecLinks, self.SecSet, self.UP_Links, self.UPSet, self.HiNT_Links, self.FullSet, self.Super_Links, self.ExpSet))
 
 
     def map_rows_to_names(self,):
-        """ Maps Node IDs to matrix row/column indexes; """
+        """ Maps Node Database IDs, Legacy IDs, display names and types to matrix row/column indexes; """
 
         def request_location(LocationBufferDict, location):
-            """Just a Buffered lookup of location"""
+            """
+            Just a Buffered lookup of location, since the number of cellular location is relatively small
+            (~80), it makes sense to buffer the IOs on it.
+            Normally should be moved out as a buffering decorator
+            :param LocationBufferDict:
+            :param location:
+            :return:
+            """
             location = str(location)
             if location in LocationBufferDict.keys():
                 return LocationBufferDict[location]
@@ -274,9 +365,13 @@ class MatrixGetter(object):
 
     def fast_row_insert(self, element, index_type):
         """
-        performs an correct insertion of an edge to the matrix.
+        Performs an correct insertion of an edge to the matrix.
+        :param element: tuple of indexes designating elements we are willing to link
+        :type element: 2- tuple of ints
+        :param index_type: type of the insert, so that the matrix coefficient can be looked up in the Adjacency_Martix_Dict
+                            or Conductance_Martix_Dict from the configs file
+        :type index_type: str
         """
-
         self.Ajacency_Matrix[element[0], element[1]] = min(self.Ajacency_Matrix[element[0], element[1]] + Adjacency_Martix_Dict[index_type], 1)
         self.Ajacency_Matrix[element[1], element[0]] = min(self.Ajacency_Matrix[element[1], element[0]] + Adjacency_Martix_Dict[index_type], 1)
 
@@ -288,7 +383,7 @@ class MatrixGetter(object):
 
     def create_val_matrix(self):
         """
-        Creates the Value and Conductance matrices
+        Creates anew self.Ajacency_Matrix and self.Conductance_Matrix
         """
 
         self.full_load_LS()
@@ -341,7 +436,14 @@ class MatrixGetter(object):
 
 
     def get_eigenspectrum(self, numberEigvals):
-
+        """
+        Recovers the eigenspectrum associated to the *n* biggest eigenvalues, where *n* is specified by numberEigvals.
+            If the Adjacency and conductance matrix haven't been preloaded first, will raise an Exception
+        :param numberEigvals: specifies how many biggest eigenvalues we are willing to get.
+        :type numberEigvals: int
+        :raise Exception: "Matrix must be pre-loaded first" if self.Ajacency_Matrix and self.Conductance_Matrix have not
+                            been computed anew or pre-loaded first
+        """
         if self.Conductance_Matrix == np.zeros((4,4)) or self.FullSet == []:
             raise Exception("Matrix must be pre-loaded first")
 
@@ -360,6 +462,12 @@ class MatrixGetter(object):
 
 
     def get_normalized_laplacian(self, fudge = 1E-18):
+        """
+        Returns the normalized conductance matrix (Conductance matrix is actually the matrix laplacian of the associated
+        Graph)
+        :param fudge: Cancells out the action of eigenvalues that are too low.
+        :return: normalized matrix
+        """
         d, V = np.linalg.eigh(self.Conductance_Matrix)
         D = np.diag(1./np.sqrt(d + fudge))
         return np.dot(np.dot(V, D), V.T)
@@ -367,8 +475,11 @@ class MatrixGetter(object):
 
     def Write_Connexity_Infos(self):
         """
-            Writes the infos about connexity of different components of a graph. This execution is the main
-            reason for the existance of the "Value" Matrix.
+            Writes the infos about connexity of different components of a graph into the database for the future use.
+            This execution is the main reason for the existance of the Adjacency Matrix.
+
+            :warning: This process has to ber re-run each time the underlying database is changed in a way that migh
+            affect the main connex graph
         """
         CCOmps = connected_components(self.Ajacency_Matrix, directed = False)
 
@@ -390,7 +501,8 @@ class MatrixGetter(object):
 
     def full_rebuild(self):
         """
-        Performs the initial loading routines that set up in place the sytem of dump files and co
+        Performs the initial loading routines that set up in place the sytem of dump files to allow fast loading in the
+        future
         """
 
         CA  = self.Connexity_Aware
@@ -407,11 +519,16 @@ class MatrixGetter(object):
         self.create_val_matrix()
         self.get_eigenspectrum(100)
 
+    def fast_load(self):
+        pass
 
     def reset_Connexity_Infos(self):
         """
         Resets the .costum field of all the Nodes on which we have iterated here. Usefull to perform
         After node set or node connectivity were modfied.
+
+        :warning: Requires the self.Main_set_IDs to be preloaded to function correctly. In case it is impossible,
+                    use the Erase_costum_fields function from the IO_Routines module.
         """
 
         for NodeID in self.main_connexity_set_IDs:
