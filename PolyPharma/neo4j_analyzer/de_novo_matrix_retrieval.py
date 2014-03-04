@@ -10,7 +10,7 @@ self-referenced conductances
 """
 
 from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
-from PolyPharma.configs import IDFilter
+from PolyPharma.configs import edge_type_filters, Adjacency_Martix_Dict, Conductance_Matrix_Dict, Dumps
 from copy import copy
 from time import time
 import itertools
@@ -19,54 +19,16 @@ import pickle
 from scipy.sparse import lil_matrix
 from scipy.sparse.linalg import eigsh
 from scipy.sparse.csgraph import connected_components
+from IO_Routines import reaction_participant_getter,expand_from_seed
 
-# TODO: switch from filtering to annotating as part of Cross-ref (main_connex) set
-
-
-class Dumps(object):
-    matrix_LS = 'dump5.dump'
-    matrix_corrs = 'dump2.dump'
-    eigen_VaMat = 'eigen_valmat.csv'
-    eigen_ConMat = 'eigen_conmat.csv'
-    val_eigen = 'pickleDump.dump'
-    cond_eigen = 'pickleDump_0_5.dump'
-    ValMat = 'pickleDump3.dump'
-    ConMat = 'pickleDump4.dump'
-    UniP_att = 'UP_Attach.dump'
-    Main_Connex_group = 'Connex_group.dump'
 
 
 class MatrixGetter(object):
 
-    # Refers to the groups of links between the nodes that should be treated in the same manner
-    edge_type_filter0_1 = ["is_part_of_collection"]                    # Group relation group
-    edge_type_filter0_2 = ["is_same"]                                  # Same relation group
-    edge_type_filter1_1 = ["is_Catalysant", "is_reaction_particpant"]  # Reaction relation group
-    edge_type_filter1_2 = ["is_part_of_complex", "is_Regulant"]        # Contact_interaction relation group
-    edge_type_filter1_3 = ["is_interacting"]                           # Contact_interaction relation group
-    edge_type_filter2 = ["is_possibly_same"]                           # possibly_same relation group
 
-    #TODO: move the coefficients to the configs file
-
-    # Coefficients values for the value_Matrix
-    Adjacency_Martix_Dict = {"Group":0.5,
-                 "Same":1,
-                 "Reaction":0.33,
-                 "Contact_interaction":0.33,
-                 "possibly_same":0.1,
-                 }
-
-    # Coefficients values for the conductance_Matrix
-    Conductance_Matrix_Dict = {"Group":0.5,
-                 "Same":100,
-                 "Reaction":1,
-                 "Contact_interaction":1,
-                 "possibly_same":0.1,
-                 }
-
-    # List of all the reaction types present in the DatabaseGraph that will be
-    # used as roots to build the interaction network (not all nodes are necessary
-    # within the connex part of the graph)
+    # # List of all the reaction types present in the DatabaseGraph that will be
+    # # used as roots to build the interaction network (not all nodes are necessary
+    # # within the connex part of the graph)
     ReactionsList = [DatabaseGraph.TemplateReaction, DatabaseGraph.Degradation, DatabaseGraph.BiochemicalReaction]
 
 
@@ -206,24 +168,8 @@ class MatrixGetter(object):
                 for Reaction in ReactionType.get_all():
                     if Reaction == None:
                         continue
-
-                    #TODO: export this to the IO_Routines as "Reaction_participant_getter" and "connexity aware"
-                    LocalList = []
-                    for edge_type in self.edge_type_filter1_1:
-                        if Reaction.bothV(edge_type) == None:
-                            continue
-                        for elt in Reaction.bothV(edge_type):
-                            Connex = True
-
-                            if self.Connexity_Aware:
-                                Connex = False
-                                if  elt.custom != None and "Main_Connex" in elt.custom:
-                                    Connex = True
-
-                            ID = str(elt).split('/')[-1][:-1]
-                            if ID not in IDFilter and Connex:
-                                LocalList.append(ID)
-                                count += 1
+                    LocalList, cnt = reaction_participant_getter(Reaction, self.Connexity_Aware)
+                    count += cnt
 
                     if len(LocalList) > 1:
                         ReagentClusters.append(copy(LocalList))
@@ -249,23 +195,12 @@ class MatrixGetter(object):
             SuperSeed = set()
             SuperSeed.update(SubSeed)
             count = 0
-            # noinspection PyTypeChecker
             for element in SubSeed:
-                SeedNode = DatabaseGraph.vertices.get(element)
-                LocalList = []
-
-                #TODO: export this to the IO_Routines. In fact, all of this should belong to the IO_Routines
-
-                for edge_type in edge_type_filter:
-                    if SeedNode.bothV(edge_type) != None:
-                        for elt in SeedNode.bothV(edge_type):
-                            ID = str(elt).split('/')[-1][:-1]
-                            if ID not in IDFilter:
-                                LocalList.append(ID)
-                                SuperSeed.add(ID)
-                                count += 1
+                LocalList, count_increase = expand_from_seed(element, edge_type_filter)
                 if len(LocalList) > 0:
                     Clusters[element] = copy(LocalList)
+                    SuperSeed.update(LocalList)
+                    count+=count_increase
             return Clusters, SuperSeed, count
 
 
@@ -279,25 +214,25 @@ class MatrixGetter(object):
         self.ReactLinks, self.InitSet, c = get_Reaction_blocks()
         characterise('Reactions', self.ReactLinks, self.InitSet, c)
 
-        self.GroupLinks, self.GroupSet, c = get_expansion(self.InitSet, self.edge_type_filter0_1)
+        self.GroupLinks, self.GroupSet, c = get_expansion(self.InitSet, edge_type_filters["Group"])
         characterise('Groups', self.GroupLinks, self.GroupSet, c)
 
-        self.SecLinks, self.SecSet, c = get_expansion(self.GroupSet, self.edge_type_filter1_2)
+        self.SecLinks, self.SecSet, c = get_expansion(self.GroupSet, edge_type_filters["Contact_interaction"])
         characterise('Secondary Links', self.SecLinks, self.SecSet, c)
 
         for i in range(0,5):
-            SecLinks2, SecSet2, c = get_expansion(self.SecSet, self.edge_type_filter1_2)
+            SecLinks2, SecSet2, c = get_expansion(self.SecSet, edge_type_filters["Contact_interaction"])
             self.SecSet = SecSet2
             self.SecLinks = SecLinks2
             characterise('Secondary Links '+str(i)+' ', self.SecLinks, self.SecSet, c)
 
-        self.UP_Links, self.UPSet, c = get_expansion(self.SecSet, self.edge_type_filter0_2)
+        self.UP_Links, self.UPSet, c = get_expansion(self.SecSet, edge_type_filters["Same"])
         characterise('Uniprot Links', self.UP_Links, self.UPSet, c)
 
-        self.HiNT_Links, self.FullSet, c = get_expansion(self.UPSet, self.edge_type_filter1_3)
+        self.HiNT_Links, self.FullSet, c = get_expansion(self.UPSet, edge_type_filters["HiNT_Contact_interaction"])
         characterise('HiNT Links', self.HiNT_Links, self.FullSet, c)
 
-        self.Super_Links, self.ExpSet, c = get_expansion(self.FullSet, self.edge_type_filter2)
+        self.Super_Links, self.ExpSet, c = get_expansion(self.FullSet, edge_type_filters["possibly_same"])
         characterise('Looks_similar Links', self.Super_Links, self.ExpSet, c)
 
         self.dump_object('fixture.dump',(self.ReactLinks,self.InitSet,self.GroupLinks, self.GroupSet, self.SecLinks, self.SecSet, self.UP_Links, self.UPSet, self.HiNT_Links, self.FullSet, self.Super_Links, self.ExpSet))
@@ -320,24 +255,21 @@ class MatrixGetter(object):
 
         ######################################################################################################################
 
-        if self.FastLoad:
-            self.undump_Maps()
 
-        else:
-            counter = 0
-            LocationBufferDict = {}
+        counter = 0
+        LocationBufferDict = {}
 
-            for ID in self.Highest_Set:
-                self.NodeID2MatrixNumber[ID] = counter
-                self.MatrixNumber2NodeID[counter] = ID
-                Vertex = DatabaseGraph.vertices.get(ID)
-                self.ID2displayName[ID] = Vertex.displayName
-                self.ID2Type[ID] = Vertex.element_type
-                if Vertex.element_type == "UNIPROT":
-                    self.Uniprots.append(ID)
-                if Vertex.localization != None:
-                    self.ID2Localization[ID] = request_location(LocationBufferDict, Vertex.localization)
-                counter += 1
+        for ID in self.Highest_Set:
+            self.NodeID2MatrixNumber[ID] = counter
+            self.MatrixNumber2NodeID[counter] = ID
+            Vertex = DatabaseGraph.vertices.get(ID)
+            self.ID2displayName[ID] = Vertex.displayName
+            self.ID2Type[ID] = Vertex.element_type
+            if Vertex.element_type == "UNIPROT":
+                self.Uniprots.append(ID)
+            if Vertex.localization != None:
+                self.ID2Localization[ID] = request_location(LocationBufferDict, Vertex.localization)
+            counter += 1
 
 
     def fast_row_insert(self, element, index_type):
@@ -345,13 +277,13 @@ class MatrixGetter(object):
         performs an correct insertion of an edge to the matrix.
         """
 
-        self.Ajacency_Matrix[element[0], element[1]] = min(self.Ajacency_Matrix[element[0], element[1]] + self.Adjacency_Martix_Dict[index_type], 1)
-        self.Ajacency_Matrix[element[1], element[0]] = min(self.Ajacency_Matrix[element[1], element[0]] + self.Adjacency_Martix_Dict[index_type], 1)
+        self.Ajacency_Matrix[element[0], element[1]] = min(self.Ajacency_Matrix[element[0], element[1]] + Adjacency_Martix_Dict[index_type], 1)
+        self.Ajacency_Matrix[element[1], element[0]] = min(self.Ajacency_Matrix[element[1], element[0]] + Adjacency_Martix_Dict[index_type], 1)
 
-        self.Conductance_Matrix[element[0], element[1]] -= self.Conductance_Matrix_Dict[index_type]
-        self.Conductance_Matrix[element[1], element[0]] -= self.Conductance_Matrix_Dict[index_type]
-        self.Conductance_Matrix[element[1], element[1]] += self.Conductance_Matrix_Dict[index_type]
-        self.Conductance_Matrix[element[0], element[0]] += self.Conductance_Matrix_Dict[index_type]
+        self.Conductance_Matrix[element[0], element[1]] -= Conductance_Matrix_Dict[index_type]
+        self.Conductance_Matrix[element[1], element[0]] -= Conductance_Matrix_Dict[index_type]
+        self.Conductance_Matrix[element[1], element[1]] += Conductance_Matrix_Dict[index_type]
+        self.Conductance_Matrix[element[0], element[0]] += Conductance_Matrix_Dict[index_type]
 
 
     def create_val_matrix(self):
@@ -410,13 +342,8 @@ class MatrixGetter(object):
 
     def get_eigenspectrum(self, numberEigvals):
 
-        # TODO: erase the if/else loop below
-
-        if not self.FastLoad:
-            self.create_val_matrix()
-
-        else:
-            self.undump_Maps()
+        if self.Conductance_Matrix == np.zeros((4,4)) or self.FullSet == []:
+            raise Exception("Matrix must be pre-loaded first")
 
         print "entering eigenvect computation", self.time()
 
@@ -430,6 +357,7 @@ class MatrixGetter(object):
         print np.all(eigsh(self.Conductance_Matrix)[0] > 0)
 
         print self.time()
+
 
     def get_normalized_laplacian(self, fudge = 1E-18):
         d, V = np.linalg.eigh(self.Conductance_Matrix)
@@ -464,50 +392,20 @@ class MatrixGetter(object):
         """
         Performs the initial loading routines that set up in place the sytem of dump files and co
         """
-        FL = self.FastLoad
-        self.FastLoad = False
+
         CA  = self.Connexity_Aware
         self.Connexity_Aware = False
 
-        self.get_eigenspectrum(1)
-        # self.undump_Main_connex_set()
+        self.create_val_matrix()
+
+        self.undump_Main_connex_set()
         self.reset_Connexity_Infos()
         self.Write_Connexity_Infos()
         self.dump_Main_connex_set()
 
         self.Connexity_Aware = CA
+        self.create_val_matrix()
         self.get_eigenspectrum(100)
-
-        self.FastLoad = FL
-
-        self.compute_Uniprot_Attachments()  # ACHTUNG
-
-
-    def compute_Uniprot_Attachments(self):
-        """
-            Attaches the Uniprots to the proteins from the reactome, allowing to combine the information circulation values
-            Is used to map from a single Uniprot to all the nodes that  can be attained through that node.
-
-            Modst likely was rendered obsolete by the introduction of the HiNT database
-        """
-
-        # TODO: this have to be ported back to the routines
-
-        Uniprot_Attach = {}
-
-        for SP_Node_ID in self.Uniprots:
-            Vertex = DatabaseGraph.UNIPORT.get(SP_Node_ID)
-            Generator = Vertex.bothV("is_same")
-            if Generator == None:
-                continue
-            Uniprot_Attach[SP_Node_ID] = []
-            for item in Generator:
-                ID = str(item).split('/')[-1][:-1]
-                Uniprot_Attach[SP_Node_ID].append(ID)
-            print 'attached %s cross-refs to Reactome from Node number %s in database' % (len(Uniprot_Attach[SP_Node_ID]), SP_Node_ID)
-        self.dump_object(Dumps.UniP_att, Uniprot_Attach)
-        print "Linking of %s nodes for UP attachment was done in %s" % (str(len(self.Uniprots)), str(self.time()))
-        return Uniprot_Attach
 
 
     def reset_Connexity_Infos(self):
@@ -520,7 +418,7 @@ class MatrixGetter(object):
             Node = DatabaseGraph.vertices.get(NodeID)
             Node.save()
 
-        print "has resetted xconnexity over %s nodes in %s" % (len(self.main_connexity_set_IDs), self.time())
+        print "has resetted connexity over %s nodes in %s" % (len(self.main_connexity_set_IDs), str(self.time()))
 
 
 if __name__ == "__main__":

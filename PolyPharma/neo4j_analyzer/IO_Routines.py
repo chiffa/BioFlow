@@ -1,7 +1,7 @@
 __author__ = 'ank'
 
 from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
-
+from PolyPharma.configs import IDFilter, edge_type_filters
 
 def lookup_by_ID(Domain, req):
     retset = Domain.index.lookup( ID = req )
@@ -94,6 +94,42 @@ def Erase_custom_fields():
     for Node in Node_gen:
         Node.custom = ''
         Node.save()
+
+
+def reaction_participant_getter(Reaction, main_connex_only):
+    edge_type_filter = edge_type_filters["Reaction"]
+    LocalList = []
+    count = 0
+    for edge_type in edge_type_filter:
+        if Reaction.bothV(edge_type) == None:
+            continue
+        for elt in Reaction.bothV(edge_type):
+            Connex = True
+
+            if main_connex_only:
+                Connex = False
+                if  elt.custom != None and "Main_Connex" in elt.custom:
+                    Connex = True
+
+            ID = str(elt).split('/')[-1][:-1]
+            if ID not in IDFilter and Connex:
+                LocalList.append(ID)
+                count += 1
+    return LocalList, count
+
+
+def expand_from_seed(Seed_Node_ID, edge_filter):
+    Seed_Node = DatabaseGraph.vertices.get(Seed_Node_ID)
+    LocalList = []
+    count = 0
+    for edge_type in edge_filter:
+        if Seed_Node.bothV(edge_type) != None:
+            for elt in Seed_Node.bothV(edge_type):
+                ID = str(elt).split('/')[-1][:-1]
+                if ID not in IDFilter:
+                    LocalList.append(ID)
+                    count += 1
+    return LocalList, count
 
 
 

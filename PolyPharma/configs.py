@@ -44,6 +44,46 @@ ref_coll = db.refrence_v_0_3
 data_coll = db.data_v_0_3
 
 
+# Refers to the groups of links between the nodes that should be treated in the same manner
+edge_type_filters = {
+    "Group" : ["is_part_of_collection"],                                  # Group relation group
+    "Same" : ["is_same"],                                                 # Same relation group
+    "Reaction" : ["is_Catalysant", "is_reaction_particpant"],             # Reaction relation group
+    "Contact_interaction" : ["is_part_of_complex", "is_Regulant"],        # Contact_interaction relation group
+    "HiNT_Contact_interaction" : ["is_interacting"],                      # Contact_interaction relation group
+    "possibly_same" : ["is_possibly_same"],
+    }
+
+
+# Coefficients values for the value_Matrix
+Adjacency_Martix_Dict = {"Group":0.5,
+             "Same":1,
+             "Reaction":0.33,
+             "Contact_interaction":0.33,
+             "possibly_same":0.1,
+             }
+
+# Coefficients values for the conductance_Matrix
+Conductance_Matrix_Dict = {"Group":0.5,
+             "Same":100,
+             "Reaction":1,
+             "Contact_interaction":1,
+             "possibly_same":0.1,
+             }
+
+class Dumps(object):
+    matrix_LS = 'dump5.dump'
+    matrix_corrs = 'dump2.dump'
+    eigen_VaMat = 'eigen_valmat.csv'
+    eigen_ConMat = 'eigen_conmat.csv'
+    val_eigen = 'pickleDump.dump'
+    cond_eigen = 'pickleDump_0_5.dump'
+    ValMat = 'pickleDump3.dump'
+    ConMat = 'pickleDump4.dump'
+    UniP_att = 'UP_Attach.dump'
+    Main_Connex_group = 'Connex_group.dump'
+
+
 IDFilter=['5379',     # Small_Molecule_Collection Purine nucleotide
           '5298',     # Small_Molecule_Collection ADP, GDP, CDP, UDP
           '816',      # Small_Molecule ATP
