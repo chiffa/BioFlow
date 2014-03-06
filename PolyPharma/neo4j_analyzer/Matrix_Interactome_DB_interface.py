@@ -1,30 +1,37 @@
 __author__ = 'ank'
 """
 This module contains all the routines that are respojnsible for pulling
-the matrixes out of the neo4j graph and processing them
-
-The general idea is to build up
-- a value matrix that references only the connexions between distinct nodes
-- a conductance matrix that refers the conductance between the nodes and the
-self-referenced conductances
+the matrixes out of the neo4j graph and processing them.
 """
-
-from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
-from PolyPharma.configs import edge_type_filters, Adjacency_Martix_Dict, Conductance_Matrix_Dict, Dumps
-from copy import copy
-from time import time
 import itertools
 import numpy as np
 import pickle
+from copy import copy
+from time import time
+
 from scipy.sparse import lil_matrix
 from scipy.sparse.linalg import eigsh
 from scipy.sparse.csgraph import connected_components
-from IO_Routines import reaction_participant_getter,expand_from_seed
 
+from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
+from PolyPharma.configs import edge_type_filters, Adjacency_Martix_Dict, Conductance_Matrix_Dict, Dumps
+from PolyPharma.neo4j_analyzer.IO_Routines import reaction_participant_getter, expand_from_seed
+
+# TODO: change the behavior of HiNT propagation to a several stages propagation
+# TODO: re-introduce the deleted module "uniprot_linkage" and test the size of main connex set.
+#       Without it, Main connex set is 24k nodes, with 4331 UP links and 1051 Hint links
 
 
 class MatrixGetter(object):
+    """
+    Builds an object that is used ans an interface between matrix representation of an interactome and the
 
+    :param Connexity_Aware: if set to True, loads only the elements of the main connex set of the database
+    :type Connexity_Aware: bool
+    :param full_impact: if set to True, will compare the names of entities and link the entities that has the same \
+            name with the "Possibily the same" relation
+    :type full_impact: bool
+    """
 
     # # List of all the reaction types present in the DatabaseGraph that will be
     # # used as roots to build the interaction network (not all nodes are necessary
@@ -32,17 +39,7 @@ class MatrixGetter(object):
     ReactionsList = [DatabaseGraph.TemplateReaction, DatabaseGraph.Degradation, DatabaseGraph.BiochemicalReaction]
 
 
-    def __init__(self, FastLoad, Connexity_Aware, full_impact):
-        """
-        :param FastLoad: if set to True, all the parameters normally retrieved from the database will be undumped
-        :type FastLoad: bool
-        :param Connexity_Aware: if set to True, loads only the elements of the main connex set of the database
-        :type Connexity_Aware: bool
-        :param full_impact: if set to True, will compare the names of entities and link the entities that has the same \
-                    name with the "Possibily the same" relation
-        :type full_impact: bool
-        """
-        self.FastLoad = FastLoad
+    def __init__(self, Connexity_Aware, full_impact):
         self.Connexity_Aware = Connexity_Aware
         self.full_impact = full_impact
 
@@ -85,6 +82,7 @@ class MatrixGetter(object):
     def write_to_csv(self, filename, array):
         """
         Dumps a numpy array to csv
+
         :param filename: location of dumping
         :type filename: str
         :param array: array to dump
@@ -113,6 +111,7 @@ class MatrixGetter(object):
     def undump_object(self, dump_filename):
         """
         Undumps a pickled object
+
         :param dump_filename: filename from which undump
         :type dump_filename: str
         :return: the undumped object
@@ -190,6 +189,7 @@ class MatrixGetter(object):
     def time(self):
         """
         Times the execution
+
         :return: tuple containing the time since the creation of the Matrix_getter object and since the last cal of function formatted as string
         :rtype: str
         """
@@ -204,21 +204,19 @@ class MatrixGetter(object):
         """
         Performs the loading of all the objects and the relations in the database according to the following algorithm:
             - get all the reaction nodes, i.e. reactions specified in the self.Reaction_List.
-            - For each reaction, add the participants to the "seeds" list and create a set of groups linking them all
-                together
+            - For each reaction, add the participants to the "seeds" list and create a set of groups linking them all together
             - for each element of hte "seeds" list, crawl the objects reachable from this seed by specific relations,
             add those new elements to the list and remember as reachable from the current element of the seed list.
 
             The relations are crawled in the following order:
                 * "Group"
                 * "Same"
-                * "Contact_interaction" (repeated 5 times to increase as much as possible the main connex size, even
-                 for the knowledge groups that are badly represented in the interactome database)
+                * "Contact_interaction" (repeated 5 times to increase as much as possible the main connex size, even for the knowledge groups that are badly represented in the interactome database)
                 * "HiNT Contact_interaction"
                 * "possibly_same"
             The exact relations in each group of relation abbreviations are specified in the configs.py file,
 
-        This function fills in the *Set and *Links elements of the Matrix_getter object/
+        This function fills in the self.Set and self.Links elements of the MatrixGetter object
         """
 
         def get_Reaction_blocks():
@@ -281,6 +279,7 @@ class MatrixGetter(object):
         def characterise(name, Links, Group, c):
             """
             Prints a charectristics of a return object from the get_Reaction_blocks or get_expansion
+
             :param name: name of the object characterised
             :type name: str
             :param Links: element 1 of the return tuple (Links between objects)
@@ -330,6 +329,7 @@ class MatrixGetter(object):
             Just a Buffered lookup of location, since the number of cellular location is relatively small
             (~80), it makes sense to buffer the IOs on it.
             Normally should be moved out as a buffering decorator
+
             :param LocationBufferDict:
             :param location:
             :return:
@@ -366,6 +366,7 @@ class MatrixGetter(object):
     def fast_row_insert(self, element, index_type):
         """
         Performs an correct insertion of an edge to the matrix.
+
         :param element: tuple of indexes designating elements we are willing to link
         :type element: 2- tuple of ints
         :param index_type: type of the insert, so that the matrix coefficient can be looked up in the Adjacency_Martix_Dict
@@ -439,6 +440,7 @@ class MatrixGetter(object):
         """
         Recovers the eigenspectrum associated to the *n* biggest eigenvalues, where *n* is specified by numberEigvals.
             If the Adjacency and conductance matrix haven't been preloaded first, will raise an Exception
+
         :param numberEigvals: specifies how many biggest eigenvalues we are willing to get.
         :type numberEigvals: int
         :raise Exception: "Matrix must be pre-loaded first" if self.Ajacency_Matrix and self.Conductance_Matrix have not
@@ -465,6 +467,7 @@ class MatrixGetter(object):
         """
         Returns the normalized conductance matrix (Conductance matrix is actually the matrix laplacian of the associated
         Graph)
+
         :param fudge: Cancells out the action of eigenvalues that are too low.
         :return: normalized matrix
         """
@@ -478,8 +481,7 @@ class MatrixGetter(object):
             Writes the infos about connexity of different components of a graph into the database for the future use.
             This execution is the main reason for the existance of the Adjacency Matrix.
 
-            :warning: This process has to ber re-run each time the underlying database is changed in a way that migh
-            affect the main connex graph
+            :warning: This process has to ber re-run each time the underlying database is changed in a way that migh affect the main connex graph
         """
         CCOmps = connected_components(self.Ajacency_Matrix, directed = False)
 
@@ -520,7 +522,29 @@ class MatrixGetter(object):
         self.get_eigenspectrum(100)
 
     def fast_load(self):
-        pass
+        """
+        Preloads mappings, matrices and eigenvalues
+        """
+        self.undump_Maps()
+        self.undump_Matrices()
+        self.undump_Eigens()
+
+
+    def get_descriptor_for_index(self, index):
+        """
+        Recovers a descriptor set for a given index in the current matrix mapping
+
+        :param index: idenx for which return a descirptor
+        :return: Type, displayName and if a localization is given, returns display name too.
+        :rtype: tuple
+        """
+        if self.MatrixNumber2NodeID[index] in self.ID2Localization.keys():
+            return (self.ID2Type[self.MatrixNumber2NodeID[index]],
+                    self.ID2displayName[self.MatrixNumber2NodeID[index]],
+                    self.ID2Localization[self.MatrixNumber2NodeID[index]])
+        else:
+            return (self.ID2Type[self.MatrixNumber2NodeID[index]],
+                    self.ID2displayName[self.MatrixNumber2NodeID[index]])
 
     def reset_Connexity_Infos(self):
         """
@@ -539,5 +563,5 @@ class MatrixGetter(object):
 
 
 if __name__ == "__main__":
-    Mat_gter = MatrixGetter(True, True, True)
+    Mat_gter = MatrixGetter(True, True)
     Mat_gter.full_rebuild()

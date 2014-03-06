@@ -5,18 +5,12 @@ Created on Jul 11, 2013
 This module contains all the routines that are respojnsible for pulling 
 the matrixes out of the neo4j graph and processing them
 
-The general idea is to build up 
-- a value matrix that references only the connexions between distinct nodes
-- a conductance matrix that refers the conductance between the nodes and the 
-self-referenced conductances
-
 '''
-from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
 from PolyPharma.configs import IDFilter
 import copy
 from scipy.sparse import lil_matrix
-from scipy.sparse.linalg import eigsh
-import itertools
+# from scipy.sparse.linalg import eigsh
+# import itertools
 from time import time
 import pickle
 import numpy as np
@@ -27,421 +21,39 @@ import random
 from scikits.sparse.cholmod import cholesky
 from scipy.sparse import csc_matrix
 from scipy.sparse import diags
-from math import  sqrt
 ID2Aboundances = {}
-from scipy.sparse.csgraph import connected_components
-from scipy.sparse.csgraph import shortest_path
 import pylab
 import math
+from Matrix_Interactome_DB_interface import MatrixGetter
 
 
-# TODO: dissociate
-
-# Refers to the groups of links between the nodes that should be treated in the same manner 
-edge_type_filter0_1=["is_part_of_collection"]                    # Group relation group
-edge_type_filter0_2=["is_same"]                                  # Same relation group
-edge_type_filter1_1=["is_Catalysant", "is_reaction_particpant"]  # Reaction relation group
-edge_type_filter1_2=["is_part_of_complex", "is_Regulant"]        # Contact_interaction relation group
-edge_type_filter1_3=["is_interacting"]                           # Contact_interaction relation group
-edge_type_filter2=["is_possibly_same"]                           # possibly_same relation group
-
-# Coefficients values for the value_Matrix
-DfactorDict={"Group":0.5,
-             "Same":1,
-             "Reaction":0.33,
-             "Contact_interaction":0.33,
-             "possibly_same":0.1,
-             }
-
-# Coefficients values for the conductance_Matrix
-ConductanceDict={"Group":0.5,
-             "Same":100,
-             "Reaction":1,
-             "Contact_interaction":1,
-             "possibly_same":0.1,
-             }
-
-# List of all the reaction types present in the DatabaseGraph that will be 
-# used as roots to build the interaction network (not all nodes are necessary
-# within the connex part of the graph)
-ReactionsList=[DatabaseGraph.TemplateReaction, DatabaseGraph.Degradation, DatabaseGraph.BiochemicalReaction]
-
-def get_Reaction_blocks(Connexity_Aware):
-    '''
-    Recovers the blocks if interaction that are due to a common set of reactions
-    for the elements. They will be used as roots to build the complete interaction
-    tree later on.
-    
-    @param Connexity_Aware: if this parameter is set for true, only the elements
-                            that are within the major connexity graph will be loaded
-    @type Connexity_Aware: boolean  
-    
-    @attention: do not set Connexity_Aware to True on the first run or before 
-                performing the Write_Connexity_Infos routine
-    
-    @return Reagent_Clusters: Clusters of reagents that interact together through a common reaction 
-    @rtype: list of lists of NodeIDs
-    
-    @return Seeds: NodeIDs of the nodes that were encountered, used to perform a further expansion regarding
-                    the other links (Complex participation, contact, etc...)
-    @rtype: List of NodeIDs
-    
-    @return count: number of interaction clusters
-    @rtype count: int
-    '''
-    ReagentClusters=[]
-    Seeds=set()
-    count=0
-    for ReactionType in ReactionsList:
-        for Reaction in ReactionType.get_all():
-            if Reaction!=None:
-                LocalList=[]
-                for edge_type in edge_type_filter1_1:
-                    if Reaction.bothV(edge_type)!=None:
-                        for elt in Reaction.bothV(edge_type):
-                            Connex=True
-                            if Connexity_Aware:
-                                Connex=False
-                                if  elt.custom!=None and "Main_Connex" in elt.custom:
-                                    Connex=True 
-                            ID=str(elt).split('/')[-1][:-1]
-                            if ID not in IDFilter and Connex:
-                                LocalList.append(ID)
-                                count+=1
-                if len(LocalList)>1:
-                    ReagentClusters.append(copy.copy(LocalList))
-                    Seeds.update(LocalList)
-    
-    return ReagentClusters, Seeds, count
-
-def get_expansion(SubSeed,edge_type_filter):
-    '''
-    Recovers all the nodes reached from the SubSeed according to a the relations listed
-    in edge_type_filter
-    
-    @param SubSeed: List of NodeIDs that serve as a root for searching further relations
-    @type SubSeed: List of NodeIDs
-    
-    @param edge_type_filter: type of relations according to which the graph will be explored
-    @type edge_type_filter: relations of the type bulbsGraph.Relationtype (these are well python objects)
-    
-    @return Clusters: Dictionary of lists, where key is the NodeID from the SubSeed and the list of 
-    @rtype Clusters: 
-    
-    @return SuperSet: List of NodeIDs attained from the SubSet by the relation types from the edge_type_filter 
-    @rtype SuperSet: List of NodeIDs
-    '''
-    Clusters={}
-    SuperSeed=set()
-    SuperSeed.update(SubSeed)
-    count=0
-    for element in SubSeed:
-        SeedNode=DatabaseGraph.vertices.get(element)
-        LocalList=[]
-        for edge_type in edge_type_filter:
-            if SeedNode.bothV(edge_type)!=None:
-                for elt in SeedNode.bothV(edge_type):
-                    ID=str(elt).split('/')[-1][:-1]
-                    if ID not in IDFilter:
-                        LocalList.append(ID)
-                        SuperSeed.add(ID)
-                        count+=1
-        if len(LocalList)>0:
-            Clusters[element]=copy.copy(LocalList)
-    return Clusters, SuperSeed, count
-
-def compute_Uniprot_Attachments():
-    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))
-    Uniprot_Attach={} #Attaches the Uniprots to the proteins from the reactome, allowing to combine the information circulation values
-    for SP_Node_ID in Uniprots:
-        Vertex=DatabaseGraph.UNIPORT.get(SP_Node_ID)
-        Generator=Vertex.bothV("is_same")
-        if Generator!=None:
-            Uniprot_Attach[SP_Node_ID]=[]
-            for item in Generator:
-                ID=str(item).split('/')[-1][:-1]
-                Uniprot_Attach[SP_Node_ID].append(ID)
-        print SP_Node_ID, 'processed', len(Uniprot_Attach[SP_Node_ID])
-    pickle.dump(Uniprot_Attach,file('UP_Attach.dump','w'))
-    return Uniprot_Attach
-
-def load_Uniprot_Attachments():
-    Uniprot_Attach=pickle.load(file('UP_Attach.dump','r'))
-    return Uniprot_Attach
-
-def build_correspondances(IDSet,Rapid):
-    NodeID2MatrixNumber={}
-    MatrixNumber2NodeID={}
-    ID2displayName={}
-    ID2Type={}
-    Uniprots=[]
-    ID2Localization={}
-    counter=0
-    LocationBufferDict={}
-    if not Rapid:
-        for ID in IDSet:
-            NodeID2MatrixNumber[ID]=counter
-            MatrixNumber2NodeID[counter]=ID
-            Vertex=DatabaseGraph.vertices.get(ID)
-            ID2displayName[ID]=Vertex.displayName
-            ID2Type[ID]=Vertex.element_type
-            if Vertex.element_type=="UNIPROT":
-                Uniprots.append(ID)
-            if Vertex.localization!=None:
-                ID2Localization[ID]=request_location(LocationBufferDict,Vertex.localization)
-            counter+=1
-        pickleDump2=file('pickleDump2.dump','w')
-        pickle.dump((NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots),pickleDump2)
-        pickleDump2.close()
-    else:
-        NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))
-    return NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots
-
-def request_location(LocationBufferDict,location):
-    location=str(location)
-    if location in LocationBufferDict.keys():
-        return LocationBufferDict[location]
-    else:
-        generator=DatabaseGraph.Location.index.lookup(ID=location)
-        if generator!=None:
-            for elt in generator:
-                LocationBufferDict[location]=str(elt.displayName)
-                return str(elt.displayName)
-
-
-def getMatrix(decreaseFactorDict, numberEigvals, FastLoad, ConnexityAwareness):
-    init=time()
-    # Connect the groups of ingredients that share the same reactions1
-    # Retrieve seeds for the matrix computation
-    ReactLinks, InitSet,GroupLinks, GroupSet,SecLinks, SecSet,UP_Links, UPSet,HiNT_Links, FullSet,Super_Links,ExpSet=({},[],{},[],{},[],{},[],{},[],{},[])
-    if not FastLoad:
-        ReactLinks, InitSet, c = get_Reaction_blocks(ConnexityAwareness)
-        print len(ReactLinks), len(InitSet), c
-        print time()-init
-        t=time()
-        GroupLinks, GroupSet, c = get_expansion(InitSet,edge_type_filter0_1)
-        print len(GroupLinks), len(GroupSet),c
-        print time()-init, time()-t
-        t=time()
-        
-        SecLinks, SecSet, c = get_expansion(GroupSet,edge_type_filter1_2)
-        print len(SecLinks), len(SecSet), c
-        print time()-init, time()-t
-        t=time()
-        
-        for i in range(0,5):
-            SecLinks2, SecSet2, c = get_expansion(SecSet,edge_type_filter1_2)
-            print len(SecLinks2), len(SecSet2), c
-            print time()-init, time()-t
-            SecSet=SecSet2
-            SecLinks=SecLinks2
-            t=time()
-        
-        UP_Links, UPSet, c = get_expansion(SecSet,edge_type_filter0_2)
-        print len(UP_Links), len(UPSet), c
-        print time()-init, time()-t
-        t=time()
-        HiNT_Links, FullSet, c = get_expansion(UPSet,edge_type_filter1_3)
-        print len(HiNT_Links), len(FullSet), c
-        print time()-init, time()-t
-        t=time()
-        Super_Links, ExpSet, c = get_expansion(FullSet,edge_type_filter2)
-        print len(Super_Links), len(ExpSet), c
-        print time()-init, time()-t
-        t=time()
-        DF=file('dump5.dump','w')
-        pickle.dump((ReactLinks, InitSet, GroupLinks, GroupSet, SecLinks, SecSet, UP_Links, UPSet, HiNT_Links, FullSet, Super_Links, ExpSet),DF)
-#         pickle.dump((ReactLinks, InitSet,GroupLinks, GroupSet, SecLinks, SecSet, UP_Links, UPSet),DF)
-    else:
-        DF=file('dump5.dump','r')
-        ReactLinks, InitSet, GroupLinks, GroupSet, SecLinks, SecSet, UP_Links, UPSet, HiNT_Links, FullSet, Super_Links,ExpSet=pickle.load(DF)
-#         ReactLinks, InitSet, GroupLinks, GroupSet, SecLinks, SecSet, UP_Links, UPSet = pickle.load(DF)
-    
-    # Fill in the matrix with the values
-    # Take an impact vector
-    # Continue multiplications as long as needed for convergence
-    
-    # export the matrix as a flat file
-    #    => Most significantly touched elements, especially in the UNIPORT
-    #    => Get the vector of affected proteins, then multiply it over the transfer
-    #        Matrix until an equilibrium is reached.
-    
-    # Pay attention to the criticality spread => vector shoud increase exponentially for the important prots, effectively shutting down the whole system
-    # But not in the case of "unimportant proteins"
-    
-    # => Assymetric influence matrices (causality followship)
-    # Markov clustering linalgebra on sparce matrices to accelerate all this shit?
-    
-    # We could actually envision it as a chain reaction in a nuclear reactor, leading either to a reaction spiraling out of control (total functional shutdown, at least for a
-    # given function.
-    
-    # Idea behind the eigenvectors: if we generate random sets of genes perturbating the network, some combination would lead to a way more powerful effect when propagated
-    # in a markovian, turn-based network (runaway), whereas other sets will lead to a lighter runaway. A way to estimate runaway specifics of protein-protein interaction network
-    # The strongest runaway would be generated by the highest absolute-value link
-    # ACHTUNG!!!!! all the lanes have to be normalized later on to be effectively corresponding to a Markov model!!!! => Not in our case, since some proteins are affecting
-    # SEVERAL other proteins at the same time
-    
-    # Limitations: no physical-path toxicity (such as rising pH, changing the O2 content or depleting ATP/ADP)
-    
-    # If a specific set of GO_Terms is put down, we can say that the function they describe is down.
-    # Recall v.s. precision for a GO array for a perturbed protein set?
-    # Non-randomness of a recall?
-    # Pathway structure?
-    
-    # Method extendable to inhibition / activation binaries, by introducing positive / negative values for the matrix
-    
-    print "building correspondances", time()-init,
-    t=time()
-    # In_Case of the full impact: replace UPSet by ExpSet
-    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = build_correspondances(ExpSet,FastLoad)
-    
-    
-    print "building the ValMatrix", time()-init, time()-t
-    t=time()
-    
-    # Group node definintion have to be corrected so they are not all related together but instead are linked towards the central "group" node!!!!
-    
-    # TODO: update all this element so that it incorporates the new linkage 
-    
-    # In_Case of the full impact: replace UPSet by ExpSet
-    loadLen=len(ExpSet)
-    ValueMatrix=lil_matrix((loadLen,loadLen))
-    ConductanceMatrix=lil_matrix((loadLen,loadLen))
-    for group in ReactLinks:
-        for elt in itertools.permutations(group,2):
-            element=(NodeID2MatrixNumber[elt[0]],NodeID2MatrixNumber[elt[1]])
-            ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Reaction"],1)
-            ConductanceMatrix[element[0],element[1]]=ConductanceMatrix[element[0],element[1]]-decreaseFactorDict["Reaction"]
-            ConductanceMatrix[element[1],element[1]]=ConductanceMatrix[element[1],element[1]]+decreaseFactorDict["Reaction"]/2.0
-            ConductanceMatrix[element[0],element[0]]=ConductanceMatrix[element[0],element[0]]+decreaseFactorDict["Reaction"]/2.0
-            # the 2.0 is there because each symmetrical position will be attained twice 
-            
-    for key in GroupLinks.keys():
-        for val in GroupLinks[key]:
-            element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
-            ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Group"],1)
-            ConductanceMatrix[element[0],element[1]]=ConductanceMatrix[element[0],element[1]]-decreaseFactorDict["Group"]
-            
-            element=(NodeID2MatrixNumber[val],NodeID2MatrixNumber[key])
-            ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Group"],1)
-            ConductanceMatrix[element[0],element[1]]=ConductanceMatrix[element[0],element[1]]-decreaseFactorDict["Group"]
-            
-            ConductanceMatrix[element[1],element[1]]=ConductanceMatrix[element[1],element[1]]+decreaseFactorDict["Group"]
-            ConductanceMatrix[element[0],element[0]]=ConductanceMatrix[element[0],element[0]]+decreaseFactorDict["Group"]
-            
-    for key in SecLinks.keys():
-        for val in SecLinks[key]:
-            element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
-            ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Contact_interaction"],1)
-            ConductanceMatrix[element[0],element[1]]=ConductanceMatrix[element[0],element[1]]-decreaseFactorDict["Contact_interaction"]
-            
-            element=(NodeID2MatrixNumber[val],NodeID2MatrixNumber[key])
-            ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Contact_interaction"],1)
-            ConductanceMatrix[element[0],element[1]]=ConductanceMatrix[element[0],element[1]]-decreaseFactorDict["Contact_interaction"]
-            
-            ConductanceMatrix[element[1],element[1]]=ConductanceMatrix[element[1],element[1]]+decreaseFactorDict["Contact_interaction"]
-            ConductanceMatrix[element[0],element[0]]=ConductanceMatrix[element[0],element[0]]+decreaseFactorDict["Contact_interaction"]
-            
-    for key in UP_Links.keys():
-        for val in UP_Links[key]:
-            element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
-            ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Same"],1)
-            ConductanceMatrix[element[0],element[1]]=ConductanceMatrix[element[0],element[1]]-decreaseFactorDict["Same"]
-            
-            element=(NodeID2MatrixNumber[val],NodeID2MatrixNumber[key])
-            ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Same"],1)
-            ConductanceMatrix[element[0],element[1]]=ConductanceMatrix[element[0],element[1]]-decreaseFactorDict["Same"]
-            
-            ConductanceMatrix[element[1],element[1]]=ConductanceMatrix[element[1],element[1]]+decreaseFactorDict["Same"]
-            ConductanceMatrix[element[0],element[0]]=ConductanceMatrix[element[0],element[0]]+decreaseFactorDict["Same"]
-            
-    for key in HiNT_Links.keys():
-        for val in HiNT_Links[key]:
-            element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
-            ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Contact_interaction"],1)
-            ConductanceMatrix[element[0],element[1]]=ConductanceMatrix[element[0],element[1]]-decreaseFactorDict["Contact_interaction"]
-             
-            element=(NodeID2MatrixNumber[val],NodeID2MatrixNumber[key])
-            ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["Contact_interaction"],1)
-            ConductanceMatrix[element[0],element[1]]=ConductanceMatrix[element[0],element[1]]-decreaseFactorDict["Contact_interaction"]
-             
-            ConductanceMatrix[element[1],element[1]]=ConductanceMatrix[element[1],element[1]]+decreaseFactorDict["Contact_interaction"]
-            ConductanceMatrix[element[0],element[0]]=ConductanceMatrix[element[0],element[0]]+decreaseFactorDict["Contact_interaction"]
-             
-    for key in Super_Links.keys():
-        for val in Super_Links[key]:
-            element=(NodeID2MatrixNumber[key],NodeID2MatrixNumber[val])
-            ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["possibly_same"],1)
-            ConductanceMatrix[element[0],element[1]]=ConductanceMatrix[element[0],element[1]]-decreaseFactorDict["possibly_same"]
-             
-            element=(NodeID2MatrixNumber[val],NodeID2MatrixNumber[key])
-            ValueMatrix[element[0],element[1]]=min(ValueMatrix[element[0],element[1]]+decreaseFactorDict["possibly_same"],1)
-            ConductanceMatrix[element[0],element[1]]=ConductanceMatrix[element[0],element[1]]-decreaseFactorDict["possibly_same"]
-             
-            ConductanceMatrix[element[1],element[1]]=ConductanceMatrix[element[1],element[1]]+decreaseFactorDict["possibly_same"]
-            ConductanceMatrix[element[0],element[0]]=ConductanceMatrix[element[0],element[0]]+decreaseFactorDict["possibly_same"]
-
-    print "entering eigenvect computation", time()-init, time()-t
-    t=time()
-    eigenvals, eigenvects = eigsh(ValueMatrix,numberEigvals)
-    eigenvals2, eigenvects2 = eigsh(ConductanceMatrix,numberEigvals)
-    print eigenvals
-    print '<======================>'
-    print eigenvals2
-    print '<======================>'
-    print np.all(eigsh(ConductanceMatrix)[0] > 0)
-    output = file('eigenvals.csv','w')
-    output.write(eigenvals)
-    output.close()
-    output2 = file('eigenvals.csv','w')
-    output2.write(eigenvals2)
-    output2.close()
-    pickleDump=file('pickleDump.dump','w')
-    pickle.dump((eigenvals, eigenvects), pickleDump)
-    pickleDump.close()
-    pickleDump_0_5=file('pickleDump_0_5.dump','w')
-    pickle.dump((eigenvals2,eigenvects2),pickleDump_0_5)
-    pickleDump_0_5.close()
-    pickleDump3=file('pickleDump3.dump','w')
-    pickle.dump(ValueMatrix,pickleDump3)
-    pickleDump3.close()
-    pickleDump4=file('pickleDump4.dump','w')
-    pickle.dump(ConductanceMatrix,pickleDump4)
-    pickleDump4.close()
-    print time()-init, time()-t
-
-def get_Descriptor(MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, index):
-    if MatrixNumber2NodeID[index] in ID2Localization.keys():
-        return (ID2Type[MatrixNumber2NodeID[index]], ID2displayName[MatrixNumber2NodeID[index]], ID2Localization[MatrixNumber2NodeID[index]])
-    else: 
-        return (ID2Type[MatrixNumber2NodeID[index]], ID2displayName[MatrixNumber2NodeID[index]])
     
 def get_eigenvect_Stats():
-    init=time()
-    pickleDump=file('pickleDump.dump','r')
+    init = time()
+    pickleDump = file('pickleDump.dump','r')    # TODO: change the undump behavior here
     eigenvals, eigenvects = pickle.load(pickleDump)
-    pickleDump2=file('pickleDump2.dump','r')
+    pickleDump2 = file('pickleDump2.dump','r')  # TODO: change the undump behavior here
     NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(pickleDump2)
-    eigenVectsList=[]
-    SuperIndex={}
-    CounterIndex={}
-    print 'depicked',time()-init
-    for i in range(0,eigenvects.shape[1]):
-        eigenVectsList.append(eigenvects[:,i])
-    i=0
+    eigenVectsList = []
+    SuperIndex = {}
+    CounterIndex = {}
+    print 'depicked', time()-init
+    for i in range(0, eigenvects.shape[1]):
+        eigenVectsList.append(eigenvects[:, i])
+    i = 0
     for eigenvect in eigenVectsList:
-        i+=1
-        normalized=np.multiply(eigenvect,eigenvect)
+        i += 1
+        normalized = np.multiply(eigenvect, eigenvect)
         for k in range(0,10):
-            index=np.argmax(normalized, 0)
+            index = np.argmax(normalized, 0)
             if MatrixNumber2NodeID[index] not in CounterIndex.keys():
-                CounterIndex[MatrixNumber2NodeID[index]]=0
-                SuperIndex[MatrixNumber2NodeID[index]]=get_Descriptor(MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, index)
-            CounterIndex[MatrixNumber2NodeID[index]]+=normalized[index]
-            normalized[index]=0
-    srtd=sorted(CounterIndex.iteritems(), key=operator.itemgetter(1),reverse=True)
+                CounterIndex[MatrixNumber2NodeID[index]] = 0
+                SuperIndex[MatrixNumber2NodeID[index]] = get_Descriptor(MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, index)
+            CounterIndex[MatrixNumber2NodeID[index]] += normalized[index]
+            normalized[index] = 0
+    srtd = sorted(CounterIndex.iteritems(), key = operator.itemgetter(1), reverse = True)
     print IDFilter
-    for key,val in srtd[:100]:
+    for key, val in srtd[:100]:
         print val, key, SuperIndex[key], key in IDFilter
         if key in IDFilter:
             print 'error on key: ', key
@@ -454,20 +66,20 @@ def UniprotCalibrate(rounds,depth, filename, Rdom):
     P. Silver in E.Coli. One single propagation iteration
     # NOTICE: it might be better to perform the information collection only for the other uniprot- proteins
     '''
-    init=time()
-    pickleDump2=file('pickleDump2.dump','r')
+    init = time()
+    pickleDump2 = file('pickleDump2.dump','r')  # TODO: change the undump behavior here
     NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(pickleDump2)
-    pickleDump3=file('pickleDump3.dump','r')
-    ValueMatrix=pickle.load(pickleDump3)
+    pickleDump3 = file('pickleDump3.dump','r')  # TODO: change the undump behavior here
+    ValueMatrix = pickle.load(pickleDump3)
     print 'unpickled in:', time()-init
-    Finale=MainUprotCalLoop(Uniprots,ValueMatrix,NodeID2MatrixNumber,rounds,MatrixNumber2NodeID,ID2displayName,ID2Type,ID2Localization,depth,Rdom)
-    write=file(filename, 'w')
+    Finale = MainUprotCalLoop(Uniprots, ValueMatrix, NodeID2MatrixNumber, rounds, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, depth,Rdom)
+    write = file(filename, 'w')
     pickle.dump(Finale, write)
     write.close()
     print 'round completed in:', time()-init      
 
 
-def MainUprotCalLoop(Uniprots,ValueMatrix,NodeID2MatrixNumber,rounds,MatrixNumber2NodeID,ID2displayName,ID2Type,ID2Localization,depth,Rdom):
+def MainUprotCalLoop(Uniprots, ValueMatrix, NodeID2MatrixNumber, rounds, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, depth, Rdom):
     iterations=1
     ReUniprots=copy.copy(Uniprots)
     Finale=[]
@@ -522,7 +134,7 @@ def treat_Calibration():
     for filename in Filenames:
         if 'calibrate' in filename:
             FnameList.append(filename)
-    for fname in FnameList:
+    for fname in FnameList:               # TODO: change the undump behavior here
         DicList[fname.split('.')[0][-1]]=(pickle.load(file(fname,'r')))
     memory={}    
     for key in DicList.keys():
@@ -550,7 +162,7 @@ def treat_Calibration():
             
 
 def checkMatrix():
-    pickleDump3=file('pickleDump3.dump','r')
+    pickleDump3=file('pickleDump3.dump','r')  # TODO: change the undump behavior here
     ValueMatrix=pickle.load(pickleDump3)
     NzeroList=ValueMatrix.nonzero()
     faultyList=[]
@@ -569,9 +181,9 @@ def checkMatrix():
 
 def processEigenVectors():
     init=time()
-    pickleDump=file('pickleDump.dump','r')
+    pickleDump=file('pickleDump.dump','r')  # TODO: change the undump behavior here
     eigenvals, eigenvects=pickle.load(pickleDump)
-    pickleDump2=file('pickleDump2.dump','r')
+    pickleDump2=file('pickleDump2.dump','r')  # TODO: change the undump behavior here
     NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(pickleDump2)
     eigenVectsList=[]
     SuperIndex=[]
@@ -599,12 +211,12 @@ def columnSort():
     '''
     np.sum is broken for sparse matrixes. does the same thing with option axis=0
     '''
-    pickleDump3=file('pickleDump3.dump','r')
+    pickleDump3=file('pickleDump3.dump','r')  # TODO: change the undump behavior here
     ValueMatrix=pickle.load(pickleDump3)
     SupportDict={}
     IndexDict={}
     nz=ValueMatrix.nonzero()
-    pickleDump2=file('pickleDump2.dump','r')
+    pickleDump2=file('pickleDump2.dump','r')  # TODO: change the undump behavior here
     NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(pickleDump2)
     print 'ended imports'
     for i in range(0, len(nz[0])):
@@ -618,9 +230,9 @@ def columnSort():
             for val in SupportDict[key]:
                 IndexDict[key]+=float(ValueMatrix[key,val])
                 
-    srtd=sorted( IndexDict.iteritems(), key=operator.itemgetter(1),reverse=True )
+    srtd = sorted( IndexDict.iteritems(), key=operator.itemgetter(1),reverse=True )
     
-    outf=file('columnSum.csv','w')
+    outf = file('columnSum.csv','w')
     
     for elt in srtd:
         Stri=str(str(MatrixNumber2NodeID[elt[0]])+'\t'+str(elt[1])+'\n')
@@ -652,7 +264,7 @@ def compute_sample_circulation_intensity_minimal(Sample, epsilon=1e-10):
     
     '''
     init=time()
-    conductance_Matrix=pickle.load(file('pickleDump4.dump','r'))
+    conductance_Matrix=pickle.load(file('pickleDump4.dump','r'))   # TODO: change the undump behavior here
     # NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))
     InformativityArray=np.zeros((conductance_Matrix.shape[0],1))                                # Database ID to Informativity
     Solver=cholesky(csc_matrix(conductance_Matrix),epsilon)
@@ -690,7 +302,7 @@ def compute_sample_circulation_intensity(Sample, epsilon=1e-10, array_v=''):
     '''
     # NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))
     InformativityArray=compute_sample_circulation_intensity_minimal(Sample, epsilon)
-    name='InfoArray_new'+str(array_v)+'.dump'
+    name='InfoArray_new'+str(array_v)+'.dump'   # TODO: change the undump behavior here
     pickle.dump(InformativityArray,file(name,'w'))
     return InformativityArray
 
@@ -703,7 +315,7 @@ def Compute_circulation_intensity(epsilon=1e-10):
     @type epsilon: float
     
     '''
-    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))
+    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))   # TODO: change the undump behavior here
     re_UP=[]
     for SP in Uniprots:
         re_UP.append(NodeID2MatrixNumber[SP])
@@ -711,7 +323,7 @@ def Compute_circulation_intensity(epsilon=1e-10):
 
 
 def Compute_random_sample(sample_size, iterations, epsilon=1e-10, name_version=''):
-    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))
+    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))   # TODO: change the undump behavior here
     re_UP=[]
     for SP in Uniprots:
         re_UP.append(NodeID2MatrixNumber[SP])
@@ -721,8 +333,8 @@ def Compute_random_sample(sample_size, iterations, epsilon=1e-10, name_version='
         compute_sample_circulation_intensity(re_UP,epsilon,name_version+str(i))
 
 def Compute_truly_random_sample(rounds,iterations,epsilon,name_version=''):
-    conductance_Matrix=pickle.load(file('pickleDump4.dump','r'))
-    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))
+    conductance_Matrix=pickle.load(file('pickleDump4.dump','r'))   # TODO: change the undump behavior here
+    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))   # TODO: change the undump behavior here
     Solver=cholesky(csc_matrix(conductance_Matrix),epsilon)
     re_UP=[]
     for SP in Uniprots:
@@ -756,7 +368,7 @@ def Compute_truly_random_sample(rounds,iterations,epsilon,name_version=''):
         CorrInf=np.zeros((conductance_Matrix.shape[0],1))
         CorrInf[:]=rounds
         InformativityArray=InformativityArray-CorrInf
-        name='InfoArray_new'+str(name_version)+str(i)+'.dump'
+        name='InfoArray_new'+str(name_version)+str(i)+'.dump'   # TODO: change the undump behavior here
         Fle=file(name,'w')
         pickle.dump(InformativityArray,Fle)
         Fle.close()
@@ -857,12 +469,12 @@ def get_Current_all(Conductance_Matrix, Voltages, J):
     
 def stats_over_random_info_circ_samples(UniProtAttachement=True):
     from PolyPharma.Utils.Prot_Aboundances import ID2Aboundances
-    UPNode_IDs_2Proteins_IDs_List=load_Uniprot_Attachments()
-    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))
+    UPNode_IDs_2Proteins_IDs_List = load_Uniprot_Attachments()
+    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))   # TODO: change the undump behavior here
     DicList=[]
     FnameList=[]
     Filenames = listdir('.')
-    for filename in Filenames:
+    for filename in Filenames:    # TODO: change the undump behavior here
         if 'InfoArray_new' in filename:
             FnameList.append(filename)
     for fname in FnameList:
@@ -899,9 +511,9 @@ def stats_over_random_info_circ_samples(UniProtAttachement=True):
         else:
             errcount1+=1
     Overingtonicitiy=np.zeros((Stats_Mat.shape[0],1))
-    Overington_IDList=pickle.load(file('IDList.dump','r'))
+    Overington_IDList=pickle.load(file('IDList.dump','r'))   # TODO: change the undump behavior here
     errcount2=0
-    finmatrix=pickle.load(file('finmatrix.dump','r'))
+    finmatrix=pickle.load(file('finmatrix.dump','r'))  # TODO: change the undump behavior here
     for ID in Overington_IDList:
         if ID in NodeID2MatrixNumber.keys():
             Overingtonicitiy[NodeID2MatrixNumber[ID],0]=1.0
@@ -918,9 +530,9 @@ def check_Silverality(sample_size,iterations):
     with the distance between them
     '''
     from scipy.sparse.csgraph import dijkstra
-    conductance_Matrix=pickle.load(file('pickleDump4.dump','r'))
-    value_Matrix=pickle.load(file('pickleDump3.dump','r'))
-    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))
+    conductance_Matrix=pickle.load(file('pickleDump4.dump','r'))  # TODO: change the undump behavior here
+    value_Matrix=pickle.load(file('pickleDump3.dump','r'))  # TODO: change the undump behavior here
+    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))  # TODO: change the undump behavior here
     cumulative=[]
     rei_UP=[]
     for SP in Uniprots:
@@ -941,11 +553,11 @@ def check_Silverality(sample_size,iterations):
             print distances
             cumulative.append((distances[index],Currents[index,0]))
             distances[index]=100
-    pickle.dump(cumulative,file('Silverality.dump','w'))
+    pickle.dump(cumulative,file('Silverality.dump','w'))  # TODO: change the undump behavior here
     return cumulative
 
 def analyze_Silverality():
-    Silverality_List=pickle.load(file('Silverality.dump','r'))
+    Silverality_List=pickle.load(file('Silverality.dump','r'))  # TODO: change the undump behavior here
     SuperDict={}
     for distance, value in Silverality_List:
         if distance not in SuperDict.keys():
@@ -991,66 +603,30 @@ def analyze_Silverality():
 #     pylab.show()
     # TODO: perform statistical analysis
 
-def Perform_Loading_Routines():
-    '''
-    @param eigenvals:
-    @type eigenvals:
-    
-    @param param:   
-    '''
-    
-    getMatrix(DfactorDict, 1, False, False)
-    Erase_Additional_Infos()
-    Write_Connexity_Infos()
-    getMatrix(DfactorDict, 100, False, True)
-    compute_Uniprot_Attachments()
-
 
 def Perform_Testing_Routines():
     raise NotImplementedError
 
-#TODO: redirect to the de-novo matrix import
-def Write_Connexity_Infos():    
-    ValueMatrix = pickle.load(file('pickleDump3.dump','r'))
-    CCOmps = connected_components(ValueMatrix, directed=False)
-    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))
-    
-    counters = np.zeros((CCOmps[0],1))
-    for elt in range(0,len(CCOmps[1])):
-        counters[CCOmps[1][elt],0] += 1
-    major_Index=np.argmax(counters)
-    
-    ln=len(CCOmps[1])
-    for i in range(0,len(CCOmps[1])):
-        print 'running,',i,ln
-        if CCOmps[1][i]==major_Index:
-            Node=DatabaseGraph.vertices.get(MatrixNumber2NodeID[i])
-            Node.custom='Main_Connex'
-            Node.save()
-
-def Erase_Additional_Infos():
-    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))
-    
-    for NodeID in NodeID2MatrixNumber.keys():
-        Node=DatabaseGraph.vertices.get(NodeID)
-        Node.custom=''
-        Node.save()
 
 def Compute_and_Store_circulation(handle, List_of_UPs, mongo_db_collection):
     print 'entering computation for: ', handle, 'with', len(List_of_UPs), 'UPs'
-    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))
+    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))   # TODO: change the undump behavior here
     re_UP_List=[]
     for elt in List_of_UPs:
         if elt in NodeID2MatrixNumber.keys():
             re_UP_List.append(NodeID2MatrixNumber[elt])
-    Informativity_Array=compute_sample_circulation_intensity_minimal(re_UP_List)
+    Informativity_Array=compute_sample_circulation_intensity_minimal(re_UP_List)   # TODO: change the undump behavior here
     UPs_Set=pickle.dumps(set(List_of_UPs))
-    post={'GO_ID':handle,'UP_Set':UPs_Set,'Info_Array':pickle.dumps(Informativity_Array)}
+    post={'GO_ID':handle,'UP_Set':UPs_Set,'Info_Array':pickle.dumps(Informativity_Array)}   # TODO: change the undump behavior here
     mongo_db_collection.insert(post)
     return Informativity_Array
 
+
 def Compute_ponderated_info_circulation(UPs_2Binding_Affs):
     raise NotImplementedError
+
+
+
 
 # TODO: compute the whole ensemble of the nodes perturbed by the protein
         # segment them with the voltage-based interaction
@@ -1103,9 +679,9 @@ stats_over_random_info_circ_samples(True)
 # stats_over_random_info_circ_samples(True)
 # 
 # this is going to last for a while. Now we need to get it split among several nodes
-'''
-<================================================>
-'''
+#
+# <================================================>
+#
 # checkMatrix()
 # 
 # get_eigenvect_Stats()
