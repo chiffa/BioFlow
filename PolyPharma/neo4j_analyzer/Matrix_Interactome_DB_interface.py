@@ -58,8 +58,9 @@ class MatrixGetter(object):
         self.MatrixNumber2NodeID = {}
         self.ID2displayName = {}
         self.ID2Type = {}
-        self.ID2Localization ={}
+        self.ID2Localization = {}
         self.Uniprots = []
+        self.Uniprot_attachments = {} # currently maintained for legacy reasons
 
         self.ReactLinks = []
         self.InitSet = []
@@ -133,7 +134,7 @@ class MatrixGetter(object):
         """
         undumps self.Ajacency_Matrix and self.Conductance_Matrix
         """
-        self.ValueMatrix = self.undump_object(Dumps.ValMat)
+        self.Ajacency_Matrix = self.undump_object(Dumps.ValMat)
         self.Conductance_Matrix = self.undump_object(Dumps.ConMat)
 
 
@@ -142,7 +143,7 @@ class MatrixGetter(object):
         dumps self.adj_eigenvals and self.Conductance_Matrix and writes them to csv
         """
         self.write_to_csv(Dumps.eigen_VaMat, self.adj_eigenvals)
-        self.write_to_csv(Dumps.eigen_ConMat, self.Conductance_Matrix)
+        self.write_to_csv(Dumps.eigen_ConMat, self.cond_eigenvals)
         self.dump_object(Dumps.val_eigen, (self.adj_eigenvals, self.adj_eigenvects))
         self.dump_object(Dumps.cond_eigen, (self.cond_eigenvals, self.cond_eigenvects))
 
@@ -162,14 +163,16 @@ class MatrixGetter(object):
         """
         self.dump_object(Dumps.matrix_corrs,
                          (self.NodeID2MatrixNumber, self.MatrixNumber2NodeID,
-                          self.ID2displayName, self.ID2Type, self.ID2Localization, self.Uniprots))
+                          self.ID2displayName, self.ID2Type, self.ID2Localization,
+                          self.Uniprots, self.Uniprot_attachments))
 
 
     def undump_Maps(self):
         """
         undumps all the elements required for the mapping between the types and ids of database entries and matrix columns
         """
-        self.NodeID2MatrixNumber, self.MatrixNumber2NodeID, self.ID2displayName, self.ID2Type, self.ID2Localization, self.Uniprots = self.undump_object(Dumps.matrix_corrs)
+        self.NodeID2MatrixNumber, self.MatrixNumber2NodeID, self.ID2displayName, self.ID2Type,\
+        self.ID2Localization, self.Uniprots, self.Uniprot_attachments = self.undump_object(Dumps.matrix_corrs)
 
 
     def dump_Main_connex_set(self):
@@ -236,7 +239,7 @@ class MatrixGetter(object):
             count = 0
             for ReactionType in self.ReactionsList:
                 for Reaction in ReactionType.get_all():
-                    if Reaction == None:
+                    if Reaction is None:
                         continue
                     LocalList, cnt = reaction_participant_getter(Reaction, self.Connexity_Aware)
                     count += cnt
@@ -276,7 +279,7 @@ class MatrixGetter(object):
             return Clusters, SuperSeed, count
 
 
-        def characterise(name, Links, Group, c):
+        def characterise(name, Links, Group, count):
             """
             Prints a charectristics of a return object from the get_Reaction_blocks or get_expansion
 
@@ -285,11 +288,11 @@ class MatrixGetter(object):
             :param Links: element 1 of the return tuple (Links between objects)
             :param Group: element 2 of the return tuple (SuperSeed)
             :type Group: set or list
-            :param c: element 3 of the return tuple (count)
-            :type c: int
+            :param count: element 3 of the return tuple (count)
+            :type count: int
             """
             print '===========>', name, '<==========='
-            print len(Links), len(Group), c
+            print len(Links), len(Group), count
             print self.time()
 
         ################################################################################################################
@@ -324,24 +327,25 @@ class MatrixGetter(object):
     def map_rows_to_names(self,):
         """ Maps Node Database IDs, Legacy IDs, display names and types to matrix row/column indexes; """
 
-        def request_location(LocationBufferDict, location):
+        def request_location(Location_Buffer_Dict, location):
             """
             Just a Buffered lookup of location, since the number of cellular location is relatively small
             (~80), it makes sense to buffer the IOs on it.
             Normally should be moved out as a buffering decorator
 
-            :param LocationBufferDict:
-            :param location:
-            :return:
+            :type Location_Buffer_Dict: dict
+            :param Location_Buffer_Dict: Buffered location
+            :param location: location Node Lagacy ID we are willing to verify
+            :return: displayName of the requested location
             """
             location = str(location)
-            if location in LocationBufferDict.keys():
-                return LocationBufferDict[location]
+            if location in Location_Buffer_Dict.keys():
+                return Location_Buffer_Dict[location]
             else:
                 generator = DatabaseGraph.Location.index.lookup(ID = location)
                 if generator != None:
                     for elt in generator:
-                        LocationBufferDict[location] = str(elt.displayName)
+                        Location_Buffer_Dict[location] = str(elt.displayName)
                         return str(elt.displayName)
 
         ######################################################################################################################
@@ -358,7 +362,7 @@ class MatrixGetter(object):
             self.ID2Type[ID] = Vertex.element_type
             if Vertex.element_type == "UNIPROT":
                 self.Uniprots.append(ID)
-            if Vertex.localization != None:
+            if Vertex.localization is not None:
                 self.ID2Localization[ID] = request_location(LocationBufferDict, Vertex.localization)
             counter += 1
 
@@ -446,7 +450,7 @@ class MatrixGetter(object):
         :raise Exception: "Matrix must be pre-loaded first" if self.Ajacency_Matrix and self.Conductance_Matrix have not
                             been computed anew or pre-loaded first
         """
-        if self.Conductance_Matrix == np.zeros((4,4)) or self.FullSet == []:
+        if self.Conductance_Matrix.shape == (4,4):
             raise Exception("Matrix must be pre-loaded first")
 
         print "entering eigenvect computation", self.time()
@@ -517,9 +521,14 @@ class MatrixGetter(object):
         self.Write_Connexity_Infos()
         self.dump_Main_connex_set()
 
+        self.compute_Uniprot_Attachments()
         self.Connexity_Aware = CA
         self.create_val_matrix()
         self.get_eigenspectrum(100)
+
+        self.dump_Maps()
+        self.dump_Matrices()
+        self.dump_Eigens()
 
     def fast_load(self):
         """
@@ -562,6 +571,24 @@ class MatrixGetter(object):
         print "has resetted connexity over %s nodes in %s" % (len(self.main_connexity_set_IDs), str(self.time()))
 
 
+    def compute_Uniprot_Attachments(self):
+        """
+        Computes the dictionarry of attachements between the Uniprots and Reactome proteins
+        """
+        for SP_Node_ID in self.Uniprots:
+            Vertex = DatabaseGraph.UNIPORT.get(SP_Node_ID)
+            Generator = Vertex.bothV("is_same")
+            if Generator is not None:
+                self.Uniprot_attachments[SP_Node_ID] = []
+                for item in Generator:
+                    ID = str(item).split('/')[-1][:-1]
+                    self.Uniprot_attachments[SP_Node_ID].append(ID)
+            print 'attached %s Reactome proteins to the node %s' %(len(self.Uniprot_attachments[SP_Node_ID]), SP_Node_ID)
+
+
 if __name__ == "__main__":
     Mat_gter = MatrixGetter(True, True)
-    Mat_gter.full_rebuild()
+    # Mat_gter.full_rebuild()
+    Mat_gter.fast_load()
+    Mat_gter.get_eigenspectrum(100)
+    Mat_gter.dump_Eigens()

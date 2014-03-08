@@ -7,7 +7,6 @@ Created on Jun 26, 2013
 import PolyPharma.configs as conf
 import copy
 
-
 source_file = open(conf.UNIPROT_source, "r")
 
 Interesting_TaxIDs = [TaxID.strip() for TaxID in conf.Sources['UNIPROT']['tax_ids'].split(',') if TaxID not in ('',' ')]
@@ -17,7 +16,7 @@ NameIgnore = ['Contains', 'Allergen', 'EC=', 'Flags: ', 'CD_antigen', 'INN=']
 defDict = {'Acnum':[], 'Names':{'Full':'', 'AltNames':[]}, 'GeneRefs':{'Names':[], 'OrderedLocusNames':[], 'ORFNames':[]},
            'Ensembl':[], 'KEGG':[], 'EMBL':[], 'GO':[], 'Pfam':[], 'SUPFAM':[], 'PDB':[]}
 
-# TODO: add the PDB cross-reference
+# TODO: refactor to avoid any call to the expensive function unless a specific function has been build
 
 Uniprot = {}  # {SWISSPROT_ID:{
             #                 'Acnum':[],
@@ -57,6 +56,7 @@ def parse_Xref(Dico,Line):
     if 'PDB; ' in Line:
         Dico['PDB'].append(Line.split(';')[1].strip())
 
+
 def parse_GeneRefs(Dico,Line):
     words = filter(lambda a:a != '', str(Line.strip() + ' ').split('; '))
     for word in words[1:]:
@@ -93,7 +93,8 @@ def parse_Name(Dico,Line):
         return ''
     if any(x in Line for x in NameIgnore):
         return ''         
-                
+
+
 def process_line(Dico, Line, keyword):
     if keyword == 'ID':
         words = filter(lambda a:a != '', Line.split(' '))
@@ -111,11 +112,13 @@ def process_line(Dico, Line, keyword):
     if keyword == 'DR' and any(x in Line for x in Interesing_xrefs):
         parse_Xref(Dico,Line)
 
+
 def end_Block(Dico):
     if Dico['TaxID'] in Interesting_TaxIDs:
         Ignore[0] = False
         Uniprot[Dico['ID']] = Dico
     return copy.deepcopy(defDict)
+
 
 def Parse_Uniprot():
     LocalDictionary = copy.deepcopy(defDict)
@@ -128,6 +131,7 @@ def Parse_Uniprot():
             LocalDictionary = end_Block(LocalDictionary)
         if  keyword in Interesting_lines:
             process_line(LocalDictionary, line, keyword)
+
 
 def get_Names_dict():
     namesDict = {}

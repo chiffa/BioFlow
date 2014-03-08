@@ -26,39 +26,50 @@ import pylab
 import math
 from Matrix_Interactome_DB_interface import MatrixGetter
 
+MG = MatrixGetter(True,False)
+MG.fast_load()
 
-    
-def get_eigenvect_Stats():
-    init = time()
-    pickleDump = file('pickleDump.dump','r')    # TODO: change the undump behavior here
-    eigenvals, eigenvects = pickle.load(pickleDump)
-    pickleDump2 = file('pickleDump2.dump','r')  # TODO: change the undump behavior here
-    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(pickleDump2)
-    eigenVectsList = []
-    SuperIndex = {}
-    CounterIndex = {}
-    print 'depicked', time()-init
-    for i in range(0, eigenvects.shape[1]):
-        eigenVectsList.append(eigenvects[:, i])
-    i = 0
-    for eigenvect in eigenVectsList:
-        i += 1
-        normalized = np.multiply(eigenvect, eigenvect)
-        for k in range(0,10):
-            index = np.argmax(normalized, 0)
-            if MatrixNumber2NodeID[index] not in CounterIndex.keys():
-                CounterIndex[MatrixNumber2NodeID[index]] = 0
-                SuperIndex[MatrixNumber2NodeID[index]] = get_Descriptor(MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, index)
-            CounterIndex[MatrixNumber2NodeID[index]] += normalized[index]
-            normalized[index] = 0
-    srtd = sorted(CounterIndex.iteritems(), key = operator.itemgetter(1), reverse = True)
-    print IDFilter
-    for key, val in srtd[:100]:
-        print val, key, SuperIndex[key], key in IDFilter
-        if key in IDFilter:
-            print 'error on key: ', key
-    print eigenvals
-    return CounterIndex, SuperIndex
+
+# TODO: we need to refactor the filtering system
+def characterise_eigenvects():
+    """
+    Recovers statistics over eigenvectors in order to remove excessively connected nodes.
+
+    :return: Index counting how many times each element has occured in the 100 biggest eigenvectors, then sorts them,
+             Index characterising each element from the matrix
+    """
+
+    # SuperIndex = {}
+    # CounterIndex = {}
+    # eigenVectsList = np.split(MG.adj_eigenvects,MG.adj_eigenvects.shape[1], axis = 1)
+
+    # TODO: We can do it waay more easily with numpy
+    norm = np.linalg.norm(MG.adj_eigenvects, axis=1)
+    sbigest_args = np.argsort(norm)[-100:]
+
+    for arg in sbigest_args:
+        print arg, norm[arg], MG.get_descriptor_for_index(arg)
+
+    print sbigest_args
+
+    # for eigenvect in eigenVectsList:
+    #     normalized = np.multiply(eigenvect, eigenvect)
+    #     for k in range(0,10):
+    #         index = np.argmax(normalized, 0)
+    #         if MG.MatrixNumber2NodeID[index] not in CounterIndex.keys():
+    #             CounterIndex[MG.MatrixNumber2NodeID[index]] = 0
+    #             SuperIndex[MG.MatrixNumber2NodeID[index]] = MG.get_descriptor_for_index(index)
+    #         CounterIndex[MG.MatrixNumber2NodeID[index]] += normalized[index]
+    #         normalized[index] = 0
+    # srtd = sorted(CounterIndex.iteritems(), key = operator.itemgetter(1), reverse = True)
+    # print IDFilter
+    # for key, val in srtd[:100]:
+    #     print val, key, SuperIndex[key], key in IDFilter
+    #     if key in IDFilter:
+    #         print 'error on key: ', key
+
+    # return CounterIndex, SuperIndex
+
 
 def UniprotCalibrate(rounds,depth, filename, Rdom):
     '''
@@ -99,7 +110,7 @@ def MainUprotCalLoop(Uniprots, ValueMatrix, NodeID2MatrixNumber, rounds, MatrixN
                 Vector=ValueMatrix*Vector
                 for k in ForbidList:
                     Vector[k]=0.0
-            LocalSample={ID:get_Descriptor(MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, NodeID2MatrixNumber[ID])}
+            LocalSample={ID:MG.get_descriptor_for_index(NodeID2MatrixNumber[ID])}
             nzIndexes = Vector.nonzero()[0]
             redepth=min(depth,len(nzIndexes))
             suplist=random.sample(nzIndexes,redepth)
@@ -111,10 +122,11 @@ def MainUprotCalLoop(Uniprots, ValueMatrix, NodeID2MatrixNumber, rounds, MatrixN
                     value='infinity'
                 else:
                     value=Vector[index]/np.linalg.norm(Vector,1)
-                LocalSample[MatrixNumber2NodeID[index]]=(Vector[index], value, get_Descriptor(MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, index))
+                LocalSample[MatrixNumber2NodeID[index]]=(Vector[index], value, MG.get_descriptor_for_index(index))
             Subfinale.append(LocalSample)
         Finale.append(Subfinale)
     return Finale
+
 
 def mass_Calibrate(maxrange,depth,Rdom=False):
     '''
@@ -123,7 +135,8 @@ def mass_Calibrate(maxrange,depth,Rdom=False):
     for i in range(2, maxrange+1):
         filename=str('calibrate'+str(i)+'.dump')
         UniprotCalibrate(i,depth,filename,Rdom)
-    
+
+
 def treat_Calibration():
     '''
     Performs the analysis of calibration
@@ -179,6 +192,7 @@ def checkMatrix():
 #         value=ValueMatrix[index[0],index[1]]
 #         print index, value
 
+
 def processEigenVectors():
     init=time()
     pickleDump=file('pickleDump.dump','r')  # TODO: change the undump behavior here
@@ -197,7 +211,7 @@ def processEigenVectors():
         indexes={}
         for k in range(0,10):
             index=np.argmax(normalized, 0)
-            indexes[MatrixNumber2NodeID[index]]=(normalized[index], get_Descriptor(MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, index))
+            indexes[MatrixNumber2NodeID[index]]=(normalized[index], MG.get_descriptor_for_index(index))
             normalized[index]=0
         SuperIndex.append(indexes)
     for subIndex in SuperIndex:
@@ -240,27 +254,30 @@ def columnSort():
         outf.write(Stri)
     outf.close()
 
+
 def get_voltages(numpy_array, MatrixNumber2NodeID, InformativityDict):
     for i in range(0, len(numpy_array)):
         InformativityDict[MatrixNumber2NodeID[i]]+=numpy_array[i,0]
     return
-        
+
+
 def create_InfoDict(MatrixNumber2NodeID):
     new_dict={}
     for val in MatrixNumber2NodeID.values():
         new_dict[val]=0.0
     return new_dict
 
+
 def compute_sample_circulation_intensity_minimal(Sample, epsilon=1e-10):
     '''
     performs the information circulation calculation in agreement with the publication by Misiuro et al, but with algorithm slightly modified for 
     more rapid computation of information circulation
     
-    @param Sample: List of row/column numbers that are to be used in the computation (~170 for a computation converging in less then an hour)
-    @type: list of ints
+    :param Sample: List of row/column numbers that are to be used in the computation (~170 for a computation converging in less then an hour)
+    :type Sample: list of ints
     
-    @param epsilon: corrective factor for the calculation of Cholesky matrix. defaults to 1e-10
-    @type epsilon: float
+    :param epsilon: corrective factor for the calculation of Cholesky matrix. defaults to 1e-10
+    :type epsilon: float
     
     '''
     init=time()
@@ -288,16 +305,17 @@ def compute_sample_circulation_intensity_minimal(Sample, epsilon=1e-10):
             InformativityArray+=Current
     return InformativityArray
 
+
 def compute_sample_circulation_intensity(Sample, epsilon=1e-10, array_v=''):
     '''
     performs the information circulation calculation in agreement with the publication by Misiuro et al, but with algorithm slightly modified for 
     more rapid computation of information circulation
     
-    @param Sample: List of row/column numbers that are to be used in the computation (~170 for a computation converging in less then an hour)
-    @type: list of ints
+    :param Sample: List of row/column numbers that are to be used in the computation (~170 for a computation converging in less then an hour)
+    :type Sample: list of ints
     
-    @param epsilon: corrective factor for the calculation of Cholesky matrix. defaults to 1e-10
-    @type epsilon: float
+    :param epsilon: corrective factor for the calculation of Cholesky matrix. defaults to 1e-10
+    :type epsilon: float
     
     '''
     # NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))
@@ -306,13 +324,14 @@ def compute_sample_circulation_intensity(Sample, epsilon=1e-10, array_v=''):
     pickle.dump(InformativityArray,file(name,'w'))
     return InformativityArray
 
+
 def Compute_circulation_intensity(epsilon=1e-10):
     '''
     performs the information circulation calculation in agreement with the publication by Misiuro et al, but with algorithm slightly modified for 
     more rapid computation of information circulation
     
-    @param epsilon: corrective factor for the calculation of Cholesky matrix. defaults to 1e-10
-    @type epsilon: float
+    :param epsilon: corrective factor for the calculation of Cholesky matrix. defaults to 1e-10
+    :type epsilon: float
     
     '''
     NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))   # TODO: change the undump behavior here
@@ -331,6 +350,7 @@ def Compute_random_sample(sample_size, iterations, epsilon=1e-10, name_version='
         random.shuffle(re_UP)
         re_UP=re_UP[:sample_size]
         compute_sample_circulation_intensity(re_UP,epsilon,name_version+str(i))
+
 
 def Compute_truly_random_sample(rounds,iterations,epsilon,name_version=''):
     conductance_Matrix=pickle.load(file('pickleDump4.dump','r'))   # TODO: change the undump behavior here
@@ -378,11 +398,11 @@ def Analyze_relations(Current, number,MatrixNumber2NodeID, ID2displayName, ID2Ty
     '''
     Just a way to print out the nodes making pass the most of the current
     
-    @param Current: the current
-    @type Current: numpy array
+    :param Current: the current
+    :type Current: numpy array
       
-    @param number: the number of the most important relations one wants to observe
-    @type number: integer
+    :param number: the number of the most important relations one wants to observe
+    :type number: integer
     
     '''
     writer=file('Current_Analysis.csv','w')
@@ -424,20 +444,22 @@ def Analyze_relations(Current, number,MatrixNumber2NodeID, ID2displayName, ID2Ty
             writer.write(Buffer)
     writer.close()
 
+
 def Info_circulation_for_Single_Node(conductance_Matrix,source_MatrixID,sinks_MatrixIDs,epsilon=1e-10):
     '''
     Computes the information circulation for a single node, according to a slightly improved method compared to the one described by Missiuro
-    @param conductance_Matrix: Conductance matrix
-    @type conductance_Matrix: scipy.sparse lil_matrix
+
+    :param conductance_Matrix: Conductance matrix
+    :type conductance_Matrix: scipy.sparse lil_matrix
     
-    @param source_MatrixID: number of the row/line of the source node within the conductance matrix corresponding to the source
-    @type source_MatrixID: int
+    :param source_MatrixID: number of the row/line of the source node within the conductance matrix corresponding to the source
+    :type source_MatrixID: int
     
-    @param sinks_MatrixIDs: list of numbers of the rows/lines within the conductance matrix corresponding to sinks  
-    @type sinks_MatrixIDs: list of ints
+    :param sinks_MatrixIDs: list of numbers of the rows/lines within the conductance matrix corresponding to sinks
+    :type sinks_MatrixIDs: list of ints
     
-    @param epsilon: corrective factor for the calculation of Cholesky matrix. defaults to 1e-10
-    @type epsilon: float
+    :param epsilon: corrective factor for the calculation of Cholesky matrix. defaults to 1e-10
+    :type epsilon: float
     '''
     Solver=cholesky(csc_matrix(conductance_Matrix),epsilon)
     Cummulative_Informativity=np.zeros((conductance_Matrix.shape[0],1))
@@ -449,6 +471,7 @@ def Info_circulation_for_Single_Node(conductance_Matrix,source_MatrixID,sinks_Ma
         current=get_Current_all(conductance_Matrix,Voltage,J)
         Cummulative_Informativity+=current
     return Cummulative_Informativity
+
 
 def get_Current_all(Conductance_Matrix, Voltages, J):
     '''
@@ -467,62 +490,63 @@ def get_Current_all(Conductance_Matrix, Voltages, J):
     return Currents
 
     
-def stats_over_random_info_circ_samples(UniProtAttachement=True):
-    from PolyPharma.Utils.Prot_Aboundances import ID2Aboundances
-    UPNode_IDs_2Proteins_IDs_List = load_Uniprot_Attachments()
-    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))   # TODO: change the undump behavior here
-    DicList=[]
-    FnameList=[]
-    Filenames = listdir('.')
-    for filename in Filenames:    # TODO: change the undump behavior here
-        if 'InfoArray_new' in filename:
-            FnameList.append(filename)
-    for fname in FnameList:
-        DicList.append(pickle.load(file(fname,'r')))
-    Stats_Mat=np.concatenate(tuple(DicList),axis=1)
-    MeanInfos=np.mean(Stats_Mat,axis=1).reshape((Stats_Mat.shape[0],1))
-    STDInfos=np.std(Stats_Mat,axis=1).reshape((Stats_Mat.shape[0],1))
-    # Check if STD>MEANInfos
-    for LineID in range(0,Stats_Mat.shape[0]):
-        if MeanInfos[LineID,0] < STDInfos[LineID,0]:
-            print LineID, MatrixNumber2NodeID[LineID],'|',MeanInfos[LineID,0], STDInfos[LineID,0]
-            print Stats_Mat[LineID,:]
-            print '<==============================>'
-    if UniProtAttachement:
-        # @attention: this is a temporary patch. 
-        # TODO: A full implementation would require several iterations of eHiT propagation and then 
-        # several more iterations of Reactome.org propagation.
-        for UP_ID in UPNode_IDs_2Proteins_IDs_List.keys():
-            if len(UPNode_IDs_2Proteins_IDs_List[UP_ID])>1:
-                print UP_ID, 'problem!!!!'
-            else:
-                Prot_ID=UPNode_IDs_2Proteins_IDs_List[UP_ID][0]
-                if Prot_ID in NodeID2MatrixNumber.keys():
-                    MeanInfos[NodeID2MatrixNumber[UP_ID],0]+=MeanInfos[NodeID2MatrixNumber[Prot_ID],0]
-                    ID2Localization[UP_ID]=ID2Localization[Prot_ID]
-                    STDInfos[NodeID2MatrixNumber[UP_ID],0]=math.sqrt(STDInfos[NodeID2MatrixNumber[UP_ID],0]**2+STDInfos[NodeID2MatrixNumber[Prot_ID],0]**2)
-    pessimist=MeanInfos-1.97*STDInfos
-    optimist=MeanInfos+1.97*STDInfos
-    aboundances=np.zeros((Stats_Mat.shape[0],1))
-    errcount1=0
-    for key,val in ID2Aboundances.iteritems():
-        if key in NodeID2MatrixNumber.keys():
-            aboundances[NodeID2MatrixNumber[key],0]=val
-        else:
-            errcount1+=1
-    Overingtonicitiy=np.zeros((Stats_Mat.shape[0],1))
-    Overington_IDList=pickle.load(file('IDList.dump','r'))   # TODO: change the undump behavior here
-    errcount2=0
-    finmatrix=pickle.load(file('finmatrix.dump','r'))  # TODO: change the undump behavior here
-    for ID in Overington_IDList:
-        if ID in NodeID2MatrixNumber.keys():
-            Overingtonicitiy[NodeID2MatrixNumber[ID],0]=1.0
-        else:
-            errcount2+=1
-    print 'errcount from stats', errcount1, errcount2
-    print STDInfos.shape, pessimist.shape, optimist.shape, aboundances.shape, Overingtonicitiy.shape, finmatrix.shape
-    Additional=np.concatenate((STDInfos,pessimist,optimist,aboundances,Overingtonicitiy,finmatrix),axis=1)
-    Analyze_relations(MeanInfos, 50000, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Additional)
+# def stats_over_random_info_circ_samples(UniProtAttachement=True):
+#     from PolyPharma.Utils.Prot_Aboundances import ID2Aboundances
+#     UPNode_IDs_2Proteins_IDs_List = MG.Uniprot_attachments
+#     NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))   # TODO: change the undump behavior here
+#     DicList=[]
+#     FnameList=[]
+#     Filenames = listdir('.')
+#     for filename in Filenames:    # TODO: change the undump behavior here
+#         if 'InfoArray_new' in filename:
+#             FnameList.append(filename)
+#     for fname in FnameList:
+#         DicList.append(pickle.load(file(fname,'r')))
+#     Stats_Mat=np.concatenate(tuple(DicList),axis=1)
+#     MeanInfos=np.mean(Stats_Mat,axis=1).reshape((Stats_Mat.shape[0],1))
+#     STDInfos=np.std(Stats_Mat,axis=1).reshape((Stats_Mat.shape[0],1))
+#     # Check if STD>MEANInfos
+#     for LineID in range(0,Stats_Mat.shape[0]):
+#         if MeanInfos[LineID,0] < STDInfos[LineID,0]:
+#             print LineID, MatrixNumber2NodeID[LineID],'|',MeanInfos[LineID,0], STDInfos[LineID,0]
+#             print Stats_Mat[LineID,:]
+#             print '<==============================>'
+#     if UniProtAttachement:
+#         # @attention: this is a temporary patch.
+#         # TODO: A full implementation would require several iterations of eHiT propagation and then
+#         # several more iterations of Reactome.org propagation.
+#         for UP_ID in UPNode_IDs_2Proteins_IDs_List.keys():
+#             if len(UPNode_IDs_2Proteins_IDs_List[UP_ID])>1:
+#                 print UP_ID, 'problem!!!!'
+#             else:
+#                 Prot_ID=UPNode_IDs_2Proteins_IDs_List[UP_ID][0]
+#                 if Prot_ID in NodeID2MatrixNumber.keys():
+#                     MeanInfos[NodeID2MatrixNumber[UP_ID],0]+=MeanInfos[NodeID2MatrixNumber[Prot_ID],0]
+#                     ID2Localization[UP_ID]=ID2Localization[Prot_ID]
+#                     STDInfos[NodeID2MatrixNumber[UP_ID],0]=math.sqrt(STDInfos[NodeID2MatrixNumber[UP_ID],0]**2+STDInfos[NodeID2MatrixNumber[Prot_ID],0]**2)
+#     pessimist=MeanInfos-1.97*STDInfos
+#     optimist=MeanInfos+1.97*STDInfos
+#     aboundances=np.zeros((Stats_Mat.shape[0],1))
+#     errcount1=0
+#     for key,val in ID2Aboundances.iteritems():
+#         if key in NodeID2MatrixNumber.keys():
+#             aboundances[NodeID2MatrixNumber[key],0]=val
+#         else:
+#             errcount1+=1
+#     Overingtonicitiy=np.zeros((Stats_Mat.shape[0],1))
+#     Overington_IDList=pickle.load(file('IDList.dump','r'))   # TODO: change the undump behavior here
+#     errcount2=0
+#     finmatrix=pickle.load(file('finmatrix.dump','r'))  # TODO: change the undump behavior here
+#     for ID in Overington_IDList:
+#         if ID in NodeID2MatrixNumber.keys():
+#             Overingtonicitiy[NodeID2MatrixNumber[ID],0]=1.0
+#         else:
+#             errcount2+=1
+#     print 'errcount from stats', errcount1, errcount2
+#     print STDInfos.shape, pessimist.shape, optimist.shape, aboundances.shape, Overingtonicitiy.shape, finmatrix.shape
+#     Additional=np.concatenate((STDInfos,pessimist,optimist,aboundances,Overingtonicitiy,finmatrix),axis=1)
+#     Analyze_relations(MeanInfos, 50000, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Additional)
+
 
 def check_Silverality(sample_size,iterations):
     '''
@@ -555,6 +579,7 @@ def check_Silverality(sample_size,iterations):
             distances[index]=100
     pickle.dump(cumulative,file('Silverality.dump','w'))  # TODO: change the undump behavior here
     return cumulative
+
 
 def analyze_Silverality():
     Silverality_List=pickle.load(file('Silverality.dump','r'))  # TODO: change the undump behavior here
@@ -625,7 +650,8 @@ def Compute_and_Store_circulation(handle, List_of_UPs, mongo_db_collection):
 def Compute_ponderated_info_circulation(UPs_2Binding_Affs):
     raise NotImplementedError
 
-
+if __name__ == "__main__":
+    characterise_eigenvects()
 
 
 # TODO: compute the whole ensemble of the nodes perturbed by the protein
@@ -669,7 +695,7 @@ def Compute_ponderated_info_circulation(UPs_2Binding_Affs):
 
 # Perform_Loading_Routines()
 # 
-stats_over_random_info_circ_samples(True)
+# stats_over_random_info_circ_samples(True)
 # 
 # check_Silverality(100,100)
 # 

@@ -83,6 +83,7 @@ class Dumps(object):
     UniP_att = 'UP_Attach.dump'
     Main_Connex_group = 'Connex_group.dump'
 
+# Sh***, those are ID values in a database version, they are not strict
 
 IDFilter=['5379',     # Small_Molecule_Collection Purine nucleotide
           '5298',     # Small_Molecule_Collection ADP, GDP, CDP, UDP
@@ -117,6 +118,8 @@ IDFilter=['5379',     # Small_Molecule_Collection Purine nucleotide
           '2151',     # ('Small_Molecule', u'CO2', 'endoplasmic reticulum lumen')
           '872',      # H+ 
                ]
+
+# IDFilter = []
 
 
 if __name__ == "__main__":
