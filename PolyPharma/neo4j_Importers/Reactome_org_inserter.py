@@ -5,6 +5,8 @@ Created on Jun 15, 2013
 '''
 import logging
 from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
+import pickle
+from PolyPharma.configs import Dumps, Leg_ID_Filter
 
 ####################################################################################
 #
@@ -14,6 +16,7 @@ from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
 ####################################################################################
 
 # TODO: export logs location to the configs file
+# TODO: create a dict that is pickled into ther reserve to remember the forbidden IDs
 
 logging.basicConfig(level=logging.DEBUG,
                     format='%(levelname)-8s %(message)s',
@@ -27,7 +30,9 @@ formatter = logging.Formatter('%(levelname)-8s %(message)s')
 console.setFormatter(formatter)
 logging.getLogger('').addHandler(console)
 
-LocalDict={} # accelerated access pointer to the objects
+LocalDict = {} # accelerated access pointer to the objects
+ForbiddenIDs = []
+
 
 def InsertCellLocations(Cell_locations_dict):
     for Loc in Cell_locations_dict.keys():
@@ -63,34 +68,36 @@ def MetaInsert(bulbs_graph_class, property_source_dict):
     Inserst a Meta-Object (I.e. any physical entity or collection thereof) as a member of a bulbs class and pumping the
     source information from the property source
     """
-    length=len(property_source_dict)
-    counter=0
+    length = len(property_source_dict)
+    counter = 0
     for key in property_source_dict.keys():
-        counter+=1
-        print '\n',counter,'/',length,'\n'
-        primary=bulbs_graph_class.create(ID=key,
-                                         displayName=property_source_dict[key]['displayName'],
-                                         localization=property_source_dict[key]['cellularLocation'])
-        LocalDict[key]=primary
+        counter += 1
+        print '\n', counter, '/', length, '\n'
+        primary = bulbs_graph_class.create(ID = key,
+                                         displayName = property_source_dict[key]['displayName'],
+                                         localization = property_source_dict[key]['cellularLocation'],
+                                         main_connex = False)
+        if key in Leg_ID_Filter:
+            ForbiddenIDs.append(str(primary).split('/')[-1][:-1])
+        LocalDict[key] = primary
         MinimalAnnotInsert(LocalDict[key], property_source_dict[key]['references'])
         if 'cellularLocation' in property_source_dict[key].keys():
-            secondary=LocalDict[property_source_dict[key]['cellularLocation']]
+            secondary = LocalDict[property_source_dict[key]['cellularLocation']]
             DatabaseGraph.is_localized.create(primary,
                                               secondary,
-                                              costum_from=primary.ID,
-                                              costum_to=secondary.ID)
-            # TODO add ModificationFeature insertion
+                                              costum_from = primary.ID,
+                                              costum_to = secondary.ID)
         if 'modification' in property_source_dict[key].keys():
             for modification in property_source_dict[key]['modification']:
                 if 'location' in modification.keys() and 'modification' in modification.keys():
                     LocMod=DatabaseGraph.ModificationFeature.create(ID = modification['ID'],
-                                                                    type="post-translational_Mod",
-                                                                    location=modification['location'],
-                                                                    displayName=modification['modification'])
+                                                                    type = "post-translational_Mod",
+                                                                    location = modification['location'],
+                                                                    displayName = modification['modification'])
                     DatabaseGraph.is_able_to_modify.create(primary,
                                                            LocMod,
-                                                           costum_from=primary.ID,
-                                                           costum_to=LocMod.ID)
+                                                           costum_from = primary.ID,
+                                                           costum_to = LocMod.ID)
 
 def CollectionRefsInsert(primaryCollection):
     """
@@ -302,8 +309,6 @@ def insert_all(Skip='N'):
     if Skip=='N':
         InsertCellLocations(DG.CellularLocations)
 
-        #TODO: replace by a factory of insertions for meta and collection assemblies
-
         MetaInsert(DatabaseGraph.DNA, DG.Dnas)
         MetaInsert(DatabaseGraph.DNA_Collection, DG.Dna_Collections)
         MetaInsert(DatabaseGraph.RNA, DG.Rnas)
@@ -325,6 +330,9 @@ def insert_all(Skip='N'):
 
         ComplexPartsInsert(DG.Complexes)
 
+        # NOW dump the ForbiddenIDs
+        pickle.dump(ForbiddenIDs, Dumps.Forbidden_IDs)
+
     if Skip == 'M':
         getAllMetaSets()
 
@@ -338,6 +346,7 @@ def insert_all(Skip='N'):
     CatalysisInsert(DG.Catalysises)
     ModulationInsert(DG.Modulations)
     Pathways_Insert(DG.PathwaySteps, DG.Pathways)
+
 
 
 full_dict = {'DNA':DatabaseGraph.DNA,

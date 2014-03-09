@@ -127,11 +127,12 @@ def Erase_custom_fields():
         on all the elements of all the classes susceptible to have the costum field.
     """
 
-    # TODO: reconfigure to erase connexity infos later on.
+    # TODO: reconfigure to erase connexity infos later on based onthe main_connex tag on the nodes
     Node_gen = DatabaseGraph.Node.get(costum = 'Main_Connex')
 
     for Node in Node_gen:
         Node.custom = ''
+        Node.main_connex = False
         Node.save()
 
 
@@ -156,7 +157,7 @@ def reaction_participant_getter(Reaction, main_connex_only):
 
             if main_connex_only:
                 Connex = False
-                if  elt.custom != None and "Main_Connex" in elt.custom:
+                if (elt.custom is not None and "Main_Connex" in elt.custom) or elt.main_connex:
                     Connex = True
 
             ID = str(elt).split('/')[-1][:-1]

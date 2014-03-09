@@ -16,16 +16,24 @@ from GO_UNIPROT_Inserter import getGOs, import_GOs, import_UNIPROTS
 from PolyPharma.neo4j_Declarations.General_operations import clean
 from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
 from Hint_importer import cross_ref_HiNT
+import sys
 
-# clear_all(full_dict)
-# insert_all()
-# # run_diagnostics(full_dict)
-#
-# import_GOs()
-# # getGOs()
-# # clean(DatabaseGraph.UNIPORT)
-# import_UNIPROTS()
-# # clean(DatabaseGraph.GOTerm)
-# cross_ref_HiNT(True)
-#
+##################################
+# redirecting all to a log file
+f = open('Commander_logs.log','w')
+sys.stdout = f
+#################################
+
+clear_all(full_dict)
 # run_diagnostics(full_dict)
+insert_all()
+# run_diagnostics(full_dict)
+
+import_GOs()
+# getGOs()
+# clean(DatabaseGraph.UNIPORT)
+import_UNIPROTS()
+# clean(DatabaseGraph.GOTerm)
+cross_ref_HiNT(True)
+
+run_diagnostics(full_dict)

@@ -501,6 +501,7 @@ class MatrixGetter(object):
                 self.main_connexity_set_IDs.append(self.MatrixNumber2NodeID[i])
                 Node = DatabaseGraph.vertices.get(self.MatrixNumber2NodeID[i])
                 Node.custom = 'Main_Connex'
+                Node.main_connex = True
                 Node.save()
         print "Marking of %s nodes for connexity was done in %s" % (str(ln), str(self.time()))
 
@@ -563,9 +564,11 @@ class MatrixGetter(object):
         :warning: Requires the self.Main_set_IDs to be preloaded to function correctly. In case it is impossible,
                     use the Erase_costum_fields function from the IO_Routines module.
         """
-
+        # TODO: reset the connexity correctly
         for NodeID in self.main_connexity_set_IDs:
             Node = DatabaseGraph.vertices.get(NodeID)
+            Node.main_connex = False
+            Node.custom = ''
             Node.save()
 
         print "has resetted connexity over %s nodes in %s" % (len(self.main_connexity_set_IDs), str(self.time()))
