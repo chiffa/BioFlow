@@ -35,6 +35,10 @@ ForbiddenIDs = []
 
 
 def InsertCellLocations(Cell_locations_dict):
+    """
+
+    :param Cell_locations_dict:
+    """
     for Loc in Cell_locations_dict.keys():
         LocalDict[Loc] = DatabaseGraph.Location.create(ID = Loc,
                                                      displayName = Cell_locations_dict[Loc])
@@ -43,6 +47,9 @@ def MinimalAnnotInsert(annotated_node, payload_list):
     """
     Inserts a minimal annotation provided the annotated_node Node (it requires the direct, local DB ID and thus)
     needs to be inserted at the same time as the annotated object
+
+    :param annotated_node:
+    :param payload_list:
     """
     for Type in payload_list.keys():
         if Type!='name' and payload_list[Type]!='' and payload_list[Type]!=[]:
@@ -67,6 +74,9 @@ def MetaInsert(bulbs_graph_class, property_source_dict):
     """
     Inserst a Meta-Object (I.e. any physical entity or collection thereof) as a member of a bulbs class and pumping the
     source information from the property source
+
+    :param bulbs_graph_class:
+    :param property_source_dict:
     """
     length = len(property_source_dict)
     counter = 0
@@ -102,6 +112,8 @@ def MetaInsert(bulbs_graph_class, property_source_dict):
 def CollectionRefsInsert(primaryCollection):
     """
     Links a collection object reference to the members of the collection.
+
+    :param primaryCollection:
     """
     for key in primaryCollection.keys():
         for ref in primaryCollection[key]['collectionMembers']:
@@ -113,6 +125,8 @@ def CollectionRefsInsert(primaryCollection):
 def ComplexPartsInsert(complexes_dict):
     """
     Links part of a complex to the complex
+
+    :param complexes_dict:
     """
     for key in complexes_dict.keys():
         for part in complexes_dict[key]['parts']:
@@ -126,6 +140,9 @@ def ReactionInsert(bulbs_graph_class, property_source_dict):
     """
     Inserst a Reaction-Object (I.e. any reaction or type of reactions) as a member of a bulbs class and pumping the
     source information from the property source
+
+    :param bulbs_graph_class:
+    :param property_source_dict:
     """
     for key in property_source_dict.keys():
         LocalDict[key]=bulbs_graph_class.create(ID=key,
@@ -148,6 +165,8 @@ def ReactionInsert(bulbs_graph_class, property_source_dict):
 def CatalysisInsert(catalysises_dict):
     """
     Inserts all the catalysis links from one meta-element to an another
+
+    :param catalysises_dict:
     """
     for key in catalysises_dict.keys():
         if 'controller' in catalysises_dict[key].keys() and 'controlled' in catalysises_dict[key].keys():
@@ -182,6 +201,8 @@ def CatalysisInsert(catalysises_dict):
 def ModulationInsert(modulations_dict):
     """
     Inserts all the Modulation links from one meta-element to an another
+
+    :param modulations_dict:
     """
     for key in modulations_dict.keys():
         primary=LocalDict[modulations_dict[key]['controller']]
@@ -197,6 +218,9 @@ def Pathways_Insert(pathway_steps, pathways):
     """
     Inserts all the Pathways, linking and chaining subpathways
     Attention, it have to be imported at the same time as the reactions.
+
+    :param pathway_steps:
+    :param pathways:
     """
     for key in pathway_steps.keys():
         primary=DatabaseGraph.PathwayStep.create(ID=key)
@@ -240,10 +264,12 @@ def Pathways_Insert(pathway_steps, pathways):
 def getOneMetaSet(function):
     """
     In case a MetaObject was already inserted, reloads it to the local dictionary for futher annoation
+
+    :param function:
     """
     for MetaKey in function.get_all():
-        if MetaKey!=None:
-            LocalDict[MetaKey.ID]=MetaKey
+        if MetaKey is not  None:
+            LocalDict[MetaKey.ID] = MetaKey
         
 def getAllMetaSets():
     """
@@ -271,6 +297,8 @@ def getAllMetaSets():
 def clear_all(instruction_dict):
     """
     empties the whole BioPax-bound node set.
+
+    :param instruction_dict:
     """
     for name, bulbs_class in instruction_dict.iteritems():
         counter = 0
@@ -285,13 +313,12 @@ def clear_all(instruction_dict):
 def run_diagnostics(instruction_dict):
     """
     Checks the number of nodes of each type.
+
+    :param instruction_dict:
     """
     supercounter = 0
     for name, bulbs_class in instruction_dict.iteritems():
-        counter = 0
-        if bulbs_class.get_all():
-            for bulbs_class_instance in bulbs_class.get_all():
-                counter += 1
+        counter = bulbs_class.count()
         print name, ':', counter
         supercounter += counter
     print 'Total: ', supercounter
@@ -300,9 +327,9 @@ def run_diagnostics(instruction_dict):
 def insert_all(Skip='N'):
     """
     Performs the massive import of the Reactome database into the local neo4j database.
-    :parameter Skip:
-    * N => will skip nothing and implement the import once and for all.
-    * M => skips meta import, recovers the metas and resumes from the Reactions import.
+
+    :param Skip:     * N => will skip nothing and implement the import once and for all.
+                     * M => skips meta import, recovers the metas and resumes from the Reactions import.
     """
     import Reactome_org_parser as DG
 

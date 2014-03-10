@@ -19,6 +19,7 @@ from PolyPharma.neo4j_analyzer.IO_Routines import reaction_participant_getter, e
 
 # TODO: change the behavior of HiNT propagation to a several stages propagation
 #       Main connex set is 24k nodes, with 4331 UP links and 1051 Hint links
+#       With the full UP import, the main connex set is 25k Nodes, with 4336 UP Links and 1191 HiNT links
 
 
 class MatrixGetter(object):
@@ -563,7 +564,6 @@ class MatrixGetter(object):
         :warning: Requires the self.Main_set_IDs to be preloaded to function correctly. In case it is impossible,
                     use the Erase_costum_fields function from the IO_Routines module.
         """
-        # TODO: reset the connexity correctly
         for NodeID in self.main_connexity_set_IDs:
             Node = DatabaseGraph.vertices.get(NodeID)
             Node.main_connex = False
@@ -585,12 +585,14 @@ class MatrixGetter(object):
                 for item in Generator:
                     ID = str(item).split('/')[-1][:-1]
                     self.Uniprot_attachments[SP_Node_ID].append(ID)
-            print 'attached %s Reactome proteins to the node %s' %(len(self.Uniprot_attachments[SP_Node_ID]), SP_Node_ID)
+                print 'attached %s Reactome proteins to the node %s' %(len(self.Uniprot_attachments[SP_Node_ID]), SP_Node_ID)
+            else:
+                print 'No attachement for the node %s' %(SP_Node_ID)
 
 
 if __name__ == "__main__":
     Mat_gter = MatrixGetter(True, True)
-    # Mat_gter.full_rebuild()
-    Mat_gter.fast_load()
+    Mat_gter.full_rebuild()
+    # Mat_gter.fast_load()
     Mat_gter.get_eigenspectrum(100)
     Mat_gter.dump_Eigens()

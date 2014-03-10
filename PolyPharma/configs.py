@@ -94,7 +94,7 @@ Leg_ID_Filter = {
 # Sh***, those are ID values in a database version, they are not strict
 
 
-
+# Modify to get dynamically loaded from the dump
 IDFilter = [  '5379',     # Small_Molecule_Collection Purine nucleotide
               '5298',     # Small_Molecule_Collection ADP, GDP, CDP, UDP
               '816',      # Small_Molecule ATP

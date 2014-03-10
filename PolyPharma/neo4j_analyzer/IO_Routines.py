@@ -1,7 +1,8 @@
 __author__ = 'ank'
 
 from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
-from PolyPharma.configs import IDFilter, edge_type_filters
+from PolyPharma.configs import IDFilter, Leg_ID_Filter, edge_type_filters, Dumps
+import pickle
 
 def lookup_by_ID(Domain, req):
     """
@@ -47,6 +48,52 @@ def Look_up_by_ID_for_a_set(Domain, ID_set):
         print "=================="
 
 
+def run_through(node_generator):
+    """
+    Supporting function. Gets the nodes that are referenced by the annot_nodes in the generator
+
+    :param node_generator: iterator over annot_nodes
+    :return: the list of object nodes accessible from this set of annot_nodes
+    :raise Warning: if an annotation node is not bound to a real node. This might happen if some object nodes were manually
+                    deleted, but not their annotation nodes. Tu curb this a full database reload is required
+    """
+    if not node_generator:
+        return []
+
+    retset = []
+    for node in node_generator:
+        gen_2 = node.inV("is_annotated")
+        if not gen_2:
+            raise Warning(str(node) + "is floating alone in the wild. He feels lonely.")
+        for rel_node in gen_2:
+            node_db_ID = str(rel_node).split('/')[-1][:-1]
+            node_ID = rel_node.ID
+            node_type = rel_node.element_type
+            node_display = rel_node.displayName
+            retset.append((node_type, node_display, node_db_ID, node_ID))
+    return retset
+
+
+def unwrap_DB_ID(node_generator):
+    """
+    Supporting function. Gets the nodes that are referenced by the annot_nodes in the generator
+
+    :param node_generator: iterator over annot_nodes
+    :return: the DB_IDs list of object nodes accessible from this set of annot_nodes
+    :raise Warning: if an annotation node is not bound to a real node. This might happen if some object nodes were manually
+                    deleted, but not their annotation nodes. Tu curb this a full database reload is required
+    """
+    if not node_generator:
+        return []
+
+    retset = []
+    for node in node_generator:
+        node_db_ID = str(node).split('/')[-1][:-1]
+        retset.append(node_db_ID)
+    return retset
+
+
+
 def Look_up_Annot_Node(p_load, p_type = ''):
     """
     Looks up nodes accessible via the annotation nodes with a given annotation and given annotation type.
@@ -62,29 +109,6 @@ def Look_up_Annot_Node(p_load, p_type = ''):
     :rtype: 4- tuple
     :raise Exception: "p_type unsupported", in case a p_type is not on the supported list specified in the neo4j_Declarations.neo4j_typeDec
     """
-
-    def run_through(node_generator):
-        """
-        Supporting function. Gets the nodes that are referenced by the annot_nodes in the generator
-
-        :param node_generator: iterator over annot_nodes
-        :return: the list of object nodes accessible from this set of annot_nodes
-        :raise Warning: if an annotation node is not bound to a real node. This might happen if some object nodes were manually
-                        deleted, but not their annotation nodes. Tu curb this a full database reload is required
-        """
-        retset = []
-        for node in node_generator:
-            gen_2 = node.inV("is_annotated")
-            if not node_generator:
-                raise Warning(str(node) + "is floating alone in the wild. He feels lonely.")
-            for rel_node in gen_2:
-                node_db_ID = str(rel_node).split('/')[-1][:-1]
-                node_ID = rel_node.ID
-                node_type = rel_node.element_type
-                node_display = rel_node.displayName
-                retset.append((node_type, node_display, node_db_ID, node_ID))
-
-        return retset
 
     def double_index_search(pload, ptype):
         """
@@ -106,14 +130,10 @@ def Look_up_Annot_Node(p_load, p_type = ''):
     pload = p_load.upper()
     if p_type == '':
         node_generator = DatabaseGraph.AnnotNode.index.lookup(payload = pload)
-        if not node_generator:
-            return []
         return run_through(node_generator)
 
     if p_type in Anot_Node_ptypes:
         node_generator =  double_index_search(pload, p_type)
-        if not node_generator:
-            return []
         return run_through(node_generator)
 
     raise Exception(p_type + "is unsupported. Please refer to Anot_Node_ptypes in neo4j_typeDec for supported types")
@@ -189,6 +209,28 @@ def expand_from_seed(Seed_Node_ID, edge_filter):
                     count += 1
     return LocalList, count
 
+
+def recompute_forbidden_IDs(Node_Type_Dict):
+    """
+    Recomputes the list of nodes that contain overloaded terms that would bring too close together the reactions that are normally not,
+    just because of participation of ultra-aboundant elements, such as H2O, H+ or ATP
+
+    :param Node_Type_List: Dictionary mapping the names of entities to their corresponding bulbs classes
+    :type Node_Type_Dict: dict
+    """
+    retlist = set()
+    for bulbs_type in Node_Type_Dict.itervalues():
+        for forbidden_Legacy_ID in Leg_ID_Filter:
+            retlist.update(unwrap_DB_ID(bulbs_type.index.lookup(ID = forbidden_Legacy_ID)))
+    pickle.dump(retlist, file(Dumps.Forbidden_IDs,'w'))
+
+
+
+Forbidden_verification_dict = {   'Small Molecule':DatabaseGraph.SmallMolecule,
+                                  'Small Molecule Collection':DatabaseGraph.SmallMolecule_Collection,
+                                  'Physical Entity':DatabaseGraph.PhysicalEntity,
+                                  'Physical Entity Collection':DatabaseGraph.PhysicalEntity_Collection,
+                                }
 
 
 if __name__ == "__main__":

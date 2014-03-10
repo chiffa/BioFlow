@@ -18,11 +18,11 @@ from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
 from Hint_importer import cross_ref_HiNT
 import sys
 
-#################################
-# redirecting all to a log file
-f = open('../logs/Commander_logs.log','w')
-sys.stdout = f
-################################
+# #################################
+# # redirecting all to a log file
+# f = open('../logs/Commander_logs.log','w')
+# sys.stdout = f
+# ################################
 
 # clear_all(full_dict)
 # run_diagnostics(full_dict)

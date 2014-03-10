@@ -34,14 +34,17 @@ MG.fast_load()
 # TODO: we need to refactor the filtering system
 
 
-def characterise_eigenvects(N_of_eigenvectors_to_characterise):
+def characterise_eigenvects(N_of_eigenvectors_to_characterise, Type='Adj'):
     """
     Recovers statistics over eigenvectors in order to remove excessively connected nodes.
 
     :return: Names of the elements in the 100 biggest eigenvectors in the adjacency matrix
     """
     Retname = set()
-    norm = np.linalg.norm(MG.adj_eigenvects, axis = 1)
+    if Type == 'Adj':
+        norm = np.linalg.norm(MG.adj_eigenvects, axis = 1)
+    else:
+        norm = np.linalg.norm(MG.cond_eigenvects, axis = 1)
     sbigest_args = np.argsort(norm)[-N_of_eigenvectors_to_characterise:]
 
     for arg in reversed(sbigest_args):
@@ -73,14 +76,17 @@ def checkMatrix():
 
 
 
-def processEigenVectors(nbiggest):
+def processEigenVectors(nbiggest, Type='Adj'):
     """
     Recovers "nbiggest" elements with the biggest association to a given eigenvector and returns them.
 
     :param nbiggest: number of biggest elements in a eigenvector to analyse
     :return: biggest element indexes in colums, where each column corresponds to the eigenvector and each column contains nbiggest elements
     """
-    absolute = np.absolute(MG.adj_eigenvects)
+    if Type == 'Adj':
+        absolute = np.absolute(MG.adj_eigenvects)
+    else:
+        absolute = np.absolute(MG.cond_eigenvects)
     eigbiggest = np.argsort(absolute, axis=0)[-nbiggest:, :]
 
     for i in range(0, eigbiggest.shape[1]):
@@ -96,6 +102,8 @@ def columnSort():
     Implements a per-axis sum in a wierd way, provided that np.sum is broken for sparse matrixes.
     Does the same thing as np.sum(Mg.Adjacency_Matrix, axis=0)
     '''
+    print MG.Ajacency_Matrix.sum(axis=1).shape
+
     SupportDict = {}
     IndexDict = {}
     nz = MG.Ajacency_Matrix.nonzero()
@@ -128,25 +136,24 @@ def columnSort():
 
 def get_voltages(numpy_array, MatrixNumber2NodeID, InformativityDict):
     """
+    This method seems to compute the voltages from several computation
 
-    :param numpy_array:
-    :param MatrixNumber2NodeID:
+    :param numpy_array: array of voltages on each node resulting from the computation
     :param InformativityDict:
-    :return:
     """
     for i in range(0, len(numpy_array)):
-        InformativityDict[MatrixNumber2NodeID[i]] += numpy_array[i, 0]
-    return
+        InformativityDict[MG.MatrixNumber2NodeID[i]] += numpy_array[i, 0]
 
 
-def create_InfoDict(MatrixNumber2NodeID):
+
+def create_InfoDict():
     """
+    Creates a dict containing all the DB NodeIDs
 
-    :param MatrixNumber2NodeID:
-    :return:
+    :return: dict
     """
     new_dict={}
-    for val in MatrixNumber2NodeID.values():
+    for val in MG.MatrixNumber2NodeID.itervalues():
         new_dict[val]=0.0
     return new_dict
 
