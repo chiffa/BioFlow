@@ -73,7 +73,7 @@ Conductance_Matrix_Dict = {"Group":0.5,
              }
 
 class Dumps(object):
-    prefix = path.abspath('./dumps/')
+    prefix = str(path.abspath(path.dirname(__file__)+'/dumps'))
     matrix_LS = 'dump5.dump'
     matrix_corrs = 'dump2.dump'
     eigen_VaMat = 'eigen_valmat.csv'
@@ -84,8 +84,8 @@ class Dumps(object):
     ConMat = 'pickleDump4.dump'
     UniP_att = 'UP_Attach.dump'
     Main_Connex_group = 'Connex_group.dump'
-    Forbidden_IDs = prefix+'ForbiddenIDs.dump'
-
+    Forbidden_IDs = prefix + '/ForbiddenIDs.dump'
+    Adj_degree = prefix + '/Adjacency_degree.csv'
 
 Leg_ID_Filter = {
     'Reactome:' : ['H+','ATP', 'GTP', 'Pi', 'H2O', 'ADP', 'PPi', 'GDP', 'O2', 'CO2', 'NTP',]

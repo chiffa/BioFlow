@@ -18,8 +18,7 @@ from PolyPharma.configs import edge_type_filters, Adjacency_Martix_Dict, Conduct
 from PolyPharma.neo4j_analyzer.IO_Routines import reaction_participant_getter, expand_from_seed
 
 # TODO: change the behavior of HiNT propagation to a several stages propagation
-# TODO: re-introduce the deleted module "uniprot_linkage" and test the size of main connex set.
-#       Without it, Main connex set is 24k nodes, with 4331 UP links and 1051 Hint links
+#       Main connex set is 24k nodes, with 4331 UP links and 1051 Hint links
 
 
 class MatrixGetter(object):

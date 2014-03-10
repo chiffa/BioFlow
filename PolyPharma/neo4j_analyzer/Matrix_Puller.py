@@ -6,7 +6,7 @@ This module contains all the routines that are respojnsible for pulling
 the matrixes out of the neo4j graph and processing them
 
 '''
-from PolyPharma.configs import IDFilter
+from PolyPharma.configs import Dumps
 import copy
 from scipy.sparse import lil_matrix
 # from scipy.sparse.linalg import eigsh
@@ -26,242 +26,125 @@ import pylab
 import math
 from Matrix_Interactome_DB_interface import MatrixGetter
 
-MG = MatrixGetter(True,False)
+
+MG = MatrixGetter(True, False)
 MG.fast_load()
 
 
 # TODO: we need to refactor the filtering system
-def characterise_eigenvects():
+
+
+def characterise_eigenvects(N_of_eigenvectors_to_characterise):
     """
     Recovers statistics over eigenvectors in order to remove excessively connected nodes.
 
-    :return: Index counting how many times each element has occured in the 100 biggest eigenvectors, then sorts them,
-             Index characterising each element from the matrix
+    :return: Names of the elements in the 100 biggest eigenvectors in the adjacency matrix
     """
+    Retname = set()
+    norm = np.linalg.norm(MG.adj_eigenvects, axis = 1)
+    sbigest_args = np.argsort(norm)[-N_of_eigenvectors_to_characterise:]
 
-    # SuperIndex = {}
-    # CounterIndex = {}
-    # eigenVectsList = np.split(MG.adj_eigenvects,MG.adj_eigenvects.shape[1], axis = 1)
+    for arg in reversed(sbigest_args):
+        print 'Matrix row: %s, \t Row Norm: %s, \t Description: %s' % (arg,  norm[arg],  MG.get_descriptor_for_index(arg))
+        Retname.add(str(MG.get_descriptor_for_index(arg)[1]))
 
-    # TODO: We can do it waay more easily with numpy
-    norm = np.linalg.norm(MG.adj_eigenvects, axis=1)
-    sbigest_args = np.argsort(norm)[-100:]
+    return Retname
 
-    for arg in sbigest_args:
-        print arg, norm[arg], MG.get_descriptor_for_index(arg)
-
-    print sbigest_args
-
-    # for eigenvect in eigenVectsList:
-    #     normalized = np.multiply(eigenvect, eigenvect)
-    #     for k in range(0,10):
-    #         index = np.argmax(normalized, 0)
-    #         if MG.MatrixNumber2NodeID[index] not in CounterIndex.keys():
-    #             CounterIndex[MG.MatrixNumber2NodeID[index]] = 0
-    #             SuperIndex[MG.MatrixNumber2NodeID[index]] = MG.get_descriptor_for_index(index)
-    #         CounterIndex[MG.MatrixNumber2NodeID[index]] += normalized[index]
-    #         normalized[index] = 0
-    # srtd = sorted(CounterIndex.iteritems(), key = operator.itemgetter(1), reverse = True)
-    # print IDFilter
-    # for key, val in srtd[:100]:
-    #     print val, key, SuperIndex[key], key in IDFilter
-    #     if key in IDFilter:
-    #         print 'error on key: ', key
-
-    # return CounterIndex, SuperIndex
-
-
-def UniprotCalibrate(rounds,depth, filename, Rdom):
-    '''
-    Checks if the decrease corresponds on average to the value predicted for natural networks by 
-    P. Silver in E.Coli. One single propagation iteration
-    # NOTICE: it might be better to perform the information collection only for the other uniprot- proteins
-    '''
-    init = time()
-    pickleDump2 = file('pickleDump2.dump','r')  # TODO: change the undump behavior here
-    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(pickleDump2)
-    pickleDump3 = file('pickleDump3.dump','r')  # TODO: change the undump behavior here
-    ValueMatrix = pickle.load(pickleDump3)
-    print 'unpickled in:', time()-init
-    Finale = MainUprotCalLoop(Uniprots, ValueMatrix, NodeID2MatrixNumber, rounds, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, depth,Rdom)
-    write = file(filename, 'w')
-    pickle.dump(Finale, write)
-    write.close()
-    print 'round completed in:', time()-init      
-
-
-def MainUprotCalLoop(Uniprots, ValueMatrix, NodeID2MatrixNumber, rounds, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, depth, Rdom):
-    iterations=1
-    ReUniprots=copy.copy(Uniprots)
-    Finale=[]
-    if Rdom:
-        iterations=3
-    for i in range(0,iterations):
-        Subfinale=[]
-        if Rdom:
-            Uniprots=random.sample(Uniprots, 200)
-        for ID in Uniprots:
-            Vector=np.zeros((ValueMatrix.shape[1],1))
-            Vector[NodeID2MatrixNumber[ID]]=1.0
-            ForbidList=[]
-            for i in range(0,rounds):
-                for k in Vector.nonzero():
-                    ForbidList.append(k)
-                Vector=ValueMatrix*Vector
-                for k in ForbidList:
-                    Vector[k]=0.0
-            LocalSample={ID:MG.get_descriptor_for_index(NodeID2MatrixNumber[ID])}
-            nzIndexes = Vector.nonzero()[0]
-            redepth=min(depth,len(nzIndexes))
-            suplist=random.sample(nzIndexes,redepth)
-            for index in suplist:
-                index=int(index)
-                value=0
-                if np.linalg.norm(Vector,1) < 10e-3:
-                    print 'error', ID, np.linalg.norm(Vector,1)
-                    value='infinity'
-                else:
-                    value=Vector[index]/np.linalg.norm(Vector,1)
-                LocalSample[MatrixNumber2NodeID[index]]=(Vector[index], value, MG.get_descriptor_for_index(index))
-            Subfinale.append(LocalSample)
-        Finale.append(Subfinale)
-    return Finale
-
-
-def mass_Calibrate(maxrange,depth,Rdom=False):
-    '''
-    Performs several rounds of calibration, actually recomputing the figure presented by P. Silver
-    '''
-    for i in range(2, maxrange+1):
-        filename=str('calibrate'+str(i)+'.dump')
-        UniprotCalibrate(i,depth,filename,Rdom)
-
-
-def treat_Calibration():
-    '''
-    Performs the analysis of calibration
-    '''
-    DicList={}
-    FnameList=[]
-    Filenames = listdir('.')
-    for filename in Filenames:
-        if 'calibrate' in filename:
-            FnameList.append(filename)
-    for fname in FnameList:               # TODO: change the undump behavior here
-        DicList[fname.split('.')[0][-1]]=(pickle.load(file(fname,'r')))
-    memory={}    
-    for key in DicList.keys():
-        memory[key]=[]
-        print key, 'iterated!'
-        for sublist in DicList[key]:
-            average1=0
-            average2=0
-            count=0 
-            for Dict in sublist:
-                print Dict
-                for subkey, subval in Dict.iteritems():
-                    if subval[0]!='UNIPROT':
-                        if int(subval[0])<0:
-                            print Dict
-                        count+=1
-                        average1+=int(subval[0])
-                        average2+=int(subval[1])
-            average1=float(average1)/float(count)
-            average2=float(average2)/float(count)
-            memory[key].append((average1,average2))
-    srtd=sorted(memory.iteritems(), key=operator.itemgetter(0))
-    for key, val in srtd:
-        print key, val[0][0], val[1][0], val[2][0], '|', val[0][1], val[1][1], val[2][1]
-            
 
 def checkMatrix():
-    pickleDump3=file('pickleDump3.dump','r')  # TODO: change the undump behavior here
-    ValueMatrix=pickle.load(pickleDump3)
-    NzeroList=ValueMatrix.nonzero()
-    faultyList=[]
-    for i in range(0,len(NzeroList[0])):
-        index=(int(NzeroList[0][i]),int(NzeroList[1][i]))
-        value=ValueMatrix[index[0],index[1]]
+    """
+    Verifyes that the adjacency matrix has no elements with unexpected values. If there are, prints them, then throws
+    an exception
+
+    :Note: this constitutes one of the possible partitioning of the matrix into functional clusters.
+    :raise Exception: "Unexpected behavior among adjacency nodes!" if adjacency matrix has unexpected elements
+    """
+    NzeroList = MG.Ajacency_Matrix.nonzero()
+    faultyList = []
+    for i in range(0, len(NzeroList[0])):
+        index = (int(NzeroList[0][i]), int(NzeroList[1][i]))
+        value = MG.Ajacency_Matrix[index[0],index[1]]
         if value < 0.0 or value > 1.0:
             faultyList.append(index)
-    print len(faultyList)
-    print len(NzeroList[0])
-#     rsample=random.sample(range(0,len(NzeroList[0])), 10)
-#     for i in rsample:
-#         index=(int(NzeroList[0][i]),int(NzeroList[1][i]))
-#         value=ValueMatrix[index[0],index[1]]
-#         print index, value
+    print "There are %s faulty nodes out of %s" % (len(faultyList),len(NzeroList[0]))
+    if len(faultyList)>0:
+        print faultyList
+        raise Exception("Unexpected behavior among adjacency nodes!")
 
 
-def processEigenVectors():
-    init=time()
-    pickleDump=file('pickleDump.dump','r')  # TODO: change the undump behavior here
-    eigenvals, eigenvects=pickle.load(pickleDump)
-    pickleDump2=file('pickleDump2.dump','r')  # TODO: change the undump behavior here
-    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(pickleDump2)
-    eigenVectsList=[]
-    SuperIndex=[]
-    print 'depicked',time()-init
-    for i in range(0,eigenvects.shape[1]):
-        eigenVectsList.append(eigenvects[:,i])
-    i=0
-    for eigenvect in eigenVectsList:
-        i+=1
-        normalized=np.multiply(eigenvect,eigenvect)
-        indexes={}
-        for k in range(0,10):
-            index=np.argmax(normalized, 0)
-            indexes[MatrixNumber2NodeID[index]]=(normalized[index], MG.get_descriptor_for_index(index))
-            normalized[index]=0
-        SuperIndex.append(indexes)
-    for subIndex in SuperIndex:
-        for key in subIndex.keys():
-            print '\t', key, subIndex[key]
-        print '<=========================>'
-    return SuperIndex
+
+def processEigenVectors(nbiggest):
+    """
+    Recovers "nbiggest" elements with the biggest association to a given eigenvector and returns them.
+
+    :param nbiggest: number of biggest elements in a eigenvector to analyse
+    :return: biggest element indexes in colums, where each column corresponds to the eigenvector and each column contains nbiggest elements
+    """
+    absolute = np.absolute(MG.adj_eigenvects)
+    eigbiggest = np.argsort(absolute, axis=0)[-nbiggest:, :]
+
+    for i in range(0, eigbiggest.shape[1]):
+        for index, value in reversed(zip(eigbiggest[:, i], absolute[eigbiggest[:, i], i])):
+            print index, value, MG.get_descriptor_for_index(index)
+        print '<==================>'
+
+    return eigbiggest
 
 
 def columnSort():
     '''
-    np.sum is broken for sparse matrixes. does the same thing with option axis=0
+    Implements a per-axis sum in a wierd way, provided that np.sum is broken for sparse matrixes.
+    Does the same thing as np.sum(Mg.Adjacency_Matrix, axis=0)
     '''
-    pickleDump3=file('pickleDump3.dump','r')  # TODO: change the undump behavior here
-    ValueMatrix=pickle.load(pickleDump3)
-    SupportDict={}
-    IndexDict={}
-    nz=ValueMatrix.nonzero()
-    pickleDump2=file('pickleDump2.dump','r')  # TODO: change the undump behavior here
-    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(pickleDump2)
-    print 'ended imports'
+    SupportDict = {}
+    IndexDict = {}
+    nz = MG.Ajacency_Matrix.nonzero()
+
     for i in range(0, len(nz[0])):
         if nz[0][i] not in SupportDict.keys():
-            SupportDict[nz[0][i]]=[]
+            SupportDict[nz[0][i]] = []
         SupportDict[nz[0][i]].append(nz[1][i])
+
     print 'ended loading indexes'
+
     for key in SupportDict.keys():
         if len(SupportDict[key])>1:
-            IndexDict[key]=0
+            IndexDict[key] = 0
             for val in SupportDict[key]:
-                IndexDict[key]+=float(ValueMatrix[key,val])
-                
-    srtd = sorted( IndexDict.iteritems(), key=operator.itemgetter(1),reverse=True )
+                IndexDict[key] += float(MG.Ajacency_Matrix[key, val])
+
+    srtd = sorted( IndexDict.iteritems(), key=operator.itemgetter(1), reverse=True )
     
-    outf = file('columnSum.csv','w')
+    outf = file(Dumps.Adj_degree,'w')
     
     for elt in srtd:
-        Stri=str(str(MatrixNumber2NodeID[elt[0]])+'\t'+str(elt[1])+'\n')
-        print  MatrixNumber2NodeID[elt[0]], elt[1]
+
+        Stri = str(str(MG.MatrixNumber2NodeID[elt[0]]) + '\t' + str(elt[1]) + '\t'+str(MG.get_descriptor_for_index(elt[0]))+'\n')
+
         outf.write(Stri)
+
     outf.close()
 
 
 def get_voltages(numpy_array, MatrixNumber2NodeID, InformativityDict):
+    """
+
+    :param numpy_array:
+    :param MatrixNumber2NodeID:
+    :param InformativityDict:
+    :return:
+    """
     for i in range(0, len(numpy_array)):
-        InformativityDict[MatrixNumber2NodeID[i]]+=numpy_array[i,0]
+        InformativityDict[MatrixNumber2NodeID[i]] += numpy_array[i, 0]
     return
 
 
 def create_InfoDict(MatrixNumber2NodeID):
+    """
+
+    :param MatrixNumber2NodeID:
+    :return:
+    """
     new_dict={}
     for val in MatrixNumber2NodeID.values():
         new_dict[val]=0.0
@@ -651,7 +534,12 @@ def Compute_ponderated_info_circulation(UPs_2Binding_Affs):
     raise NotImplementedError
 
 if __name__ == "__main__":
-    characterise_eigenvects()
+    # characterise_eigenvects(100)
+    # checkMatrix()
+    # processEigenVectors(15)
+    columnSort()
+
+
 
 
 # TODO: compute the whole ensemble of the nodes perturbed by the protein
@@ -735,57 +623,3 @@ if __name__ == "__main__":
 # TODO: implementation while using Ehit interactions only
 
 
-# Shut down HiNT analysis => Slightly improves the result
-
-# Synchronious eigenvectors approach: protect agains entering into a forbidden list the target node
-# start iterating matrix multiplications starting from the node1 to go to the node2
-# enter each node visited in the forbidden set, except for node2
-# terminate iterating when there are no more new reaches for node2 after all the interations
-
-# Percentage of information reaching a given node compared to all the information reaching the node: eigenvalue approach too.
-# Error we do: compute three times
-
-# Ok, what is going on is that we have collections of ~ 300 elements completely screwing our system
-
-# The problem that a information broadcasting between the elements of the same group is not a good thing, but a direct broadcasting into a reaction is actually
-# what we need in our matrix.
-
-
-# In order to be precise, we should not only take in account the power of bindinb between a molecule and protein and criticality of the protein, but also the abundance of the
-# protein in the reactome
-
-# => Done with the aboundance retrieval
-
-# DONE: use sparse matrixes routines to calculate the number of connex elements in the graph
-#   Problem: there are 58 disconnected sets.
-#   Solution: retrieve the Node Ids of the main connex Set and write them into the neo4j graph, then retrieve only them
-
-# DONE: markup of the major connex graph within neo4j database
-#    Waiting for the execution
-
-
-# DONE: calculate the distance graph
-    # seems to work pretty well with Djikistra.
-    # Can we perform a retrieval of specific nodes within distance X of the main component? 
-
-# DONE: buid jump tables to compute the number of reactional transitions
-#    Implemented by using djikstra algo from scipy.sparse.csgraph
-#
-
-# DONE: retrieve Pamela silver's degradation of the data with the time
-#    Waiting for the execution
-#    
-
-# DONE: pull in the annotations regarding the proteins aboundances
-#    
-#    
-
-# DONE: pull in the 300 essential targets from the EBI dude (John Overington)
-#     Results aren't so conclusive. It seems that the protein concentration defenitely plays some role in the determining if a protein is a 
-#     Target of an existing drug or not, butthe informativity seems not. Probably this is due to the fact that the targeted proteins are often 
-#     cellular receptors.
-
-# DONE: perform a localization factor pull-out for the Uniprots based on their proteins of attachement
-#        Waiting for the execution
-
-# DONE: broadcast to uniprots for the localization of the pointed proteins

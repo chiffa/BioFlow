@@ -275,10 +275,10 @@ def clear_all(instruction_dict):
     for name, bulbs_class in instruction_dict.iteritems():
         counter = 0
         if bulbs_class.get_all():
-            for bulbs_class_instance in bulbs_class.get_all():
+            IDlist = [str(bulbs_class_instance).split('/')[-1][:-1] for bulbs_class_instance in bulbs_class.get_all() ]
+            for ID in IDlist:
                 counter += 1
-                ID = str(bulbs_class_instance).split('/')[-1][:-1]
-                DatabaseGraph.PathwayStep.delete(ID)
+                bulbs_class.delete(ID) #Untraceable bug down here
                 if counter % 100 == 0:
                     print name, ':', counter
 
@@ -331,7 +331,7 @@ def insert_all(Skip='N'):
         ComplexPartsInsert(DG.Complexes)
 
         # NOW dump the ForbiddenIDs
-        pickle.dump(ForbiddenIDs, Dumps.Forbidden_IDs)
+        pickle.dump(ForbiddenIDs, open(Dumps.Forbidden_IDs, 'w'))
 
     if Skip == 'M':
         getAllMetaSets()
