@@ -87,6 +87,7 @@ class Dumps(object):
     Main_Connex_group = 'Connex_group.dump'
     Forbidden_IDs = prefix + '/ForbiddenIDs.dump'
     Adj_degree = prefix + '/Adjacency_degree.csv'
+    Silverality = prefix + 'Silverality.dump'
 
 Leg_ID_Filter = ['H+', 'ATP', 'GTP', 'Pi', 'H2O', 'ADP', 'PPi', 'GDP', 'O2', 'CO2', 'NTP',]
 

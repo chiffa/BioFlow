@@ -3,6 +3,7 @@ __author__ = 'ank'
 from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
 from PolyPharma.configs import IDFilter, Leg_ID_Filter, edge_type_filters, Dumps
 import pickle
+from itertools import chain
 
 def lookup_by_ID(Domain, req):
     """
@@ -148,7 +149,7 @@ def Erase_custom_fields():
     """
 
     # TODO: reconfigure to erase connexity infos later on based onthe main_connex tag on the nodes
-    Node_gen = DatabaseGraph.Node.get(costum = 'Main_Connex')
+    Node_gen = chain(DatabaseGraph.Node.get(costum = 'Main_Connex'), DatabaseGraph.Node.get(main_connex = True))
 
     for Node in Node_gen:
         Node.custom = ''
@@ -177,7 +178,7 @@ def reaction_participant_getter(Reaction, main_connex_only):
 
             if main_connex_only:
                 Connex = False
-                if (elt.custom is not None and "Main_Connex" in elt.custom) or elt.main_connex:
+                if elt.main_connex:
                     Connex = True
 
             ID = str(elt).split('/')[-1][:-1]
@@ -187,7 +188,7 @@ def reaction_participant_getter(Reaction, main_connex_only):
     return LocalList, count
 
 
-def expand_from_seed(Seed_Node_ID, edge_filter):
+def expand_from_seed(Seed_Node_ID, edge_filter, main_connex_only):
     """
     Recovers all the nodes accessible in one jump from a seed_node with a given database ID by jumping only via the relations
         of type specified in the edge_filter
@@ -203,8 +204,15 @@ def expand_from_seed(Seed_Node_ID, edge_filter):
     for edge_type in edge_filter:
         if Seed_Node.bothV(edge_type) != None:
             for elt in Seed_Node.bothV(edge_type):
+                Connex = True
+
+                if main_connex_only:
+                    Connex = False
+                    if elt.main_connex:
+                        Connex = True
+
                 ID = str(elt).split('/')[-1][:-1]
-                if ID not in IDFilter:
+                if ID not in IDFilter and Connex:
                     LocalList.append(ID)
                     count += 1
     return LocalList, count

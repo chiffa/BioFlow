@@ -15,7 +15,7 @@ from scipy.sparse.csgraph import connected_components
 
 from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
 from PolyPharma.configs import edge_type_filters, Adjacency_Martix_Dict, Conductance_Matrix_Dict, Dumps
-from PolyPharma.neo4j_analyzer.IO_Routines import reaction_participant_getter, expand_from_seed
+from PolyPharma.neo4j_analyzer.IO_Routines import reaction_participant_getter, expand_from_seed, Erase_custom_fields
 
 # TODO: change the behavior of HiNT propagation to a several stages propagation
 #       Main connex set is 24k nodes, with 4331 UP links and 1051 Hint links
@@ -62,6 +62,7 @@ class MatrixGetter(object):
         self.ID2Localization = {}
         self.Uniprots = []
         self.Uniprot_attachments = {} # currently maintained for legacy reasons
+        self.Uniprot_Mat_idxs = []
 
         self.ReactLinks = []
         self.InitSet = []
@@ -75,8 +76,6 @@ class MatrixGetter(object):
         self.FullSet = []
         self.Super_Links = {}
         self.ExpSet = []
-
-        self.main_connexity_set_IDs = []
 
         self.Matrix_reality = Dumps.matrix_corrs
 
@@ -165,7 +164,7 @@ class MatrixGetter(object):
         self.dump_object(Dumps.matrix_corrs,
                          (self.NodeID2MatrixNumber, self.MatrixNumber2NodeID,
                           self.ID2displayName, self.ID2Type, self.ID2Localization,
-                          self.Uniprots, self.Uniprot_attachments))
+                          self.Uniprots, self.Uniprot_attachments, self.Uniprot_Mat_idxs))
 
 
     def undump_Maps(self):
@@ -173,22 +172,7 @@ class MatrixGetter(object):
         undumps all the elements required for the mapping between the types and ids of database entries and matrix columns
         """
         self.NodeID2MatrixNumber, self.MatrixNumber2NodeID, self.ID2displayName, self.ID2Type,\
-        self.ID2Localization, self.Uniprots, self.Uniprot_attachments = self.undump_object(Dumps.matrix_corrs)
-
-
-    def dump_Main_connex_set(self):
-        """
-        dumps the IDs of objects in the main connex set
-        """
-        self.dump_object(Dumps.Main_Connex_group,self.main_connexity_set_IDs)
-
-
-    def undump_Main_connex_set(self):
-        """
-        undumps the IDs of objects in the main connex set
-        """
-        self.main_connexity_set_IDs = self.undump_object(Dumps.Main_Connex_group)
-
+        self.ID2Localization, self.Uniprots, self.Uniprot_attachments, self.Uniprot_Mat_idxs = self.undump_object(Dumps.matrix_corrs)
 
     def time(self):
         """
@@ -251,7 +235,7 @@ class MatrixGetter(object):
 
             return ReagentClusters, Seeds, count
 
-        def get_expansion(SubSeed, edge_type_filter):
+        def get_expansion( SubSeed, edge_type_filter):
             '''
             Recovers all the nodes reached from the SubSeed according to a the relations listed
             in edge_type_filter
@@ -272,11 +256,11 @@ class MatrixGetter(object):
             SuperSeed.update(SubSeed)
             count = 0
             for element in SubSeed:
-                LocalList, count_increase = expand_from_seed(element, edge_type_filter)
+                LocalList, count_increase = expand_from_seed(element, edge_type_filter, self.Connexity_Aware)
                 if len(LocalList) > 0:
                     Clusters[element] = copy(LocalList)
                     SuperSeed.update(LocalList)
-                    count+=count_increase
+                    count += count_increase
             return Clusters, SuperSeed, count
 
 
@@ -344,7 +328,7 @@ class MatrixGetter(object):
                 return Location_Buffer_Dict[location]
             else:
                 generator = DatabaseGraph.Location.index.lookup(ID = location)
-                if generator != None:
+                if generator is not None:
                     for elt in generator:
                         Location_Buffer_Dict[location] = str(elt.displayName)
                         return str(elt.displayName)
@@ -363,6 +347,7 @@ class MatrixGetter(object):
             self.ID2Type[ID] = Vertex.element_type
             if Vertex.element_type == "UNIPROT":
                 self.Uniprots.append(ID)
+                self.Uniprot_Mat_idxs.append(counter)
             if Vertex.localization is not None:
                 self.ID2Localization[ID] = request_location(LocationBufferDict, Vertex.localization)
             counter += 1
@@ -519,7 +504,9 @@ class MatrixGetter(object):
         self.create_val_matrix()
 
         self.undump_Main_connex_set()
-        self.reset_Connexity_Infos()
+        # TODO: hard connexity reset
+        # TODO: better selection of UP so that they are adherent to Reactome_nodes
+        Erase_custom_fields()
         self.Write_Connexity_Infos()
         self.dump_Main_connex_set()
 
@@ -557,22 +544,6 @@ class MatrixGetter(object):
             return (self.ID2Type[self.MatrixNumber2NodeID[index]],
                     self.ID2displayName[self.MatrixNumber2NodeID[index]])
 
-    def reset_Connexity_Infos(self):
-        """
-        Resets the .costum field of all the Nodes on which we have iterated here. Usefull to perform
-        After node set or node connectivity were modfied.
-
-        :warning: Requires the self.Main_set_IDs to be preloaded to function correctly. In case it is impossible,
-                    use the Erase_costum_fields function from the IO_Routines module.
-        """
-        for NodeID in self.main_connexity_set_IDs:
-            Node = DatabaseGraph.vertices.get(NodeID)
-            Node.main_connex = False
-            Node.custom = ''
-            Node.save()
-
-        print "has resetted connexity over %s nodes in %s" % (len(self.main_connexity_set_IDs), str(self.time()))
-
 
     def compute_Uniprot_Attachments(self):
         """
@@ -588,12 +559,23 @@ class MatrixGetter(object):
                     self.Uniprot_attachments[SP_Node_ID].append(ID)
                 print 'attached %s Reactome proteins to the node %s' %(len(self.Uniprot_attachments[SP_Node_ID]), SP_Node_ID)
             else:
-                print 'No attachement for the node %s' %(SP_Node_ID)
+                print 'No attachement for the node %s' % SP_Node_ID
+
+    def hacky_corr(self):
+        self.undump_Maps()
+        self.Uniprot_Mat_idxs = []
+        for SP_Id in self.Uniprots:
+            Node=DatabaseGraph.UNIPORT.get(SP_Id)
+            if Node.main_connex:
+                self.Uniprot_Mat_idxs.append(self.NodeID2MatrixNumber[SP_Id])
+        print len(self.Uniprot_Mat_idxs)
+        self.dump_Maps()
 
 
 if __name__ == "__main__":
     Mat_gter = MatrixGetter(True, True)
-    Mat_gter.full_rebuild()
-    # Mat_gter.fast_load()
-    Mat_gter.get_eigenspectrum(100)
-    Mat_gter.dump_Eigens()
+    Mat_gter.hacky_corr()
+    # Mat_gter.full_rebuild()
+    # # Mat_gter.fast_load()
+    # Mat_gter.get_eigenspectrum(100)
+    # Mat_gter.dump_Eigens()

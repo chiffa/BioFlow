@@ -136,7 +136,7 @@ def import_UNIPROTS():
     Imports the whole parsed uniprot dictionary from the utils.uniprot parser into the database
 
     """
-    # TODO: if all explodes on the next import, check the line below and revert the import behavior of Uniprot
+
     Uniprot = Parse_Uniprot()
     Acnums2RProts = getExistingAcnums()
     i = 0
@@ -150,10 +150,12 @@ def import_UNIPROTS():
                                        displayName = Uniprot[CH_PROT_ID]['Names']['Full'],
                                        main_connex = False)
         # check inclusion in Reactome
+        # TODO: if all explodes on the next import, check the line below and revert the import behavior of Uniprot
         if not set1.isdisjoint(set2):
             logging.debug('Uniprot %s intersects Reactome on the following acnums: %s', (str(CH_PROT_ID), str(set1)))
             i += 1
             primary.involved = True
+        # TODO: if all explodes on the next import, check the line above and revert the import behavior of Uniprot
         logging.debug('UNIPROT %s', str("{0:.2f}".format(float(i)/float(leng)*100)))
         # Add the newly created uniprot to the buffer
         UniprotDict[CH_PROT_ID] = primary
