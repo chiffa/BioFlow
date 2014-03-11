@@ -7,8 +7,6 @@ Created on Jun 26, 2013
 import PolyPharma.configs as conf
 import copy
 
-source_file = open(conf.UNIPROT_source, "r")
-
 Interesting_TaxIDs = [TaxID.strip() for TaxID in conf.Sources['UNIPROT']['tax_ids'].split(',') if TaxID not in ('',' ')]
 Interesting_lines = ['ID', 'AC', 'DE', 'GN', 'OX', 'DR']
 Interesing_xrefs = ['EMBL', 'GO', 'Pfam', 'Ensembl', 'KEGG', 'PDB']
@@ -18,7 +16,7 @@ defDict = {'Acnum':[], 'Names':{'Full':'', 'AltNames':[]}, 'GeneRefs':{'Names':[
 
 # TODO: refactor to avoid any call to the expensive function unless a specific function has been build
 
-Uniprot = {}  # {SWISSPROT_ID:{
+# Uniprot = {}  # {SWISSPROT_ID:{
             #                 'Acnum':[],
             #                 'RecName':RecordName,
             #                 'ORFNames': [],
@@ -33,6 +31,11 @@ Ignore = [False, 2]
 
 
 def parse_Xref(Dico,Line):
+    """
+
+    :param Dico:
+    :param Line:
+    """
     if 'EMBL; ' in Line and 'ChEMBL' not in Line:
         splt = Line.split(';')
         if len(splt)>4:
@@ -58,6 +61,11 @@ def parse_Xref(Dico,Line):
 
 
 def parse_GeneRefs(Dico,Line):
+    """
+
+    :param Dico:
+    :param Line:
+    """
     words = filter(lambda a:a != '', str(Line.strip() + ' ').split('; '))
     for word in words[1:]:
         if 'ORFNames' in word:
@@ -72,6 +80,12 @@ def parse_GeneRefs(Dico,Line):
 
 
 def parse_Name(Dico,Line):
+    """
+
+    :param Dico:
+    :param Line:
+    :return:
+    """
     if 'RecName: Full=' in Line:
         Dico['Names']['Full'] = Line.split('RecName: Full=')[1].split(';')[0]
         return ''
@@ -96,6 +110,12 @@ def parse_Name(Dico,Line):
 
 
 def process_line(Dico, Line, keyword):
+    """
+
+    :param Dico:
+    :param Line:
+    :param keyword:
+    """
     if keyword == 'ID':
         words = filter(lambda a:a != '', Line.split(' '))
         Dico['ID'] = words[1]
@@ -113,7 +133,12 @@ def process_line(Dico, Line, keyword):
         parse_Xref(Dico,Line)
 
 
-def end_Block(Dico):
+def end_Block(Dico, Uniprot):
+    """
+
+    :param Dico:
+    :return:
+    """
     if Dico['TaxID'] in Interesting_TaxIDs:
         Ignore[0] = False
         Uniprot[Dico['ID']] = Dico
@@ -121,19 +146,33 @@ def end_Block(Dico):
 
 
 def Parse_Uniprot():
+    """
+
+
+    """
+    Uniprot = {}
     LocalDictionary = copy.deepcopy(defDict)
+    source_file = open(conf.UNIPROT_source, "r")
     while True:
         line = source_file.readline()
         if not line:
             break
         keyword = line[0:2]
         if keyword == '//':
-            LocalDictionary = end_Block(LocalDictionary)
+            LocalDictionary = end_Block(LocalDictionary, Uniprot)
         if  keyword in Interesting_lines:
             process_line(LocalDictionary, line, keyword)
 
+    return Uniprot
+
 
 def get_Names_dict():
+    """
+
+    :param Uniprot:
+    :return:
+    """
+    Uniprot = Parse_Uniprot()
     namesDict = {}
     for elt in Uniprot.keys():
         NameList = [Uniprot[elt]['Names']['Full'].lower().strip()]
@@ -151,31 +190,39 @@ def get_Names_dict():
     
     return namesDict
 
+
 def get_access_dicts():
     '''
     Returns an access dictionary that would plot genes names, AcNums or EMBL identifiers to the 
     Swissprot IDs
+
+    :param Uniprot:
+    :return:
     '''
-    access_dict={}
+    Uniprot = Parse_Uniprot()
+    access_dict = {}
     for key in Uniprot.keys():
         for subelt in Uniprot[key]['KEGG']:
-            access_dict[subelt]= key
+            access_dict[subelt] = key
         for subelt in Uniprot[key]['Ensembl']:
-            access_dict[subelt]= key
+            access_dict[subelt] = key
         for subelt in Uniprot[key]['EMBL']:
             access_dict[subelt['Accession']] = key
             access_dict[subelt['ID']] = key
         for subelt in Uniprot[key]['Acnum']:
-            access_dict[subelt]= key
+            access_dict[subelt] = key
         for subelt in Uniprot[key]['GeneRefs']['Names']:
-            access_dict[subelt]= key
+            access_dict[subelt] = key
         for subelt in Uniprot[key]['GeneRefs']['OrderedLocusNames']:
-            access_dict[subelt]= key
+            access_dict[subelt] = key
         for subelt in Uniprot[key]['GeneRefs']['ORFNames']:
-            access_dict[subelt]= key
+            access_dict[subelt] = key
     return access_dict
 
-
-Parse_Uniprot()
-names_Dict = get_Names_dict()
-access_dict = get_access_dicts()
+if __name__ == '__main__':
+    Uniprot = Parse_Uniprot()
+    print len(Uniprot)
+    names_Dict = get_Names_dict()
+    print len(names_Dict)
+    access_dict = get_access_dicts()
+    print len(access_dict)

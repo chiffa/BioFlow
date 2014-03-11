@@ -5,7 +5,7 @@ Created on Jul 5, 2013
 '''
 
 from PolyPharma.Utils.GO_Structure_Parser import fill_GO_Terms
-from PolyPharma.Utils.UNIPROT_Parser import Uniprot
+from PolyPharma.Utils.UNIPROT_Parser import Parse_Uniprot
 from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
 import logging
 
@@ -136,6 +136,8 @@ def import_UNIPROTS():
     Imports the whole parsed uniprot dictionary from the utils.uniprot parser into the database
 
     """
+    # TODO: if all explodes on the next import, check the line below and revert the import behavior of Uniprot
+    Uniprot = Parse_Uniprot()
     Acnums2RProts = getExistingAcnums()
     i = 0
     j = 0
@@ -221,4 +223,4 @@ def getUniprots():
     
 
 if __name__ == "__main__":
-    pass
+    import_UNIPROTS()

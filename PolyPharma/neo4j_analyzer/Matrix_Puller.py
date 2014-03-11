@@ -541,9 +541,9 @@ def Compute_ponderated_info_circulation(UPs_2Binding_Affs):
     raise NotImplementedError
 
 if __name__ == "__main__":
-    # characterise_eigenvects(100)
-    # checkMatrix()
-    # processEigenVectors(15)
+    characterise_eigenvects(100, Type = 'Cond')
+    checkMatrix()
+    processEigenVectors(15,Type = 'Cond')
     columnSort()
 
 

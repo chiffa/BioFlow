@@ -13,8 +13,10 @@ def compute_Prot_Aboundances():
     performs a computationally expensive part of protein aboundance computation
     and stores the result in a pickle file
     '''
-    from UNIPROT_Parser import access_dict
+    from PolyPharma.Utils.UNIPROT_Parser import get_access_dicts
     from PolyPharma.configs import Prot_abound
+
+    access_dict = get_access_dicts()
     SP2Aboundances={}
     Fle=file(Prot_abound,'r')
     i=0

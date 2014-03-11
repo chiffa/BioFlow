@@ -20,6 +20,7 @@ from PolyPharma.neo4j_analyzer.IO_Routines import reaction_participant_getter, e
 # TODO: change the behavior of HiNT propagation to a several stages propagation
 #       Main connex set is 24k nodes, with 4331 UP links and 1051 Hint links
 #       With the full UP import, the main connex set is 25k Nodes, with 4336 UP Links and 1191 HiNT links
+#       With forbidding overloaded items: 24k771 Nodes, 4293 UP Links, 1186 HiNT links
 
 
 class MatrixGetter(object):

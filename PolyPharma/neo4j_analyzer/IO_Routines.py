@@ -221,7 +221,9 @@ def recompute_forbidden_IDs(Node_Type_Dict):
     retlist = set()
     for bulbs_type in Node_Type_Dict.itervalues():
         for forbidden_Legacy_ID in Leg_ID_Filter:
-            retlist.update(unwrap_DB_ID(bulbs_type.index.lookup(ID = forbidden_Legacy_ID)))
+            generator = bulbs_type.index.lookup(displayName = forbidden_Legacy_ID)
+            UNW = unwrap_DB_ID(generator)
+            retlist.update(UNW)
     pickle.dump(retlist, file(Dumps.Forbidden_IDs,'w'))
 
 
@@ -237,5 +239,6 @@ if __name__ == "__main__":
     # print count_items(DatabaseGraph.UNIPORT)
     # lookup_by_ID(DatabaseGraph.UNIPORT, "CK2N2_HUMAN")
     # Erase_custom_fields()
+    recompute_forbidden_IDs(Forbidden_verification_dict)
 
     print Look_up_Annot_Node('ENSG00000131981', 'UNIPROT_Ensembl')
