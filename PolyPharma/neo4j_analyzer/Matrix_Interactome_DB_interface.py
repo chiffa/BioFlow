@@ -484,7 +484,6 @@ class MatrixGetter(object):
         for i in range(0, len(CCOmps[1])):
             print 'Marking graph main connex elements: %s done' % str("{0:.2f}".format(float(i)/float(ln)*100))
             if CCOmps[1][i] == major_Index:
-                self.main_connexity_set_IDs.append(self.MatrixNumber2NodeID[i])
                 Node = DatabaseGraph.vertices.get(self.MatrixNumber2NodeID[i])
                 Node.custom = 'Main_Connex'
                 Node.main_connex = True
@@ -503,12 +502,10 @@ class MatrixGetter(object):
 
         self.create_val_matrix()
 
-        self.undump_Main_connex_set()
         # TODO: hard connexity reset
         # TODO: better selection of UP so that they are adherent to Reactome_nodes
         Erase_custom_fields()
         self.Write_Connexity_Infos()
-        self.dump_Main_connex_set()
 
         self.compute_Uniprot_Attachments()
         self.Connexity_Aware = CA
@@ -574,8 +571,8 @@ class MatrixGetter(object):
 
 if __name__ == "__main__":
     Mat_gter = MatrixGetter(True, True)
-    Mat_gter.hacky_corr()
-    # Mat_gter.full_rebuild()
-    # # Mat_gter.fast_load()
-    # Mat_gter.get_eigenspectrum(100)
-    # Mat_gter.dump_Eigens()
+    # Mat_gter.hacky_corr()
+    Mat_gter.full_rebuild ()
+    # Mat_gter.fast_load()
+    Mat_gter.get_eigenspectrum(100)
+    Mat_gter.dump_Eigens()

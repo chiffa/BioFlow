@@ -46,6 +46,8 @@ Improve crosslinking between different databases
 
 # TODO: add fulltext indexes to the nodes
 
+# TODO: There might be an error in the module responsible for linkage between the uniprots and the accession numbers: for instance the 20253 has an annotation with an Acnum, but
+    # has no Uniprot attached to it within the database => this is possibly due to the fact that some of the uniprots are refered as being from different organsims (such as HIV invasion pathway)
 
 
 
@@ -97,6 +99,20 @@ Current Limitations
 ===================
 
 Limitations: no physical-path toxicity (such as rising pH, changing the O2 content or depleting ATP/ADP)
+
+
+Potential enhancements:
+=======================
+
+# TODO: create GO and Pathway Structure access
+    # Calibrate the values so that after ~ 3 transitions the correlation vanishes on average (Follow Pamela Silver Approach) => this is actually the cumulated perturbation of
+    # two targets that should vanish totally
+
+# TODO: along with Overingtonicity integrate the list of essential genes in human diseases from the PLoS 2011 publication
+    # Importance of complementation of the information with the Reactome.org data with the EHiT data: otherwise the information circulation completely sucks
+    # Reactome.org: the interactions due to kinases aren't explicitly shown. Instead a broadcasting through the secondary features that perform the modification
+    # Is needed. Which is completely stupid, because it doesn't show the specific action on the proteins due to the conformation modification. Thus Reactome.org
+    # is more of a ressource for human experts then for truly machine-learning tasks.
 
 
 To be treated:
@@ -188,6 +204,18 @@ To be treated:
     #        Waiting for the execution
 
     # DONE: broadcast to uniprots for the localization of the pointed proteins
+
+    # # DONE: reverse GO_Access: provided the Uniprots find the proteins carrying over the most information
+    # DONE: mount a PyMongo data store in order to be able to save and retrieve the programming objects easily
+    #         How is it done: - picket to string
+    #        Store an object in a collection defined by it's Id and computation number
+    #        If requested, retrieve by ID or else
+    #         Index on the GO ID and belonging UNIPROTs (If same set of uniprots, it is the same) => store as sets
+    #         Pickles of sets with the same elements are always the same
+
+    # DONE: remake the sampling so it is efficiently 170**2/2 one to one randomly chosen pairs that are calculated, and not the whole 170 ensemble, so that the
+    # Informativities actually follow a gaussian distribution
+
 
 General programming:
 ===================
