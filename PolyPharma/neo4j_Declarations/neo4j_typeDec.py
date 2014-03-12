@@ -8,13 +8,13 @@ Created on Jun 13, 2013
 # in the indexes and it could be very hard to remember what is what after some time
 
 from bulbs.model import Node, Relationship
-from bulbs.property import String, Integer, Float
+from bulbs.property import String, Integer, Float, Bool
 
 class CostumNode(Node):             # Serves as a basis for the annotation
     element_type = "CostumNode"
     ID = String(nullable = False)       # Reactome import heritage
     displayName = String()            # To see what it is, for the human operator
-    # main_connex = String()
+    main_connex = Bool()
     custom = String()                 # Just in case
     load = Float()                    # Deprecated. To freeze information transmission score (Dict should be better?)
 
@@ -173,7 +173,7 @@ class is_next_in_pathway(CostumLink):
     
 class UNIPROT(Meta):
     element_type = "UNIPROT"
-    involved = Integer() # 1 / 0 -> if it is involved in the Reactome.org interactions or not.
+    involved = Bool() # 1 / 0 -> if it is involved in the Reactome.org interactions or not.
 
 class GOTerm(CostumNode):
     element_type = "GOTerm"

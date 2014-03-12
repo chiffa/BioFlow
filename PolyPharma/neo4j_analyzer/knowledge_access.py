@@ -355,11 +355,13 @@ def get_GO_Term_occurences(Importance_Dict,flat):
         
 
 def align_names2SP():
-    from PolyPharma.Utils.UNIPROT_Parser import names_Dict
+    from PolyPharma.Utils.UNIPROT_Parser import get_Names_dict
     # If overington, switch comments on the two next lines
     # from configs import Targets_dict2 as Targets_dict
     # from congigs import Targets_File2 as Targets_File
     from PolyPharma.configs import Targets_dict, Targets_File
+
+    names_Dict = get_Names_dict()
     Fle=file(Targets_File,'r')
     FileDict={}
     i=0

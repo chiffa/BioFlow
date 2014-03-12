@@ -6,13 +6,17 @@ Created on Jul 26, 2013
 
 import pickle
 
+# TODO: input the aboundances into the database, relative to the uniprot terms
+
 def compute_Prot_Aboundances():
     '''
     performs a computationally expensive part of protein aboundance computation
     and stores the result in a pickle file
     '''
-    from UNIPROT_Parser import access_dict
-    from configs import Prot_abound 
+    from PolyPharma.Utils.UNIPROT_Parser import get_access_dicts
+    from PolyPharma.configs import Prot_abound
+
+    access_dict = get_access_dicts()
     SP2Aboundances={}
     Fle=file(Prot_abound,'r')
     i=0
@@ -46,7 +50,7 @@ def load_Prot_Aboundances():
 def load_Prot_Aboundances_NodeIDs():
     SP2Aboundances=pickle.load(file('../Utils/SP2Aboundaces.dump','r'))
     ID2Aboundances={}
-    from neo4j_analyzer.knowledge_access import convert_SP_to_IDs
+    from PolyPharma.neo4j_analyzer.knowledge_access import convert_SP_to_IDs
     SP2IDs=convert_SP_to_IDs(SP2Aboundances.keys())
     for key,val in SP2Aboundances.iteritems():
         if key in SP2IDs.keys():

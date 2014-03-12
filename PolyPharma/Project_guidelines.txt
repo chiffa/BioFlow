@@ -133,6 +133,62 @@ To be treated:
 
     # Group node definintion have to be corrected so they are not all related together but instead are linked towards the central "group" node!!!!
 
+
+    # Shut down HiNT analysis => Slightly improves the result
+
+    # Synchronious eigenvectors approach: protect agains entering into a forbidden list the target node
+    # start iterating matrix multiplications starting from the node1 to go to the node2
+    # enter each node visited in the forbidden set, except for node2
+    # terminate iterating when there are no more new reaches for node2 after all the interations
+
+    # Percentage of information reaching a given node compared to all the information reaching the node: eigenvalue approach too.
+    # Error we do: compute three times
+
+    # Ok, what is going on is that we have collections of ~ 300 elements completely screwing our system
+
+    # The problem that a information broadcasting between the elements of the same group is not a good thing, but a direct broadcasting into a reaction is actually
+    # what we need in our matrix.
+
+
+    # In order to be precise, we should not only take in account the power of bindinb between a molecule and protein and criticality of the protein, but also the abundance of the
+    # protein in the reactome
+
+    # => Done with the aboundance retrieval
+
+    # DONE: use sparse matrixes routines to calculate the number of connex elements in the graph
+    #   Problem: there are 58 disconnected sets.
+    #   Solution: retrieve the Node Ids of the main connex Set and write them into the neo4j graph, then retrieve only them
+
+    # DONE: markup of the major connex graph within neo4j database
+    #    Waiting for the execution
+
+
+    # DONE: calculate the distance graph
+        # seems to work pretty well with Djikistra.
+        # Can we perform a retrieval of specific nodes within distance X of the main component?
+
+    # DONE: buid jump tables to compute the number of reactional transitions
+    #    Implemented by using djikstra algo from scipy.sparse.csgraph
+    #
+
+    # DONE: retrieve Pamela silver's degradation of the data with the time
+    #    Waiting for the execution
+    #
+
+    # DONE: pull in the annotations regarding the proteins aboundances
+    #
+    #
+
+    # DONE: pull in the 300 essential targets from the EBI dude (John Overington)
+    #     Results aren't so conclusive. It seems that the protein concentration defenitely plays some role in the determining if a protein is a
+    #     Target of an existing drug or not, butthe informativity seems not. Probably this is due to the fact that the targeted proteins are often
+    #     cellular receptors.
+
+    # DONE: perform a localization factor pull-out for the Uniprots based on their proteins of attachement
+    #        Waiting for the execution
+
+    # DONE: broadcast to uniprots for the localization of the pointed proteins
+
 General programming:
 ===================
 
