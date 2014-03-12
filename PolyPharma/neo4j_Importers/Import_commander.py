@@ -18,6 +18,9 @@ from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
 from Hint_importer import cross_ref_HiNT
 import sys
 
+#TODO: add the aboundance import
+#TODO: add the derivative importance contribution
+
 # #################################
 # # redirecting all to a log file
 # f = open('../logs/Commander_logs.log','w')

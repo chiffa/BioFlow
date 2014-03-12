@@ -6,34 +6,34 @@ This module contains all the routines that are respojnsible for pulling
 the matrixes out of the neo4j graph and processing them
 
 '''
-from PolyPharma.configs import Dumps
 import copy
-from scipy.sparse import lil_matrix
-# from scipy.sparse.linalg import eigsh
-# import itertools
-# from time import time
-import pickle
-import numpy as np
 import operator
-# from os import listdir
 import random
-# noinspection PyUnresolvedReferences
-from scikits.sparse.cholmod import cholesky
+import pickle
+import pylab
+import numpy as np
+from itertools import combinations, repeat
+from scipy.sparse import lil_matrix
 from scipy.sparse import csc_matrix
 from scipy.sparse import diags
-ID2Aboundances = {}
-import pylab
-# import math
+# noinspection PyUnresolvedReferences
+from scikits.sparse.cholmod import cholesky
+from PolyPharma.configs import Dumps
 from Matrix_Interactome_DB_interface import MatrixGetter
 
+ID2Aboundances = {}
 
+# NOTE: in case of creation of a fixture to test the class functionalities, the fixture object should be imported instead of MG and fake it's objects.
 MG = MatrixGetter(True, False)
 MG.fast_load()
 
 
-# TODO: we need to refactor the filtering system
-
 def _characterize(Objkt):
+    """
+    Small snipped used to debug unexpected behavior of matrix/ndarray/sparse matrix mixtures
+
+    :param Objkt: object to characteize
+    """
     print Objkt.shape, Objkt.sum(),
     print len(Objkt.nonzero()[0]),
     print type(Objkt)
@@ -107,11 +107,10 @@ def processEigenVectors(nbiggest, Type='Adj'):
 
 
 def columnSort():
-    '''
+    """
     Computes the degree of adjacency for each node and writes it out in a human-readable format to a file specified in
     Dumps.Adj_degree
-    '''
-
+    """
     summat = MG.Ajacency_Matrix.sum(axis=1)
     sorts = summat.argsort(axis=0)
 
@@ -125,34 +124,8 @@ def columnSort():
     outf.close()
 
 
-# def get_voltages(numpy_array, InformativityDict):
-#     """
-#     Deprecated.
-#     This method seems to compute the voltages from several computation
-#
-#     :param numpy_array: array of voltages on each node resulting from the computation
-#     :param InformativityDict:
-#     """
-#     for i in range(0, len(numpy_array)):
-#         InformativityDict[MG.MatrixNumber2NodeID[i]] += numpy_array[i, 0]
-#
-#
-#
-# def create_InfoDict():
-#     """
-#     Deprecated
-#     Creates a dict mapping all the DB NodeIDs to zero. Might be a home-brewed alternative to collections.defaultdict
-#
-#     :return: dict
-#     """
-#     new_dict={}
-#     for val in MG.MatrixNumber2NodeID.itervalues():
-#         new_dict[val]=0.0
-#     return new_dict
-
-
 def compute_sample_circulation_intensity_minimal(Sample, epsilon=1e-10):
-    '''
+    """
     performs the information circulation calculation in agreement with the publication by Misiuro et al, but with algorithm slightly modified for 
     more rapid computation of information circulation.
 
@@ -164,45 +137,42 @@ def compute_sample_circulation_intensity_minimal(Sample, epsilon=1e-10):
     :param epsilon: corrective factor for the calculation of Cholesky matrix. defaults to 1e-10
     :type epsilon: float
     :return: the informativity array
-    
-    '''
+    """
 
-    InformativityArray = np.zeros(( MG.Conductance_Matrix.shape[0], 1))                                # Database ID to Informativity
+    InformativityArray = np.zeros(( MG.Conductance_Matrix.shape[0], 1))
     Solver = cholesky(csc_matrix(MG.Conductance_Matrix), epsilon)
 
     print 1, MG.time()
     print Sample
     print len(Sample)
-    for i in range(0,len(Sample)):
-        print '\n', 2, i, MG.time()
-        for j in range(i,len(Sample)):
-            if j%25 == 24:
-                print '*',
-            J = np.zeros((MG.Conductance_Matrix.shape[0], 1))   #TODO: refactor to use itertools.combinations
-            J[Sample[i],0] = 1.0
-            J[Sample[j],0] = -1.0
-            V = Solver(J)
-            Current = get_Current_all(V, J)
-            InformativityArray += Current
+
+    for i,j in combinations(Sample,2):
+        J = np.zeros((MG.Conductance_Matrix.shape[0], 1))
+        J[i, 0] = 1.0
+        J[j,0] = -1.0
+        V = Solver(J)
+        Current = get_Current_all(V, J)
+        InformativityArray += Current
     return InformativityArray
 
 
 def compute_sample_circulation_intensity(Sample, epsilon=1e-10, array_v=''):
-    '''
+    """
+    Attention, this method shoyld never be called. Normally all the major IO operations on information arrays should be performed with the compute and store
+    circulation method
+
     performs the information circulation calculation in agreement with the publication by Misiuro et al, but with algorithm slightly modified for 
     more rapid computation of information circulation
     
-    :param array_v:
+    :param array_v: Array version, allowing it to vbe differentiated from other arrays on storage
     :param Sample: List of row/column numbers that are to be used in the computation (~170 for a computation converging in less then an hour)
     :type Sample: list of ints
     
     :param epsilon: corrective factor for the calculation of Cholesky matrix. defaults to 1e-10
     :type epsilon: float
-    
-    '''
-    # NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))
+    """
     InformativityArray = compute_sample_circulation_intensity_minimal(Sample, epsilon)
-    name = 'InfoArray_new'+str(array_v)+'.dump'   # TODO: change the undump behavior here to a MongoDB call
+    name = Dumps.InfoArray+str(array_v)+'.dump'
     pickle.dump(InformativityArray, file(name, 'w'))
     return InformativityArray
 
@@ -224,13 +194,14 @@ def Compute_circulation_intensity(epsilon=1e-10):
 
 def Compute_random_sample(sample_size, iterations, epsilon=1e-10, name_version=''):
     '''
-    performs the information circulation calculation in agreement with the publication by Misiuro et al, but with algorithm slightly modified for
+    Performs the information circulation calculation in agreement with the publication by Misiuro et al, but with algorithm slightly modified for
     more rapid computation of information circulation
-
-    Unlike them ethod above, if the sample size is under 170, it converges in an hour instead of months.
+    Unlike them Method above, if the sample size is under 170, it converges in an hour instead of months.
 
     :warning: it's computations are not reliable, since it computes a full informativity within a restricted set of proteins.
-
+    :param sample_size: Size of elements to randomly pull out of the uniprot list
+    :param iterations: Number of random pulls to perform from the uniprot list to get all the interesing thigns
+    :param name_version: suffix to add to the name before the storage to distinguish from the previous iterations.
     :param epsilon: corrective factor for the calculation of Cholesky matrix. defaults to 1e-10
     :type epsilon: float
 
@@ -244,23 +215,32 @@ def Compute_random_sample(sample_size, iterations, epsilon=1e-10, name_version='
 
 def Compute_truly_random_sample(rounds, iterations, epsilon, name_version=''):
     """
-    Performs a computation of information circulation for pairs of randomly selected pairs of nodes
+    Performs a computation of information circulation for pairs of randomly selected pairs of nodes.
+    Unlike the previous method, it doesn't have a group biais; and the whole matrix is supressed for n repetitions of
+    information transfer. Only the nodes that transport any information in addition to their own (i.e.) non-isolated
+    and non-leaf nodes. The result is returned and dumped as a new array that is name-versionned with the name_version
+    argument.
 
-    :param rounds:
-    :param iterations:
-    :param epsilon:
-    :param name_version:
+    Historically this method was used to calibrate the information circulation and rapidly find proteins that were
+    transporting the most information
+
+    :param rounds: times random pairs will be selected
+    :param iterations: full rounds of informativity computation, each time informativity being added. More or less redoundant with rounds: the total number of iterations is iterations*rounds
+    :param epsilon: fudge, preventing overflow
+    :param name_version: calculation-specific string allowing to differnetiate the dump from the rest
     """
-    Solver = cholesky(csc_matrix(MG.Conductance_Matrix),epsilon)
+    Solver = cholesky(csc_matrix(MG.Conductance_Matrix), epsilon)
 
     for i in range(0, iterations):
         InformativityArray = np.zeros((MG.Conductance_Matrix.shape[0], 1))
         print 'iteration', i, MG.time()
 
-        L1, L2 = (MG.Uniprot_Mat_idxs.copy(),MG.Uniprot_Mat_idxs.copy())
-        random.shuffle(L1)
-        random.shuffle(L2)
-        List_of_pairs = zip(L1, L2)
+        List_of_pairs = []
+        for _ in repeat(None,rounds):
+            L1, L2 = (MG.Uniprot_Mat_idxs.copy(),MG.Uniprot_Mat_idxs.copy())
+            random.shuffle(L1)
+            random.shuffle(L2)
+            List_of_pairs += zip(L1, L2)
 
         j = 0
         for pair in List_of_pairs:
@@ -276,40 +256,42 @@ def Compute_truly_random_sample(rounds, iterations, epsilon, name_version=''):
         CorrInf = np.zeros((MG.Conductance_Matrix.shape[0], 1))
         CorrInf[:] = rounds # names how many times each element was called to communicate with a different one.
         InformativityArray = InformativityArray - CorrInf
-        name = 'InfoArray_new'+str(name_version)+str(i)+'.dump'   # TODO: change the undump behavior here to a MongoDB call
+        name = Dumps.InfoArray+str(name_version)+str(i)+'.dump'
         Fle = file(name,'w')
         pickle.dump(InformativityArray,Fle)
         Fle.close()
         
 
 def Analyze_relations(Current, number, AdditionalInfos=None):
-    '''
-    Just a way to print out the nodes making pass the most of the current
-    
+    """
+    Just a way to print out the nodes making pass the most of the current.
+
+    Historically a reporting function, not essential for the matrix manipulation. Should be moved elsewhere.
+
     :param Current: current running through the graph laplacian of a current system.
     :type Current: numpy array
       
     :param number: the number of the most important relations one wants to observe
     :type number: integer
-    
-    '''
+
+    :param AdditionalInfos: controls if additional informations will be added to the output. Defaults to None
+
+    """
+    # TODO: move this function elsewhere; it is a formatting-for output, not essential for processing function
+    # TODO: replace buffered string concatenation by ','.join(arglist)
+
     writer = file('Current_Analysis.csv','w')
     infos = np.absolute(Current)
     initLine = 'ID'+'\t'+'Mean Informativity'+'\t'+'Type'+'\t'+'Standard deviation'+'\t'+'Pessimistic Info estimation'
     initLine += '\t'+'optimistic Info estimation'+'\t'+'Protein Aboundace'+'\t'+'Essential for Overington'+'\t'+'GO Name'
     initLine += '\t'+'GO ID'+'\t'+'Score'+'\t'+'displayName'+'\t'+'localization'+'\n'
-
     writer.write(initLine)
-    if AdditionalInfos == None:
+    if AdditionalInfos is None:
         for i in range(0,min(number,len(infos))):
             locmax = np.argmax(infos)
             Buffer = ''
             Buffer += str(MG.MatrixNumber2NodeID[locmax])+'\t'+str(float(infos[locmax]))+'\t'
-            print MG.MatrixNumber2NodeID[locmax], float(infos[locmax]),'\t',
             Buffer += str(MG.ID2Type[MG.MatrixNumber2NodeID[locmax]])+'\t'
-            print MG.ID2Type[MG.MatrixNumber2NodeID[locmax]], '\t',
-            Buffer += str(MG.ID2displayName[MG.MatrixNumber2NodeID[locmax]])+'\n'
-            print MG.ID2displayName[MG.MatrixNumber2NodeID[locmax]]
             infos[locmax] = 0.0
             writer.write(Buffer)
     else:
@@ -317,20 +299,16 @@ def Analyze_relations(Current, number, AdditionalInfos=None):
             locmax = np.argmax(infos)
             Buffer = ''
             Buffer += str(MG.MatrixNumber2NodeID[locmax])+'\t'+str(float(infos[locmax]))+'\t'
-            print MG.MatrixNumber2NodeID[locmax], float(infos[locmax]),'\t',
             Buffer += str(MG.ID2Type[MG.MatrixNumber2NodeID[locmax]])+'\t'
-            print MG.ID2Type[MG.MatrixNumber2NodeID[locmax]], '\t',
             for elt in AdditionalInfos[locmax,:].tolist():
                 if str(elt) != str(0.0):
                     Buffer += str(elt)+'\t'
-                    print elt, '\t',
                 else:
                     Buffer += '\t'
             Buffer += str(MG.ID2displayName[MG.MatrixNumber2NodeID[locmax]])
             if MG.MatrixNumber2NodeID[locmax] in MG.ID2Localization.keys():
                 Buffer += '\t'+str(MG.ID2Localization[MG.MatrixNumber2NodeID[locmax]])
             Buffer += '\n'
-            print MG.ID2displayName[MG.MatrixNumber2NodeID[locmax]]
             infos[locmax] = 0.0
             writer.write(Buffer)
     writer.close()
@@ -382,64 +360,6 @@ def get_Current_all(Voltages, J):
     absol = sm.multiply(sign)
     Currents = (np.array(absol.sum(axis=0).T) + np.absolute(J)) / 2.0
     return Currents
-
-    
-# def stats_over_random_info_circ_samples(UniProtAttachement=True):
-#     from PolyPharma.Utils.Prot_Aboundances import ID2Aboundances
-#     UPNode_IDs_2Proteins_IDs_List = MG.Uniprot_attachments
-#     NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))   # TODO: change the undump behavior here
-#     DicList=[]
-#     FnameList=[]
-#     Filenames = listdir('.')
-#     for filename in Filenames:    # TODO: change the undump behavior here
-#         if 'InfoArray_new' in filename:
-#             FnameList.append(filename)
-#     for fname in FnameList:
-#         DicList.append(pickle.load(file(fname,'r')))
-#     Stats_Mat=np.concatenate(tuple(DicList),axis=1)
-#     MeanInfos=np.mean(Stats_Mat,axis=1).reshape((Stats_Mat.shape[0],1))
-#     STDInfos=np.std(Stats_Mat,axis=1).reshape((Stats_Mat.shape[0],1))
-#     # Check if STD>MEANInfos
-#     for LineID in range(0,Stats_Mat.shape[0]):
-#         if MeanInfos[LineID,0] < STDInfos[LineID,0]:
-#             print LineID, MatrixNumber2NodeID[LineID],'|',MeanInfos[LineID,0], STDInfos[LineID,0]
-#             print Stats_Mat[LineID,:]
-#             print '<==============================>'
-#     if UniProtAttachement:
-#         # @attention: this is a temporary patch.
-#         # TODO: A full implementation would require several iterations of eHiT propagation and then
-#         # several more iterations of Reactome.org propagation.
-#         for UP_ID in UPNode_IDs_2Proteins_IDs_List.keys():
-#             if len(UPNode_IDs_2Proteins_IDs_List[UP_ID])>1:
-#                 print UP_ID, 'problem!!!!'
-#             else:
-#                 Prot_ID=UPNode_IDs_2Proteins_IDs_List[UP_ID][0]
-#                 if Prot_ID in NodeID2MatrixNumber.keys():
-#                     MeanInfos[NodeID2MatrixNumber[UP_ID],0]+=MeanInfos[NodeID2MatrixNumber[Prot_ID],0]
-#                     ID2Localization[UP_ID]=ID2Localization[Prot_ID]
-#                     STDInfos[NodeID2MatrixNumber[UP_ID],0]=math.sqrt(STDInfos[NodeID2MatrixNumber[UP_ID],0]**2+STDInfos[NodeID2MatrixNumber[Prot_ID],0]**2)
-#     pessimist=MeanInfos-1.97*STDInfos
-#     optimist=MeanInfos+1.97*STDInfos
-#     aboundances=np.zeros((Stats_Mat.shape[0],1))
-#     errcount1=0
-#     for key,val in ID2Aboundances.iteritems():
-#         if key in NodeID2MatrixNumber.keys():
-#             aboundances[NodeID2MatrixNumber[key],0]=val
-#         else:
-#             errcount1+=1
-#     Overingtonicitiy=np.zeros((Stats_Mat.shape[0],1))
-#     Overington_IDList=pickle.load(file('IDList.dump','r'))   # TODO: change the undump behavior here
-#     errcount2=0
-#     finmatrix=pickle.load(file('finmatrix.dump','r'))  # TODO: change the undump behavior here
-#     for ID in Overington_IDList:
-#         if ID in NodeID2MatrixNumber.keys():
-#             Overingtonicitiy[NodeID2MatrixNumber[ID],0]=1.0
-#         else:
-#             errcount2+=1
-#     print 'errcount from stats', errcount1, errcount2
-#     print STDInfos.shape, pessimist.shape, optimist.shape, aboundances.shape, Overingtonicitiy.shape, finmatrix.shape
-#     Additional=np.concatenate((STDInfos,pessimist,optimist,aboundances,Overingtonicitiy,finmatrix),axis=1)
-#     Analyze_relations(MeanInfos, 50000, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Additional)
 
 
 def check_Silverality(sample_size, iterations):
@@ -508,45 +428,44 @@ def analyze_Silverality():
         y3[i,0] = StatsDict[key][0]-StatsDict[key][1]
         i += 1
 
-    
     pylab.plot(x, y1, '-k', label='mean')
     pylab.plot(x, y2, '-r', label='mean+std')
     pylab.plot(x, y3, '-b', label='mean-std')
     pylab.legend(loc='upper right')
     pylab.show()
 
-#     array1=np.zeros((len(Silverality_List),1))
-#     array2=np.zeros((len(Silverality_List),1))
-#     
-#     for i in range(0, len(Silverality_List)):
-#         array1[i,0]=Silverality_List[i][0]
-#         array2[i,0]=Silverality_List[i][1]
-#     pylab.plot(array1, array2)
-#     pylab.show()
-    # TODO: perform statistical analysis
 
 
 def Compute_and_Store_circulation(handle, List_of_UPs, mongo_db_collection):
     """
+    Computes information circulation for a set of uniprots, then pickles the result stores them in a mongoDB
 
-    :param handle:
-    :param List_of_UPs:
-    :param mongo_db_collection:
-    :return:
+    :param handle: name of the entity to store under the ID
+    :param List_of_UPs: list of Uniprot Nodes on which we are willing to perform the retrieval and storage
+    :param mongo_db_collection:  pymongo mongoDB client attachement
+    :return: Informativity array that was stored
     """
     print 'entering computation for: ', handle, 'with', len(List_of_UPs), 'UPs'
     re_UP_List = []
     for elt in List_of_UPs:
         if elt in MG.NodeID2MatrixNumber.keys():
             re_UP_List.append(MG.NodeID2MatrixNumber[elt])
+
     Informativity_Array = compute_sample_circulation_intensity_minimal(re_UP_List)
     UPs_Set = pickle.dumps(set(List_of_UPs))
-    post = {'GO_ID':handle, 'UP_Set':UPs_Set, 'Info_Array':pickle.dumps(Informativity_Array)}
+    post = {'GO_ID': handle, 'UP_Set':UPs_Set, 'Info_Array':pickle.dumps(Informativity_Array)}
     mongo_db_collection.insert(post)
     return Informativity_Array
 
 
 def Compute_ponderated_info_circulation(UPs_2Binding_Affs):
+    """
+    Should compute the information circulation wehre the flowing information is ponderated by the importance a given
+    protein has for our analysis.
+
+    :param UPs_2Binding_Affs: Dictionary linking UniprotNode_IDs to their relative importances for the ponderated information circ. calculation
+    :raise NotImplementedError: It is not implemented yet
+    """
     raise NotImplementedError
 
 
@@ -555,91 +474,32 @@ if __name__ == "__main__":
     # checkMatrix()
     # processEigenVectors(15,Type = 'Cond')
     # columnSort()
-    lst = [22811, 18147, 13023]
-    compute_sample_circulation_intensity_minimal(lst)
-    check_Silverality(10, 100)
-    analyze_Silverality()
+    # lst = [22811, 18147, 13023]
+    # print compute_sample_circulation_intensity_minimal(lst)
+    # check_Silverality(10, 100)
+    # analyze_Silverality()
+    pass
 
 
+# TODO: for a double node and a single node computation, add internode voltage in addition to the information flow.
+    # the formula is actually J_convolve_Voltages_times_J.T
 
-
-# TODO: compute the whole ensemble of the nodes perturbed by the protein
-        # segment them with the voltage-based interaction
-        # retrieve segments
-        # for each segment compute the most critical protein (hidden variable)
-        # compute the annotation ponderated by hte importance for all of the proteins significantly affectd by the conductance calculation 
-        # (don't forget to divide by n each node), where n is the 
-        # compare the significance of the protein affected to the information circulation in the whole interactome
-
-
-
-
-# TODO: compute the ponderated Information circulation: use protein aboundances. The other one is assumed to be inhibition power biasis
-        # then extract summary GO terms based on the Uniprot affection data
-
-# TODO: along with Overingtonicity integrate the list of essential genes in human diseases from the PLoS 2011 publication
-
-# DONE: reverse GO_Access: provided the Uniprots find the proteins carrying over the most information
-# DONE: mount a PyMongo data store in order to be able to save and retrieve the programming objects easily
-#         How is it done: - picket to string
-#        Store an object in a collection defined by it's Id and computation number
-#        If requested, retrieve by ID or else
-#         Index on the GO ID and belonging UNIPROTs (If same set of uniprots, it is the same) => store as sets
-#         Pickles of sets with the same elements are always the same
-
-# Importance of complementation of the information with the Reactome.org data with the EHiT data: otherwise the information circulation completely sucks
-# Reactome.org: the interactions due to kinases aren't explicitly shown. Instead a broadcasting through the secondary features that perform the modification
-# Is needed. Which is completely stupid, because it doesn't show the specific action on the proteins due to the conformation modification. Thus Reactome.org
-# is more of a ressource for human experts then for truly machine-learning tasks.
-
-# TODO:
-# Compute the voltages during the computation to determine what would be the current between two nodes at a given current. 
-# Compute the currents at a given voltage for each GO term pair.
-# Create GO_Term - specific proximity matrix, and store it with the others for the later clustering
+# TODO: Compute the voltages during the computation to determine what would be the current between two nodes at a given potential difference.
+# TODO: Compute the currents at a given voltage for each GO term pair.
+# TODO: Create GO_Term - specific proximity matrix, and store it with the others for the later clustering
 
 # TODO: compute the purities of main action: 3 most important contibutions to GO terms, then pull them into a correct position and comprare
-# - Importance
-# - purity
-# - possible clustering => use the BEA algo from the Part 1 of the internship
+    # - Importance
+    # - purity
+    # - possible clustering => use the BEA algo from the Part 1 of the internship
 
-# Perform_Loading_Routines()
-# 
-# stats_over_random_info_circ_samples(True)
-# 
-# check_Silverality(100,100)
-# 
-# analyze_Silverality()
-# Compute_truly_random_sample(2,3,1e-10, '1_')
-# 
-# stats_over_random_info_circ_samples(True)
-# 
-# this is going to last for a while. Now we need to get it split among several nodes
-#
-# <================================================>
-#
-# checkMatrix()
-# 
-# get_eigenvect_Stats()
-# 
-# processEigenVectors()
-# 
-# mass_Calibrate(6,10,True)
-#  
-# treat_Calibration()
-# 
-# columnSort()
-
-
-# DONE: remake the sampling so it is efficiently 170**2/2 one to one randomly chosen pairs that are calculated, and not the whole 170 ensemble, so that the 
-# Informativities actually follow a gaussian distribution
-
-
-# TODO: There might be an error in the module responsible for linkage between the uniprots and the accession numbers: for instance the 20253 has an annotation with an Acnum, but
-# has no Uniprot attached to it within the database
-
-# TODO: create GO and Pathway Structure access
-# Calibrate the values so that after ~ 3 transitions the correlation vanishes on average (Follow Pamela Silver Approach) => this is actually the cumulated perturbation of
-# two targets that shoudl vanish totally 
+# TODO: compute the whole ensemble of the nodes perturbed by the protein
+        # * segment them with the voltage-based interaction
+        # * retrieve segments
+        # * for each segment compute the most critical protein (hidden variable)
+        # * compute the annotation ponderated by the importance for all of the proteins significantly affectd by the conductance calculation
+        # * (don't forget to divide by n each node), where n is the
+        # * compare the significance of the protein affected to the information circulation in the whole interactome
 
 # TODO: implementation while using Ehit interactions only
 
