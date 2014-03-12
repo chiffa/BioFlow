@@ -1,8 +1,10 @@
-'''
-Created on 12 mai 2013
-@author: Andrei Kucharavy
+__author__='ank'
+"""
+:created: 12 mai 2013
+:@author: Andrei Kucharavy
+
 Holds all the configurations of the environmental variables for the whole project
-'''
+"""
 
 from PolyPharma.Utils.ConfigParsers.Configs_parser import parse_configs, sourcefile_compilator
 from pprint import PrettyPrinter
@@ -75,20 +77,22 @@ Conductance_Matrix_Dict = {"Group":0.5,
 
 class Dumps(object):
     prefix = str(path.abspath(path.dirname(__file__)+'/dumps'))
-    matrix_LS = 'dump5.dump'
-    matrix_corrs = 'dump2.dump'
-    eigen_VaMat = 'eigen_valmat.csv'
-    eigen_ConMat = 'eigen_conmat.csv'
-    val_eigen = 'pickleDump.dump'
-    cond_eigen = 'pickleDump_0_5.dump'
-    ValMat = 'pickleDump3.dump'
-    ConMat = 'pickleDump4.dump'
-    UniP_att = 'UP_Attach.dump'
-    Main_Connex_group = 'Connex_group.dump'
+    matrix_LS = prefix + '/dump5.dump'
+    matrix_corrs = prefix + '/dump2.dump'
+    eigen_VaMat = prefix + '/eigen_valmat.csv'
+    eigen_ConMat = prefix + '/eigen_conmat.csv'
+    val_eigen = prefix + '/pickleDump.dump'
+    cond_eigen = prefix + '/pickleDump_0_5.dump'
+    ValMat = prefix + '/pickleDump3.dump'
+    ConMat = prefix + '/pickleDump4.dump'
+    UniP_att = prefix + '/UP_Attach.dump'
+    Main_Connex_group = prefix + '/Connex_group.dump'
     Forbidden_IDs = prefix + '/ForbiddenIDs.dump'
     Adj_degree = prefix + '/Adjacency_degree.csv'
     Silverality = prefix + '/Silverality.dump'
     InfoArray = prefix + '/sample_array'
+    Up_dict_dump = prefix + '/Uniprot_dict.dump'
+    GO_dump = prefix + '/GO.dump'
 
 Leg_ID_Filter = ['H+', 'ATP', 'GTP', 'Pi', 'H2O', 'ADP', 'PPi', 'GDP', 'O2', 'CO2', 'NTP',]
 

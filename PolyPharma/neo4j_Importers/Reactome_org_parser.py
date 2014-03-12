@@ -18,6 +18,7 @@ import PolyPharma.configs as conf
 ####################################################################################
 
 # TODO: export logs location to the configs file
+# TODO: rebuild to avoid import attempts on simple module load
 
 logging.basicConfig(level=logging.DEBUG,
                     format='%(levelname)-8s %(message)s',
@@ -31,14 +32,6 @@ formatter = logging.Formatter('%(levelname)-8s %(message)s')
 console.setFormatter(formatter)
 logging.getLogger('').addHandler(console)
 
-####################################################################################
-#
-# Initial parse of all the elements in the Reactome BioPax package
-#
-####################################################################################
-
-tree = ET.parse(conf.ReactomeBioPax)
-root = tree.getroot()
 
 ####################################################################################
 #
@@ -110,7 +103,7 @@ def zipDicts(dict1,dict2):
 #
 ####################################################################################
 
-def parse_BioSource():
+def parse_BioSource(root):
     BioSourcesXml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}BioSource')
     for single_bio_source in BioSourcesXml:
         key=single_bio_source.attrib.values()[0]
@@ -119,7 +112,7 @@ def parse_BioSource():
                 BioSources[key]=bio_source_ref_property.text
                 break
     
-def parse_CellularLocations():
+def parse_CellularLocations(root):
     CellularLocationsXml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}CellularLocationVocabulary')
     for single_cellular_location in CellularLocationsXml:
         key=single_cellular_location.attrib.values()[0]
@@ -127,7 +120,7 @@ def parse_CellularLocations():
             if '}term' in loc_ref.tag:
                 CellularLocations[key]=loc_ref.text
     
-def parse_SeqModVoc():    
+def parse_SeqModVoc(root):
     SeqModVocXml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}SequenceModificationVocabulary')
     for single_SeqMod in SeqModVocXml:
         key=single_SeqMod.attrib.values()[0]
@@ -135,7 +128,7 @@ def parse_SeqModVoc():
             if '}term' in mod_ref.tag:
                 SeqModVoc[key]=mod_ref.text
 
-def parse_SeqSite():
+def parse_SeqSite(root):
     SeqSiteXml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}SequenceSite')
     for single_SeqSite in SeqSiteXml:
         key=single_SeqSite.attrib.values()[0]
@@ -149,7 +142,7 @@ def parse_SeqSite():
 #
 ####################################################################################
 
-def parse_DnaRefs():
+def parse_DnaRefs(root):
     DnaRefsXml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}DnaReference')
     for single_Dna_Ref in DnaRefsXml:
         key=single_Dna_Ref.attrib.values()[0]
@@ -167,7 +160,7 @@ def parse_DnaRefs():
             if '}organism' in dna_ref_property.tag and dna_ref_property.attrib.values()[0][1:]!='BioSource1':
                 DnaRefs[key]['organism']=BioSources[dna_ref_property.attrib.values()[0][1:]]
     
-def parse_RnaRefs():
+def parse_RnaRefs(root):
     RnaRefsXml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}RnaReference')
     for single_Rna_Ref in RnaRefsXml:
         key=single_Rna_Ref.attrib.values()[0]
@@ -199,7 +192,7 @@ def parse_RnaRefs():
             if '}organism' in rna_ref_property.tag and rna_ref_property.attrib.values()[0][1:]!='BioSource1':
                 RnaRefs[key]['organism']=BioSources[rna_ref_property.attrib.values()[0][1:]]
     
-def parse_SmallMoleculeRefs():
+def parse_SmallMoleculeRefs(root):
     SmallMoleculeRefsXml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}SmallMoleculeReference')
     for single_SmallMolecule_Ref in SmallMoleculeRefsXml:
         key=single_SmallMolecule_Ref.attrib.values()[0]
@@ -217,7 +210,7 @@ def parse_SmallMoleculeRefs():
             if '}organism' in SmallMolecule_ref_property.tag and SmallMolecule_ref_property.attrib.values()[0][1:]!='BioSource1':
                 SmallMoleculeRefs[key]['organism']=BioSources[SmallMolecule_ref_property.attrib.values()[0][1:]]
     
-def parse_ProteinRefs(): 
+def parse_ProteinRefs(root):
     ProteinRefsXml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}ProteinReference')
     for single_Protein_Ref in ProteinRefsXml:
         key=single_Protein_Ref.attrib.values()[0]
@@ -235,7 +228,7 @@ def parse_ProteinRefs():
             if '}organism' in protein_ref_property.tag and protein_ref_property.attrib.values()[0][1:]!='BioSource1':
                 ProteinRefs[key]['organism']=BioSources[protein_ref_property.attrib.values()[0][1:]]
     
-def parse_ModificationFeatures():
+def parse_ModificationFeatures(root):
     ModificationFeatureXml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}ModificationFeature')
     for single_ModificationFeature in ModificationFeatureXml:
         key=single_ModificationFeature.attrib.values()[0]
@@ -269,7 +262,7 @@ def MetaParser_SecLoop(LocDic,local_property,CollectionMarker):
         LocDic['collectionMembers'].append(local_property.attrib.values()[0][1:])
     return CollectionMarker
 
-def parse_Dnas():
+def parse_Dnas(root):
     Dnas_Xml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}Dna')
     for single_Dna in Dnas_Xml:
         key=single_Dna.attrib.values()[0]
@@ -285,7 +278,7 @@ def parse_Dnas():
             del LocalDict['collectionMembers']
             Dnas[key]=LocalDict
     
-def parse_Rnas():
+def parse_Rnas(root):
     Rnas_Xml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}Rna')
     for single_Rna in Rnas_Xml:
         key=single_Rna.attrib.values()[0]
@@ -301,7 +294,7 @@ def parse_Rnas():
             del LocalDict['collectionMembers']
             Rnas[key]=LocalDict
     
-def parse_SmallMolecules():
+def parse_SmallMolecules(root):
     SmallMolecules_Xml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}SmallMolecule')
     for single_SmallMolecule in SmallMolecules_Xml:
         key=single_SmallMolecule.attrib.values()[0]
@@ -317,7 +310,7 @@ def parse_SmallMolecules():
             del LocalDict['collectionMembers']
             SmallMolecules[key]=LocalDict
 
-def parse_Proteins():
+def parse_Proteins(root):
     Proteins_Xml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}Protein')
     for single_Protein in Proteins_Xml:
         key=single_Protein.attrib.values()[0]
@@ -337,7 +330,7 @@ def parse_Proteins():
             del LocalDict['collectionMembers']
             Proteins[key]=LocalDict
     
-def parse_PhysicalEntities():
+def parse_PhysicalEntities(root):
     PhysicalEntities_Xml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}PhysicalEntity')
     for single_PhysicalEntity in PhysicalEntities_Xml:
         key=single_PhysicalEntity.attrib.values()[0]
@@ -351,7 +344,7 @@ def parse_PhysicalEntities():
             del LocalDict['collectionMembers']
             PhysicalEntities[key]=LocalDict
     
-def parse_Complexes():
+def parse_Complexes(root):
     Complex_Xml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}Complex')
     for single_Complex in Complex_Xml:
         key=single_Complex.attrib.values()[0]
@@ -368,7 +361,7 @@ def parse_Complexes():
             del LocalDict['collectionMembers']
             Complexes[key]=LocalDict
     
-def parse_TemplateReactions():
+def parse_TemplateReactions(root):
     TemplateReaction_Xml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}TemplateReaction')
     for single_TemplateReaction in TemplateReaction_Xml:
         key=single_TemplateReaction.attrib.values()[0]
@@ -382,7 +375,7 @@ def parse_TemplateReactions():
                 LocalDict['references']['name']=TemplateReaction_property.text
         TemplateReactions[key]=LocalDict
     
-def parse_Degradations():    
+def parse_Degradations(root):
     DegradationXml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}Degradation')
     for single_Degradation in DegradationXml:
         key=single_Degradation.attrib.values()[0]
@@ -396,7 +389,7 @@ def parse_Degradations():
                 LocalDict['references']['eCNumber']=Degradation_property.text
         Degradations[key]=LocalDict
     
-def parse_BiochemicalReactions():    
+def parse_BiochemicalReactions(root):
     BiochemicalReactionXml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}BiochemicalReaction')
     for single_BiochemicalReaction in BiochemicalReactionXml:
         key=single_BiochemicalReaction.attrib.values()[0]
@@ -412,7 +405,7 @@ def parse_BiochemicalReactions():
                 LocalDict['references']['eCNumber']=BiochemicalReaction_property.text
         BiochemicalReactions[key]=LocalDict
     
-def parse_Catalysises():    
+def parse_Catalysises(root):
     CatalysisesXml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}Catalysis')
     for single_Catalysis in CatalysisesXml:
         key=single_Catalysis.attrib.values()[0]
@@ -426,7 +419,7 @@ def parse_Catalysises():
                 Catalysises[key]['ControlType']=catalysis_property.text
     TemplateReactRegulationXml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}TemplateReactionRegulation')
     for single_TRR in TemplateReactRegulationXml:
-        key=single_Catalysis.attrib.values()[0]
+        key=single_TRR.attrib.values()[0]
         Catalysises[key]={}
         for TRR_property in single_TRR:
             if '}controlled' in TRR_property.tag:
@@ -447,7 +440,7 @@ def parse_Catalysises():
             if '}controlType' in control_property.tag and 'BiochemicalReaction' in control_property.attrib.values()[0]:
                 Catalysises[key]['ControlType']=control_property.text
     
-def parse_Modulations():    
+def parse_Modulations(root):
     ModulationsXml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}Modulation')
     for single_Modulation in ModulationsXml:
         key=single_Modulation.attrib.values()[0]
@@ -462,7 +455,7 @@ def parse_Modulations():
             if '}controlType' in modulation_property.tag:
                 Modulations[key]['controlType']=modulation_property.text
 
-def parse_Pathways():
+def parse_Pathways(root):
     PathwaysXml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}Pathway')
     for single_Pathway in PathwaysXml:
         key=single_Pathway.attrib.values()[0]
@@ -478,7 +471,7 @@ def parse_Pathways():
                 LocalDict['PathwayStep'].append(pathway_property.attrib.values()[0][1:])    
         Pathways[key]=LocalDict
 
-def parse_Pathway_Steps():
+def parse_Pathway_Steps(root):
     Pathway_Steps_Xml=root.findall('{http://www.biopax.org/release/biopax-level3.owl#}PathwayStep')
     exclude=['Modulation','Control','TemplateReactionRegulation', 'Catalysis']
     for single_Pathway_step in Pathway_Steps_Xml:
@@ -492,32 +485,43 @@ def parse_Pathway_Steps():
         PathwaySteps[key]=LocalDict
 
 def parse_all():
-    parse_BioSource()
-    parse_CellularLocations()
-    parse_SeqModVoc()
-    parse_SeqSite()
-    
-    parse_DnaRefs()
-    parse_RnaRefs()
-    parse_SmallMoleculeRefs()
-    parse_ProteinRefs()
-    parse_ModificationFeatures()
-    
-    parse_Dnas()
-    parse_Rnas()
-    parse_SmallMolecules()
-    parse_Proteins()
-    parse_PhysicalEntities()
-    parse_Complexes()
-    
-    parse_TemplateReactions()
-    parse_Degradations()
-    parse_BiochemicalReactions()
-    parse_Catalysises()
-    
-    parse_Modulations()
-    parse_Pathways()
-    parse_Pathway_Steps()
 
+
+    ####################################################################################
+    #
+    # Initial parse of all the elements in the Reactome BioPax package
+    #
+    ####################################################################################
+
+    tree = ET.parse(conf.ReactomeBioPax)
+    root = tree.getroot()
+
+
+    parse_BioSource(root)
+    parse_CellularLocations(root)
+    parse_SeqModVoc(root)
+    parse_SeqSite(root)
+    
+    parse_DnaRefs(root)
+    parse_RnaRefs(root)
+    parse_SmallMoleculeRefs(root)
+    parse_ProteinRefs(root)
+    parse_ModificationFeatures(root)
+    
+    parse_Dnas(root)
+    parse_Rnas(root)
+    parse_SmallMolecules(root)
+    parse_Proteins(root)
+    parse_PhysicalEntities(root)
+    parse_Complexes(root)
+    
+    parse_TemplateReactions(root)
+    parse_Degradations(root)
+    parse_BiochemicalReactions(root)
+    parse_Catalysises(root)
+    
+    parse_Modulations(root)
+    parse_Pathways(root)
+    parse_Pathway_Steps(root)
 
 parse_all()

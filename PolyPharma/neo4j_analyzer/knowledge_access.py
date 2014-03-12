@@ -18,6 +18,7 @@ from scipy.stats.kde import  gaussian_kde
 import numpy as np
 from pylab import plot, hist, show
 from PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface import MatrixGetter
+from PolyPharma.configs import Dumps
 
 MG = MatrixGetter(True, False)
 MG.fast_load()
@@ -27,163 +28,26 @@ GORegTypes = ["is_Regulant"]
 # TODO: add pathway analytics typings.
 # TODO: export the GO import into a separate Knowledge_access_DB_interface
 
-def import_TargetMappings():
-    pickleDump2=file('pickleDump2.dump','r')
-    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(pickleDump2)  #TODO": correct dumping here
-    pickleDump2.close()
-    return NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots
+# def import_TargetMappings():
+#     pickleDump2=file('pickleDump2.dump','r')
+#     NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(pickleDump2)  #TODO": correct dumping here
+#     pickleDump2.close()
+#     return NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots
+#
+# def import_RelMatrix():
+#     pickleDump3 = file('pickleDump3.dump','r')
+#     ValueMatrix = pickle.load(pickleDump3)  #TODO": correct dumping here
+#     pickleDump3.close()
+#     return ValueMatrix
 
-def import_RelMatrix():
-    pickleDump3 = file('pickleDump3.dump','r')
-    ValueMatrix = pickle.load(pickleDump3)  #TODO": correct dumping here
-    pickleDump3.close()
-    return ValueMatrix
 
-def compute_UniprotDict():
-    pickleDump2=file('pickleDump2.dump','r')
-    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots=pickle.load(pickleDump2)  #TODO": correct dumping here
-    pickleDump2.close()
-    UniprotDict={}
-    for elt in Uniprots:
-        node=DatabaseGraph.UNIPORT.get(elt)
-        altID=node.ID
-        UniprotDict[altID]=(elt,ID2displayName[elt])
-        UniprotDict[elt]=altID
-    Fle=file('Uniprot_Dict.dump','w')
-    pickle.dump(UniprotDict,Fle)  #TODO": correct dumping here
-    return UniprotDict
 
 def import_UniprotDict():
-    UniprotDict=pickle.load(file('Uniprot_Dict.dump','r'))  #TODO": correct dumping here
+    UniprotDict = pickle.load(file(Dumps.Up_dict_dump,'r'))
     return UniprotDict
 
-def get_GO_access(Filtr):
-    '''
-    Loads all of the relations between the UNIPROTs and GOs as one giant dictionary
-    @param Filtr: the List of GO types we would like to get loaded into our analysis
-    @type Filtr: list of strings
-    
-    @return RelDict: NodeID -> list of IDs of GO annotations nodes associated to it
-    @return SeedSet: List of GO nodes reached from the NodeID
-    '''
-    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = import_TargetMappings()
-    RelDict={}
-    SeedSet=set()
-    i=0
-    for ID in Uniprots:
-        LocList=[]
-        Root=DatabaseGraph.UNIPORT.get(ID)
-        generator = Root.bothV("is_go_annotation")
-        if generator!=None:
-            for GO in generator:
-                if GO.Namespace in Filtr:
-                    GOID=str(GO).split('/')[-1][:-1]
-                    LocList.append(GOID)
-                    SeedSet.add(GOID)
-        if LocList==[]:
-            i+=1
-            print "error!!!!!!", ID, ID2displayName[ID]
-        else:
-            RelDict[ID]=copy.copy(LocList)
-    print i
-    Fle=file('GO.dump','w')
-    pickle.dump((RelDict, SeedSet),Fle)  #TODO": correct dumping here
-    return RelDict, SeedSet
 
-def get_GO_structure(Filtr,seedSet):
-    '''
-    Loads all of the relations between the GOs that are generalisation of the seedList GOs and that are withing the types specified in Filtr
-    @param Filtr: the List of GO types we would like to get loaded into our analysis
-    @type Filtr: list of strings
-    
-    @param seedSet: set of GO types we would like to get loaded into our analysis. It is assumed that seedList obeys the Filtr rules
-    @type seedSet: set of strings
-    
-    @return GeneralDict: ID -> Local Ontology List, Local Regulation List
-    '''
-    GeneralDict={}
-    VisitedSet=set()
-    seedList=list(seedSet)
-    GO_Names={}
-    GO_IDs={}
-    rev_GO_IDs={}
-    while seedList!=[]:
-        ID=seedList.pop()
-        VisitedSet.add(ID)
-        LocUpList=[]
-        LocRegList=[]
-        GONode=DatabaseGraph.GOTerm.get(ID)
-        GO_Names[ID]=str(GONode.displayName)
-        GO_IDs[ID]=str(GONode.ID)
-        rev_GO_IDs[str(GONode.ID)]=ID
-        for Typ in GOUpTypes:
-            generator=GONode.outV(Typ)
-            if generator!=None:
-                for elt in generator:
-                    subID=str(elt).split('/')[-1][:-1]
-                    if elt.Namespace in Filtr:
-                        LocUpList.append(subID) 
-                        if subID not in VisitedSet and subID not in seedList:
-                            seedList.append(subID)
-        for Typ in GORegTypes:
-            generator=GONode.outV(Typ)
-            if generator!=None:
-                for elt in generator:
-                    subID=str(elt).split('/')[-1][:-1]
-                    if elt.Namespace in Filtr:
-                        LocRegList.append(subID)
-                        if subID not in VisitedSet and subID not in seedList:
-                            seedList.append(subID)
-        LocUpList=list(set(LocUpList))
-        LocRegList=list(set(LocRegList))
-        GeneralDict[ID]=(LocUpList,LocRegList)
-    Fle=file('GO_structure.dump','w')
-    pickle.dump(GeneralDict,Fle)  #TODO": correct dumping here
-    Fle2=file('GO_names.dump','w')
-    pickle.dump(GO_Names,Fle2)  #TODO": correct dumping here
-    Fle3=file('GO_IDs.dump','w')
-    pickle.dump(GO_IDs,Fle3)  #TODO": correct dumping here
-    Fle4=file('rev_GO_IDs.dump','w')
-    pickle.dump(rev_GO_IDs,Fle4)  #TODO": correct dumping here
-    return GeneralDict
 
-def get_GO_Informativities():
-    '''
-    here calculated without any information on regulation
-    '''
-    init=time()
-    GO_access=pickle.load(file('GO.dump','r'))[0]  #TODO": correct dumping here
-    GO_structure=pickle.load(file('GO_structure.dump','r'))  #TODO": correct dumping here
-    TimesReached={}
-    i=0
-    l=len(GO_access)
-    accelerationDict={}
-    Reverse_Dict={}
-    for key in GO_access.keys():
-        i+=1
-        print 'entering',float(i)/float(l),time()-init
-        init=time()
-        toVisit=[]
-        toVisit=copy.copy(GO_access[key])
-        visited=[]
-        while toVisit!=[]:
-            elt=toVisit.pop()
-            InStack=[]
-            vs=acceleratedInsert(GO_structure, accelerationDict, elt)
-            visited=visited+vs
-        visited=list(set(visited))
-        for elt in visited:
-            if elt not in TimesReached.keys():
-                Reverse_Dict[elt]=[]
-                TimesReached[elt]=0
-            Reverse_Dict[elt].append(key)
-            TimesReached[elt]+=1
-    Fle=file('GO_Informativities.dump','w')
-    pickle.dump(TimesReached,Fle)  #TODO": correct dumping here
-    Fle2=file('accDict.dump','w')
-    pickle.dump(accelerationDict,Fle2)  #TODO": correct dumping here
-    Fle3=file('Reverse_dict.dump','w')
-    pickle.dump(Reverse_Dict,Fle3)  #TODO": correct dumping here
 
 def analyze_GO_Informativities():
     GO_Infos = pickle.load(file('GO_Informativities.dump','r'))  #TODO": correct dumping here
@@ -485,13 +349,6 @@ def get_Dictionnary_Stats(Dictionary):
     pdf=gaussian_kde(np.asarray(ValList))
     log_pdf=gaussian_kde(np.asarray(LogValList))
     return pdf, log_pdf
-
-def rebuild():
-    filtr=['biological_process']
-    RelDict, SeedSet=get_GO_access(filtr)
-    get_GO_structure(filtr,SeedSet)
-    get_GO_Informativities()
-    compute_UniprotDict()
 
 def get_Reference_Flow(GO_Node_ID,GO_ID,py_mongo_collection, GOs2UP_Node_IDs):
     if py_mongo_collection.find({'GO_ID': GO_ID}).count()>0:
