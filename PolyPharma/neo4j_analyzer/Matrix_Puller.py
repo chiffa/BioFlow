@@ -33,6 +33,11 @@ MG.fast_load()
 
 # TODO: we need to refactor the filtering system
 
+def _characterize(Objkt):
+    print Objkt.shape, Objkt.sum(),
+    print len(Objkt.nonzero()[0]),
+    print type(Objkt)
+
 
 def characterise_eigenvects(N_of_eigenvectors_to_characterise, Type='Adj'):
     """
@@ -96,6 +101,7 @@ def processEigenVectors(nbiggest, Type='Adj'):
         for index, value in reversed(zip(eigbiggest[:, i], absolute[eigbiggest[:, i], i])):
             print index, value, MG.get_descriptor_for_index(index)
         print '<==================>'
+        print 'Index \t value \t Descriptor'
 
     return eigbiggest
 
@@ -119,28 +125,30 @@ def columnSort():
     outf.close()
 
 
-def get_voltages(numpy_array, MatrixNumber2NodeID, InformativityDict):
-    """
-    This method seems to compute the voltages from several computation
-
-    :param numpy_array: array of voltages on each node resulting from the computation
-    :param InformativityDict:
-    """
-    for i in range(0, len(numpy_array)):
-        InformativityDict[MG.MatrixNumber2NodeID[i]] += numpy_array[i, 0]
-
-
-
-def create_InfoDict():
-    """
-    Creates a dict mapping all the DB NodeIDs to zero. Might be a home-brewed alternative to collections.defaultdict
-
-    :return: dict
-    """
-    new_dict={}
-    for val in MG.MatrixNumber2NodeID.itervalues():
-        new_dict[val]=0.0
-    return new_dict
+# def get_voltages(numpy_array, InformativityDict):
+#     """
+#     Deprecated.
+#     This method seems to compute the voltages from several computation
+#
+#     :param numpy_array: array of voltages on each node resulting from the computation
+#     :param InformativityDict:
+#     """
+#     for i in range(0, len(numpy_array)):
+#         InformativityDict[MG.MatrixNumber2NodeID[i]] += numpy_array[i, 0]
+#
+#
+#
+# def create_InfoDict():
+#     """
+#     Deprecated
+#     Creates a dict mapping all the DB NodeIDs to zero. Might be a home-brewed alternative to collections.defaultdict
+#
+#     :return: dict
+#     """
+#     new_dict={}
+#     for val in MG.MatrixNumber2NodeID.itervalues():
+#         new_dict[val]=0.0
+#     return new_dict
 
 
 def compute_sample_circulation_intensity_minimal(Sample, epsilon=1e-10):
@@ -170,7 +178,7 @@ def compute_sample_circulation_intensity_minimal(Sample, epsilon=1e-10):
         for j in range(i,len(Sample)):
             if j%25 == 24:
                 print '*',
-            J = np.zeros((MG.Conductance_Matrix.shape[0], 1))
+            J = np.zeros((MG.Conductance_Matrix.shape[0], 1))   #TODO: refactor to use itertools.combinations
             J[Sample[i],0] = 1.0
             J[Sample[j],0] = -1.0
             V = Solver(J)
@@ -369,13 +377,10 @@ def get_Current_all(Voltages, J):
     # This one seems to be pretty fucked-up, likely because of the non-connexity of a large portion of uniprots.
     diag_Voltages = lil_matrix(diags(Voltages.T.tolist()[0], 0))
     Corr_Conductance_Matrix = MG.Conductance_Matrix - lil_matrix(diags(MG.Conductance_Matrix.diagonal(), 0))
-    sm = diag_Voltages.multiply(Corr_Conductance_Matrix) - Corr_Conductance_Matrix.multiply(diag_Voltages)
+    sm = diag_Voltages.dot(Corr_Conductance_Matrix) - Corr_Conductance_Matrix.dot(diag_Voltages)
     sign = sm.sign()
     absol = sm.multiply(sign)
-    Currents = (absol.sum(axis=0).T + np.absolute(J)) / 2.0
-    print Currents.shape, Currents.sum(),
-    print Currents.nonzero(),
-    print type(Currents)
+    Currents = (np.array(absol.sum(axis=0).T) + np.absolute(J)) / 2.0
     return Currents
 
     
@@ -550,6 +555,8 @@ if __name__ == "__main__":
     # checkMatrix()
     # processEigenVectors(15,Type = 'Cond')
     # columnSort()
+    lst = [22811, 18147, 13023]
+    compute_sample_circulation_intensity_minimal(lst)
     check_Silverality(10, 100)
     analyze_Silverality()
 
