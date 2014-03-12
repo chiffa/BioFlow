@@ -1,8 +1,11 @@
-'''
-Created on Jul 16, 2013
+__author__='ank'
 
-@author: andrei
-'''
+"""
+:author: Andrei
+
+:warning: in refactoring
+"""
+
 
 from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
 import copy
@@ -14,26 +17,31 @@ import math
 from scipy.stats.kde import  gaussian_kde
 import numpy as np
 from pylab import plot, hist, show
+from PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface import MatrixGetter
 
-GOUpTypes=["is_a_go","is_part_of_go"]
-GORegTypes=["is_Regulant"]
+MG = MatrixGetter(True, False)
+MG.fast_load()
 
+GOUpTypes = ["is_a_go", "is_part_of_go"]
+GORegTypes = ["is_Regulant"]
+# TODO: add pathway analytics typings.
+# TODO: export the GO import into a separate Knowledge_access_DB_interface
 
 def import_TargetMappings():
     pickleDump2=file('pickleDump2.dump','r')
-    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(pickleDump2)
+    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(pickleDump2)  #TODO": correct dumping here
     pickleDump2.close()
     return NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots
 
 def import_RelMatrix():
     pickleDump3 = file('pickleDump3.dump','r')
-    ValueMatrix = pickle.load(pickleDump3)
+    ValueMatrix = pickle.load(pickleDump3)  #TODO": correct dumping here
     pickleDump3.close()
     return ValueMatrix
 
 def compute_UniprotDict():
     pickleDump2=file('pickleDump2.dump','r')
-    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots=pickle.load(pickleDump2)
+    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots=pickle.load(pickleDump2)  #TODO": correct dumping here
     pickleDump2.close()
     UniprotDict={}
     for elt in Uniprots:
@@ -42,11 +50,11 @@ def compute_UniprotDict():
         UniprotDict[altID]=(elt,ID2displayName[elt])
         UniprotDict[elt]=altID
     Fle=file('Uniprot_Dict.dump','w')
-    pickle.dump(UniprotDict,Fle)
+    pickle.dump(UniprotDict,Fle)  #TODO": correct dumping here
     return UniprotDict
 
 def import_UniprotDict():
-    UniprotDict=pickle.load(file('Uniprot_Dict.dump','r'))
+    UniprotDict=pickle.load(file('Uniprot_Dict.dump','r'))  #TODO": correct dumping here
     return UniprotDict
 
 def get_GO_access(Filtr):
@@ -79,7 +87,7 @@ def get_GO_access(Filtr):
             RelDict[ID]=copy.copy(LocList)
     print i
     Fle=file('GO.dump','w')
-    pickle.dump((RelDict, SeedSet),Fle)
+    pickle.dump((RelDict, SeedSet),Fle)  #TODO": correct dumping here
     return RelDict, SeedSet
 
 def get_GO_structure(Filtr,seedSet):
@@ -130,13 +138,13 @@ def get_GO_structure(Filtr,seedSet):
         LocRegList=list(set(LocRegList))
         GeneralDict[ID]=(LocUpList,LocRegList)
     Fle=file('GO_structure.dump','w')
-    pickle.dump(GeneralDict,Fle)
+    pickle.dump(GeneralDict,Fle)  #TODO": correct dumping here
     Fle2=file('GO_names.dump','w')
-    pickle.dump(GO_Names,Fle2)
+    pickle.dump(GO_Names,Fle2)  #TODO": correct dumping here
     Fle3=file('GO_IDs.dump','w')
-    pickle.dump(GO_IDs,Fle3)
+    pickle.dump(GO_IDs,Fle3)  #TODO": correct dumping here
     Fle4=file('rev_GO_IDs.dump','w')
-    pickle.dump(rev_GO_IDs,Fle4)
+    pickle.dump(rev_GO_IDs,Fle4)  #TODO": correct dumping here
     return GeneralDict
 
 def get_GO_Informativities():
@@ -144,8 +152,8 @@ def get_GO_Informativities():
     here calculated without any information on regulation
     '''
     init=time()
-    GO_access=pickle.load(file('GO.dump','r'))[0]
-    GO_structure=pickle.load(file('GO_structure.dump','r'))
+    GO_access=pickle.load(file('GO.dump','r'))[0]  #TODO": correct dumping here
+    GO_structure=pickle.load(file('GO_structure.dump','r'))  #TODO": correct dumping here
     TimesReached={}
     i=0
     l=len(GO_access)
@@ -171,16 +179,16 @@ def get_GO_Informativities():
             Reverse_Dict[elt].append(key)
             TimesReached[elt]+=1
     Fle=file('GO_Informativities.dump','w')
-    pickle.dump(TimesReached,Fle)
+    pickle.dump(TimesReached,Fle)  #TODO": correct dumping here
     Fle2=file('accDict.dump','w')
-    pickle.dump(accelerationDict,Fle2)
+    pickle.dump(accelerationDict,Fle2)  #TODO": correct dumping here
     Fle3=file('Reverse_dict.dump','w')
-    pickle.dump(Reverse_Dict,Fle3)
+    pickle.dump(Reverse_Dict,Fle3)  #TODO": correct dumping here
 
 def analyze_GO_Informativities():
-    GO_Infos = pickle.load(file('GO_Informativities.dump','r'))
+    GO_Infos = pickle.load(file('GO_Informativities.dump','r'))  #TODO": correct dumping here
     srted = sorted(GO_Infos.iteritems(), key=operator.itemgetter(1), reverse=True)
-    GO_2_Names=pickle.load(file('GO_names.dump','r'))
+    GO_2_Names=pickle.load(file('GO_names.dump','r'))  #TODO": correct dumping here
     i=0
     for key, val in srted[:500]:
         i+=1
@@ -188,19 +196,19 @@ def analyze_GO_Informativities():
     return GO_Infos
 
 def load_GO_Informativities():
-    GO_Infos = pickle.load(file('GO_Informativities.dump','r'))
+    GO_Infos = pickle.load(file('GO_Informativities.dump','r'))  #TODO": correct dumping here
     return GO_Infos
 
 def load_GO_Structure():
-    GO_structure = pickle.load(file('GO_structure.dump','r'))
+    GO_structure = pickle.load(file('GO_structure.dump','r'))  #TODO": correct dumping here
     return GO_structure
 
 def load_GO_Accesses():
-    GO_Accesses=pickle.load(file('GO.dump','r'))
+    GO_Accesses=pickle.load(file('GO.dump','r'))  #TODO": correct dumping here
     return GO_Accesses
 
 def load_accDict():
-    accDict=pickle.load(file('accDict.dump','r'))
+    accDict=pickle.load(file('accDict.dump','r'))  #TODO": correct dumping here
     return accDict
 
 def acceleratedInsert(GO_structure,accelerationDict, name):
@@ -277,10 +285,10 @@ def specialRatio(Number1,Number2,epsilon=1e-7):
         return abs(float(Number1)/float(Number1+Number2))*100
 
 def get_GO_Term_occurences(Importance_Dict,flat):
-    NamesDict=pickle.load(file('GO_names.dump','r'))
-    GO_access=pickle.load(file('GO.dump','r'))[0]
-    GO_structure=pickle.load(file('GO_structure.dump','r'))
-    GO_Infos = pickle.load(file('GO_Informativities.dump','r'))
+    NamesDict=pickle.load(file('GO_names.dump','r'))  #TODO": correct dumping here
+    GO_access=pickle.load(file('GO.dump','r'))[0]  #TODO": correct dumping here
+    GO_structure=pickle.load(file('GO_structure.dump','r'))  #TODO": correct dumping here
+    GO_Infos = pickle.load(file('GO_Informativities.dump','r'))  #TODO": correct dumping here
     accelerationDict=load_accDict()
     Associated_GOs={}
     ReverseDict={}
@@ -417,7 +425,7 @@ def TouchedIDs():
             else:
                 errcount += 1
     print '444', len(IDList),errcount,len(valuelist)
-    pickle.dump(IDList, file('IDList.dump','w'))
+    pickle.dump(IDList, file('IDList.dump','w'))  #TODO": correct dumping here
     return IDList
     
 #     Uniprot_Dict=import_UniprotDict()
@@ -441,7 +449,7 @@ def Tirage(sampleSize, flat, iterations):
     Pulls at random several proteins of a determined size to estimate 
     the error margins
     '''
-    GO_Accesses=pickle.load(file('GO.dump','r'))[0]
+    GO_Accesses=pickle.load(file('GO.dump','r'))[0]  #TODO": correct dumping here
     UP_Dict=import_UniprotDict()
     SP_List=list(GO_Accesses.keys())
     RestList=[]
@@ -452,10 +460,10 @@ def Tirage(sampleSize, flat, iterations):
             ImpDict[UP_Dict[item]]=1.0
         RestList.append(get_GO_Term_occurences(ImpDict,flat)[1:2])
         print '\n<===============================>\n'
-    pickle.dump(RestList,file('CompressedStats.dump','w'))
+    pickle.dump(RestList,file('CompressedStats.dump','w'))  #TODO": correct dumping here
     
 def get_Tirage_stats():
-    RestList=pickle.load(file('CompressedStats.dump','r'))
+    RestList=pickle.load(file('CompressedStats.dump','r'))  #TODO": correct dumping here
     dumpFile=file('dumpFile.csv', 'w')
     ValList=[]
     LogValList=[]
@@ -488,14 +496,14 @@ def rebuild():
 def get_Reference_Flow(GO_Node_ID,GO_ID,py_mongo_collection, GOs2UP_Node_IDs):
     if py_mongo_collection.find({'GO_ID': GO_ID}).count()>0:
         for pointer in py_mongo_collection.find({'GO_ID': GO_ID}):
-            Ref_Flow=pickle.loads(pointer['Info_Array'])
+            Ref_Flow=pickle.loads(pointer['Info_Array'])  #TODO": correct dumping here
             return Ref_Flow
     UPs=GOs2UP_Node_IDs[GO_Node_ID]
-    serUPs=pickle.dumps(set(UPs))
+    serUPs=pickle.dumps(set(UPs))  #TODO": correct dumping here
     if py_mongo_collection.find({'UP_Set':serUPs}).count()>0:
         for pointer in  py_mongo_collection.find({'UP_Set':serUPs}):
-            Ref_Flow=pickle.loads(pointer['Info_Array'])
-            post={'GO_ID':GO_ID,'UP_Set':serUPs,'Info_Array':pickle.dumps(Ref_Flow)}
+            Ref_Flow=pickle.loads(pointer['Info_Array'])  #TODO": correct dumping here
+            post={'GO_ID':GO_ID,'UP_Set':serUPs,'Info_Array':pickle.dumps(Ref_Flow)}  #TODO": correct dumping here
             py_mongo_collection.insert(post)
             return Ref_Flow
     from Matrix_Puller import Compute_and_Store_circulation
@@ -503,10 +511,10 @@ def get_Reference_Flow(GO_Node_ID,GO_ID,py_mongo_collection, GOs2UP_Node_IDs):
     return Ref_Flow
 
 def get_Local_Flow(UP_List,py_mongo_collection):
-    serUPs=pickle.dumps(set(UP_List))
+    serUPs=pickle.dumps(set(UP_List))  #TODO": correct dumping here
     if py_mongo_collection.find({'UP_Set':serUPs}).count()>0:
         for pointer in  py_mongo_collection.find({'UP_Set':serUPs}):
-            local_Flow=pickle.loads(pointer['Info_Array'])
+            local_Flow=pickle.loads(pointer['Info_Array'])  #TODO": correct dumping here
             return local_Flow
     from Matrix_Puller import Compute_and_Store_circulation
     local_Flow=Compute_and_Store_circulation('',UP_List,py_mongo_collection)
@@ -519,8 +527,8 @@ def compare_Local_Info_to_Ref(Go,UP_List):
     UP_List is a list of Swissprot_IDs reached by a GO term in a particular configuration
     '''
     from PolyPharma.configs import ref_coll,data_coll
-    Go2Node_IDs=pickle.load(file('GO_IDs.dump','r'))
-    GOs2UP_Node_IDs=pickle.load(file('Reverse_dict.dump','r'))
+    Go2Node_IDs=pickle.load(file('GO_IDs.dump','r'))  #TODO": correct dumping here
+    GOs2UP_Node_IDs=pickle.load(file('Reverse_dict.dump','r'))  #TODO": correct dumping here
     SP_ID2Node_ID=import_UniprotDict()
     re_UP_List=[]
     for elt in UP_List:
@@ -532,8 +540,8 @@ def compare_Local_Info_to_Ref(Go,UP_List):
 
 def Compute_GO_sp_InfoCirc(Under_N,Over_N):
     GO_UnderN=[]
-    GOs2UP_Node_IDs=pickle.load(file('Reverse_dict.dump','r'))
-    Go2Node_IDs=pickle.load(file('GO_IDs.dump','r'))
+    GOs2UP_Node_IDs=pickle.load(file('Reverse_dict.dump','r'))  #TODO": correct dumping here
+    Go2Node_IDs=pickle.load(file('GO_IDs.dump','r'))  #TODO": correct dumping here
     for GO, val in GOs2UP_Node_IDs.iteritems():
         if len(val)<Under_N and len(val)>Over_N:
             GO_UnderN.append(GO)
@@ -562,9 +570,9 @@ def get_Max_Informativities(FilteringAbsolute, FilteringFraction):
     For each term, computes the set of GO Terms for which a Uniprot term have a maximal informativity
     '''
     from PolyPharma.configs import ref_coll
-    from Matrix_Puller import load_Uniprot_Attachments
-    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))
-    UPNode_IDs_2Proteins_IDs_List=load_Uniprot_Attachments()
+
+    NodeID2MatrixNumber, MatrixNumber2NodeID, ID2displayName, ID2Type, ID2Localization, Uniprots = pickle.load(file('pickleDump2.dump','r'))  #TODO": correct dumping here
+    UPNode_IDs_2Proteins_IDs_List = copy.copy(MG.Uniprot_attachments)
     print len(NodeID2MatrixNumber.keys()) 
     # Broadcast the uniprot attachments:
     GO2Column={}
@@ -575,8 +583,8 @@ def get_Max_Informativities(FilteringAbsolute, FilteringFraction):
     i=0
     for InfArrayDict in ref_coll.find():
         print 'trating:', InfArrayDict['GO_ID'], i
-        TrueArray = broadcaset_Uniports(Uniprots,UPNode_IDs_2Proteins_IDs_List,NodeID2MatrixNumber,pickle.loads(InfArrayDict['Info_Array']))
-        TrueSet = (InfArrayDict['GO_ID'],pickle.loads(InfArrayDict['UP_Set']),TrueArray)
+        TrueArray = broadcaset_Uniports(Uniprots,UPNode_IDs_2Proteins_IDs_List,NodeID2MatrixNumber,pickle.loads(InfArrayDict['Info_Array']))  #TODO": correct dumping here
+        TrueSet = (InfArrayDict['GO_ID'],pickle.loads(InfArrayDict['UP_Set']),TrueArray)  #TODO": correct dumping here
         GO2Column[TrueSet[0]] = i
         Column2GO[i] = TrueSet[0]
         GO2TotalFlow[TrueSet[0]] = len(TrueSet[1])
@@ -607,9 +615,9 @@ def get_Max_Informativities(FilteringAbsolute, FilteringFraction):
     
     print len(Uniprots), len(HighestAbsolute_Dict.keys()), len(HighestRelative_Dict.keys())
     
-    NamesDict=pickle.load(file('GO_names.dump','r'))
-    Rev_GO_IDs=pickle.load(file('rev_GO_IDs.dump','r'))
-    
+    NamesDict=pickle.load(file('GO_names.dump','r'))  #TODO": correct dumping here
+    Rev_GO_IDs=pickle.load(file('rev_GO_IDs.dump','r'))  #TODO": correct dumping here
+
     for key,val in HighestRelative_Dict.iteritems():
         print ID2displayName[key],'\t', val[0],'\t', NamesDict[Rev_GO_IDs[val[0]]],'\t', val[1]
     
@@ -639,12 +647,10 @@ def get_Max_Informativities(FilteringAbsolute, FilteringFraction):
     
     finmatrix=np.concatenate((Max_GOs,Max_GO_Names,Max_GO_val),axis=1)
     Fle=file('finmatrix.dump','w')
-    pickle.dump(finmatrix,Fle)
+    pickle.dump(finmatrix,Fle)  #TODO": correct dumping here
     return HighestAbsolute_Dict, HighestRelative_Dict, finmatrix
         
-                
-        
-    
+
 # rebuild()
 # Tirage(48,True,100)
 # FD,SD = align_names2SP()
@@ -653,12 +659,6 @@ def get_Max_Informativities(FilteringAbsolute, FilteringFraction):
 # TouchedIDs()
 # Compute_GO_sp_InfoCirc(10,3)
 # get_Max_Informativities(1.5,0.35)
-
-
-
-
-
-
 
 # => Only about 100 uniprots out of 4000 do not point towards the GOs
 

@@ -1,11 +1,10 @@
-'''
-Created on Jul 11, 2013
-@author: andrei
+__author__ = 'ank'
+"""
+:author: andrei
 
 This module contains all the routines that are respojnsible for pulling 
 the matrixes out of the neo4j graph and processing them
-
-'''
+"""
 import copy
 import operator
 import random
@@ -502,5 +501,3 @@ if __name__ == "__main__":
         # * compare the significance of the protein affected to the information circulation in the whole interactome
 
 # TODO: implementation while using Ehit interactions only
-
-
