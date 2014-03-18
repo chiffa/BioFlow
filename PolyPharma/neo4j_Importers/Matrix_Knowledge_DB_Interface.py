@@ -14,8 +14,11 @@ import math
 from scipy.stats.kde import  gaussian_kde
 import numpy as np
 from pylab import plot, hist, show
+from itertools import combinations
 from pprint import PrettyPrinter
-from scipy.sparse import csr_matrix
+from scipy.sparse import lil_matrix
+from scipy.sparse.csgraph import shortest_path, connected_components
+from scipy.sparse.csgraph._validation import validate_graph
 from collections import defaultdict
 from itertools import chain
 from PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface import MatrixGetter
@@ -38,12 +41,14 @@ GORegTypes = ["is_Regulant"]
 
 ppritner = PrettyPrinter(indent = 4)
 
+
 def _characterise(objekt):
     print 'Object of size %s and type %s' %(len(objekt),type(objekt))
 
-def _characterise_mat(matrix):
-    print 'Matrix of shape %s, type %s and has %s non-zero terms' %(matrix.shape, type(matrix), len(matrix.nonzero()[0]))
 
+def _characterise_mat(matrix):
+    print 'Matrix of shape %s, type %s and has %s non-zero terms, min is %s, max is %s' %(matrix.shape, type(matrix),
+                                                                len(matrix.nonzero()[0]), np.min(matrix), np.max(matrix))
 
 
 class GO_Interface(object):
@@ -55,6 +60,7 @@ class GO_Interface(object):
         self.Filtr = Filter
         self.InitSet = Uniprot_Node_IDs
         self.init_time = time()
+        self.partial_time = time()
 
         self.UP2GO_Dict = {}
         self.GO2UP = defaultdict(list)
@@ -103,12 +109,12 @@ class GO_Interface(object):
 
 
     def dump_core(self):
-        dump_object(Dumps.GO_dump, (self.UP2GO_Dict, self.SeedSet, self.Reachable_nodes_dict, self.GO_Names,
+        dump_object(Dumps.GO_dump, (self.UP2GO_Dict, self.GO2UP, self.SeedSet, self.Reachable_nodes_dict, self.GO_Names,
                                     self.GO_Legacy_IDs, self.rev_GO_IDs, self.All_GOs, self.GO2Num, self.Num2GO))
 
 
     def undump_core(self):
-        self.UP2GO_Dict, self.SeedSet, self.Reachable_nodes_dict, self.GO_Names, self.GO_Legacy_IDs,\
+        self.UP2GO_Dict, self.GO2UP, self.SeedSet, self.Reachable_nodes_dict, self.GO_Names, self.GO_Legacy_IDs,\
         self.rev_GO_IDs, self.All_GOs, self.GO2Num, self.Num2GO = undump_object(Dumps.GO_dump)
 
 
@@ -215,7 +221,8 @@ class GO_Interface(object):
                         Local_DownList.append(subID)
                     else:
                         Local_InReg_List.append(subID)
-            self.Reachable_nodes_dict[ID] = (list(set(Local_UpList)), list(set(Local_Regulation_List)), list(set(Local_DownList)), list(set(Local_InReg_List)))
+            self.Reachable_nodes_dict[ID] = (list(set(Local_UpList)), list(set(Local_Regulation_List)),
+                                             list(set(Local_DownList)), list(set(Local_InReg_List)))
 
         self.All_GOs = list(VisitedSet)
         self.Num2GO = dict( (i, val) for i, val in enumerate(self.All_GOs) )
@@ -236,7 +243,7 @@ class GO_Interface(object):
             Builds undirected adjacency matrix for the GO transitions
 
             """
-            baseMatrix = csr_matrix((len(self.All_GOs), len(self.All_GOs)))
+            baseMatrix = lil_matrix((len(self.All_GOs), len(self.All_GOs)))
             for node, package in self.Reachable_nodes_dict.iteritems():
                 fw_nodes = package[0]
                 if include_reg:
@@ -247,7 +254,6 @@ class GO_Interface(object):
                     idx = (idx[1], idx[0])
                     baseMatrix[idx] = 1
 
-            _characterise_mat(baseMatrix)
             self.Adjacency_matrix = copy.copy(baseMatrix)
 
 
@@ -257,7 +263,7 @@ class GO_Interface(object):
             Builds directed adjacency matrix for the GO transitions
 
             """
-            baseMatrix = csr_matrix((len(self.All_GOs), len(self.All_GOs)))
+            baseMatrix = lil_matrix((len(self.All_GOs), len(self.All_GOs)))
             for node, package in self.Reachable_nodes_dict.iteritems():
                 fw_nodes = package[0]
                 if include_reg:
@@ -266,67 +272,49 @@ class GO_Interface(object):
                     idx = (self.GO2Num[node], self.GO2Num[node2])
                     baseMatrix[idx] = 1
 
-                _characterise_mat(baseMatrix)
-                self.dir_adj_matrix = copy.copy(baseMatrix)
+            self.dir_adj_matrix = copy.copy(baseMatrix)
 
         build_adjacency()
         build_dir_adj()
 
 
-
     def get_GO_Reach(self):
         """
-        introduce the iformation computation with regulation,. Outiline: transmit to each higher-level node the
-                number of nodes attainable from each node. I.e. instead of an exploration rooted at each node, use
-                a simultaneous exploration of a whole tree.
+        Recovers by how many different uniprots each GO term is reached, both in distance-agnostic and distance-specific
+        terms.
 
         """
-        Fw_Structure = dict((key, val[0] + val[1]) for key, val in self.Reachable_nodes_dict.iteritems())
-        Fw_Structure_noreg = dict((key, val[0]) for key, val in self.Reachable_nodes_dict.iteritems())
-        Rv_Structure = dict((key, val[2] + val[3]) for key, val in self.Reachable_nodes_dict.iteritems())
-        Rv_Structure_noreg = dict((key, val[2]) for key, val in self.Reachable_nodes_dict.iteritems())
+        dir_reg_path = shortest_path(self.dir_adj_matrix, directed = True, method = 'D' )
+        dir_reg_path[np.isinf(dir_reg_path)] = 0.0
+        dir_reg_path = lil_matrix(dir_reg_path)
+        print dir_reg_path.nonzero()
+
         Reach = dict((el, []) for el in self.Reachable_nodes_dict.keys())
-        Leaves = set(ID for ID in Rv_Structure if not Rv_Structure[ID])
-        Processed = set()
+        Reach.update(self.GO2UP)
 
-        _characterise(Leaves)
+        Step_Reach = dict((key, dict((v,0) for v in val)) for key, val in Reach.iteritems())
+        # when called on possibly unencoutenred items, anticipate a default falue of 10 000
 
+        # Now just scan vertical columns and add UP terms attached
+        for idx1, idx2 in zip(list(dir_reg_path.nonzero()[0]),list(dir_reg_path.nonzero()[1])):
+            Reach[self.Num2GO[idx2]] += Reach[self.Num2GO[idx1]]
+            if dir_reg_path[idx1, idx2] < 1.0:
+                raise Exception("null in non-null patch")
+            step_reach_upgrade = dict( (key, val + dir_reg_path[idx1, idx2]) for key, val in Step_Reach[self.Num2GO[idx1]].iteritems())
+            for k, v in step_reach_upgrade.iteritems():
+                Step_Reach[self.Num2GO[idx2]][k] = min(Step_Reach[self.Num2GO[idx2]].setdefault(k,100000), v)
 
-        def collapse_leaf(Node):
-            """
-            Collapses all the leaves pointing to a particular Node
+        for key, val in Reach.iteritems():
+            Reach[key] = list(set(val))
 
-            Also calls and modifies parameter from the external scope:
-                * Structure: dict of Forwards links, ie. NodeId 2 Up or Regulating Nodes
-                * Structure: dict of Reverse links, ie. NodeId 2 Down or Regulated_by Nodes
-                * Stores processed results: structure storing the Nodes that were leafs but were collapsed
+        # Now we need to revert the reach to get the set of all the primary and derived GO terms that describe a UP
 
+        lendict = {key : [len(val), len(Step_Reach[key].keys())] for key, val in Reach.iteritems()}
+        ppritner.pprint(lendict)
+        # nar = np.log(np.array(list(lendict.values())))
+        # hist(nar, bins=20, log=True, histtype='step')
+        # show()
 
-            :param Node: Leaf_Node we want to collapse
-            """
-            pass
-
-        def manage_reg_ring():
-            """
-            A function that takes care of managing a ring on the leaves that prevents further cropping because
-            of a ring of "regulates structure, for instance like in a feed-back loop.
-
-            - Removes all the regulates relations and computes the regulation-less leafs
-            - Finds clusters of reg-less listst that are connex through "regulates" and "Up" relations
-            - For each cluster, copies to each node a list of all reachable nodes from the main cluster
-
-             Also calls from the outer scope:
-                * Structure: dict of Forward Up and Reg links separaterly # used to build a partial connexity matrix
-                *
-
-            """
-            # Implementation spec: use scipy.sparse.csgraph.shortest_path on a graph with progressively more and more
-            # fractured "regulates" links
-            pass
-
-
-        for node in Leaves:
-            pass
 
     def build_laplacian(self, include_reg=True):
         """
@@ -392,8 +380,11 @@ if __name__ == '__main__':
     filtr = ['biological_process']
 
     KG = GO_Interface(filtr, MG.Uniprots)
-    KG.rebuild()
-    KG.store()
+    # KG.rebuild()
+    # KG.store()
 
-    # KG.load()
-    # KG.get_GO_Reach()
+    KG.load()
+    print KG.time()
+    KG.get_GO_Reach()
+    print KG.time()
+    # fill for reach only is done in 3 seconds in all, 2 seconds on it's own
