@@ -93,6 +93,8 @@ class Dumps(object):
     InfoArray = prefix + '/sample_array'
     Up_dict_dump = prefix + '/Uniprot_dict.dump'
     GO_dump = prefix + '/GO.dump'
+    GO_builder_stat = prefix + '/GO_builder_stats.dump'
+    GO_Mats = prefix + '/GO_mats.dump'
 
 Leg_ID_Filter = ['H+', 'ATP', 'GTP', 'Pi', 'H2O', 'ADP', 'PPi', 'GDP', 'O2', 'CO2', 'NTP',]
 

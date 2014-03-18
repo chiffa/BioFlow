@@ -264,8 +264,6 @@ class MatrixGetter(object):
         self.Super_Links, self.ExpSet, c = get_expansion(self.FullSet, edge_type_filters["possibly_same"])
         characterise('Looks_similar Links', self.Super_Links, self.ExpSet, c)
 
-        # self.dump_object('fixture.dump',(self.ReactLinks,self.InitSet,self.GroupLinks, self.GroupSet, self.SecLinks, self.SecSet, self.UP_Links, self.UPSet, self.HiNT_Links, self.FullSet, self.Super_Links, self.ExpSet))
-
 
     def map_rows_to_names(self,):
         """ Maps Node Database IDs, Legacy IDs, display names and types to matrix row/column indexes; """
