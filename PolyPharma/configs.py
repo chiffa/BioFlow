@@ -67,6 +67,7 @@ Adjacency_Martix_Dict = {"Group":0.5,
              "possibly_same":0.1,
              }
 
+
 # Coefficients values for the conductance_Matrix
 Conductance_Matrix_Dict = {"Group":0.5,
              "Same":100,
@@ -74,6 +75,7 @@ Conductance_Matrix_Dict = {"Group":0.5,
              "Contact_interaction":1,
              "possibly_same":0.1,
              }
+
 
 class Dumps(object):
     prefix = str(path.abspath(path.dirname(__file__)+'/dumps'))
@@ -95,6 +97,8 @@ class Dumps(object):
     GO_dump = prefix + '/GO.dump'
     GO_builder_stat = prefix + '/GO_builder_stats.dump'
     GO_Mats = prefix + '/GO_mats.dump'
+    GO_Infos = prefix + '/GO_Infos.dump'
+
 
 Leg_ID_Filter = ['H+', 'ATP', 'GTP', 'Pi', 'H2O', 'ADP', 'PPi', 'GDP', 'O2', 'CO2', 'NTP',]
 

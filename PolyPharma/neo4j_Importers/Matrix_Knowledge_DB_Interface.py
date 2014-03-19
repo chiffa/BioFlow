@@ -16,6 +16,7 @@ import numpy as np
 from pylab import plot, hist, show
 from itertools import combinations
 from pprint import PrettyPrinter
+from math import log
 from scipy.sparse import lil_matrix
 from scipy.sparse.csgraph import shortest_path, connected_components
 from scipy.sparse.csgraph._validation import validate_graph
@@ -69,8 +70,13 @@ class GO_Interface(object):
         self.GO2Num = {}
         self.Num2GO = {}
 
-        self.Reachable_nodes_dict = {}
-        self.Rev_Reachable_nodes_dict = {}
+        self.UP2GO_Reachable_nodes = {}
+        self.GO2UP_Reachable_nodes = {}
+        self.UP2GO_step_Reachable_nodes = {}
+        self.GO2UP_step_Reachable_nodes = {}
+        self.GO2_Pure_Ent = {}
+        self.GO2_Weighted_Ent = {}
+
         self.GO_Names = {}
         self.GO_Legacy_IDs = {}
         self.rev_GO_IDs = {}
@@ -126,16 +132,28 @@ class GO_Interface(object):
         self.Adjacency_matrix, self.dir_adj_matrix, self.Laplacian_matrix = undump_object(Dumps.GO_Mats)
 
 
+    def dump_informativities(self):
+        dump_object(Dumps.GO_Infos, (self.UP2GO_Reachable_nodes, self.GO2UP_Reachable_nodes, self.UP2GO_step_Reachable_nodes,
+                                    self.GO2UP_step_Reachable_nodes, self.GO2_Pure_Ent, self.GO2_Weighted_Ent))
+
+
+    def undump_informativities(self):
+        self.UP2GO_Reachable_nodes, self.GO2UP_Reachable_nodes, self.UP2GO_step_Reachable_nodes, \
+        self.GO2UP_step_Reachable_nodes, self.GO2_Pure_Ent, self.GO2_Weighted_Ent = undump_object(Dumps.GO_Infos)
+
+
     def store(self):
         self.dump_statics()
         self.dump_core()
         self.dump_matrices()
+        self.dump_informativities()
 
 
     def rebuild(self):
         self.get_GO_access()
         self.get_GO_structure()
         self.get_matrixes()
+        self.get_GO_Reach()
 
 
     def load(self):
@@ -278,49 +296,124 @@ class GO_Interface(object):
         build_dir_adj()
 
 
+    def equient(self, number):
+        """
+        returns an entropy given by a number of equiprobable events, where event is the number.
+
+        :param number:
+        """
+        if number < 1.0:
+            raise Exception("Wrong value provided for entropy computation")
+
+        return -log(1/float(number),2)
+
+
     def get_GO_Reach(self):
         """
         Recovers by how many different uniprots each GO term is reached, both in distance-agnostic and distance-specific
         terms.
 
         """
+
+        def verify_equivalence_of_reaches(step_reach, reach):
+            """
+
+            :param step_reach:
+            :param reach:
+            :raise Exception:
+            """
+            lendict = {key : [len(val), len(step_reach[key].keys())] for key, val in reach.iteritems()}
+            for key, val in lendict.iteritems():
+                if val[1] != val[0]:
+                    raise Exception('Reach exploration results not equivalent! Please report the error.')
+
+
+        def special_sum(Dico, filter_funct = lambda x : x+1.0 ):
+            """
+            Special sum used for the computation of staged informativity of different terms
+
+            :param Dico:
+            :param filter_funct:
+            :raise Exception:
+            """
+            summer = 0
+            for key, val_list in Dico.iteritems():
+                summer += filter_funct(key)*len(val_list)
+            return summer
+
+
         dir_reg_path = shortest_path(self.dir_adj_matrix, directed = True, method = 'D' )
         dir_reg_path[np.isinf(dir_reg_path)] = 0.0
         dir_reg_path = lil_matrix(dir_reg_path)
         print dir_reg_path.nonzero()
 
-        Reach = dict((el, []) for el in self.Reachable_nodes_dict.keys())
-        Reach.update(self.GO2UP)
+        self.GO2UP_Reachable_nodes = dict((el, []) for el in self.Reachable_nodes_dict.keys())
+        self.GO2UP_Reachable_nodes.update(self.GO2UP)
 
-        Step_Reach = dict((key, dict((v,0) for v in val)) for key, val in Reach.iteritems())
+        pre_GO2UP_step_reachable_nodes = dict((key, dict((v,0) for v in val)) for key, val in self.GO2UP_Reachable_nodes.iteritems())
         # when called on possibly unencoutenred items, anticipate a default falue of 10 000
 
         # Now just scan vertical columns and add UP terms attached
         for idx1, idx2 in zip(list(dir_reg_path.nonzero()[0]),list(dir_reg_path.nonzero()[1])):
-            Reach[self.Num2GO[idx2]] += Reach[self.Num2GO[idx1]]
+            self.GO2UP_Reachable_nodes[self.Num2GO[idx2]] += self.GO2UP_Reachable_nodes[self.Num2GO[idx1]]
             if dir_reg_path[idx1, idx2] < 1.0:
                 raise Exception("null in non-null patch")
-            step_reach_upgrade = dict( (key, val + dir_reg_path[idx1, idx2]) for key, val in Step_Reach[self.Num2GO[idx1]].iteritems())
+            step_reach_upgrade = dict( (key, val + dir_reg_path[idx1, idx2]) for key, val in pre_GO2UP_step_reachable_nodes[self.Num2GO[idx1]].iteritems())
             for k, v in step_reach_upgrade.iteritems():
-                Step_Reach[self.Num2GO[idx2]][k] = min(Step_Reach[self.Num2GO[idx2]].setdefault(k,100000), v)
+                pre_GO2UP_step_reachable_nodes[self.Num2GO[idx2]][k] = min(pre_GO2UP_step_reachable_nodes[self.Num2GO[idx2]].setdefault(k,100000), v)
 
-        for key, val in Reach.iteritems():
-            Reach[key] = list(set(val))
+        for key, val in self.GO2UP_Reachable_nodes.iteritems():
+            self.GO2UP_Reachable_nodes[key] = list(set(val))
 
-        # Now we need to revert the reach to get the set of all the primary and derived GO terms that describe a UP
+        verify_equivalence_of_reaches(pre_GO2UP_step_reachable_nodes, self.GO2UP_Reachable_nodes)
 
-        lendict = {key : [len(val), len(Step_Reach[key].keys())] for key, val in Reach.iteritems()}
-        ppritner.pprint(lendict)
-        # nar = np.log(np.array(list(lendict.values())))
-        # hist(nar, bins=20, log=True, histtype='step')
-        # show()
+        # Now we need to invert the reach to get the set of all the primary and derived GO terms that describe a UP
+        self.UP2GO_Reachable_nodes = dict((key, []) for key in self.UP2GO_Dict.keys())
+        self.UP2GO_step_Reachable_nodes= dict((key, defaultdict(list)) for key in self.UP2GO_Dict.keys())
+        self.GO2UP_step_Reachable_nodes = dict((key, defaultdict(list)) for key in pre_GO2UP_step_reachable_nodes.keys())
+        for key, val_dict in pre_GO2UP_step_reachable_nodes.iteritems():
+            for k, v in val_dict.iteritems():
+                self.GO2UP_step_Reachable_nodes[key][v].append(k)
+                self.UP2GO_step_Reachable_nodes[k][v].append(key)
+                self.UP2GO_Reachable_nodes[k].append(key)
+
+        # and finally we compute the pure and weighted informativities for each term
+        self.GO2_Pure_Ent = dict( (key, self.equient(len(val))) for key, val in self.GO2UP_Reachable_nodes.iteritems())
+        self.GO2_Weighted_Ent = dict( (key, self.equient(special_sum(val_dict))) for key, val_dict in self.GO2UP_step_Reachable_nodes.iteritems())
+
+
+    def get_Laplacians(self):
+        """
+        Recovers the Laplacian (information conductance) matrixes for the GO annotation terms.
+        For weighted laplacian, currently implements a Max-Ent with custom factor as transition price.
+
+        :warning: for this method to function, get_GO reach function must be run first.
+        :warning: accounting for regulatory relations between the GO terms is included into the term
+
+        """
+        baseMatrix = -copy.copy(self.dir_adj_matrix)
+        nz_list = copy.copy(zip(list(baseMatrix.nonzero()[0]), list(baseMatrix.nonzero()[1])))
+
+        total_ent = self.equient(len(self.UP2GO_Dict.keys()))
+
+        for idx1, idx2 in nz_list:
+            max_Ent = max(self.GO2_Pure_Ent[self.Num2GO[idx1]],self.GO2_Pure_Ent[self.Num2GO[idx2]])
+            baseMatrix[idx1, idx2] = -total_ent/max_Ent # TODO: figrue out if entropic information computation should be done here or in a special function.
+            baseMatrix[idx2, idx1] = -total_ent/max_Ent # TODO: reduction of information to plafonate it at the triad-level
+            baseMatrix[idx2, idx2] += total_ent/max_Ent
+            baseMatrix[idx1, idx1] += total_ent/max_Ent
+
+
+
+
+
 
 
     def build_laplacian(self, include_reg=True):
         """
         Builds undirected laplacian matrix for the GO transitions. This one actually depends on the get_GO reach command
 
-        :warning: for this method to function, get_GO reach function must be run first.
+
 
         :param include_reg: if True, regulation transitions will be included.
         """
@@ -387,4 +480,11 @@ if __name__ == '__main__':
     print KG.time()
     KG.get_GO_Reach()
     print KG.time()
-    # fill for reach only is done in 3 seconds in all, 2 seconds on it's own
+
+    # Non-trivial interesting GOs: reach between 3 and 200. For them, we should calculate the hidden strong importance
+    # terms, i.e. routing over X percent of information => UP importance for GO terms.
+
+    # loading takes 1 second.
+    # fill for reach only is done in 2 seconds,
+    # tepping takes another 15,
+    # inverting + info computation - 1 more second
