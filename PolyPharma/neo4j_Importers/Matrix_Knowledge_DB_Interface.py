@@ -57,9 +57,10 @@ class GO_Interface(object):
     General calss to recover all the informations associated with GO from database and buffer them for further use.
     """
 
-    def __init__(self, Filter, Uniprot_Node_IDs):
+    def __init__(self, Filter, Uniprot_Node_IDs, corrfactor):
         self.Filtr = Filter
         self.InitSet = Uniprot_Node_IDs
+        self.corrfactor = corrfactor
         self.init_time = time()
         self.partial_time = time()
 
@@ -69,12 +70,13 @@ class GO_Interface(object):
         self.All_GOs = []
         self.GO2Num = {}
         self.Num2GO = {}
+        self.total_Entropy = None
 
         self.UP2GO_Reachable_nodes = {}
         self.GO2UP_Reachable_nodes = {}
         self.UP2GO_step_Reachable_nodes = {}
         self.GO2UP_step_Reachable_nodes = {}
-        self.GO2_Pure_Ent = {}
+        self.GO2_Pure_Inf = {}
         self.GO2_Weighted_Ent = {}
 
         self.GO_Names = {}
@@ -107,7 +109,7 @@ class GO_Interface(object):
 
 
     def dump_statics(self):
-        dump_object(Dumps.GO_builder_stat, (self.Filtr, self.InitSet))
+        dump_object(Dumps.GO_builder_stat, (self.Filtr, self.InitSet ,self.corrfactor))
 
 
     def undump_statics(self):
@@ -134,12 +136,12 @@ class GO_Interface(object):
 
     def dump_informativities(self):
         dump_object(Dumps.GO_Infos, (self.UP2GO_Reachable_nodes, self.GO2UP_Reachable_nodes, self.UP2GO_step_Reachable_nodes,
-                                    self.GO2UP_step_Reachable_nodes, self.GO2_Pure_Ent, self.GO2_Weighted_Ent))
+                                    self.GO2UP_step_Reachable_nodes, self.GO2_Pure_Inf, self.GO2_Weighted_Ent))
 
 
     def undump_informativities(self):
         self.UP2GO_Reachable_nodes, self.GO2UP_Reachable_nodes, self.UP2GO_step_Reachable_nodes, \
-        self.GO2UP_step_Reachable_nodes, self.GO2_Pure_Ent, self.GO2_Weighted_Ent = undump_object(Dumps.GO_Infos)
+        self.GO2UP_step_Reachable_nodes, self.GO2_Pure_Inf, self.GO2_Weighted_Ent = undump_object(Dumps.GO_Infos)
 
 
     def store(self):
@@ -161,12 +163,13 @@ class GO_Interface(object):
         Preloads itself from the saved dumps, in case the Filtering system is the same
 
         """
-        Filtr, Initset = self.undump_statics()
+        Filtr, Initset, corrfactor = self.undump_statics()
         if self.Filtr != Filtr:
             raise Exception("Wrong Filtering attempted to be recovered from storage")
         if self.InitSet != Initset:
             raise Exception("Wrong Initset attempted to be recovered from storage")
-
+        if self.corrfactor != corrfactor:
+            raise Exception("Wrong correction factor attempted to be recovered from storage")
         self.undump_core()
         self.undump_matrices()
 
@@ -304,8 +307,9 @@ class GO_Interface(object):
         """
         if number < 1.0:
             raise Exception("Wrong value provided for entropy computation")
-
-        return -log(1/float(number),2)
+        if not self.total_Entropy:
+            self.total_Entropy = -log(1/float(len(self.UP2GO_Dict.keys())),2)
+        return pow(-self.total_Entropy/log(1/float(number),2), self.corrfactor)
 
 
     def get_GO_Reach(self):
@@ -378,7 +382,7 @@ class GO_Interface(object):
                 self.UP2GO_Reachable_nodes[k].append(key)
 
         # and finally we compute the pure and weighted informativities for each term
-        self.GO2_Pure_Ent = dict( (key, self.equient(len(val))) for key, val in self.GO2UP_Reachable_nodes.iteritems())
+        self.GO2_Pure_Inf = dict( (key, self.equient(len(val))) for key, val in self.GO2UP_Reachable_nodes.iteritems())
         self.GO2_Weighted_Ent = dict( (key, self.equient(special_sum(val_dict))) for key, val_dict in self.GO2UP_step_Reachable_nodes.iteritems())
 
 
@@ -388,36 +392,21 @@ class GO_Interface(object):
         For weighted laplacian, currently implements a Max-Ent with custom factor as transition price.
 
         :warning: for this method to function, get_GO reach function must be run first.
-        :warning: accounting for regulatory relations between the GO terms is included into the term
+        :warning: accounting for regulatory relation relation between the GO terms is performed if has been done in the adjunction matrix computation
 
         """
         baseMatrix = -copy.copy(self.dir_adj_matrix)
         nz_list = copy.copy(zip(list(baseMatrix.nonzero()[0]), list(baseMatrix.nonzero()[1])))
 
-        total_ent = self.equient(len(self.UP2GO_Dict.keys()))
-
         for idx1, idx2 in nz_list:
-            max_Ent = max(self.GO2_Pure_Ent[self.Num2GO[idx1]],self.GO2_Pure_Ent[self.Num2GO[idx2]])
-            baseMatrix[idx1, idx2] = -total_ent/max_Ent # TODO: figrue out if entropic information computation should be done here or in a special function.
-            baseMatrix[idx2, idx1] = -total_ent/max_Ent # TODO: reduction of information to plafonate it at the triad-level
-            baseMatrix[idx2, idx2] += total_ent/max_Ent
-            baseMatrix[idx1, idx1] += total_ent/max_Ent
+            minInf = min(self.GO2_Pure_Inf[self.Num2GO[idx1]],self.GO2_Pure_Inf[self.Num2GO[idx2]])
+            baseMatrix[idx1, idx2] = -minInf # TODO: figrue out if entropic information computation should be done here or in a special function.
+            baseMatrix[idx2, idx1] = -minInf # TODO: reduction of information to plafonate it at the triad-level
+            baseMatrix[idx2, idx2] += minInf
+            baseMatrix[idx1, idx1] += minInf
 
+        self.Laplacian_matrix = baseMatrix
 
-
-
-
-
-
-    def build_laplacian(self, include_reg=True):
-        """
-        Builds undirected laplacian matrix for the GO transitions. This one actually depends on the get_GO reach command
-
-
-
-        :param include_reg: if True, regulation transitions will be included.
-        """
-        pass
 
     def get_GO_Informativities(self):
         """
@@ -472,9 +461,10 @@ class GO_Interface(object):
 if __name__ == '__main__':
     filtr = ['biological_process']
 
-    KG = GO_Interface(filtr, MG.Uniprots)
-    # KG.rebuild()
-    # KG.store()
+    KG = GO_Interface(filtr, MG.Uniprots, 1)
+    KG.rebuild()
+    KG.store()
+    print KG.time()
 
     KG.load()
     print KG.time()
@@ -488,3 +478,7 @@ if __name__ == '__main__':
     # fill for reach only is done in 2 seconds,
     # tepping takes another 15,
     # inverting + info computation - 1 more second
+
+    data_array = np.array(list(KG.GO2_Pure_Inf.values()))
+    hist(data_array, 100, log=True)
+    show()
