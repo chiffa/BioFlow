@@ -72,6 +72,8 @@ class GO_Interface(object):
         self.Num2GO = {}
         self.total_Entropy = None
 
+        self.Reachable_nodes_dict ={}
+
         self.UP2GO_Reachable_nodes = {}
         self.GO2UP_Reachable_nodes = {}
         self.UP2GO_step_Reachable_nodes = {}
@@ -172,6 +174,7 @@ class GO_Interface(object):
             raise Exception("Wrong correction factor attempted to be recovered from storage")
         self.undump_core()
         self.undump_matrices()
+        self.undump_informativities()
 
     def get_GO_access(self):
         """
@@ -308,7 +311,9 @@ class GO_Interface(object):
         if number < 1.0:
             raise Exception("Wrong value provided for entropy computation")
         if not self.total_Entropy:
-            self.total_Entropy = -log(1/float(len(self.UP2GO_Dict.keys())),2)
+            self.total_Entropy = -log(1/float(len(self.UP2GO_Dict.keys())), 2)
+        if number == 1.0:
+             return 2*self.total_Entropy
         return pow(-self.total_Entropy/log(1/float(number),2), self.corrfactor)
 
 
@@ -400,8 +405,9 @@ class GO_Interface(object):
 
         for idx1, idx2 in nz_list:
             minInf = min(self.GO2_Pure_Inf[self.Num2GO[idx1]],self.GO2_Pure_Inf[self.Num2GO[idx2]])
-            baseMatrix[idx1, idx2] = -minInf # TODO: figrue out if entropic information computation should be done here or in a special function.
-            baseMatrix[idx2, idx1] = -minInf # TODO: reduction of information to plafonate it at the triad-level
+            # TODO: filter out GOs with not enough UP
+            baseMatrix[idx1, idx2] = -minInf
+            baseMatrix[idx2, idx1] = -minInf
             baseMatrix[idx2, idx2] += minInf
             baseMatrix[idx1, idx1] += minInf
 
@@ -436,7 +442,7 @@ class GO_Interface(object):
                 self.TimesReached[elt] += 1
         # Fle=file('GO_Informativities.dump','w')
         # pickle.dump(TimesReached,Fle)  #TODO": correct dumping here
-        # Fle2=file('accDict.dump','w')
+        # Fle2=file('accDict.dump','w')print KG.time()
         # pickle.dump(accelerationDict,Fle2)  #TODO": correct dumping here
         # Fle3=file('Reverse_dict.dump','w')
         # pickle.dump(Reverse_Dict, Fle3)  #TODO": correct dumping here
@@ -462,14 +468,15 @@ if __name__ == '__main__':
     filtr = ['biological_process']
 
     KG = GO_Interface(filtr, MG.Uniprots, 1)
-    KG.rebuild()
-    KG.store()
-    print KG.time()
+    # KG.rebuild()
+    # print KG.time()
+    # KG.store()
+    # print KG.time()
 
     KG.load()
     print KG.time()
-    KG.get_GO_Reach()
-    print KG.time()
+    # KG.get_GO_Reach()
+    # print KG.time()
 
     # Non-trivial interesting GOs: reach between 3 and 200. For them, we should calculate the hidden strong importance
     # terms, i.e. routing over X percent of information => UP importance for GO terms.
@@ -479,6 +486,8 @@ if __name__ == '__main__':
     # tepping takes another 15,
     # inverting + info computation - 1 more second
 
-    data_array = np.array(list(KG.GO2_Pure_Inf.values()))
+    # full computation - 3 minutes 18 seconds; save 7 seconds, retrieval - 3 seconds
+
+    data_array = np.array([log(val) for val in KG.GO2_Pure_Inf.itervalues()])
     hist(data_array, 100, log=True)
     show()
