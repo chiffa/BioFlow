@@ -61,6 +61,7 @@ class GO_Interface(object):
         self.Filtr = Filter
         self.InitSet = Uniprot_Node_IDs
         self.corrfactor = corrfactor
+        self.ultraspec_cleaned = False
         self.init_time = time()
         self.partial_time = time()
 
@@ -302,20 +303,6 @@ class GO_Interface(object):
         build_dir_adj()
 
 
-    def equient(self, number):
-        """
-        returns an entropy given by a number of equiprobable events, where event is the number.
-
-        :param number:
-        """
-        if number < 1.0:
-            raise Exception("Wrong value provided for entropy computation")
-        if not self.total_Entropy:
-            self.total_Entropy = -log(1/float(len(self.UP2GO_Dict.keys())), 2)
-        if number == 1.0:
-             return 2*self.total_Entropy
-        return pow(-self.total_Entropy/log(1/float(number),2), self.corrfactor)
-
 
     def get_GO_Reach(self):
         """
@@ -349,6 +336,20 @@ class GO_Interface(object):
             for key, val_list in Dico.iteritems():
                 summer += filter_funct(key)*len(val_list)
             return summer
+
+        def equient(number):
+            """
+            returns an entropy given by a number of equiprobable events, where event is the number.
+
+            :param number:
+            """
+            if number < 1.0:
+                raise Exception("Wrong value provided for entropy computation")
+            if not self.total_Entropy:
+                self.total_Entropy = -log(1/float(len(self.UP2GO_Dict.keys())), 2)
+            if number == 1.0:
+                 return 2*self.total_Entropy
+            return pow(-self.total_Entropy/log(1/float(number),2), self.corrfactor)
 
 
         dir_reg_path = shortest_path(self.dir_adj_matrix, directed = True, method = 'D' )
@@ -387,8 +388,8 @@ class GO_Interface(object):
                 self.UP2GO_Reachable_nodes[k].append(key)
 
         # and finally we compute the pure and weighted informativities for each term
-        self.GO2_Pure_Inf = dict( (key, self.equient(len(val))) for key, val in self.GO2UP_Reachable_nodes.iteritems())
-        self.GO2_Weighted_Ent = dict( (key, self.equient(special_sum(val_dict))) for key, val_dict in self.GO2UP_step_Reachable_nodes.iteritems())
+        self.GO2_Pure_Inf = dict( (key, equient(len(val))) for key, val in self.GO2UP_Reachable_nodes.iteritems())
+        self.GO2_Weighted_Ent = dict( (key, equient(special_sum(val_dict))) for key, val_dict in self.GO2UP_step_Reachable_nodes.iteritems())
 
 
     def get_Laplacians(self):
@@ -405,7 +406,6 @@ class GO_Interface(object):
 
         for idx1, idx2 in nz_list:
             minInf = min(self.GO2_Pure_Inf[self.Num2GO[idx1]],self.GO2_Pure_Inf[self.Num2GO[idx2]])
-            # TODO: filter out GOs with not enough UP
             baseMatrix[idx1, idx2] = -minInf
             baseMatrix[idx2, idx1] = -minInf
             baseMatrix[idx2, idx2] += minInf
@@ -413,39 +413,6 @@ class GO_Interface(object):
 
         self.Laplacian_matrix = baseMatrix
 
-
-    def get_GO_Informativities(self):
-        """
-        Here calculated without any information on regulation
-        ..todo: introduce the iformation computation with regulation,. Outiline: transmit to each higher-level node the
-                number of nodes attainable from each node. I.e. instead of an exploration rooted at each node, use
-                a simultaneous exploration of a whole tree.
-
-        """
-        i = 0
-        l = len(self.UP2GO_Dict)
-        for key in self.UP2GO_Dict.keys():
-            i += 1
-            print 'entering', float(i)/float(l), self.time()
-            toVisit = copy.copy(self.UP2GO_Dict[key])
-            visited = []
-            while toVisit:
-                elt = toVisit.pop()
-                vs = acceleratedInsert(self.UP2GO_Dict, self.accelerationDict, elt)
-                visited += vs
-            visited = list(set(visited))
-            for elt in visited:
-                if elt not in self.TimesReached.keys():
-                    self.Reverse_Dict[elt] = []
-                    self.TimesReached[elt] = 0
-                self.Reverse_Dict[elt].append(key)
-                self.TimesReached[elt] += 1
-        # Fle=file('GO_Informativities.dump','w')
-        # pickle.dump(TimesReached,Fle)  #TODO": correct dumping here
-        # Fle2=file('accDict.dump','w')print KG.time()
-        # pickle.dump(accelerationDict,Fle2)  #TODO": correct dumping here
-        # Fle3=file('Reverse_dict.dump','w')
-        # pickle.dump(Reverse_Dict, Fle3)  #TODO": correct dumping here
 
 
     def compute_UniprotDict(self):
@@ -464,6 +431,31 @@ class GO_Interface(object):
         return UniprotDict
 
 
+    def filter_out_ultraspecific(self, ultraspecificity = 3):
+        """
+        Filters out GO terms that are too specific and builds a directed, undirected adjacency maps and laplacian.
+
+        :param ultraspecificity: parameter how much uniprots have to point to a GO term for it not to be considered ultraspecific anymore
+        """
+        pass
+
+    def export_conduction_system(self, UniprotList):
+        if not UniprotList in self.UP2GO_Dict.keys():
+            ex_pload = 'Following Uniprots either were not in the construction set or have no GOs attached: \n %s' % set(UniprotList)-set(self.UP2GO_Dict.keys())
+            raise Exception(ex_pload)
+        # write out all the proteins with a set of characteristics
+        pass
+        # attach all the GOs that this set of Proteins attains
+        pass
+        # retrieve al the GOs that can be reached from those base GOs
+        pass
+        # Write those GOs out
+        pass
+        # for all the GOs that were attained, link the GOs between them according to the directed adjacency graph riles.
+        pass
+
+
+
 if __name__ == '__main__':
     filtr = ['biological_process']
 
@@ -475,19 +467,51 @@ if __name__ == '__main__':
 
     KG.load()
     print KG.time()
-    # KG.get_GO_Reach()
-    # print KG.time()
+    KG.get_Laplacians()
+    print KG.time()
 
     # Non-trivial interesting GOs: reach between 3 and 200. For them, we should calculate the hidden strong importance
     # terms, i.e. routing over X percent of information => UP importance for GO terms.
 
-    # loading takes 1 second.
+    # loading takes 1-6 seconds.
     # fill for reach only is done in 2 seconds,
     # tepping takes another 15,
     # inverting + info computation - 1 more second
+    # Laplacian building =>
 
     # full computation - 3 minutes 18 seconds; save 7 seconds, retrieval - 3 seconds
 
-    data_array = np.array([log(val) for val in KG.GO2_Pure_Inf.itervalues()])
-    hist(data_array, 100, log=True)
-    show()
+    # data_array = np.array([log(val) for val in KG.GO2_Pure_Inf.itervalues()])
+    # hist(data_array, 100, log=True)
+    # show()
+
+    # TODO: filter out GOs with not enough UP
+
+    # TODO: export of the analytical system in a Gephy-compatible GDF
+    #       => Yes, export as GDF, including attached proteins, with names and GOs with informativities and random pick orobas
+
+    # UP confusion matrix by GO Term?
+        # => coefficient of corelation?
+    # GO specificity (i.e. how fully the given UP set covers a given GO term )
+    # GO recall (i.e. how many UPs a given GO term covers from a given set? )
+    # GO confusion power: i.e. knowing just that GO terms, how many terms out of this set would we retrieve? in case of
+    # an equiprobable pulling out of all the UP terms you know are annotated with such a GO?
+
+    # How can we scale it with introducing credibility values for the Uniprots?
+
+    # Sorting on the probability of confusion with a random sample, of addition of a random sample of a given size to the
+    # GO analysis system?
+
+    # what would be the probability of a set with a given informativity popping out on random for a given selection of terms?
+
+    # in order to perform the correct implementation, we need to draw a graph of the correlation between the confusion
+    # of the minimal informativity GO term of a set and the tension required to transmit the information
+
+    # Problem: ultraspecificity requires a pretty strong re-manipulation of both GOs and matrix construction routines after
+    # the matrices have been build.
+
+    # Wouldn't it be easier just to repress the informativity they induce by modifying the correction factors in the
+    # information functions?
+        # => Now, the distortion the uinduce is more then 10 times stronger. In addition the presence of this terms
+        # would greatly slow the matrix computation performance. (there are almost 3000 of them: a third of all the GO terms)
+    # What we could do is just to ceil the informativity of terms on the x-term informaitivity
