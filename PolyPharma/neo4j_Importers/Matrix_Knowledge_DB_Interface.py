@@ -26,6 +26,8 @@ from PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface import MatrixGett
 from PolyPharma.configs import Dumps
 from PolyPharma.neo4j_analyzer.knowledge_access import acceleratedInsert
 from PolyPharma.neo4j_analyzer.IO_Routines import dump_object, write_to_csv, undump_object
+from PolyPharma.Utils.GDF_export import GDF_export_Interface
+
 
 # Creates an instance of MatrixGetter and loads pre-computed values
 MG = MatrixGetter(True, False)
@@ -55,13 +57,20 @@ def _characterise_mat(matrix):
 class GO_Interface(object):
     """
     General calss to recover all the informations associated with GO from database and buffer them for further use.
+
+    :param Filter:
+    :param Uniprot_Node_IDs:
+    :param corrfactor:
+    :param Ultraspec_clean:
+    :param Ultraspec_lvl:  parameter how much uniprots have to point to a GO term for it not to be considered ultraspecific anymore
     """
 
-    def __init__(self, Filter, Uniprot_Node_IDs, corrfactor):
+    def __init__(self, Filter, Uniprot_Node_IDs, corrfactor, Ultraspec_clean = False, Ultraspec_lvl = 3):
         self.Filtr = Filter
         self.InitSet = Uniprot_Node_IDs
         self.corrfactor = corrfactor
-        self.ultraspec_cleaned = False
+        self.ultraspec_cleaned = Ultraspec_clean
+        self.ultraspec_lvl = Ultraspec_lvl
         self.init_time = time()
         self.partial_time = time()
 
@@ -112,7 +121,7 @@ class GO_Interface(object):
 
 
     def dump_statics(self):
-        dump_object(Dumps.GO_builder_stat, (self.Filtr, self.InitSet ,self.corrfactor))
+        dump_object(Dumps.GO_builder_stat, (self.Filtr, self.InitSet ,self.corrfactor, self.ultraspec_cleaned, self.ultraspec_lvl))
 
 
     def undump_statics(self):
@@ -152,6 +161,7 @@ class GO_Interface(object):
         self.dump_core()
         self.dump_matrices()
         self.dump_informativities()
+        # store laplacians
 
 
     def rebuild(self):
@@ -159,6 +169,9 @@ class GO_Interface(object):
         self.get_GO_structure()
         self.get_matrixes()
         self.get_GO_Reach()
+        if self.ultraspec_cleaned:
+            self.filter_out_ultraspecific()
+        self.get_Laplacians()
 
 
     def load(self):
@@ -166,16 +179,21 @@ class GO_Interface(object):
         Preloads itself from the saved dumps, in case the Filtering system is the same
 
         """
-        Filtr, Initset, corrfactor = self.undump_statics()
+        Filtr, Initset, corrfactor, ultraspec_cleaned, ultraspec_lvl = self.undump_statics()
         if self.Filtr != Filtr:
             raise Exception("Wrong Filtering attempted to be recovered from storage")
         if self.InitSet != Initset:
             raise Exception("Wrong Initset attempted to be recovered from storage")
         if self.corrfactor != corrfactor:
             raise Exception("Wrong correction factor attempted to be recovered from storage")
+        if self.ultraspec_cleaned != ultraspec_cleaned:
+            raise Exception("Ultraspecific terms leveling state is not the same in the database as requested")
+        if self.ultraspec_lvl != ultraspec_lvl:
+            raise Exception("Ultraspecific terms leveling cut-off is not the same in the database as requested")
         self.undump_core()
         self.undump_matrices()
         self.undump_informativities()
+        #load_Laplacians
 
     def get_GO_access(self):
         """
@@ -194,7 +212,7 @@ class GO_Interface(object):
                         UP_Specific_GOs.append(GOID)
                         self.GO2UP[GOID].append(UP_DB_ID)
                         self.SeedSet.add(GOID)
-            if UP_Specific_GOs == []:
+            if not UP_Specific_GOs:
                 UPs_without_GO += 1
                 print "Warning: UP without GO has been found. Database UP_DB_ID: %s, \t name: %s!!!!!!" % (UP_DB_ID, MG.ID2displayName[UP_DB_ID])
             else:
@@ -303,6 +321,20 @@ class GO_Interface(object):
         build_dir_adj()
 
 
+    def _infcalc(self, number):
+        """
+        returns an entropy given by a number of equiprobable events, where event is the number.
+
+        :param number:
+        """
+        if number < 1.0:
+            raise Exception("Wrong value provided for entropy computation")
+        if not self.total_Entropy:
+            self.total_Entropy = -log(1/float(len(self.UP2GO_Dict.keys())), 2)
+        if number == 1.0:
+             return 2*self.total_Entropy
+        return pow(-self.total_Entropy/log(1/float(number),2), self.corrfactor)
+
 
     def get_GO_Reach(self):
         """
@@ -337,25 +369,10 @@ class GO_Interface(object):
                 summer += filter_funct(key)*len(val_list)
             return summer
 
-        def equient(number):
-            """
-            returns an entropy given by a number of equiprobable events, where event is the number.
-
-            :param number:
-            """
-            if number < 1.0:
-                raise Exception("Wrong value provided for entropy computation")
-            if not self.total_Entropy:
-                self.total_Entropy = -log(1/float(len(self.UP2GO_Dict.keys())), 2)
-            if number == 1.0:
-                 return 2*self.total_Entropy
-            return pow(-self.total_Entropy/log(1/float(number),2), self.corrfactor)
-
 
         dir_reg_path = shortest_path(self.dir_adj_matrix, directed = True, method = 'D' )
         dir_reg_path[np.isinf(dir_reg_path)] = 0.0
         dir_reg_path = lil_matrix(dir_reg_path)
-        print dir_reg_path.nonzero()
 
         self.GO2UP_Reachable_nodes = dict((el, []) for el in self.Reachable_nodes_dict.keys())
         self.GO2UP_Reachable_nodes.update(self.GO2UP)
@@ -388,8 +405,8 @@ class GO_Interface(object):
                 self.UP2GO_Reachable_nodes[k].append(key)
 
         # and finally we compute the pure and weighted informativities for each term
-        self.GO2_Pure_Inf = dict( (key, equient(len(val))) for key, val in self.GO2UP_Reachable_nodes.iteritems())
-        self.GO2_Weighted_Ent = dict( (key, equient(special_sum(val_dict))) for key, val_dict in self.GO2UP_step_Reachable_nodes.iteritems())
+        self.GO2_Pure_Inf = dict( (key, self._infcalc(len(val))) for key, val in self.GO2UP_Reachable_nodes.iteritems())
+        self.GO2_Weighted_Ent = dict( (key, self._infcalc(special_sum(val_dict))) for key, val_dict in self.GO2UP_step_Reachable_nodes.iteritems())
 
 
     def get_Laplacians(self):
@@ -431,35 +448,33 @@ class GO_Interface(object):
         return UniprotDict
 
 
-    def filter_out_ultraspecific(self, ultraspecificity = 3):
+    def filter_out_ultraspecific(self):
         """
         Filters out GO terms that are too specific and builds a directed, undirected adjacency maps and laplacian.
 
-        :param ultraspecificity: parameter how much uniprots have to point to a GO term for it not to be considered ultraspecific anymore
         """
-        pass
+        rep_val = self._infcalc(self.ultraspec_lvl)
+        # self.ultraspec_cleaned = True
+        ultraspec_GOs = list( GO for GO, reach in self.GO2UP_Reachable_nodes.iteritems() if len(reach) < self.ultraspec_lvl)
+        for GO in ultraspec_GOs:
+            self.GO2_Pure_Inf[GO] = rep_val
+
+
+
 
     def export_conduction_system(self, UniprotList):
         if not UniprotList in self.UP2GO_Dict.keys():
             ex_pload = 'Following Uniprots either were not in the construction set or have no GOs attached: \n %s' % set(UniprotList)-set(self.UP2GO_Dict.keys())
             raise Exception(ex_pload)
-        # write out all the proteins with a set of characteristics
-        pass
-        # attach all the GOs that this set of Proteins attains
-        pass
-        # retrieve al the GOs that can be reached from those base GOs
-        pass
-        # Write those GOs out
-        pass
-        # for all the GOs that were attained, link the GOs between them according to the directed adjacency graph riles.
-        pass
+        # reduce the Conduction matrix
+        # output the nodes
 
 
 
 if __name__ == '__main__':
     filtr = ['biological_process']
 
-    KG = GO_Interface(filtr, MG.Uniprots, 1)
+    KG = GO_Interface(filtr, MG.Uniprots, 1, False, 3)
     # KG.rebuild()
     # print KG.time()
     # KG.store()
@@ -467,7 +482,7 @@ if __name__ == '__main__':
 
     KG.load()
     print KG.time()
-    KG.get_Laplacians()
+    KG.filter_out_ultraspecific()
     print KG.time()
 
     # Non-trivial interesting GOs: reach between 3 and 200. For them, we should calculate the hidden strong importance
@@ -481,9 +496,9 @@ if __name__ == '__main__':
 
     # full computation - 3 minutes 18 seconds; save 7 seconds, retrieval - 3 seconds
 
-    # data_array = np.array([log(val) for val in KG.GO2_Pure_Inf.itervalues()])
-    # hist(data_array, 100, log=True)
-    # show()
+    data_array = np.array([log(val) for val in KG.GO2_Pure_Inf.itervalues()])
+    hist(data_array, 100, log=True)
+    show()
 
     # TODO: filter out GOs with not enough UP
 

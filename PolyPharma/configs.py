@@ -98,7 +98,7 @@ class Dumps(object):
     GO_builder_stat = prefix + '/GO_builder_stats.dump'
     GO_Mats = prefix + '/GO_mats.dump'
     GO_Infos = prefix + '/GO_Infos.dump'
-    GDF_debug = prefix + '/GDF_debug.dump'
+    GDF_debug = prefix + '/GDF_debug.gdf'
 
 
 class Outputs(object):
