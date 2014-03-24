@@ -98,16 +98,17 @@ class Dumps(object):
     GO_builder_stat = prefix + '/GO_builder_stats.dump'
     GO_Mats = prefix + '/GO_mats.dump'
     GO_Infos = prefix + '/GO_Infos.dump'
+    GDF_debug = prefix + '/GDF_debug.dump'
+
+
+class Outputs(object):
+    prefix = str(path.abspath(path.dirname(__file__)+'/outputs'))
+    GO_GDF_output = prefix + '/GO_Analysis_output.gdf'
 
 
 Leg_ID_Filter = ['H+', 'ATP', 'GTP', 'Pi', 'H2O', 'ADP', 'PPi', 'GDP', 'O2', 'CO2', 'NTP',]
 
-# Sh***, those are ID values in a database version, they are not strict
-
-
-# Modify to get dynamically loaded from the dump
 IDFilter = pickle.load(file(Dumps.Forbidden_IDs,'r'))
-
 
 
 if __name__ == "__main__":
