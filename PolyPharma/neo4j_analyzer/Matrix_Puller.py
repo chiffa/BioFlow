@@ -236,10 +236,9 @@ def Compute_truly_random_sample(rounds, iterations, epsilon, name_version=''):
 
         List_of_pairs = []
         for _ in repeat(None,rounds):
-            L1, L2 = (MG.Uniprot_Mat_idxs.copy(),MG.Uniprot_Mat_idxs.copy())
-            random.shuffle(L1)
-            random.shuffle(L2)
-            List_of_pairs += zip(L1, L2)
+            L = MG.Uniprot_Mat_idxs.copy()
+            random.shuffle(L)
+            List_of_pairs += zip(L[:len(L)/2], L[len(L)/2:])
 
         j = 0
         for pair in List_of_pairs:

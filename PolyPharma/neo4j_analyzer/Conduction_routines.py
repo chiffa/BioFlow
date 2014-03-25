@@ -1,10 +1,23 @@
 __author__ = 'ank'
 
+import random
 import numpy as np
 from scipy.sparse import lil_matrix, csc_matrix, diags, triu
 from PolyPharma.configs import fudge
 # noinspection PyUnresolvedReferences
 from scikits.sparse.cholmod import cholesky
+from itertools import combinations, repeat
+
+def sparse_abs(sparse_matrix):
+    """
+    Recovers an absolute value of a sparse matrix
+
+    :param sparse_matrix: sparse matrix for which we want to recover the absolute
+    :return: absolute of that matrix
+    """
+    sign = sparse_matrix.sign()
+    return sparse_matrix.multiply(sign)
+
 
 def get_voltages_with_solver(laplacian_solver, IO_array):
     """
@@ -17,11 +30,12 @@ def get_voltages_with_solver(laplacian_solver, IO_array):
     return laplacian_solver(IO_array)
 
 
-def get_IO_currents_array(IO_index_pair,shape):
+def build_IO_currents_array(IO_index_pair,shape):
     """
     from a set of two indexes, builds and returns the np array that will be taken in by a solver to recover the
     voltages
 
+    :param shape: shape of the conductance matrix
     :param IO_index_pair: pair of indexes that represent the input/output nodes(indifferently)
     """
     IO_array = np.zeros((shape[0], 1))
@@ -33,14 +47,14 @@ def get_voltages(conductivity_laplacian, IO_index_pair):
     """
     Recovers voltages based on the conductivity laplacion and the IO array
 
-    :param concuctivity_laplacian:
-    :param IOs:
+    :param conductivity_laplacian:
+    :param IO_index_pair:
 
     :return: array of potential in each node
     :return: difference of potentials between the source and the sink
     """
     Solver = cholesky(csc_matrix(conductivity_laplacian), fudge)
-    IO_array = get_IO_currents_array(IO_index_pair)
+    IO_array = build_IO_currents_array(IO_index_pair,conductivity_laplacian.shape)
     return get_voltages_with_solver(Solver, IO_array)
 
 
@@ -84,20 +98,32 @@ def get_current_through_nodes(non_redundant_current_matrix):
     return ret
 
 
-def get_pairwise_flow(conductivity_laplacian, idxlist, cancellation=True):
+def get_pairwise_flow(conductivity_laplacian, idxlist, cancellation=False):
     """
 
-    :param conductivity_laplacian:
-    :param idxlist:
+    :param conductivity_laplacian:  Laplacian representing the conductivity
+    :param idxlist: list of the indexes acting as current sources/sinks
     :param cancellation: if True, the conductance values that are induced by single nodes interactions will be cancelled.
 
     :return: current matrix for the flow system
     :return: current through each node.
     """
-    pass
+    Current_accumulator = lil_matrix(conductivity_laplacian.shape)
+    solver = cholesky(csc_matrix(conductivity_laplacian), fudge)
+
+    for i, j in combinations(idxlist,2):
+        IO_array = build_IO_currents_array((i,j), conductivity_laplacian.shape)
+        voltages = get_voltages_with_solver(solver, IO_array)
+        currents_full, current_upper = get_current_matrix(conductivity_laplacian,voltages)
+        Current_accumulator += sparse_abs(current_upper)
+
+    if cancellation:
+        Current_accumulator[Current_accumulator<len(idxlist)/2.0] = 0
+
+    return Current_accumulator, get_current_through_nodes(Current_accumulator)
 
 
-def sample_pairwise_flow(conductivity_laplacian, idxlist, resamples, cancellation=True):
+def sample_pairwise_flow(conductivity_laplacian, idxlist, resamples, cancellation=False):
     """
     Performs sampling of pairwise flow in a conductance system.
 
@@ -110,4 +136,22 @@ def sample_pairwise_flow(conductivity_laplacian, idxlist, resamples, cancellatio
                 the Kirchoff's laws. However, it can be used to see the most important connections between the GO terms
                 or Interactome and can be used to compute the flow through the individual nodes.
     """
-    return 1
+    Current_accumulator = lil_matrix(conductivity_laplacian.shape)
+    solver = cholesky(csc_matrix(conductivity_laplacian), fudge)
+    List_of_pairs = []
+
+    for _ in repeat(None, resamples):
+        L = idxlist.copy()
+        random.shuffle(L)
+        List_of_pairs += zip(L[:len(L)/2], L[len(L)/2:])
+
+    for i, j in List_of_pairs:
+        IO_array = build_IO_currents_array((i,j), conductivity_laplacian.shape)
+        voltages = get_voltages_with_solver(solver, IO_array)
+        currents_full, current_upper = get_current_matrix(conductivity_laplacian,voltages)
+        Current_accumulator += sparse_abs(current_upper)
+
+    if cancellation:
+        Current_accumulator[Current_accumulator < resamples] = 0
+
+    return Current_accumulator, get_current_through_nodes(Current_accumulator)
