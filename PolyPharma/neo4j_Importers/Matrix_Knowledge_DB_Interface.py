@@ -161,7 +161,6 @@ class GO_Interface(object):
         self.dump_core()
         self.dump_matrices()
         self.dump_informativities()
-        # store laplacians
 
 
     def rebuild(self):
@@ -193,7 +192,7 @@ class GO_Interface(object):
         self.undump_core()
         self.undump_matrices()
         self.undump_informativities()
-        #load_Laplacians
+
 
     def get_GO_access(self):
         """
@@ -431,7 +430,6 @@ class GO_Interface(object):
         self.Laplacian_matrix = baseMatrix
 
 
-
     def compute_UniprotDict(self):
         """
 
@@ -454,7 +452,7 @@ class GO_Interface(object):
 
         """
         rep_val = self._infcalc(self.ultraspec_lvl)
-        # self.ultraspec_cleaned = True
+        self.ultraspec_cleaned = True
         ultraspec_GOs = list( GO for GO, reach in self.GO2UP_Reachable_nodes.iteritems() if len(reach) < self.ultraspec_lvl)
         for GO in ultraspec_GOs:
             self.GO2_Pure_Inf[GO] = rep_val
@@ -466,8 +464,8 @@ class GO_Interface(object):
         if not UniprotList in self.UP2GO_Dict.keys():
             ex_pload = 'Following Uniprots either were not in the construction set or have no GOs attached: \n %s' % set(UniprotList)-set(self.UP2GO_Dict.keys())
             raise Exception(ex_pload)
-        # reduce the Conduction matrix
-        # output the nodes
+        # Format the nodes 2 properties list
+        # Format the Current matrix
 
 
 
@@ -482,7 +480,6 @@ if __name__ == '__main__':
 
     KG.load()
     print KG.time()
-    KG.filter_out_ultraspecific()
     print KG.time()
 
     # Non-trivial interesting GOs: reach between 3 and 200. For them, we should calculate the hidden strong importance

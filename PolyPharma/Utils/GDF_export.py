@@ -3,7 +3,7 @@ __author__ = 'ank'
 import numpy as np
 from scipy.sparse import lil_matrix
 from PolyPharma.configs import Dumps
-from copy import copy
+from PolyPharma.neo4j_analyzer.Conduction_routines import get_current_through_nodes
 
 class GDF_export_Interface(object):
     """
@@ -64,15 +64,7 @@ class GDF_export_Interface(object):
         Write the nodes with associated informations
 
         """
-        poscurr = lil_matrix(self.current_Matrix.shape)
-        poscurr[self.current_Matrix > 0.0] = self.current_Matrix[self.current_Matrix > 0.0]
-        negcurr = lil_matrix(self.current_Matrix.shape)
-        negcurr[self.current_Matrix < 0.0] = self.current_Matrix[self.current_Matrix < 0.0]
-        s = np.array(poscurr.sum(axis = 1).T - negcurr.sum(axis = 0))
-        r = np.array(poscurr.sum(axis = 0) - negcurr.sum(axis = 1).T)
-        self.Idx2Current = s
-        self.Idx2Current[r > s] = r[r > s]
-        self.Idx2Current = list(self.Idx2Current.flatten())
+        self.Idx2Current = get_current_through_nodes(self.current_Matrix)
         for nodename, nodeprops in self.node_properties.iteritems():
             if self.Idx2Current[self.Label2Idx[nodename]] > self.mincurrent:
                 self.target_file.write(nodename +', '+', '.join(nodeprops)+'\n')
@@ -107,8 +99,6 @@ if __name__ == "__main__":
     premat[0,2] = 4.0
     premat[1,2] = 0.5
     premat[0,3] = 0.01
-
-    print premat
 
     GDFW = GDF_export_Interface(Dumps.GDF_debug, ['test'],['VARCHAR'],
                                 {'test1':['test one'], 'test2':['test two'], 'test3':['test three'], 'test4':['test four']},
