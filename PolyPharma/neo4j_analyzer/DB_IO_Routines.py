@@ -242,6 +242,29 @@ def recompute_forbidden_IDs(Node_Type_Dict):
     pickle.dump(retlist, file(Dumps.Forbidden_IDs,'w'))
 
 
+def recover_UP_chars(UP_Nodes, UP_are_IDs):
+    retdict = {}
+
+    if UP_are_IDs:
+        for node_Id in UP_Nodes:
+            node = DatabaseGraph.UNIPORT.get(node_Id)
+            retdict[node] = [node.ID, node.displayName]
+        return retdict
+
+    for node_leg_Id in UP_Nodes:
+        generator = DatabaseGraph.UNIPORT.index.lookup(ID = node_leg_Id)
+        if not generator:
+            continue
+        retlist = []
+        for node in generator:
+            retlist.append(node.displayName)
+        if len(retlist)!=1:
+            raise Exception('Something went wrong with the UP retrieval for the UP %s, too many display names: %s' %
+                            (node_leg_Id,retlist))
+        else:
+            retdict[node_leg_Id] = retlist
+    return retdict
+
 
 Forbidden_verification_dict = {   'Small Molecule':DatabaseGraph.SmallMolecule,
                                   'Small Molecule Collection':DatabaseGraph.SmallMolecule_Collection,

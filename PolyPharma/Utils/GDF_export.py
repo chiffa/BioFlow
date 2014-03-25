@@ -1,12 +1,17 @@
+"""
+Module containing an objet that allows an easy export of the matrix-encoded information to GDF without the need to export the whole relation matrix
+"""
 __author__ = 'ank'
 
 import numpy as np
-from scipy.sparse import lil_matrix
 from PolyPharma.configs import Dumps
 from PolyPharma.neo4j_analyzer.Conduction_routines import get_current_through_nodes
 
+
 class GDF_export_Interface(object):
     """
+    An interface allowing the export of the matrix relatioin object and node characteristics to a GDF format, compatible
+    with visualization with appropriate tools.
 
     :param target_fname: name of the file to which the GDF file will be written to
     :param field_names: Names of different fields for the node description
@@ -52,8 +57,8 @@ class GDF_export_Interface(object):
 
         """
         accumulator = []
-        for name, type in zip(self.field_names, self.field_types):
-            accumulator.append(name+' '+type)
+        for node_name, node_type in zip(self.field_names, self.field_types):
+            accumulator.append(node_name+' '+node_type)
         retstring = ', '.join(accumulator)
         retstring = 'nodedef> name VARCHAR, current DOUBLE, '+retstring+'\n'
         self.target_file.write(retstring)
@@ -92,7 +97,6 @@ class GDF_export_Interface(object):
 
 
 if __name__ == "__main__":
-
     premat = np.zeros((4,4))
 
     premat[0,1] = 1.0
@@ -100,11 +104,11 @@ if __name__ == "__main__":
     premat[1,2] = 0.5
     premat[0,3] = 0.01
 
-    GDFW = GDF_export_Interface(Dumps.GDF_debug, ['test'],['VARCHAR'],
-                                {'test1':['test one'], 'test2':['test two'], 'test3':['test three'], 'test4':['test four']},
-                                0.1, {0:'test1', 1:'test2', 2:'test3', 3:'test4'},
-                                {'test1':0, 'test2':1, 'test3':2, 'test4':3},
-                                 premat)
+    GDFW = GDF_export_Interface( Dumps.GDF_debug, ['test'],['VARCHAR'],
+                                 {'test1':['test one'], 'test2':['test two'], 'test3':['test three'], 'test4':['test four']},
+                                 0.1, {0:'test1', 1:'test2', 2:'test3', 3:'test4'},
+                                 {'test1':0, 'test2':1, 'test3':2, 'test4':3},
+                                 premat )
 
     GDFW.write_nodedefs()
     GDFW.write_nodes()

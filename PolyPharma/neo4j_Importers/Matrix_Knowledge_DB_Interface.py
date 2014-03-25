@@ -27,6 +27,7 @@ from PolyPharma.configs import Dumps
 from PolyPharma.neo4j_analyzer.knowledge_access import acceleratedInsert
 from PolyPharma.neo4j_analyzer.IO_Routines import dump_object, write_to_csv, undump_object
 from PolyPharma.Utils.GDF_export import GDF_export_Interface
+import PolyPharma.neo4j_analyzer.Conduction_routines as CR
 
 
 # Creates an instance of MatrixGetter and loads pre-computed values
@@ -65,7 +66,7 @@ class GO_Interface(object):
     :param Ultraspec_lvl:  parameter how much uniprots have to point to a GO term for it not to be considered ultraspecific anymore
     """
 
-    def __init__(self, Filter, Uniprot_Node_IDs, corrfactor, Ultraspec_clean = False, Ultraspec_lvl = 3):
+    def __init__(self, Filter, Uniprot_Node_IDs, corrfactor, Ultraspec_clean = False, Ultraspec_lvl = 3,):
         self.Filtr = Filter
         self.InitSet = Uniprot_Node_IDs
         self.corrfactor = corrfactor
@@ -78,7 +79,7 @@ class GO_Interface(object):
         self.GO2UP = defaultdict(list)
         self.SeedSet = set()
         self.All_GOs = []
-        self.GO2Num = {}
+        self.GO2Num = {} # attention, matrices are indexed starting from 1, wheras the arrays are indexed starting from 0
         self.Num2GO = {}
         self.total_Entropy = None
 
@@ -94,6 +95,8 @@ class GO_Interface(object):
         self.GO_Names = {}
         self.GO_Legacy_IDs = {}
         self.rev_GO_IDs = {}
+
+        self.UP_names = {}
 
         self.Adjacency_matrix = np.zeros((2, 2))
         self.dir_adj_matrix = np.zeros((2, 2))
@@ -130,12 +133,12 @@ class GO_Interface(object):
 
     def dump_core(self):
         dump_object(Dumps.GO_dump, (self.UP2GO_Dict, self.GO2UP, self.SeedSet, self.Reachable_nodes_dict, self.GO_Names,
-                                    self.GO_Legacy_IDs, self.rev_GO_IDs, self.All_GOs, self.GO2Num, self.Num2GO))
+                                    self.GO_Legacy_IDs, self.rev_GO_IDs, self.All_GOs, self.GO2Num, self.Num2GO, self.UP_names))
 
 
     def undump_core(self):
         self.UP2GO_Dict, self.GO2UP, self.SeedSet, self.Reachable_nodes_dict, self.GO_Names, self.GO_Legacy_IDs,\
-        self.rev_GO_IDs, self.All_GOs, self.GO2Num, self.Num2GO = undump_object(Dumps.GO_dump)
+        self.rev_GO_IDs, self.All_GOs, self.GO2Num, self.Num2GO, self.UP_names = undump_object(Dumps.GO_dump)
 
 
     def dump_matrices(self):
@@ -203,6 +206,7 @@ class GO_Interface(object):
         for UP_DB_ID in self.InitSet:
             UP_Specific_GOs = []
             Root = DatabaseGraph.UNIPORT.get(UP_DB_ID)
+            self.UP_names[UP_DB_ID] = [Root.ID, Root.displayName]
             Node_gen = Root.bothV("is_go_annotation")
             if Node_gen:
                 for GO in Node_gen:
@@ -458,29 +462,75 @@ class GO_Interface(object):
             self.GO2_Pure_Inf[GO] = rep_val
 
 
+    def build_extended_conduction_system(self, UniprotList):
+        """
+        Builds a conduction matrix that integrates uniprots, in order to allow an easier knowledge flow analysis
+
+        :return: adjusted conduction system
+        """
+        if not set(UniprotList) <= set(self.UP2GO_Dict.keys()):
+            ex_pload = 'Following Uniprots either were not in the construction set or have no GOs attached: \n %s' % (set(UniprotList) - set(self.UP2GO_Dict.keys()))
+            raise Warning(ex_pload)
+
+        # branching distribution: at least 10x the biggest conductivity of the system
+        binding_intesity = 10*self._infcalc(self.ultraspec_lvl)
+        fixed_Index = self.Laplacian_matrix.shape[0]
+        UP2IDxs = dict((UP, fixed_Index+Idx) for Idx, UP in enumerate(UniprotList))
+        IDx2UPs = dict((Idx, UP) for UP, Idx in UP2IDxs.iteritems())
+        bigger_Laplacian = lil_matrix((self.Laplacian_matrix.shape[0]+len(UniprotList),
+                                       self.Laplacian_matrix.shape[1]+len(UniprotList)))
+        bigger_Laplacian[:self.Laplacian_matrix.shape[0], :self.Laplacian_matrix.shape[1]] = self.Laplacian_matrix
+
+        for UP in UniprotList:
+            for GO in self.UP2GO_Dict[UP]:
+                bigger_Laplacian[UP2IDxs[UP], UP2IDxs[UP]] += binding_intesity
+                bigger_Laplacian[self.GO2Num[GO], self.GO2Num[GO]] += binding_intesity
+                bigger_Laplacian[self.GO2Num[GO], UP2IDxs[UP]] -= binding_intesity
+                bigger_Laplacian[UP2IDxs[UP], self.GO2Num[GO]] -= binding_intesity
+
+        bigger_obj2idx = copy.copy(self.GO2Num).update(UP2IDxs)
+        bigger_idx2obj = copy.copy(self.Num2GO).update(IDx2UPs)
+
+        nodecharnames = ['Type', 'Legacy_ID', 'Names', 'Pure_informativity', 'Confusion_potential']
+        nodechartypes = ['VARCHAR', 'VARCHAR', 'VARCHAR', 'DOUBLE', 'DOUBLE']
+        charDict = {}
+
+        for GO in self.GO2Num.iterkeys():
+            charDict[GO] = ['GO', self.GO_Legacy_IDs, self.GO_Names, self.GO2_Pure_Inf, len(self.GO2UP_Reachable_nodes)]
+
+        for UP in UniprotList:
+            charDict[UP] = ['UP', self.UP_names[UP][0], self.UP_names[UP][1], binding_intesity, 1]
+
+        print 'entering current computation'
+        print self.time()
+        c_current = CR.get_pairwise_flow(bigger_Laplacian, [key for key in IDx2UPs.keys()])
+        print self.time()
+
+        return nodecharnames, nodechartypes, charDict, bigger_idx2obj, bigger_obj2idx, bigger_Laplacian, c_current
 
 
-    def export_conduction_system(self, UniprotList):
-        if not UniprotList in self.UP2GO_Dict.keys():
-            ex_pload = 'Following Uniprots either were not in the construction set or have no GOs attached: \n %s' % set(UniprotList)-set(self.UP2GO_Dict.keys())
-            raise Exception(ex_pload)
-        # Format the nodes 2 properties list
-        # Format the Current matrix
+    def export_conduction_system(self, Condsystem):
+        pass
 
 
 
 if __name__ == '__main__':
     filtr = ['biological_process']
 
-    KG = GO_Interface(filtr, MG.Uniprots, 1, False, 3)
+    KG = GO_Interface(filtr, MG.Uniprots, 1, True, 3)
     # KG.rebuild()
     # print KG.time()
     # KG.store()
     # print KG.time()
 
+    experimental = ['881579', '65094','925081','456374']
+
     KG.load()
+    #ppritner.pprint([(UP, KG.UP_names[UP]) for UP in KG.UP2GO_Dict.keys()[:10]])
     print KG.time()
+    ppritner.pprint(KG.build_extended_conduction_system(experimental))
     print KG.time()
+    # print KG.time()
 
     # Non-trivial interesting GOs: reach between 3 and 200. For them, we should calculate the hidden strong importance
     # terms, i.e. routing over X percent of information => UP importance for GO terms.
@@ -493,9 +543,9 @@ if __name__ == '__main__':
 
     # full computation - 3 minutes 18 seconds; save 7 seconds, retrieval - 3 seconds
 
-    data_array = np.array([log(val) for val in KG.GO2_Pure_Inf.itervalues()])
-    hist(data_array, 100, log=True)
-    show()
+    # data_array = np.array([log(val) for val in KG.GO2_Pure_Inf.itervalues()])
+    # hist(data_array, 100, log=True)
+    # show()
 
     # TODO: filter out GOs with not enough UP
 

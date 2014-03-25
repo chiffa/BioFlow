@@ -1,3 +1,6 @@
+"""
+Module containing the the general routines for processing of conduction matrices with IO current arrays.
+"""
 __author__ = 'ank'
 
 import random
@@ -7,6 +10,8 @@ from PolyPharma.configs import fudge
 # noinspection PyUnresolvedReferences
 from scikits.sparse.cholmod import cholesky
 from itertools import combinations, repeat
+from copy import copy
+
 
 def sparse_abs(sparse_matrix):
     """
@@ -92,7 +97,7 @@ def get_current_through_nodes(non_redundant_current_matrix):
     negcurr[non_redundant_current_matrix < 0.0] = non_redundant_current_matrix[non_redundant_current_matrix < 0.0]
     s = np.array(poscurr.sum(axis = 1).T - negcurr.sum(axis = 0))
     r = np.array(poscurr.sum(axis = 0) - negcurr.sum(axis = 1).T)
-    ret = s
+    ret = copy(s)
     ret[r > s] = r[r > s]
     ret = list(ret.flatten())
     return ret
@@ -111,16 +116,20 @@ def get_pairwise_flow(conductivity_laplacian, idxlist, cancellation=False):
     Current_accumulator = lil_matrix(conductivity_laplacian.shape)
     solver = cholesky(csc_matrix(conductivity_laplacian), fudge)
 
-    for i, j in combinations(idxlist,2):
+    counter = 0
+
+    for i, j in combinations(idxlist, 2):
+        counter+=1
+        print 'getting pairwise flow %s' % counter
         IO_array = build_IO_currents_array((i,j), conductivity_laplacian.shape)
         voltages = get_voltages_with_solver(solver, IO_array)
-        currents_full, current_upper = get_current_matrix(conductivity_laplacian,voltages)
+        currents_full, current_upper = get_current_matrix(conductivity_laplacian, voltages)
         Current_accumulator += sparse_abs(current_upper)
 
     if cancellation:
-        Current_accumulator[Current_accumulator<len(idxlist)/2.0] = 0
+        Current_accumulator[Current_accumulator<len(idxlist)-1] = 0
 
-    return Current_accumulator, get_current_through_nodes(Current_accumulator)
+    return Current_accumulator
 
 
 def sample_pairwise_flow(conductivity_laplacian, idxlist, resamples, cancellation=False):
@@ -155,3 +164,4 @@ def sample_pairwise_flow(conductivity_laplacian, idxlist, resamples, cancellatio
         Current_accumulator[Current_accumulator < resamples] = 0
 
     return Current_accumulator, get_current_through_nodes(Current_accumulator)
+

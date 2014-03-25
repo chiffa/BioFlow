@@ -1,22 +1,26 @@
-__author__='ank'
 """
 :created: 12 mai 2013
 :@author: Andrei Kucharavy
 
 Holds all the configurations of the environmental variables for the whole project
 """
+__author__='ank'
 
 from PolyPharma.Utils.ConfigParsers.Configs_parser import parse_configs, sourcefile_compilator
 from pprint import PrettyPrinter
+from pymongo import MongoClient
 from os import path
 import pickle
 
+
 Servers, Options, Sources, Predictions = parse_configs()
+
 
 SQLite_location = Servers['PRODUCTION']['local_sqlite']
 MongoDB_url = Servers['PRODUCTION']['mongodb_server']
 neo4j_server = Servers['PRODUCTION']['server_neo4j']
 ReadSourceDBs = sourcefile_compilator(Sources)
+
 
 GeneOntology = ReadSourceDBs['GO']
 ReactomeBioPax = ReadSourceDBs['REACTOME']
@@ -25,13 +29,16 @@ Hint_csv = ReadSourceDBs['HINT']  #attention, for me it is tab-separated
 Protein_aboundances = ReadSourceDBs['ABOUNDANCES']
 sedEffFileName = ReadSourceDBs['SIDER']  #TODO: improve mappings from Drugs to secondary effects.
 
+
 ReadSourcePredictions = sourcefile_compilator(Predictions)
+
 
 # Targets file is assumed to be tab-separated, with the first column containing fuzzy versions of "names" of "gene names"
 # from uniport and the next three - information relative to binding to this target.
 Targets_File = ReadSourcePredictions['NEFLANAVIR']
 # File from which to load the names of the 300 most frequent targets
 Targets_File2 = ReadSourcePredictions['OVERINGTON']
+
 
 # ExactDict is the dictionnary used to perform a precise matching between the fuzzy target names and the SwissProt IDs required
 # for a lookup in the database
@@ -40,9 +47,10 @@ Targets_dict = subdict
 from TargetPreProcessing.Overington_parser import subdict2
 Targets_dict2 = subdict2
 
-from pymongo import MongoClient
+
 client = MongoClient(MongoDB_url)
 db = client.PolyPharma_database
+tmp_coll = db.tmp_collection
 # TODO: see what we are going to do with versionning
 ref_coll = db.refrence_v_0_3
 data_coll = db.data_v_0_3
@@ -78,6 +86,10 @@ Conductance_Matrix_Dict = {"Group":0.5,
 
 
 class Dumps(object):
+    """
+    A class that contains and controls all the dumps related to accelerated loading of mappings between the graph DB
+    and the mapping matrix holders
+    """
     prefix = str(path.abspath(path.dirname(__file__)+'/dumps'))
     matrix_LS = prefix + '/dump5.dump'
     matrix_corrs = prefix + '/dump2.dump'

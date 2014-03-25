@@ -12,7 +12,7 @@ from bulbs.property import String, Integer, Float, Bool
 
 class CostumNode(Node):             # Serves as a basis for the annotation
     element_type = "CostumNode"
-    ID = String(nullable = False)       # Reactome import heritage
+    ID = String(nullable = False)       #TODO: rename to the legacy ID. This is a Reactome import heritage
     displayName = String()            # To see what it is, for the human operator
     main_connex = Bool()
     custom = String()                 # Just in case
