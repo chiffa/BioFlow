@@ -351,7 +351,7 @@ def get_Current_all(Voltages, J):
     :return: Currents throug each node.
     :rtype: csc_matrix
     '''
-    # This one seems to be pretty fucked-up, likely because of the non-connexity of a large portion of uniprots.
+    # This one seems to be pretty f#-up, likely because of the non-connexity of a large portion of uniprots.
     diag_Voltages = lil_matrix(diags(Voltages.T.tolist()[0], 0))
     Corr_Conductance_Matrix = MG.Conductance_Matrix - lil_matrix(diags(MG.Conductance_Matrix.diagonal(), 0))
     sm = diag_Voltages.dot(Corr_Conductance_Matrix) - Corr_Conductance_Matrix.dot(diag_Voltages)

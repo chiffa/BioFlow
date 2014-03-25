@@ -110,6 +110,7 @@ Leg_ID_Filter = ['H+', 'ATP', 'GTP', 'Pi', 'H2O', 'ADP', 'PPi', 'GDP', 'O2', 'CO
 
 IDFilter = pickle.load(file(Dumps.Forbidden_IDs,'r'))
 
+fudge = 1e-10
 
 if __name__ == "__main__":
     pp=PrettyPrinter(indent=4)
