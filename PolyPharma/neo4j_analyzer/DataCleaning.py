@@ -1,8 +1,10 @@
-'''
-Created on Jun 24, 2013
+__author__='ank'
 
-@author: andrei
-'''
+"""
+:author: Andrei
+
+:warning: **DEPRECATED**
+"""
 
 from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
 import copy

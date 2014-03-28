@@ -1,11 +1,10 @@
-'''
-Created on Jul 11, 2013
-@author: andrei
+__author__ = 'ank'
+"""
+:author: andrei
 
 This module contains all the routines that are respojnsible for pulling 
 the matrixes out of the neo4j graph and processing them
-
-'''
+"""
 import copy
 import operator
 import random
@@ -237,10 +236,9 @@ def Compute_truly_random_sample(rounds, iterations, epsilon, name_version=''):
 
         List_of_pairs = []
         for _ in repeat(None,rounds):
-            L1, L2 = (MG.Uniprot_Mat_idxs.copy(),MG.Uniprot_Mat_idxs.copy())
-            random.shuffle(L1)
-            random.shuffle(L2)
-            List_of_pairs += zip(L1, L2)
+            L = MG.Uniprot_Mat_idxs.copy()
+            random.shuffle(L)
+            List_of_pairs += zip(L[:len(L)/2], L[len(L)/2:])
 
         j = 0
         for pair in List_of_pairs:
@@ -352,7 +350,7 @@ def get_Current_all(Voltages, J):
     :return: Currents throug each node.
     :rtype: csc_matrix
     '''
-    # This one seems to be pretty fucked-up, likely because of the non-connexity of a large portion of uniprots.
+    # This one seems to be pretty f#-up, likely because of the non-connexity of a large portion of uniprots.
     diag_Voltages = lil_matrix(diags(Voltages.T.tolist()[0], 0))
     Corr_Conductance_Matrix = MG.Conductance_Matrix - lil_matrix(diags(MG.Conductance_Matrix.diagonal(), 0))
     sm = diag_Voltages.dot(Corr_Conductance_Matrix) - Corr_Conductance_Matrix.dot(diag_Voltages)
@@ -502,5 +500,3 @@ if __name__ == "__main__":
         # * compare the significance of the protein affected to the information circulation in the whole interactome
 
 # TODO: implementation while using Ehit interactions only
-
-

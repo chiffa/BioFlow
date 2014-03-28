@@ -5,7 +5,6 @@ the matrixes out of the neo4j graph and processing them.
 """
 import itertools
 import numpy as np
-import pickle
 from copy import copy
 from time import time
 
@@ -15,7 +14,8 @@ from scipy.sparse.csgraph import connected_components
 
 from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
 from PolyPharma.configs import edge_type_filters, Adjacency_Martix_Dict, Conductance_Matrix_Dict, Dumps
-from PolyPharma.neo4j_analyzer.IO_Routines import reaction_participant_getter, expand_from_seed, Erase_custom_fields
+from PolyPharma.neo4j_analyzer.DB_IO_Routines import reaction_participant_getter, expand_from_seed, Erase_custom_fields
+from PolyPharma.neo4j_analyzer.IO_Routines import write_to_csv, dump_object, undump_object
 
 # TODO: change the behavior of HiNT propagation to a several stages propagation
 #       Main connex set is 24k nodes, with 4331 UP links and 1051 Hint links
@@ -80,80 +80,38 @@ class MatrixGetter(object):
         self.Matrix_reality = Dumps.matrix_corrs
 
 
-    def write_to_csv(self, filename, array):
-        """
-        Dumps a numpy array to csv
-
-        :param filename: location of dumping
-        :type filename: str
-        :param array: array to dump
-        :type array: numpy.array
-        """
-        DF = file(filename, 'w')
-        DF.write(array)
-        DF.close()
-
-
-    def dump_object(self, dump_filename, object_to_dump):
-        """
-        Shorcut for pickling & dumping behavior
-
-        :param dump_filename: filename where the object will be dumped
-        :type dump_filename: str
-
-        :param object_to_dump: object to be pickled and dumped
-        :type object_to_dump: pickable object
-        """
-        DF = file(dump_filename, 'w')
-        pickle.dump(object_to_dump, DF)
-        DF.close()
-
-
-    def undump_object(self, dump_filename):
-        """
-        Undumps a pickled object
-
-        :param dump_filename: filename from which undump
-        :type dump_filename: str
-        :return: the undumped object
-        :rtype: object
-        """
-        DF = file(dump_filename, 'r')
-        return pickle.load(DF)
-
-
     def dump_Matrices(self):
         """
         dumps self.Ajacency_Matrix and self.Conductance_Matrix
         """
-        self.dump_object(Dumps.ValMat, self.Ajacency_Matrix)
-        self.dump_object(Dumps.ConMat, self.Conductance_Matrix)
+        dump_object(Dumps.ValMat, self.Ajacency_Matrix)
+        dump_object(Dumps.ConMat, self.Conductance_Matrix)
 
 
     def undump_Matrices(self):
         """
         undumps self.Ajacency_Matrix and self.Conductance_Matrix
         """
-        self.Ajacency_Matrix = self.undump_object(Dumps.ValMat)
-        self.Conductance_Matrix = self.undump_object(Dumps.ConMat)
+        self.Ajacency_Matrix = undump_object(Dumps.ValMat)
+        self.Conductance_Matrix = undump_object(Dumps.ConMat)
 
 
     def dump_Eigens(self):
         """
         dumps self.adj_eigenvals and self.Conductance_Matrix and writes them to csv
         """
-        self.write_to_csv(Dumps.eigen_VaMat, self.adj_eigenvals)
-        self.write_to_csv(Dumps.eigen_ConMat, self.cond_eigenvals)
-        self.dump_object(Dumps.val_eigen, (self.adj_eigenvals, self.adj_eigenvects))
-        self.dump_object(Dumps.cond_eigen, (self.cond_eigenvals, self.cond_eigenvects))
+        write_to_csv(Dumps.eigen_VaMat, self.adj_eigenvals)
+        write_to_csv(Dumps.eigen_ConMat, self.cond_eigenvals)
+        dump_object(Dumps.val_eigen, (self.adj_eigenvals, self.adj_eigenvects))
+        dump_object(Dumps.cond_eigen, (self.cond_eigenvals, self.cond_eigenvects))
 
 
     def undump_Eigens(self):
         """
         undumps self.adj_eigenvals and self.Conductance_Matrix
         """
-        self.adj_eigenvals, self.adj_eigenvects = self.undump_object(Dumps.val_eigen)
-        self.cond_eigenvals, self.cond_eigenvects = self.undump_object(Dumps.cond_eigen)
+        self.adj_eigenvals, self.adj_eigenvects = undump_object(Dumps.val_eigen)
+        self.cond_eigenvals, self.cond_eigenvects = undump_object(Dumps.cond_eigen)
 
 
 
@@ -161,7 +119,7 @@ class MatrixGetter(object):
         """
         dumps all the elements required for the mapping between the types and ids of database entries and matrix columns
         """
-        self.dump_object(Dumps.matrix_corrs,
+        dump_object(Dumps.matrix_corrs,
                          (self.NodeID2MatrixNumber, self.MatrixNumber2NodeID,
                           self.ID2displayName, self.ID2Type, self.ID2Localization,
                           self.Uniprots, self.Uniprot_attachments, self.Uniprot_Mat_idxs))
@@ -172,7 +130,7 @@ class MatrixGetter(object):
         undumps all the elements required for the mapping between the types and ids of database entries and matrix columns
         """
         self.NodeID2MatrixNumber, self.MatrixNumber2NodeID, self.ID2displayName, self.ID2Type,\
-        self.ID2Localization, self.Uniprots, self.Uniprot_attachments, self.Uniprot_Mat_idxs = self.undump_object(Dumps.matrix_corrs)
+        self.ID2Localization, self.Uniprots, self.Uniprot_attachments, self.Uniprot_Mat_idxs = undump_object(Dumps.matrix_corrs)
 
     def time(self):
         """
@@ -305,8 +263,6 @@ class MatrixGetter(object):
 
         self.Super_Links, self.ExpSet, c = get_expansion(self.FullSet, edge_type_filters["possibly_same"])
         characterise('Looks_similar Links', self.Super_Links, self.ExpSet, c)
-
-        # self.dump_object('fixture.dump',(self.ReactLinks,self.InitSet,self.GroupLinks, self.GroupSet, self.SecLinks, self.SecSet, self.UP_Links, self.UPSet, self.HiNT_Links, self.FullSet, self.Super_Links, self.ExpSet))
 
 
     def map_rows_to_names(self,):
@@ -502,8 +458,6 @@ class MatrixGetter(object):
 
         self.create_val_matrix()
 
-        # TODO: hard connexity reset
-        # TODO: better selection of UP so that they are adherent to Reactome_nodes
         Erase_custom_fields()
         self.Write_Connexity_Infos()
 
@@ -558,11 +512,17 @@ class MatrixGetter(object):
             else:
                 print 'No attachement for the node %s' % SP_Node_ID
 
+
     def hacky_corr(self):
+        """
+        Hacky method that should remain unused but by the devs.
+        Generate the Uniprot_Mat_idxs from the loaded Uniprot List. Prefents a 90-minute full database reload to compute
+        Sthing quickly.
+        """
         self.undump_Maps()
         self.Uniprot_Mat_idxs = []
         for SP_Id in self.Uniprots:
-            Node=DatabaseGraph.UNIPORT.get(SP_Id)
+            Node = DatabaseGraph.UNIPORT.get(SP_Id)
             if Node.main_connex:
                 self.Uniprot_Mat_idxs.append(self.NodeID2MatrixNumber[SP_Id])
         print len(self.Uniprot_Mat_idxs)
