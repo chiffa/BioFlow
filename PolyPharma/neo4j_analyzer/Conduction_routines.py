@@ -103,9 +103,12 @@ def get_current_through_nodes(non_redundant_current_matrix):
     return ret
 
 
-def get_pairwise_flow(conductivity_laplacian, idxlist, cancellation=False):
+def get_pairwise_flow(conductivity_laplacian, idxlist, cancellation=False, potential_lead=True):
     """
 
+
+    :param potential_lead: if set to True, the computation is done by injecting constant potential difference into the
+                            system, not a constant current.
     :param conductivity_laplacian:  Laplacian representing the conductivity
     :param idxlist: list of the indexes acting as current sources/sinks
     :param cancellation: if True, the conductance values that are induced by single nodes interactions will be cancelled.
@@ -124,6 +127,10 @@ def get_pairwise_flow(conductivity_laplacian, idxlist, cancellation=False):
         IO_array = build_IO_currents_array((i,j), conductivity_laplacian.shape)
         voltages = get_voltages_with_solver(solver, IO_array)
         currents_full, current_upper = get_current_matrix(conductivity_laplacian, voltages)
+        if potential_lead:
+            potential_diff = abs(voltages[i,0]-voltages[j,0])
+            current_upper = current_upper/potential_diff
+
         Current_accumulator += sparse_abs(current_upper)
 
     if cancellation:
@@ -165,3 +172,45 @@ def sample_pairwise_flow(conductivity_laplacian, idxlist, resamples, cancellatio
 
     return Current_accumulator, get_current_through_nodes(Current_accumulator)
 
+
+def laplacian_reachable_filter(laplacian, reachable_indexes):
+    """
+    Modifies a laplacian matrix in a way so that only the elemetns that are reachable in the current iteration of flow
+    computation are taken in account. Intended for the CO system computation.
+
+    :warning: The only current alternative is usage of LU instead of cholesky, which is computationally more difficult and also requires reach-dependent computation to
+    get an in and out flow to different GO terms
+
+    :warning: An alternative is the construction of the individual laplacian for each new application
+
+    :param laplacian: intial laplacian of directionless orientation
+    :param reachable_indexes: indexes that are reachable from the nodes for which we want to perform the computation.
+    :return: laplacian where all the lines and colums for terms that are not reachable are null.
+    """
+    arr = [0]*laplacian.shape[0]
+    for index in reachable_indexes:
+        arr[index] = 1
+    diag_mat = diags(arr, 0, format="lil")
+    re_laplacian = copy(laplacian)
+    re_laplacian = diag_mat.dot(re_laplacian.dot(diag_mat))
+    re_laplacian = re_laplacian - diags(re_laplacian.diagonal(), 0, format="lil")
+    d = (-re_laplacian.sum(axis = 0)).tolist()[0]
+    re_laplacian = re_laplacian + diags( d, 0, format="lil")
+    return re_laplacian
+
+def get_current_with_reach_limitations(inflated_laplacian, Idx_pair, reach_limiter):
+    """
+    Recovers the current passing through a conduction system while enforcing the limitation on the directionality of induction of the GO terms
+
+    :param inflated_laplacian: Laplacian containing the UP-GO relations in addition to purelyu GO-GO relations
+    :param Idx_pair: pair of indexes between which we want to compute the information flow
+    :param reach_limiter: list of indexes to which we want to limit the reach
+    :return:
+    """
+    reduced_laplacian = laplacian_reachable_filter(inflated_laplacian, reach_limiter)
+    voltages = get_voltages(reduced_laplacian, (Idx_pair[0], Idx_pair[1]))
+    _, current_upper = get_current_matrix(reduced_laplacian, voltages)
+    potential_diff = abs(voltages[Idx_pair[0], 0] - voltages[Idx_pair[1], 0])
+    current_upper = current_upper / potential_diff
+
+    return current_upper, potential_diff

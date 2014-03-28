@@ -216,6 +216,11 @@ To be treated:
     # DONE: remake the sampling so it is efficiently 170**2/2 one to one randomly chosen pairs that are calculated, and not the whole 170 ensemble, so that the
     # Informativities actually follow a gaussian distribution
 
+    # DONE: filter out GOs with not enough UP
+
+    # DONE: export of the analytical system in a Gephy-compatible GDF
+    #       => Yes, export as GDF, including attached proteins, with names and GOs with informativities and random pick orobas
+
 
 General programming:
 ===================

@@ -25,7 +25,7 @@ class GDF_export_Interface(object):
     Authorised_names = ['VARCHAR', 'DOUBLE', 'BOOLEAN', 'DOUBLE']
 
 
-    def __init__(self, target_fname, field_names, field_types, node_properties_dict, mincurrent, Idx2Label, Label2Idx, current_Matrix):
+    def __init__(self, target_fname, field_names, field_types, node_properties_dict, mincurrent, Idx2Label, Label2Idx, current_Matrix, directed=False):
         self.target_file = open(target_fname, 'w')
         self.field_types = field_types
         self.field_names = field_names
@@ -37,6 +37,7 @@ class GDF_export_Interface(object):
         self.Idx2Current = np.zeros((0,current_Matrix.shape[1]))
         # current retrieval for the output should be done by getting all the non-zero terms of the current matrix and then filtering out terms/lines that have too little absolute current
         # rebuilding a new current Matrix and creating a dict to map the relations from the previous matrix into a new one.
+        self.directed = directed
         self.verify()
 
 
@@ -72,7 +73,7 @@ class GDF_export_Interface(object):
         self.Idx2Current = get_current_through_nodes(self.current_Matrix)
         for nodename, nodeprops in self.node_properties.iteritems():
             if self.Idx2Current[self.Label2Idx[nodename]] > self.mincurrent:
-                self.target_file.write(nodename +', '+', '.join(nodeprops)+'\n')
+                self.target_file.write(nodename +', '+str(self.Idx2Current[self.Label2Idx[nodename]])+', '+', '.join(nodeprops)+'\n')
 
 
     def write_edgedefs(self):
@@ -80,7 +81,7 @@ class GDF_export_Interface(object):
         Write defintions for the edges. Right now, the information passing through the edges is restricted to the current
 
         """
-        retstring = 'edgedef> node1 VARCHAR, node1 VARCHAR, weight DOUBLE\n'
+        retstring = 'edgedef> node1 VARCHAR, node1 VARCHAR, weight DOUBLE, directed BOOLEAN\n'
         self.target_file.write(retstring)
 
 
@@ -92,7 +93,17 @@ class GDF_export_Interface(object):
         nz = self.current_Matrix.nonzero()
         for i, j in zip(nz[0], nz[1]):
             if abs(self.current_Matrix[i,j]) > self.mincurrent:
-                self.target_file.write(self.Idx2Label[i]+', '+self.Idx2Label[j]+', '+str(self.current_Matrix[i,j])+'\n')
+                if self.directed:
+                    self.target_file.write(self.Idx2Label[i]+', '+self.Idx2Label[j]+', '+str(self.current_Matrix[i,j])+', '+'true'+'\n')
+                else:
+                    self.target_file.write(self.Idx2Label[i]+', '+self.Idx2Label[j]+', '+str(self.current_Matrix[i,j])+', '+'false'+'\n')
+
+
+    def write(self):
+        self.write_nodedefs()
+        self.write_nodes()
+        self.write_edgedefs()
+        self.write_edges()
         self.target_file.close()
 
 
