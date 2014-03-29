@@ -30,6 +30,8 @@ from PolyPharma.Utils.GDF_export import GDF_export_Interface
 import PolyPharma.neo4j_analyzer.Conduction_routines as CR
 import hashlib
 import json
+import random
+import string
 
 
 # Creates an instance of MatrixGetter and loads pre-computed values
@@ -126,8 +128,10 @@ class GO_Interface(object):
 
         self.current_accumulator = np.zeros((2,2))
 
+        char_set = string.ascii_uppercase + string.digits
+        self.r_ID = ''.join(random.sample(char_set*6, 6))
 
-    def time(self):
+    def pretty_time(self):
         """
         Times the execution
 
@@ -138,6 +142,11 @@ class GO_Interface(object):
         pload = 'total: %s m %s s, \t partial: %s m %s s' % (int(it) / 60, it % 60, int(pt) / 60, pt % 60)
         self.partial_time = time()
         return pload
+
+
+    def _time(self):
+        pt = time() - self.partial_time
+        return pt
 
 
     def dump_statics(self):
@@ -640,7 +649,8 @@ class GO_Interface(object):
                 shuffle(self_connectable_UPs)
                 self.analytics_UP_list = self_connectable_UPs[:sample_size]
                 self.build_extended_conduction_system()
-                print 'Iteration: %s \t sample size: %s  \t time: %s \t atomic operations: %s' %(i, sample_size, self.time(), sample_size**2/2)
+                print 'Random ID: %s \t Sample size: %s \t iteration: %s\t speed: %s \t time: %s ' %(self.r_ID,
+                        sample_size, i, "{0:.2f}".format(sample_size**2/2/self._time()), self.pretty_time())
 
 
 def spawn_sampler(sample_size_list_plus_iteration_list):
@@ -651,27 +661,33 @@ def spawn_sampler(sample_size_list_plus_iteration_list):
     filtr = ['biological_process']
     KG = GO_Interface(filtr, MG.Uniprots, 1, True, 3)
     KG.load()
-    print KG.time()
+    print KG.pretty_time()
     sample_size_list = sample_size_list_plus_iteration_list[0]
     iteration_list = sample_size_list_plus_iteration_list[1]
     KG.randomly_sample(sample_size_list, iteration_list)
 
 
-if __name__ == '__main__':
-    filtr = ['biological_process']
+def spawn_sampler_pool(pool_size, sample_size_list, interation_list_per_pool):
+    from multiprocessing import Pool
+    p = Pool(pool_size)
+    payload = [(sample_size_list, interation_list_per_pool)]
+    p.map(spawn_sampler, payload*pool_size)
 
-    KG = GO_Interface(filtr, MG.Uniprots, 1, True, 3)
+
+if __name__ == '__main__':
+    # filtr = ['biological_process']
+    #
+    # KG = GO_Interface(filtr, MG.Uniprots, 1, True, 3)
     # KG.rebuild()
     # print KG.time()
     # KG.store()
     # print KG.time()
 
-    # experimental = ['881579','65094', '925081', '500332', '915530', '456374']
+    # spawn_sampler(([10,20],[2,2]))
 
-    KG.load()
-    # ppritner.pprint([(UP, KG.UP_Names[UP]) for UP in KG.UP2GO_Dict.keys()[:10]])
-    print KG.time()
-    KG.randomly_sample([10, 50, 100], [20, 10, 5])
+    spawn_sampler_pool(4, [10, 15, 25, 50, 100, 200], [20, 15, 10, 5, 5, 2])
+
+
 
     # TODO: build a theoretic "surprise" level estimator, comapare with experimental "surprise" of the GO terms with certain confusion/informativity observation
 
