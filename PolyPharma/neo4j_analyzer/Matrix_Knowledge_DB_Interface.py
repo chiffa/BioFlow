@@ -23,11 +23,16 @@ from scipy.sparse.csgraph._validation import validate_graph
 from collections import defaultdict
 from itertools import chain
 from PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface import MatrixGetter
-from PolyPharma.configs import Dumps
+from PolyPharma.configs import Dumps, Outputs, UP_store, UP_rand_samp
 from PolyPharma.neo4j_analyzer.knowledge_access import acceleratedInsert
 from PolyPharma.neo4j_analyzer.IO_Routines import dump_object, write_to_csv, undump_object
 from PolyPharma.Utils.GDF_export import GDF_export_Interface
 import PolyPharma.neo4j_analyzer.Conduction_routines as CR
+import hashlib
+import json
+import random
+import string
+from multiprocessing import Pool
 
 
 # Creates an instance of MatrixGetter and loads pre-computed values
@@ -52,7 +57,7 @@ def _characterise(objekt):
 
 def _characterise_mat(matrix):
     print 'Matrix of shape %s, type %s and has %s non-zero terms, min is %s, max is %s' %(matrix.shape, type(matrix),
-                                                                len(matrix.nonzero()[0]), np.min(matrix), np.max(matrix))
+                                                                len(matrix.nonzero()[0]), '<>', '<>')
 
 
 class GO_Interface(object):
@@ -60,10 +65,11 @@ class GO_Interface(object):
     General calss to recover all the informations associated with GO from database and buffer them for further use.
 
     :param Filter:
-    :param Uniprot_Node_IDs:
+    :param Uniprot_Node_IDs: A list of hte Uniprots that will be used for the GO reach and informativity computation. Beyond
+                                database and formalism issues, this allows to adapt method when limited list of UP is of interest
     :param corrfactor:
     :param Ultraspec_clean:
-    :param Ultraspec_lvl:  parameter how much uniprots have to point to a GO term for it not to be considered ultraspecific anymore
+    :param Ultraspec_lvl: parameter how much uniprots have to point to a GO term for it not to be considered ultraspecific anymore
     """
 
     def __init__(self, Filter, Uniprot_Node_IDs, corrfactor, Ultraspec_clean = False, Ultraspec_lvl = 3,):
@@ -75,6 +81,7 @@ class GO_Interface(object):
         self.init_time = time()
         self.partial_time = time()
 
+        self.UPs_without_GO = set()
         self.UP2GO_Dict = {}
         self.GO2UP = defaultdict(list)
         self.SeedSet = set()
@@ -96,12 +103,13 @@ class GO_Interface(object):
         self.GO_Legacy_IDs = {}
         self.rev_GO_IDs = {}
 
-        self.UP_names = {}
+        self.UP_Names = {}
 
         self.Adjacency_matrix = np.zeros((2, 2))
         self.dir_adj_matrix = np.zeros((2, 2))
         self.Laplacian_matrix = np.zeros((2, 2))
         self.Weighted_Laplacian_matrix = np.zeros((2, 2))
+
         self.Sign_retaining_matrix = np.zeros((2, 2))
 
         self.TimesReached = {}
@@ -109,8 +117,22 @@ class GO_Interface(object):
         self.Reverse_Dict = {}
         self.GO_Node_ID2Reach = {}
 
+        # everytghing below should not be dumped, but should be exported to the mongoDB
 
-    def time(self):
+        self.inflated_Laplacian = np.zeros((2,2))
+        self.inflated_idx2lbl = {}
+        self.inflated_lbl2idx = {}
+        self.binding_intesity = 0
+
+        self.analytics_UP_list = []
+        self.UP2circ_voltage = {}
+
+        self.current_accumulator = np.zeros((2,2))
+
+        char_set = string.ascii_uppercase + string.digits
+        self.r_ID = ''.join(random.sample(char_set*6, 6))
+
+    def pretty_time(self):
         """
         Times the execution
 
@@ -123,6 +145,11 @@ class GO_Interface(object):
         return pload
 
 
+    def _time(self):
+        pt = time() - self.partial_time
+        return pt
+
+
     def dump_statics(self):
         dump_object(Dumps.GO_builder_stat, (self.Filtr, self.InitSet ,self.corrfactor, self.ultraspec_cleaned, self.ultraspec_lvl))
 
@@ -133,12 +160,13 @@ class GO_Interface(object):
 
     def dump_core(self):
         dump_object(Dumps.GO_dump, (self.UP2GO_Dict, self.GO2UP, self.SeedSet, self.Reachable_nodes_dict, self.GO_Names,
-                                    self.GO_Legacy_IDs, self.rev_GO_IDs, self.All_GOs, self.GO2Num, self.Num2GO, self.UP_names))
+                                    self.GO_Legacy_IDs, self.rev_GO_IDs, self.All_GOs, self.GO2Num, self.Num2GO,
+                                    self.UP_Names, self.UPs_without_GO))
 
 
     def undump_core(self):
         self.UP2GO_Dict, self.GO2UP, self.SeedSet, self.Reachable_nodes_dict, self.GO_Names, self.GO_Legacy_IDs,\
-        self.rev_GO_IDs, self.All_GOs, self.GO2Num, self.Num2GO, self.UP_names = undump_object(Dumps.GO_dump)
+        self.rev_GO_IDs, self.All_GOs, self.GO2Num, self.Num2GO, self.UP_Names, self.UPs_without_GO = undump_object(Dumps.GO_dump)
 
 
     def dump_matrices(self):
@@ -159,11 +187,20 @@ class GO_Interface(object):
         self.GO2UP_step_Reachable_nodes, self.GO2_Pure_Inf, self.GO2_Weighted_Ent = undump_object(Dumps.GO_Infos)
 
 
+    def dump_inflated_elements(self):
+        dump_object(Dumps.GO_Inflated, (self.inflated_Laplacian, self.inflated_idx2lbl, self.inflated_lbl2idx, self.binding_intesity))
+
+
+    def undump_inflated_elements(self):
+        self.inflated_Laplacian, self.inflated_idx2lbl, self.inflated_lbl2idx, self.binding_intesity = undump_object(Dumps.GO_Inflated)
+
+
     def store(self):
         self.dump_statics()
         self.dump_core()
         self.dump_matrices()
         self.dump_informativities()
+        self.dump_inflated_elements()
 
 
     def rebuild(self):
@@ -174,6 +211,7 @@ class GO_Interface(object):
         if self.ultraspec_cleaned:
             self.filter_out_ultraspecific()
         self.get_Laplacians()
+        self.inflate_matrix_and_indexes()
 
 
     def load(self):
@@ -195,6 +233,7 @@ class GO_Interface(object):
         self.undump_core()
         self.undump_matrices()
         self.undump_informativities()
+        self.undump_inflated_elements()
 
 
     def get_GO_access(self):
@@ -206,7 +245,7 @@ class GO_Interface(object):
         for UP_DB_ID in self.InitSet:
             UP_Specific_GOs = []
             Root = DatabaseGraph.UNIPORT.get(UP_DB_ID)
-            self.UP_names[UP_DB_ID] = [Root.ID, Root.displayName]
+            self.UP_Names[UP_DB_ID] = [Root.ID, Root.displayName]
             Node_gen = Root.bothV("is_go_annotation")
             if Node_gen:
                 for GO in Node_gen:
@@ -218,6 +257,7 @@ class GO_Interface(object):
             if not UP_Specific_GOs:
                 UPs_without_GO += 1
                 print "Warning: UP without GO has been found. Database UP_DB_ID: %s, \t name: %s!!!!!!" % (UP_DB_ID, MG.ID2displayName[UP_DB_ID])
+                self.UPs_without_GO.add(UP_DB_ID)
             else:
                 self.UP2GO_Dict[UP_DB_ID] = copy.copy(UP_Specific_GOs)
 
@@ -436,7 +476,7 @@ class GO_Interface(object):
 
     def compute_UniprotDict(self):
         """
-
+        Computes the uniprot method requried by some other dictionary
 
         :return:
         """
@@ -462,75 +502,178 @@ class GO_Interface(object):
             self.GO2_Pure_Inf[GO] = rep_val
 
 
-    def build_extended_conduction_system(self, UniprotList):
+    def _MD5hash(self):
+        """
+        Return the MD hash of self to ensure that all the defining properties have been correctly defined before dump/retrieval
+        """
+        sorted_initset = sorted(self.InitSet, key=str.lower)
+        data = [self.Filtr, sorted_initset, self.corrfactor, self.ultraspec_cleaned, self.ultraspec_lvl]
+        md5 = hashlib.md5(json.dumps(data,sort_keys=True)).hexdigest()
+        return str(md5)
+
+
+    def mongo_flush(self, UP_set, current, voltage):
+        """
+
+        :param UP_set:
+        :param current:
+        :param voltage:
+        """
+        Payload = {'UP_Pair': sorted(UP_set), 'hash':self._MD5hash(), 'current':pickle.dumps(current), 'voltage':pickle.dumps(voltage)}
+        UP_store.insert(Payload)
+
+
+    def mongo_retrieve(self, UP_set):
+        """
+
+        :param UP_set:
+        """
+        Up_req = {'UP_Pair': sorted(UP_set), 'hash':self._MD5hash()}
+        if UP_store.find(Up_req).count() == 0:
+            return []
+        if UP_store.find(Up_req).count() > 1:
+            raise Warning('Several instances of pair %s with hash %s have been found in the database. Selecting randomly between them' % (UP_set, self._MD5hash()))
+        load = UP_store.find_one(Up_req)
+        return pickle.loads(load['current']), pickle.loads(load['voltage'])
+
+
+    def inflate_matrix_and_indexes(self):
+        """
+        Performs the laplacian matrix inflation to incorporate the uniprots on which we will be running the
+        """
+
+        # branching distribution: at least 10x the biggest conductivity of the system, unless ultrasec, in which case ~ ultraspec level
+        self.binding_intesity = 10*self._infcalc(self.ultraspec_lvl)
+        fixed_Index = self.Laplacian_matrix.shape[0]
+        self_connectable_UPs = list(set(self.InitSet) - set(self.UPs_without_GO))
+        UP2IDxs = dict((UP, fixed_Index+Idx) for Idx, UP in enumerate(self_connectable_UPs))
+        IDx2UPs = dict((Idx, UP) for UP, Idx in UP2IDxs.iteritems())
+        self.inflated_Laplacian = lil_matrix((self.Laplacian_matrix.shape[0]+len(self_connectable_UPs),
+                                       self.Laplacian_matrix.shape[1]+len(self_connectable_UPs)))
+        self.inflated_Laplacian[:self.Laplacian_matrix.shape[0], :self.Laplacian_matrix.shape[1]] = self.Laplacian_matrix
+
+        for UP in self_connectable_UPs:
+            for GO in self.UP2GO_Dict[UP]:
+                self.inflated_Laplacian[UP2IDxs[UP], UP2IDxs[UP]] += self.binding_intesity
+                self.inflated_Laplacian[self.GO2Num[GO], self.GO2Num[GO]] += self.binding_intesity
+                self.inflated_Laplacian[self.GO2Num[GO], UP2IDxs[UP]] -= self.binding_intesity
+                self.inflated_Laplacian[UP2IDxs[UP], self.GO2Num[GO]] -= self.binding_intesity
+
+
+        self.inflated_lbl2idx = copy.copy(self.GO2Num)
+        self.inflated_lbl2idx.update(UP2IDxs)
+        self.inflated_idx2lbl = copy.copy(self.Num2GO)
+        self.inflated_idx2lbl.update(IDx2UPs)
+
+
+
+    def build_extended_conduction_system(self, with_buffering = True):
         """
         Builds a conduction matrix that integrates uniprots, in order to allow an easier knowledge flow analysis
 
         :return: adjusted conduction system
         """
+        self.current_accumulator = lil_matrix(self.inflated_Laplacian.shape)
+
+        for UP1, UP2 in combinations(self.analytics_UP_list, 2):
+
+            if with_buffering:
+                mongocheck = self.mongo_retrieve((UP1,UP2))
+                if mongocheck:
+                    current_upper, voltage_diff = mongocheck
+                    self.current_accumulator = self.current_accumulator + CR.sparse_abs(current_upper)
+                    self.UP2circ_voltage[(UP1,UP2)] = voltage_diff
+                    continue
+            # >>>
+            Idx1, Idx2 = (self.inflated_lbl2idx[UP1], self.inflated_lbl2idx[UP2])
+            pre_reach = self.UP2GO_Reachable_nodes[UP1] + self.UP2GO_Reachable_nodes[UP2] + [UP1] + [UP2]
+            reach = [self.inflated_lbl2idx[label] for label in pre_reach]
+
+
+            current_upper, voltage_diff = CR.get_current_with_reach_limitations(inflated_laplacian = self.inflated_Laplacian,
+                                                            Idx_pair = (Idx1, Idx2),
+                                                            reach_limiter = reach)
+            # <<<
+            if with_buffering:
+                self.mongo_flush((UP1,UP2), current_upper, voltage_diff)
+            # >>>
+            self.current_accumulator = self.current_accumulator + CR.sparse_abs(current_upper)
+            self.UP2circ_voltage[(UP1,UP2)] = voltage_diff
+            # <<<
+
+
+    def compute_and_export_conduction_system(self,  UniprotList):
+        """
+        Computes the conduction system of the GO terms and exports it to the GDF format and flushes it into a file that
+        can be viewed with Gephi
+
+        :param UniprotList:
+        :raise Warning:
+        """
         if not set(UniprotList) <= set(self.UP2GO_Dict.keys()):
             ex_pload = 'Following Uniprots either were not in the construction set or have no GOs attached: \n %s' % (set(UniprotList) - set(self.UP2GO_Dict.keys()))
             raise Warning(ex_pload)
 
-        # branching distribution: at least 10x the biggest conductivity of the system
-        binding_intesity = 10*self._infcalc(self.ultraspec_lvl)
-        fixed_Index = self.Laplacian_matrix.shape[0]
-        UP2IDxs = dict((UP, fixed_Index+Idx) for Idx, UP in enumerate(UniprotList))
-        IDx2UPs = dict((Idx, UP) for UP, Idx in UP2IDxs.iteritems())
-        bigger_Laplacian = lil_matrix((self.Laplacian_matrix.shape[0]+len(UniprotList),
-                                       self.Laplacian_matrix.shape[1]+len(UniprotList)))
-        bigger_Laplacian[:self.Laplacian_matrix.shape[0], :self.Laplacian_matrix.shape[1]] = self.Laplacian_matrix
-
-        for UP in UniprotList:
-            for GO in self.UP2GO_Dict[UP]:
-                bigger_Laplacian[UP2IDxs[UP], UP2IDxs[UP]] += binding_intesity
-                bigger_Laplacian[self.GO2Num[GO], self.GO2Num[GO]] += binding_intesity
-                bigger_Laplacian[self.GO2Num[GO], UP2IDxs[UP]] -= binding_intesity
-                bigger_Laplacian[UP2IDxs[UP], self.GO2Num[GO]] -= binding_intesity
-
-        bigger_obj2idx = copy.copy(self.GO2Num).update(UP2IDxs)
-        bigger_idx2obj = copy.copy(self.Num2GO).update(IDx2UPs)
+        self.analytics_UP_list = UniprotList
+        self.build_extended_conduction_system()
 
         nodecharnames = ['Type', 'Legacy_ID', 'Names', 'Pure_informativity', 'Confusion_potential']
         nodechartypes = ['VARCHAR', 'VARCHAR', 'VARCHAR', 'DOUBLE', 'DOUBLE']
         charDict = {}
 
         for GO in self.GO2Num.iterkeys():
-            charDict[GO] = ['GO', self.GO_Legacy_IDs, self.GO_Names, self.GO2_Pure_Inf, len(self.GO2UP_Reachable_nodes)]
+            charDict[GO] = ['GO', self.GO_Legacy_IDs[GO], self.GO_Names[GO].replace(',','-'), str(self.GO2_Pure_Inf[GO]), str(len(self.GO2UP_Reachable_nodes[GO]))]
 
         for UP in UniprotList:
-            charDict[UP] = ['UP', self.UP_names[UP][0], self.UP_names[UP][1], binding_intesity, 1]
+            charDict[UP] = ['UP', self.UP_Names[UP][0], str(self.UP_Names[UP][1]).replace(',','-'), str(self.binding_intesity), '1']
 
-        print 'entering current computation'
-        print self.time()
-        c_current = CR.get_pairwise_flow(bigger_Laplacian, [key for key in IDx2UPs.keys()])
-        print self.time()
+        GDF_exporter = GDF_export_Interface(target_fname = Outputs.GO_GDF_output, field_names = nodecharnames,
+                                            field_types = nodechartypes, node_properties_dict = charDict,
+                                            mincurrent = 0.01, Idx2Label = self.inflated_idx2lbl, Label2Idx = self.inflated_lbl2idx,
+                                            current_Matrix = self.current_accumulator)
+        GDF_exporter.write()
 
-        return nodecharnames, nodechartypes, charDict, bigger_idx2obj, bigger_obj2idx, bigger_Laplacian, c_current
+        # TODO: add a return statement allowing to characterise the link between informativity, coverage and infromation flow.
 
 
-    def export_conduction_system(self, Condsystem):
-        pass
+    def randomly_sample(self, samples_size, samples_each_size):
+        """
+        Randomly samples the set
+
+        :param samples_size:
+        :param samples_each_size:
+        :raise Exception:
+        """
+        if not len(samples_size) == len(samples_each_size):
+            raise Exception('Not the same list sizes!')
+        self_connectable_UPs = list(set(self.InitSet) - set(self.UPs_without_GO))
+        for sample_size, iterations in zip(samples_size, samples_each_size):
+            for i in range(0, iterations):
+                shuffle(self_connectable_UPs)
+                self.analytics_UP_list = self_connectable_UPs[:sample_size]
+                self.build_extended_conduction_system()
+                md5 = hashlib.md5(json.dumps(sorted(self.analytics_UP_list),sort_keys=True)).hexdigest()
+                UP_rand_samp.insert({'hash':md5, 'size':sample_size, 'UPs':pickle.dumps(self.analytics_UP_list)})
+                print 'Random ID: %s \t Sample size: %s \t iteration: %s\t speed: %s \t time: %s ' %(self.r_ID,
+                        sample_size, i, "{0:.2f}".format(sample_size**2/2/self._time()), self.pretty_time())
+
 
 
 
 if __name__ == '__main__':
-    filtr = ['biological_process']
-
-    KG = GO_Interface(filtr, MG.Uniprots, 1, True, 3)
+    # filtr = ['biological_process']
+    #
+    # KG = GO_Interface(filtr, MG.Uniprots, 1, True, 3)
     # KG.rebuild()
     # print KG.time()
     # KG.store()
     # print KG.time()
 
-    experimental = ['881579', '65094','925081','456374']
+    pass
 
-    KG.load()
-    #ppritner.pprint([(UP, KG.UP_names[UP]) for UP in KG.UP2GO_Dict.keys()[:10]])
-    print KG.time()
-    ppritner.pprint(KG.build_extended_conduction_system(experimental))
-    print KG.time()
-    # print KG.time()
+
+
+    # TODO: build a theoretic "surprise" level estimator, comapare with experimental "surprise" of the GO terms with certain confusion/informativity observation
 
     # Non-trivial interesting GOs: reach between 3 and 200. For them, we should calculate the hidden strong importance
     # terms, i.e. routing over X percent of information => UP importance for GO terms.
@@ -546,11 +689,6 @@ if __name__ == '__main__':
     # data_array = np.array([log(val) for val in KG.GO2_Pure_Inf.itervalues()])
     # hist(data_array, 100, log=True)
     # show()
-
-    # TODO: filter out GOs with not enough UP
-
-    # TODO: export of the analytical system in a Gephy-compatible GDF
-    #       => Yes, export as GDF, including attached proteins, with names and GOs with informativities and random pick orobas
 
     # UP confusion matrix by GO Term?
         # => coefficient of corelation?
