@@ -23,7 +23,7 @@ from scipy.sparse.csgraph._validation import validate_graph
 from collections import defaultdict
 from itertools import chain
 from PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface import MatrixGetter
-from PolyPharma.configs import Dumps, Outputs, tmp_coll
+from PolyPharma.configs import Dumps, Outputs, UP_store, UP_rand_samp
 from PolyPharma.neo4j_analyzer.knowledge_access import acceleratedInsert
 from PolyPharma.neo4j_analyzer.IO_Routines import dump_object, write_to_csv, undump_object
 from PolyPharma.Utils.GDF_export import GDF_export_Interface
@@ -32,6 +32,7 @@ import hashlib
 import json
 import random
 import string
+from multiprocessing import Pool
 
 
 # Creates an instance of MatrixGetter and loads pre-computed values
@@ -519,7 +520,7 @@ class GO_Interface(object):
         :param voltage:
         """
         Payload = {'UP_Pair': sorted(UP_set), 'hash':self._MD5hash(), 'current':pickle.dumps(current), 'voltage':pickle.dumps(voltage)}
-        tmp_coll.insert(Payload)
+        UP_store.insert(Payload)
 
 
     def mongo_retrieve(self, UP_set):
@@ -528,11 +529,11 @@ class GO_Interface(object):
         :param UP_set:
         """
         Up_req = {'UP_Pair': sorted(UP_set), 'hash':self._MD5hash()}
-        if tmp_coll.find(Up_req).count() == 0:
+        if UP_store.find(Up_req).count() == 0:
             return []
-        if tmp_coll.find(Up_req).count() > 1:
+        if UP_store.find(Up_req).count() > 1:
             raise Warning('Several instances of pair %s with hash %s have been found in the database. Selecting randomly between them' % (UP_set, self._MD5hash()))
-        load = tmp_coll.find_one(Up_req)
+        load = UP_store.find_one(Up_req)
         return pickle.loads(load['current']), pickle.loads(load['voltage'])
 
 
@@ -632,6 +633,8 @@ class GO_Interface(object):
                                             current_Matrix = self.current_accumulator)
         GDF_exporter.write()
 
+        # TODO: add a return statement allowing to characterise the link between informativity, coverage and infromation flow.
+
 
     def randomly_sample(self, samples_size, samples_each_size):
         """
@@ -649,29 +652,12 @@ class GO_Interface(object):
                 shuffle(self_connectable_UPs)
                 self.analytics_UP_list = self_connectable_UPs[:sample_size]
                 self.build_extended_conduction_system()
+                md5 = hashlib.md5(json.dumps(sorted(self.analytics_UP_list),sort_keys=True)).hexdigest()
+                UP_rand_samp.insert({'hash':md5, 'size':sample_size, 'UPs':pickle.dumps(self.analytics_UP_list)})
                 print 'Random ID: %s \t Sample size: %s \t iteration: %s\t speed: %s \t time: %s ' %(self.r_ID,
                         sample_size, i, "{0:.2f}".format(sample_size**2/2/self._time()), self.pretty_time())
 
 
-def spawn_sampler(sample_size_list_plus_iteration_list):
-    """
-    Spawns a sampler initalized from the default GO_Interface
-
-    """
-    filtr = ['biological_process']
-    KG = GO_Interface(filtr, MG.Uniprots, 1, True, 3)
-    KG.load()
-    print KG.pretty_time()
-    sample_size_list = sample_size_list_plus_iteration_list[0]
-    iteration_list = sample_size_list_plus_iteration_list[1]
-    KG.randomly_sample(sample_size_list, iteration_list)
-
-
-def spawn_sampler_pool(pool_size, sample_size_list, interation_list_per_pool):
-    from multiprocessing import Pool
-    p = Pool(pool_size)
-    payload = [(sample_size_list, interation_list_per_pool)]
-    p.map(spawn_sampler, payload*pool_size)
 
 
 if __name__ == '__main__':
@@ -683,9 +669,7 @@ if __name__ == '__main__':
     # KG.store()
     # print KG.time()
 
-    # spawn_sampler(([10,20],[2,2]))
-
-    spawn_sampler_pool(4, [10, 15, 25, 50, 100, 200], [20, 15, 10, 5, 5, 2])
+    pass
 
 
 

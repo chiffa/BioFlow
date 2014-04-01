@@ -134,8 +134,8 @@ def convert_SP_to_IDs(SP_List):
                 Res_Dict[name].append(ID)
             if len(Res_Dict[name])>1:
                 print 'Error: several references!', name, Res_Dict[name]
-            else: 
-                Res_Dict[name]=Res_Dict[name][0]          
+            else:
+                Res_Dict[name]=Res_Dict[name][0]
     return Res_Dict
 
 def specialRatio(Number1,Number2,epsilon=1e-7):
