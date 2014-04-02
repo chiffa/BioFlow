@@ -128,9 +128,12 @@ class GO_Interface(object):
         self.UP2circ_voltage = {}
 
         self.current_accumulator = np.zeros((2,2))
+        self.node_current = {}
+        self.call_coutner = 0
 
         char_set = string.ascii_uppercase + string.digits
         self.r_ID = ''.join(random.sample(char_set*6, 6))
+
 
     def pretty_time(self):
         """
@@ -148,6 +151,13 @@ class GO_Interface(object):
     def _time(self):
         pt = time() - self.partial_time
         return pt
+
+
+    def call_show(self):
+        self.call_coutner +=1
+        print '*',
+        if self.call_coutner % 100 == 99:
+            print ''
 
 
     def dump_statics(self):
@@ -313,7 +323,6 @@ class GO_Interface(object):
         self.All_GOs = list(VisitedSet)
         self.Num2GO = dict( (i, val) for i, val in enumerate(self.All_GOs) )
         self.GO2Num = dict( (val, i) for i, val in enumerate(self.All_GOs) )
-
 
 
     def get_matrixes(self, include_reg = True):
@@ -566,15 +575,17 @@ class GO_Interface(object):
         self.inflated_idx2lbl.update(IDx2UPs)
 
 
-
-    def build_extended_conduction_system(self, with_buffering = True):
+    def build_extended_conduction_system(self, with_buffering = True, incremental = False):
         """
         Builds a conduction matrix that integrates uniprots, in order to allow an easier knowledge flow analysis
 
         :return: adjusted conduction system
         """
-        self.current_accumulator = lil_matrix(self.inflated_Laplacian.shape)
+        if not incremental or self.current_accumulator == np.zeros((2,2)):
+            self.current_accumulator = lil_matrix(self.inflated_Laplacian.shape)
+            self.UP2circ_voltage = {}
 
+        i = 0
         for UP1, UP2 in combinations(self.analytics_UP_list, 2):
 
             if with_buffering:
@@ -600,6 +611,20 @@ class GO_Interface(object):
             self.current_accumulator = self.current_accumulator + CR.sparse_abs(current_upper)
             self.UP2circ_voltage[(UP1,UP2)] = voltage_diff
             # <<<
+            self.call_show()
+
+        index_current = CR.get_current_through_nodes(self.current_accumulator)
+        self.node_current = dict( (self.inflated_idx2lbl[idx], val) for idx, val in enumerate(index_current))
+
+        return self.current_accumulator, self.UP2circ_voltage, self.node_current
+
+
+    def compute_conduction_system(self, current_accumulator, Uplist, node_current, limit = 0.01):
+        charDict = {}
+        for GO in self.GO2Num.iterkeys():
+            charDict[GO] = [ self.node_current[GO],
+                             self.GO2_Pure_Inf[GO],
+                             len(self.GO2UP_Reachable_nodes[GO])]
 
 
     def compute_and_export_conduction_system(self,  UniprotList):
@@ -617,23 +642,34 @@ class GO_Interface(object):
         self.analytics_UP_list = UniprotList
         self.build_extended_conduction_system()
 
-        nodecharnames = ['Type', 'Legacy_ID', 'Names', 'Pure_informativity', 'Confusion_potential']
-        nodechartypes = ['VARCHAR', 'VARCHAR', 'VARCHAR', 'DOUBLE', 'DOUBLE']
+        nodecharnames = ['Current', 'Type', 'Legacy_ID', 'Names', 'Pure_informativity', 'Confusion_potential']
+        nodechartypes = ['DOUBLE', 'VARCHAR', 'VARCHAR', 'VARCHAR', 'DOUBLE', 'DOUBLE']
         charDict = {}
 
         for GO in self.GO2Num.iterkeys():
-            charDict[GO] = ['GO', self.GO_Legacy_IDs[GO], self.GO_Names[GO].replace(',','-'), str(self.GO2_Pure_Inf[GO]), str(len(self.GO2UP_Reachable_nodes[GO]))]
+            charDict[GO] = [ str(self.node_current[GO]),
+                             'GO', self.GO_Legacy_IDs[GO],
+                             self.GO_Names[GO].replace(',','-'),
+                             str(self.GO2_Pure_Inf[GO]),
+                             str(len(self.GO2UP_Reachable_nodes[GO]))]
 
         for UP in UniprotList:
-            charDict[UP] = ['UP', self.UP_Names[UP][0], str(self.UP_Names[UP][1]).replace(',','-'), str(self.binding_intesity), '1']
+            charDict[UP] = [ str(self.node_current[UP]),
+                             'UP', self.UP_Names[UP][0],
+                             str(self.UP_Names[UP][1]).replace(',','-'),
+                             str(self.binding_intesity),
+                             '1']
 
         GDF_exporter = GDF_export_Interface(target_fname = Outputs.GO_GDF_output, field_names = nodecharnames,
                                             field_types = nodechartypes, node_properties_dict = charDict,
                                             mincurrent = 0.01, Idx2Label = self.inflated_idx2lbl, Label2Idx = self.inflated_lbl2idx,
                                             current_Matrix = self.current_accumulator)
+
         GDF_exporter.write()
 
-        # TODO: add a return statement allowing to characterise the link between informativity, coverage and infromation flow.
+
+    def export_subsystem(self, subUP):
+        pass
 
 
     def randomly_sample(self, samples_size, samples_each_size):
@@ -652,24 +688,31 @@ class GO_Interface(object):
                 shuffle(self_connectable_UPs)
                 self.analytics_UP_list = self_connectable_UPs[:sample_size]
                 self.build_extended_conduction_system()
-                md5 = hashlib.md5(json.dumps(sorted(self.analytics_UP_list),sort_keys=True)).hexdigest()
-                UP_rand_samp.insert({'hash':md5, 'size':sample_size, 'UPs':pickle.dumps(self.analytics_UP_list)})
-                print 'Random ID: %s \t Sample size: %s \t iteration: %s\t speed: %s \t time: %s ' %(self.r_ID,
+                md5 = hashlib.md5(json.dumps( sorted(self.analytics_UP_list), sort_keys=True)).hexdigest()
+                UP_rand_samp.insert({'UP_hash' : md5,
+                                     'sys_hash' : self._MD5hash(),
+                                     'size' : sample_size,
+                                     'UPs' : pickle.dumps(self.analytics_UP_list),
+                                     'currents' : pickle.dumps((self.current_accumulator, self.node_current)),
+                                     'voltages' : pickle.dumps(self.UP2circ_voltage)})
+                print '\n Random ID: %s \t Sample size: %s \t iteration: %s\t compops: %s \t time: %s ' %(self.r_ID,
                         sample_size, i, "{0:.2f}".format(sample_size**2/2/self._time()), self.pretty_time())
 
 
-
-
 if __name__ == '__main__':
-    # filtr = ['biological_process']
-    #
-    # KG = GO_Interface(filtr, MG.Uniprots, 1, True, 3)
-    # KG.rebuild()
-    # print KG.time()
-    # KG.store()
-    # print KG.time()
+    filtr = ['biological_process']
 
-    pass
+    KG = GO_Interface(filtr, MG.Uniprots, 1, True, 3)
+    # KG.rebuild()
+    # print KG.pretty_time()
+    # KG.store()
+    # print KG.pretty_time()
+    # experimental = ['881579','65094', '925081', '500332', '915530', '456374']
+    # print KG.pretty_time()
+    # KG.load()
+    #
+    # KG.compute_and_export_conduction_system(experimental)
+
 
 
 

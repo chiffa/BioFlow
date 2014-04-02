@@ -198,6 +198,8 @@ def laplacian_reachable_filter(laplacian, reachable_indexes):
     re_laplacian = re_laplacian + diags( d, 0, format="lil")
     return re_laplacian
 
+
+
 def get_current_with_reach_limitations(inflated_laplacian, Idx_pair, reach_limiter):
     """
     Recovers the current passing through a conduction system while enforcing the limitation on the directionality of induction of the GO terms

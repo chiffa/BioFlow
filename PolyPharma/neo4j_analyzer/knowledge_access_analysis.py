@@ -7,10 +7,14 @@ from Matrix_Interactome_DB_interface import  MatrixGetter
 from Matrix_Knowledge_DB_Interface import GO_Interface
 from multiprocessing import Pool
 from PolyPharma.configs import UP_rand_samp, UP_store
+from pprint import PrettyPrinter
+import pickle
+import numpy as np
 
+
+pprinter = PrettyPrinter(indent=4)
 MG = MatrixGetter(True, False)
 MG.fast_load()
-
 
 
 def spawn_sampler(sample_size_list_plus_iteration_list):
@@ -19,6 +23,7 @@ def spawn_sampler(sample_size_list_plus_iteration_list):
 
     :param sample_size_list_plus_iteration_list: combined list of sample swizes and iterations (requried for Pool.map usage)
     """
+    print sample_size_list_plus_iteration_list
     filtr = ['biological_process']
     KG = GO_Interface(filtr, MG.Uniprots, 1, True, 3)
     KG.load()
@@ -41,9 +46,13 @@ def spawn_sampler_pool(pool_size, sample_size_list, interation_list_per_pool):
     p.map(spawn_sampler, payload * pool_size)
 
 
+def show_corrs(tri_corr_array):
+    pass
+
 
 def stats_on_existing_circsys(size):
     """
+    Recovers the statistics on the existing circulation systems.
 
     :return:
     """
@@ -52,12 +61,22 @@ def stats_on_existing_circsys(size):
     KG.load()
     MD5_hash = KG._MD5hash()
 
-    for sample in UP_rand_samp.find({'size':size, 'hash':MD5_hash}):
-        UP_set = sample['UPs']
-        KG.compute_and_export_conduction_system(UP_set)
-        # TODO: finish the matrix of knowledge and then the method itself
+    curr_inf_conf_general = []
+    for sample in UP_rand_samp.find({'size':size, 'sys_hash' : MD5_hash}):
+        print sample['sys_hash'], sample['sys_hash'] == MD5_hash
+        UP_set = pickle.loads(sample['UPs'])
+        Dic_system = KG.compute_and_export_conduction_system(UP_set)
+        curr_inf_conf = []
+        for value in Dic_system.itervalues():
+            if value[1] == 'GO':
+                curr_inf_conf.append([float(value[0]), float(value[4]), int(value[5])])
+        propmat = np.array(curr_inf_conf)
+        print propmat, propmat.shape
+        print np.corrcoef(propmat)
+        curr_inf_conf_general += curr_inf_conf
 
 
 if __name__ == "__main__":
-    spawn_sampler_pool(4, [100, 150, 200, 500], [5, 5, 2, 1])
-
+    # spawn_sampler(([10, 15], [1, 2]))
+    # spawn_sampler_pool(2, [5, 10], [1, 1])
+    stats_on_existing_circsys(10)
