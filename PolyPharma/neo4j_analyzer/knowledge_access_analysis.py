@@ -10,6 +10,7 @@ from PolyPharma.configs import UP_rand_samp, UP_store
 from pprint import PrettyPrinter
 import pickle
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 pprinter = PrettyPrinter(indent=4)
@@ -47,7 +48,35 @@ def spawn_sampler_pool(pool_size, sample_size_list, interation_list_per_pool):
 
 
 def show_corrs(tri_corr_array):
-    pass
+    plt.figure()
+
+    plt.subplot(331)
+    plt.title('closest side to side')
+    plt.hist(tri_corr_array[0, :], bins=100, histtype='step')
+
+    plt.subplot(332)
+    plt.title('closest side to side')
+    plt.scatter(tri_corr_array[0, :], tri_corr_array[1, :])
+
+    plt.subplot(333)
+    plt.title('closest side to side')
+    plt.scatter(tri_corr_array[0, :], tri_corr_array[2, :])
+
+    plt.subplot(335)
+    plt.title('closest side to side')
+    plt.hist(tri_corr_array[1, :], bins=100, histtype='step')
+
+    plt.subplot(336)
+    plt.title('closest side to side')
+    plt.scatter(tri_corr_array[1, :], tri_corr_array[2, :])
+
+    plt.subplot(339)
+    plt.title('closest side to side')
+    plt.hist(tri_corr_array[2, :], bins=100, histtype='step')
+
+    plt.show()
+
+    return np.corrcoef(tri_corr_array)
 
 
 def stats_on_existing_circsys(size):
@@ -63,20 +92,17 @@ def stats_on_existing_circsys(size):
 
     curr_inf_conf_general = []
     for sample in UP_rand_samp.find({'size':size, 'sys_hash' : MD5_hash}):
-        print sample['sys_hash'], sample['sys_hash'] == MD5_hash
         UP_set = pickle.loads(sample['UPs'])
-        Dic_system = KG.compute_and_export_conduction_system(UP_set)
+        curr_mat, node_currs = pickle.loads(sample['currents'])
+        tensions = pickle.loads(sample['voltages'])
+        Dic_system = KG.compute_conduction_system(curr_mat,UP_set,node_currs)
         curr_inf_conf = []
-        for value in Dic_system.itervalues():
-            if value[1] == 'GO':
-                curr_inf_conf.append([float(value[0]), float(value[4]), int(value[5])])
-        propmat = np.array(curr_inf_conf)
-        print propmat, propmat.shape
-        print np.corrcoef(propmat)
+        propmat = np.array(list(Dic_system.itervalues())).T
         curr_inf_conf_general += curr_inf_conf
+    print show_corrs(curr_inf_conf_general)
 
 
 if __name__ == "__main__":
     # spawn_sampler(([10, 15], [1, 2]))
-    # spawn_sampler_pool(2, [5, 10], [1, 1])
-    stats_on_existing_circsys(10)
+    spawn_sampler_pool(6, [5, 10], [10, 10])
+    # stats_on_existing_circsys(10)

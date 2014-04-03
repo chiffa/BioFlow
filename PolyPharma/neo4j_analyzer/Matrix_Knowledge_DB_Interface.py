@@ -575,7 +575,7 @@ class GO_Interface(object):
         self.inflated_idx2lbl.update(IDx2UPs)
 
 
-    def build_extended_conduction_system(self, with_buffering = True, incremental = False):
+    def build_extended_conduction_system(self, with_buffering = False, incremental = False):
         """
         Builds a conduction matrix that integrates uniprots, in order to allow an easier knowledge flow analysis
 
@@ -611,7 +611,7 @@ class GO_Interface(object):
             self.current_accumulator = self.current_accumulator + CR.sparse_abs(current_upper)
             self.UP2circ_voltage[(UP1,UP2)] = voltage_diff
             # <<<
-            self.call_show()
+            # self.call_show()
 
         index_current = CR.get_current_through_nodes(self.current_accumulator)
         self.node_current = dict( (self.inflated_idx2lbl[idx], val) for idx, val in enumerate(index_current))
@@ -622,9 +622,11 @@ class GO_Interface(object):
     def compute_conduction_system(self, current_accumulator, Uplist, node_current, limit = 0.01):
         charDict = {}
         for GO in self.GO2Num.iterkeys():
-            charDict[GO] = [ self.node_current[GO],
-                             self.GO2_Pure_Inf[GO],
-                             len(self.GO2UP_Reachable_nodes[GO])]
+            if node_current[GO] > limit:
+                charDict[GO] = [ node_current[GO],
+                                 self.GO2_Pure_Inf[GO],
+                                 len(self.GO2UP_Reachable_nodes[GO])]
+        return charDict
 
 
     def compute_and_export_conduction_system(self,  UniprotList):
@@ -695,7 +697,7 @@ class GO_Interface(object):
                                      'UPs' : pickle.dumps(self.analytics_UP_list),
                                      'currents' : pickle.dumps((self.current_accumulator, self.node_current)),
                                      'voltages' : pickle.dumps(self.UP2circ_voltage)})
-                print '\n Random ID: %s \t Sample size: %s \t iteration: %s\t compops: %s \t time: %s ' %(self.r_ID,
+                print 'Random ID: %s \t Sample size: %s \t iteration: %s\t compops: %s \t time: %s ' %(self.r_ID,
                         sample_size, i, "{0:.2f}".format(sample_size**2/2/self._time()), self.pretty_time())
 
 
