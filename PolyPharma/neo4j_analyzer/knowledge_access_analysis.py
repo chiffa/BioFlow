@@ -104,5 +104,5 @@ def stats_on_existing_circsys(size):
 
 if __name__ == "__main__":
     # spawn_sampler(([10, 15], [1, 2]))
-    spawn_sampler_pool(6, [5, 10], [10, 10])
+    spawn_sampler_pool(4, [25, 50, 100], [10, 10, 10])
     # stats_on_existing_circsys(10)

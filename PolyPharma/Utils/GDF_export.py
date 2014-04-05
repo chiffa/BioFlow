@@ -31,7 +31,7 @@ class GDF_export_Interface(object):
         self.node_properties = node_properties_dict
         self.Idx2Label = Idx2Label
         self.Label2Idx = Label2Idx
-        self.mincurrent = mincurrent # minimal current for which we will be performing filtering out of the conductances and nodes through whichthe trafic is below that limit
+        self.mincurrent = mincurrent*current_Matrix.max() # minimal current for which we will be performing filtering out of the conductances and nodes through whichthe trafic is below that limit
         self.current_Matrix = current_Matrix # matrix where M[i,j] = current intesitu from i to j. Triangular superior, if current is from j to i, current is negative
         # current retrieval for the output should be done by getting all the non-zero terms of the current matrix and then filtering out terms/lines that have too little absolute current
         # rebuilding a new current Matrix and creating a dict to map the relations from the previous matrix into a new one.
@@ -69,7 +69,7 @@ class GDF_export_Interface(object):
 
         """
         for nodename, nodeprops in self.node_properties.iteritems():
-            if nodeprops[0] > self.mincurrent:
+            if float(nodeprops[0]) > self.mincurrent:
                 self.target_file.write(nodename +', '+', '.join(nodeprops)+'\n')
 
 

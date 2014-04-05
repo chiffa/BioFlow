@@ -23,7 +23,7 @@ from scipy.sparse.csgraph._validation import validate_graph
 from collections import defaultdict
 from itertools import chain
 from PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface import MatrixGetter
-from PolyPharma.configs import Dumps, Outputs, UP_store, UP_rand_samp
+from PolyPharma.configs import Dumps, Outputs, UP_rand_samp, UP_memoized_sample
 from PolyPharma.neo4j_analyzer.knowledge_access import acceleratedInsert
 from PolyPharma.neo4j_analyzer.IO_Routines import dump_object, write_to_csv, undump_object
 from PolyPharma.Utils.GDF_export import GDF_export_Interface
@@ -124,8 +124,8 @@ class GO_Interface(object):
         self.inflated_lbl2idx = {}
         self.binding_intesity = 0
 
-        self.analytics_UP_list = []
-        self.UP2circ_voltage = {}
+        self.analytic_Uniprots = []
+        self.UP2circ_and_voltage = {}
 
         self.current_accumulator = np.zeros((2,2))
         self.node_current = {}
@@ -521,29 +521,29 @@ class GO_Interface(object):
         return str(md5)
 
 
-    def mongo_flush(self, UP_set, current, voltage):
-        """
-
-        :param UP_set:
-        :param current:
-        :param voltage:
-        """
-        Payload = {'UP_Pair': sorted(UP_set), 'hash':self._MD5hash(), 'current':pickle.dumps(current), 'voltage':pickle.dumps(voltage)}
-        UP_store.insert(Payload)
-
-
-    def mongo_retrieve(self, UP_set):
-        """
-
-        :param UP_set:
-        """
-        Up_req = {'UP_Pair': sorted(UP_set), 'hash':self._MD5hash()}
-        if UP_store.find(Up_req).count() == 0:
-            return []
-        if UP_store.find(Up_req).count() > 1:
-            raise Warning('Several instances of pair %s with hash %s have been found in the database. Selecting randomly between them' % (UP_set, self._MD5hash()))
-        load = UP_store.find_one(Up_req)
-        return pickle.loads(load['current']), pickle.loads(load['voltage'])
+    # def mongo_flush(self, UP_set, current, voltage):
+    #     """
+    #
+    #     :param UP_set:
+    #     :param current:
+    #     :param voltage:
+    #     """
+    #     Payload = {'UP_Pair': sorted(UP_set), 'hash':self._MD5hash(), 'current':pickle.dumps(current), 'voltage':pickle.dumps(voltage)}
+    #     UP_store.insert(Payload)
+    #
+    #
+    # def mongo_retrieve(self, UP_set):
+    #     """
+    #
+    #     :param UP_set:
+    #     """
+    #     Up_req = {'UP_Pair': sorted(UP_set), 'hash':self._MD5hash()}
+    #     if UP_store.find(Up_req).count() == 0:
+    #         return []
+    #     if UP_store.find(Up_req).count() > 1:
+    #         raise Warning('Several instances of pair %s with hash %s have been found in the database. Selecting randomly between them' % (UP_set, self._MD5hash()))
+    #     load = UP_store.find_one(Up_req)
+    #     return pickle.loads(load['current']), pickle.loads(load['voltage'])
 
 
     def inflate_matrix_and_indexes(self):
@@ -575,7 +575,14 @@ class GO_Interface(object):
         self.inflated_idx2lbl.update(IDx2UPs)
 
 
-    def build_extended_conduction_system(self, with_buffering = False, incremental = False):
+    def set_Uniprot_source(self, Uniprots):
+        if not set(Uniprots) <= set(self.UP2GO_Dict.keys()):
+            ex_pload = 'Following Uniprots either were not in the construction set or have no GOs attached: \n %s' % (set(Uniprots) - set(self.UP2GO_Dict.keys()))
+            raise Warning(ex_pload)
+        self.analytic_Uniprots = Uniprots
+
+
+    def build_extended_conduction_system(self, memoized=True, sourced=False, incremental=False):
         """
         Builds a conduction matrix that integrates uniprots, in order to allow an easier knowledge flow analysis
 
@@ -583,40 +590,38 @@ class GO_Interface(object):
         """
         if not incremental or self.current_accumulator == np.zeros((2,2)):
             self.current_accumulator = lil_matrix(self.inflated_Laplacian.shape)
-            self.UP2circ_voltage = {}
+            if not sourced:
+                self.UP2circ_and_voltage = {}
 
-        i = 0
-        for UP1, UP2 in combinations(self.analytics_UP_list, 2):
+        for UP1, UP2 in combinations(self.analytic_Uniprots, 2):
 
-            if with_buffering:
-                mongocheck = self.mongo_retrieve((UP1,UP2))
-                if mongocheck:
-                    current_upper, voltage_diff = mongocheck
-                    self.current_accumulator = self.current_accumulator + CR.sparse_abs(current_upper)
-                    self.UP2circ_voltage[(UP1,UP2)] = voltage_diff
-                    continue
-            # >>>
+            if sourced:
+                self.current_accumulator = self.current_accumulator +\
+                                           CR.sparse_abs(self.UP2circ_and_voltage[tuple(sorted((UP1, UP2)))][1])
+                continue
+
             Idx1, Idx2 = (self.inflated_lbl2idx[UP1], self.inflated_lbl2idx[UP2])
             pre_reach = self.UP2GO_Reachable_nodes[UP1] + self.UP2GO_Reachable_nodes[UP2] + [UP1] + [UP2]
             reach = [self.inflated_lbl2idx[label] for label in pre_reach]
-
-
             current_upper, voltage_diff = CR.get_current_with_reach_limitations(inflated_laplacian = self.inflated_Laplacian,
                                                             Idx_pair = (Idx1, Idx2),
                                                             reach_limiter = reach)
-            # <<<
-            if with_buffering:
-                self.mongo_flush((UP1,UP2), current_upper, voltage_diff)
-            # >>>
             self.current_accumulator = self.current_accumulator + CR.sparse_abs(current_upper)
-            self.UP2circ_voltage[(UP1,UP2)] = voltage_diff
-            # <<<
-            # self.call_show()
+
+            if memoized:
+                self.UP2circ_and_voltage[tuple(sorted((UP1, UP2)))] = (voltage_diff, current_upper)
+
+        if memoized:
+            md5 = hashlib.md5(json.dumps( sorted(self.analytic_Uniprots), sort_keys=True)).hexdigest()
+            UP_memoized_sample.insert({'UP_hash' : md5,
+                                        'sys_hash' : self._MD5hash(),
+                                        'size' : len(self.analytic_Uniprots),
+                                        'UPs' : pickle.dumps(self.analytic_Uniprots),
+                                        'currents' : pickle.dumps((self.current_accumulator, self.node_current)),
+                                        'voltages' : pickle.dumps(self.UP2circ_and_voltage)})
 
         index_current = CR.get_current_through_nodes(self.current_accumulator)
         self.node_current = dict( (self.inflated_idx2lbl[idx], val) for idx, val in enumerate(index_current))
-
-        return self.current_accumulator, self.UP2circ_voltage, self.node_current
 
 
     def compute_conduction_system(self, current_accumulator, Uplist, node_current, limit = 0.01):
@@ -629,21 +634,14 @@ class GO_Interface(object):
         return charDict
 
 
-    def compute_and_export_conduction_system(self,  UniprotList):
+    def export_conduction_system(self):
+        # TODO: add an option for a different direction so that a comparison is still possible
         """
         Computes the conduction system of the GO terms and exports it to the GDF format and flushes it into a file that
         can be viewed with Gephi
 
-        :param UniprotList:
         :raise Warning:
         """
-        if not set(UniprotList) <= set(self.UP2GO_Dict.keys()):
-            ex_pload = 'Following Uniprots either were not in the construction set or have no GOs attached: \n %s' % (set(UniprotList) - set(self.UP2GO_Dict.keys()))
-            raise Warning(ex_pload)
-
-        self.analytics_UP_list = UniprotList
-        self.build_extended_conduction_system()
-
         nodecharnames = ['Current', 'Type', 'Legacy_ID', 'Names', 'Pure_informativity', 'Confusion_potential']
         nodechartypes = ['DOUBLE', 'VARCHAR', 'VARCHAR', 'VARCHAR', 'DOUBLE', 'DOUBLE']
         charDict = {}
@@ -655,7 +653,7 @@ class GO_Interface(object):
                              str(self.GO2_Pure_Inf[GO]),
                              str(len(self.GO2UP_Reachable_nodes[GO]))]
 
-        for UP in UniprotList:
+        for UP in self.analytic_Uniprots:
             charDict[UP] = [ str(self.node_current[UP]),
                              'UP', self.UP_Names[UP][0],
                              str(self.UP_Names[UP][1]).replace(',','-'),
@@ -666,12 +664,20 @@ class GO_Interface(object):
                                             field_types = nodechartypes, node_properties_dict = charDict,
                                             mincurrent = 0.01, Idx2Label = self.inflated_idx2lbl, Label2Idx = self.inflated_lbl2idx,
                                             current_Matrix = self.current_accumulator)
-
         GDF_exporter.write()
 
 
-    def export_subsystem(self, subUP):
-        pass
+    def export_subsystem(self, UP_system, UP_subsystem):
+
+        # TODO: add a decision if it is faster to recompute or to retrieve and render
+
+        md5 = hashlib.md5(json.dumps( sorted(UP_system), sort_keys = True)).hexdigest()
+        current_recombinator =  UP_memoized_sample.find_one({'UP_hash' : md5, 'sys_hash' : self._MD5hash(), })
+        self.UP2circ_and_voltage = pickle.loads(current_recombinator['voltages'])
+        self.set_Uniprot_source(UP_subsystem)
+        self.build_extended_conduction_system(memoized = False, sourced = True)
+        self.export_conduction_system()
+        print self.pretty_time()
 
 
     def randomly_sample(self, samples_size, samples_each_size):
@@ -684,19 +690,24 @@ class GO_Interface(object):
         """
         if not len(samples_size) == len(samples_each_size):
             raise Exception('Not the same list sizes!')
+
         self_connectable_UPs = list(set(self.InitSet) - set(self.UPs_without_GO))
+
         for sample_size, iterations in zip(samples_size, samples_each_size):
             for i in range(0, iterations):
                 shuffle(self_connectable_UPs)
-                self.analytics_UP_list = self_connectable_UPs[:sample_size]
-                self.build_extended_conduction_system()
-                md5 = hashlib.md5(json.dumps( sorted(self.analytics_UP_list), sort_keys=True)).hexdigest()
+                analytics_UP_list = self_connectable_UPs[:sample_size]
+                self.set_Uniprot_source(analytics_UP_list)
+                self.build_extended_conduction_system(memoized=False, sourced=False)
+                # print self.analytics_UP_list
+                md5 = hashlib.md5(json.dumps( sorted(analytics_UP_list), sort_keys=True)).hexdigest()
+
                 UP_rand_samp.insert({'UP_hash' : md5,
                                      'sys_hash' : self._MD5hash(),
                                      'size' : sample_size,
-                                     'UPs' : pickle.dumps(self.analytics_UP_list),
-                                     'currents' : pickle.dumps((self.current_accumulator, self.node_current)),
-                                     'voltages' : pickle.dumps(self.UP2circ_voltage)})
+                                     'UPs' : pickle.dumps(analytics_UP_list),
+                                     'currents' : pickle.dumps((self.current_accumulator, self.node_current))})
+
                 print 'Random ID: %s \t Sample size: %s \t iteration: %s\t compops: %s \t time: %s ' %(self.r_ID,
                         sample_size, i, "{0:.2f}".format(sample_size**2/2/self._time()), self.pretty_time())
 
@@ -709,11 +720,15 @@ if __name__ == '__main__':
     # print KG.pretty_time()
     # KG.store()
     # print KG.pretty_time()
-    # experimental = ['881579','65094', '925081', '500332', '915530', '456374']
-    # print KG.pretty_time()
-    # KG.load()
-    #
-    # KG.compute_and_export_conduction_system(experimental)
+    experimental = ['881579','65094', '925081', '500332', '915530', '456374']
+    print KG.pretty_time()
+    KG.load()
+
+    KG.set_Uniprot_source(experimental)
+    KG.build_extended_conduction_system()
+    KG.export_conduction_system()
+
+    KG.export_subsystem(experimental, ['881579','65094'])
 
 
 
