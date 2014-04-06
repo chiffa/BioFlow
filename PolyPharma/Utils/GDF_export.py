@@ -5,7 +5,6 @@ __author__ = 'ank'
 
 import numpy as np
 from PolyPharma.configs import Dumps
-from PolyPharma.neo4j_analyzer.Conduction_routines import get_current_through_nodes
 
 
 class GDF_export_Interface(object):
@@ -32,9 +31,8 @@ class GDF_export_Interface(object):
         self.node_properties = node_properties_dict
         self.Idx2Label = Idx2Label
         self.Label2Idx = Label2Idx
-        self.mincurrent = mincurrent # minimal current for which we will be performing filtering out of the conductances and nodes through whichthe trafic is below that limit
+        self.mincurrent = mincurrent*current_Matrix.max() # minimal current for which we will be performing filtering out of the conductances and nodes through whichthe trafic is below that limit
         self.current_Matrix = current_Matrix # matrix where M[i,j] = current intesitu from i to j. Triangular superior, if current is from j to i, current is negative
-        self.Idx2Current = np.zeros((0,current_Matrix.shape[1]))
         # current retrieval for the output should be done by getting all the non-zero terms of the current matrix and then filtering out terms/lines that have too little absolute current
         # rebuilding a new current Matrix and creating a dict to map the relations from the previous matrix into a new one.
         self.directed = directed
@@ -61,7 +59,7 @@ class GDF_export_Interface(object):
         for node_name, node_type in zip(self.field_names, self.field_types):
             accumulator.append(node_name+' '+node_type)
         retstring = ', '.join(accumulator)
-        retstring = 'nodedef> name VARCHAR, current DOUBLE, '+retstring+'\n'
+        retstring = 'nodedef> name VARCHAR, '+retstring+'\n'
         self.target_file.write(retstring)
 
 
@@ -70,10 +68,9 @@ class GDF_export_Interface(object):
         Write the nodes with associated informations
 
         """
-        self.Idx2Current = get_current_through_nodes(self.current_Matrix)
         for nodename, nodeprops in self.node_properties.iteritems():
-            if self.Idx2Current[self.Label2Idx[nodename]] > self.mincurrent:
-                self.target_file.write(nodename +', '+str(self.Idx2Current[self.Label2Idx[nodename]])+', '+', '.join(nodeprops)+'\n')
+            if float(nodeprops[0]) > self.mincurrent:
+                self.target_file.write(nodename +', '+', '.join(nodeprops)+'\n')
 
 
     def write_edgedefs(self):
