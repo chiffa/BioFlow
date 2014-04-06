@@ -50,9 +50,7 @@ Targets_dict2 = subdict2
 
 client = MongoClient(MongoDB_url)
 db = client.PolyPharma_database
-UP_store = db.human_UP2Cir_v_0
-UP_rand_samp = db.human_UP_r_samples_v_0
-UP_memoized_sample = db.human_UP2Cir_v_0
+UP_rand_samp = db.human_UP_r_samples_v_1
 tmp_coll = db.tmp_collection
 # TODO: see what we are going to do with versionning
 ref_coll = db.refrence_v_0_3
@@ -115,6 +113,7 @@ class Dumps(object):
     GO_Infos = prefix + '/GO_Infos.dump'
     GDF_debug = prefix + '/GDF_debug.gdf'
     GO_Inflated = prefix +'/GO_inflated.dump'
+    GO_Analysis_memoized = prefix + '/GO_memoization.dump'
 
 
 class Outputs(object):

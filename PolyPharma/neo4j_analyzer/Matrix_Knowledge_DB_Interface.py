@@ -23,7 +23,7 @@ from scipy.sparse.csgraph._validation import validate_graph
 from collections import defaultdict
 from itertools import chain
 from PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface import MatrixGetter
-from PolyPharma.configs import Dumps, Outputs, UP_rand_samp, UP_memoized_sample
+from PolyPharma.configs import Dumps, Outputs, UP_rand_samp
 from PolyPharma.neo4j_analyzer.knowledge_access import acceleratedInsert
 from PolyPharma.neo4j_analyzer.IO_Routines import dump_object, write_to_csv, undump_object
 from PolyPharma.Utils.GDF_export import GDF_export_Interface
@@ -125,6 +125,7 @@ class GO_Interface(object):
         self.binding_intesity = 0
 
         self.analytic_Uniprots = []
+        self.UP2UP_voltages ={}
         self.UP2circ_and_voltage = {}
 
         self.current_accumulator = np.zeros((2,2))
@@ -203,6 +204,25 @@ class GO_Interface(object):
 
     def undump_inflated_elements(self):
         self.inflated_Laplacian, self.inflated_idx2lbl, self.inflated_lbl2idx, self.binding_intesity = undump_object(Dumps.GO_Inflated)
+
+
+    def dump_memoized(self):
+        md5 = hashlib.md5(json.dumps( sorted(self.analytic_Uniprots), sort_keys=True)).hexdigest()
+        payload = {'UP_hash' : md5,
+                        'sys_hash' : self._MD5hash(),
+                        'size' : len(self.analytic_Uniprots),
+                        'UPs' : pickle.dumps(self.analytic_Uniprots),
+                        'currents' : pickle.dumps((self.current_accumulator, self.node_current)),
+                        'voltages' : pickle.dumps(self.UP2circ_and_voltage)}
+        dump_object(Dumps.GO_Analysis_memoized, payload)
+
+
+    def undump_memoized(self):
+        """
+        :return: undumped memoized analysis
+        :rtype: dict
+        """
+        return undump_object(Dumps.GO_Analysis_memoized)
 
 
     def store(self):
@@ -521,31 +541,6 @@ class GO_Interface(object):
         return str(md5)
 
 
-    # def mongo_flush(self, UP_set, current, voltage):
-    #     """
-    #
-    #     :param UP_set:
-    #     :param current:
-    #     :param voltage:
-    #     """
-    #     Payload = {'UP_Pair': sorted(UP_set), 'hash':self._MD5hash(), 'current':pickle.dumps(current), 'voltage':pickle.dumps(voltage)}
-    #     UP_store.insert(Payload)
-    #
-    #
-    # def mongo_retrieve(self, UP_set):
-    #     """
-    #
-    #     :param UP_set:
-    #     """
-    #     Up_req = {'UP_Pair': sorted(UP_set), 'hash':self._MD5hash()}
-    #     if UP_store.find(Up_req).count() == 0:
-    #         return []
-    #     if UP_store.find(Up_req).count() > 1:
-    #         raise Warning('Several instances of pair %s with hash %s have been found in the database. Selecting randomly between them' % (UP_set, self._MD5hash()))
-    #     load = UP_store.find_one(Up_req)
-    #     return pickle.loads(load['current']), pickle.loads(load['voltage'])
-
-
     def inflate_matrix_and_indexes(self):
         """
         Performs the laplacian matrix inflation to incorporate the uniprots on which we will be running the
@@ -582,7 +577,7 @@ class GO_Interface(object):
         self.analytic_Uniprots = Uniprots
 
 
-    def build_extended_conduction_system(self, memoized=True, sourced=False, incremental=False):
+    def build_extended_conduction_system(self, memoized=True, sourced=False, incremental=False, cancellation = True):
         """
         Builds a conduction matrix that integrates uniprots, in order to allow an easier knowledge flow analysis
 
@@ -590,6 +585,7 @@ class GO_Interface(object):
         """
         if not incremental or self.current_accumulator == np.zeros((2,2)):
             self.current_accumulator = lil_matrix(self.inflated_Laplacian.shape)
+            self.UP2UP_voltages = {}
             if not sourced:
                 self.UP2circ_and_voltage = {}
 
@@ -608,23 +604,23 @@ class GO_Interface(object):
                                                             reach_limiter = reach)
             self.current_accumulator = self.current_accumulator + CR.sparse_abs(current_upper)
 
+            self.UP2UP_voltages[(UP1, UP2)] = voltage_diff
+
             if memoized:
                 self.UP2circ_and_voltage[tuple(sorted((UP1, UP2)))] = (voltage_diff, current_upper)
 
+        if cancellation:
+            ln = len(self.analytic_Uniprots)
+            self.current_accumulator = self.current_accumulator/(ln*(ln-1)/2)
+
         if memoized:
-            md5 = hashlib.md5(json.dumps( sorted(self.analytic_Uniprots), sort_keys=True)).hexdigest()
-            UP_memoized_sample.insert({'UP_hash' : md5,
-                                        'sys_hash' : self._MD5hash(),
-                                        'size' : len(self.analytic_Uniprots),
-                                        'UPs' : pickle.dumps(self.analytic_Uniprots),
-                                        'currents' : pickle.dumps((self.current_accumulator, self.node_current)),
-                                        'voltages' : pickle.dumps(self.UP2circ_and_voltage)})
+            self.dump_memoized()
 
         index_current = CR.get_current_through_nodes(self.current_accumulator)
         self.node_current = dict( (self.inflated_idx2lbl[idx], val) for idx, val in enumerate(index_current))
 
 
-    def compute_conduction_system(self, current_accumulator, Uplist, node_current, limit = 0.01):
+    def compute_conduction_system(self, node_current, limit = 0.01):
         charDict = {}
         for GO in self.GO2Num.iterkeys():
             if node_current[GO] > limit:
@@ -668,16 +664,13 @@ class GO_Interface(object):
 
 
     def export_subsystem(self, UP_system, UP_subsystem):
-
-        # TODO: add a decision if it is faster to recompute or to retrieve and render
-
-        md5 = hashlib.md5(json.dumps( sorted(UP_system), sort_keys = True)).hexdigest()
-        current_recombinator =  UP_memoized_sample.find_one({'UP_hash' : md5, 'sys_hash' : self._MD5hash(), })
+        current_recombinator = self.undump_memoized()
+        if not set(UP_system) == set(pickle.loads(current_recombinator['UPs'])):
+            raise Exception('Wrong UP system re-analyzed')
         self.UP2circ_and_voltage = pickle.loads(current_recombinator['voltages'])
         self.set_Uniprot_source(UP_subsystem)
         self.build_extended_conduction_system(memoized = False, sourced = True)
         self.export_conduction_system()
-        print self.pretty_time()
 
 
     def randomly_sample(self, samples_size, samples_each_size):
@@ -699,14 +692,15 @@ class GO_Interface(object):
                 analytics_UP_list = self_connectable_UPs[:sample_size]
                 self.set_Uniprot_source(analytics_UP_list)
                 self.build_extended_conduction_system(memoized=False, sourced=False)
-                # print self.analytics_UP_list
+
                 md5 = hashlib.md5(json.dumps( sorted(analytics_UP_list), sort_keys=True)).hexdigest()
 
                 UP_rand_samp.insert({'UP_hash' : md5,
                                      'sys_hash' : self._MD5hash(),
                                      'size' : sample_size,
                                      'UPs' : pickle.dumps(analytics_UP_list),
-                                     'currents' : pickle.dumps((self.current_accumulator, self.node_current))})
+                                     'currents' : pickle.dumps((self.current_accumulator, self.node_current)),
+                                     'voltages' : pickle.dumps(self.UP2UP_voltages)})
 
                 print 'Random ID: %s \t Sample size: %s \t iteration: %s\t compops: %s \t time: %s ' %(self.r_ID,
                         sample_size, i, "{0:.2f}".format(sample_size**2/2/self._time()), self.pretty_time())
@@ -720,20 +714,29 @@ if __name__ == '__main__':
     # print KG.pretty_time()
     # KG.store()
     # print KG.pretty_time()
-    experimental = ['881579','65094', '925081', '500332', '915530', '456374']
-    print KG.pretty_time()
+    # experimental = ['881579','65094', '925081', '500332', '915530', '456374'
+
     KG.load()
+    print KG.pretty_time()
 
-    KG.set_Uniprot_source(experimental)
-    KG.build_extended_conduction_system()
-    KG.export_conduction_system()
 
-    KG.export_subsystem(experimental, ['881579','65094'])
+
+
+    # KG.randomly_sample([10], [5])
+
+    # KG.set_Uniprot_source(experimental)
+    # KG.build_extended_conduction_system()
+    # KG.export_conduction_system()
+    #
+    # KG.export_subsystem(experimental, ['881579','65094'])
 
 
 
 
     # TODO: build a theoretic "surprise" level estimator, comapare with experimental "surprise" of the GO terms with certain confusion/informativity observation
+
+    # TODO: estimate how likely it is to get a term with informativity x at a size N and what is the expectend number of terms, use the Benjamin-Hoechberg method
+            # to remove the most unlikely ones.
 
     # Non-trivial interesting GOs: reach between 3 and 200. For them, we should calculate the hidden strong importance
     # terms, i.e. routing over X percent of information => UP importance for GO terms.
