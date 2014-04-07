@@ -106,6 +106,7 @@ class Dumps(object):
     Adj_degree = prefix + '/Adjacency_degree.csv'
     Silverality = prefix + '/Silverality.dump'
     InfoArray = prefix + '/sample_array'
+
     Up_dict_dump = prefix + '/Uniprot_dict.dump'
     GO_dump = prefix + '/GO.dump'
     GO_builder_stat = prefix + '/GO_builder_stats.dump'
@@ -114,6 +115,7 @@ class Dumps(object):
     GDF_debug = prefix + '/GDF_debug.gdf'
     GO_Inflated = prefix +'/GO_inflated.dump'
     GO_Analysis_memoized = prefix + '/GO_memoization.dump'
+    GO_Indep_Linset = prefix + '/GO_Indep_linset.dump'
 
 
 class Outputs(object):

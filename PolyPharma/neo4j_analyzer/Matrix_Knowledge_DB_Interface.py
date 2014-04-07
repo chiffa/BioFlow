@@ -135,6 +135,8 @@ class GO_Interface(object):
         char_set = string.ascii_uppercase + string.digits
         self.r_ID = ''.join(random.sample(char_set*6, 6))
 
+        self.Indep_Lapl = np.zeros((2,2))
+
 
     def pretty_time(self):
         """
@@ -215,6 +217,14 @@ class GO_Interface(object):
                         'currents' : pickle.dumps((self.current_accumulator, self.node_current)),
                         'voltages' : pickle.dumps(self.UP2circ_and_voltage)}
         dump_object(Dumps.GO_Analysis_memoized, payload)
+
+
+    def dump_Indep_Linset(self):
+        dump_object(Dumps.GO_Indep_Linset, self.Indep_Lapl)
+
+
+    def undump_Indep_Linset(self):
+        self.Indep_Lapl = undump_object(Dumps.GO_Indep_Linset)
 
 
     def undump_memoized(self):
@@ -405,7 +415,7 @@ class GO_Interface(object):
             self.total_Entropy = -log(1/float(len(self.UP2GO_Dict.keys())), 2)
         if number == 1.0:
              return 2*self.total_Entropy
-        return pow(-self.total_Entropy/log(1/float(number),2), self.corrfactor)
+        return pow(-self.corrfactor[0]*self.total_Entropy/log(1/float(number),2), self.corrfactor[1])
 
 
     def get_GO_Reach(self):
@@ -706,24 +716,37 @@ class GO_Interface(object):
                         sample_size, i, "{0:.2f}".format(sample_size**2/2/self._time()), self.pretty_time())
 
 
+    def get_indep_linear_groups(self):
+        self.Indep_Lapl = lil_matrix((len(self.All_GOs), len(self.All_GOs)))
+        for GO_list in self.UP2GO_Reachable_nodes.itervalues():
+            for GO1, GO2 in combinations(GO_list,2):
+                idx1, idx2 = (self.GO2Num[GO1], self.GO2Num[GO2])
+                self.Indep_Lapl [idx1, idx2] += -1
+                self.Indep_Lapl [idx2, idx1] += -1
+                self.Indep_Lapl [idx2, idx2] += 1
+                self.Indep_Lapl [idx1, idx1] += 1
+
+
 if __name__ == '__main__':
     filtr = ['biological_process']
 
-    KG = GO_Interface(filtr, MG.Uniprots, 1, True, 3)
+    KG = GO_Interface(filtr, MG.Uniprots, (0.5, 2), True, 3)
     # KG.rebuild()
     # print KG.pretty_time()
     # KG.store()
     # print KG.pretty_time()
-    # experimental = ['881579','65094', '925081', '500332', '915530', '456374'
-
+    # experimental = ['881579','65094', '925081', '500332', '915530', '456374']
+    #
     KG.load()
     print KG.pretty_time()
-
-
-
-
+    KG.get_indep_linear_groups()
+    KG.dump_Indep_Linset()
+    #
+    #
+    #
+    #
     # KG.randomly_sample([10], [5])
-
+    #
     # KG.set_Uniprot_source(experimental)
     # KG.build_extended_conduction_system()
     # KG.export_conduction_system()

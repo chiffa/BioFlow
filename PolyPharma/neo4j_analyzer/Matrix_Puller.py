@@ -51,7 +51,7 @@ def characterise_eigenvects(N_of_eigenvectors_to_characterise, Type='Adj'):
         norm = np.linalg.norm(MG.adj_eigenvects, axis = 1)
     else:
         norm = np.linalg.norm(MG.cond_eigenvects, axis = 1)
-    sbigest_args = np.argsort(norm)[-N_of_eigenvectors_to_characterise:]
+    sbigest_args = np.argsort(norm)[- N_of_eigenvectors_to_characterise:]
 
     for arg in reversed(sbigest_args):
         print 'Matrix row: %s, \t Row Norm: %s, \t Description: %s' % (arg,  norm[arg],  MG.get_descriptor_for_index(arg))

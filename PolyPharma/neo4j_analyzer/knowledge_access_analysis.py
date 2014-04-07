@@ -14,11 +14,22 @@ import matplotlib.pyplot as plt
 from copy import copy
 from random import shuffle
 from PolyPharma.Utils.better_histogram import better2D_desisty_plot
+from itertools import combinations
+from scipy.sparse import lil_matrix
+from PolyPharma.Utils.Linalg_routines import analyze_eigvects
 
 filtr = ['biological_process']
+corrfactors = (0.5, 2)
 pprinter = PrettyPrinter(indent=4)
 MG = MatrixGetter(True, False)
 MG.fast_load()
+
+
+def KG_gen():
+    KG = GO_Interface(filtr, MG.Uniprots, corrfactors, True, 3)
+    KG.load()
+    print KG.pretty_time()
+    return KG
 
 
 def spawn_sampler(sample_size_list_plus_iteration_list):
@@ -27,10 +38,7 @@ def spawn_sampler(sample_size_list_plus_iteration_list):
 
     :param sample_size_list_plus_iteration_list: combined list of sample swizes and iterations (requried for Pool.map usage)
     """
-    print sample_size_list_plus_iteration_list
-    KG = GO_Interface(filtr, MG.Uniprots, 1, True, 3)
-    KG.load()
-    print KG.pretty_time()
+    KG = KG_gen()
     sample_size_list = sample_size_list_plus_iteration_list[0]
     iteration_list = sample_size_list_plus_iteration_list[1]
     KG.randomly_sample(sample_size_list, iteration_list)
@@ -49,7 +57,16 @@ def spawn_sampler_pool(pool_size, sample_size_list, interation_list_per_pool):
     p.map(spawn_sampler, payload * pool_size)
 
 
-def show_corrs(tri_corr_array):
+def select(tri_array, array_column, selection_span):
+    selector = np.logical_and(selection_span[0]< tri_array[array_column, :], tri_array[array_column, :]< selection_span[1])
+    decvec = tri_array[:, selector]
+    return decvec
+
+
+def show_corrs(tri_corr_array, selector):
+    KG = KG_gen()
+    inf_sel = (KG._infcalc(selector[0]), KG._infcalc(selector[1]))
+
     plt.figure()
 
     plt.subplot(331)
@@ -59,11 +76,14 @@ def show_corrs(tri_corr_array):
     plt.subplot(332)
     plt.title('current vs pure informativity')
     # better2D_desisty_plot(tri_corr_array[0, :], tri_corr_array[1, :])
-    plt.scatter(tri_corr_array[0, :], tri_corr_array[1, :])
+    plt.scatter(tri_corr_array[1, :], tri_corr_array[0, :])
+    plt.axvspan( inf_sel[0], inf_sel[1], facecolor='0.5', alpha=0.3)
 
     plt.subplot(333)
     plt.title('current v.s. confusion potential')
-    plt.scatter(tri_corr_array[0, :], tri_corr_array[2, :])
+    plt.scatter(tri_corr_array[2, :], tri_corr_array[0, :])
+    plt.axvspan( selector[0], selector[1], facecolor='0.5', alpha=0.3)
+
 
     plt.subplot(335)
     plt.title('GO_term pure informativity')
@@ -71,7 +91,16 @@ def show_corrs(tri_corr_array):
 
     plt.subplot(336)
     plt.title('Informativity vs. confusion potential')
-    plt.scatter(tri_corr_array[1, :], tri_corr_array[2, :])
+    plt.scatter(tri_corr_array[2, :], tri_corr_array[1, :])
+    plt.axvspan( selector[0], selector[1], facecolor='0.5', alpha=0.3)
+
+    plt.subplot(337)
+    plt.title('Density of current in the highlighted area')
+    plt.hist(select(tri_corr_array, 2, selector)[0, :], bins=100, histtype='step', log=True)
+
+    plt.subplot(338)
+    plt.title('Confusion v.s. informativity in the selected region')
+    plt.scatter(select(tri_corr_array, 2, selector)[2, :], select(tri_corr_array, 2, selector)[1, :])
 
     plt.subplot(339)
     plt.title('confusion potential')
@@ -82,15 +111,14 @@ def show_corrs(tri_corr_array):
     return np.corrcoef(tri_corr_array)
 
 
-def stats_on_existing_circsys(size):
+def stats_on_existing_circsys(size, slector):
     """
     Recovers the statistics on the existing circulation systems.
 
     :return:
     """
 
-    KG = GO_Interface(filtr, MG.Uniprots, 1, True, 3)
-    KG.load()
+    KG = KG_gen()
     MD5_hash = KG._MD5hash()
 
     curr_inf_conf_general = []
@@ -106,7 +134,9 @@ def stats_on_existing_circsys(size):
 
     final = np.concatenate(tuple(curr_inf_conf_general), axis=1)
     print "stats on %s samples" % count
-    print show_corrs(final)
+    print show_corrs(final, slector)
+
+    # TODO: add a band filter + 2-D plot
 
 
 def decide_regeneration():
@@ -130,9 +160,7 @@ def decide_regeneration():
     '877373', '860329', '589231', '1013595', '679330', '808630', '774665', '663924', '615588', '497135', '628832',
     '841054', '657304']
     rooot_copy = copy(sample_root)
-    KG = GO_Interface(filtr, MG.Uniprots, 1, True, 3)
-    KG.load()
-    print KG.pretty_time()
+    KG = KG_gen()
     KG.set_Uniprot_source(sample_root)
     KG.build_extended_conduction_system()
     KG.export_conduction_system()
@@ -159,8 +187,17 @@ def get_estimated_time(samples, sample_sizes, operations_per_sec=2.2):
     return counter
 
 
+def linindep_GO_groups():
+    KG = KG_gen()
+    KG.undump_Indep_Linset()
+    print KG._time()
+    analyze_eigvects(KG.Indep_Lapl, 50)
+
+
+
 if __name__ == "__main__":
     # spawn_sampler(([10, 100], [2, 1]))
-    spawn_sampler_pool(6, [10, 25, 50, 100,], [15, 10, 10, 8,])
+    # spawn_sampler_pool(4, [10, 25, 50, 100], [15, 10, 10, 8])
     # get_estimated_time([10, 25, 50, 100,], [15, 10, 10, 8,])
-    # stats_on_existing_circsys(10)
+    # stats_on_existing_circsys(10, [1000, 1200])
+    linindep_GO_groups()
