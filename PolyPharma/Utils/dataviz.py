@@ -8,6 +8,8 @@ __author__ = 'ank'
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import histogram2d
+from scipy.stats import gaussian_kde
+from numpy.random import normal
 
 
 def better2D_desisty_plot(xdat, ydat, thresh=3, bins = (100, 100)):
@@ -30,8 +32,33 @@ def better2D_desisty_plot(xdat, ydat, thresh=3, bins = (100, 100)):
     plt.plot(xdat1, ydat1, '.')
 
 
+def violin_plot(ax,data,pos, bp=False):
+    '''
+    create violin plots on an axis
+    '''
+    dist = max(pos)-min(pos)
+    w = min(0.15*max(dist,1.0),0.5)
+    for d,p in zip(data,pos):
+        k = gaussian_kde(d) #calculates the kernel density
+        m = k.dataset.min() #lower bound of violin
+        M = k.dataset.max() #upper bound of violin
+        x = np.arange(m,M,(M-m)/100.) # support for violin
+        v = k.evaluate(x) #violin profile (density curve)
+        v = v/v.max()*w #scaling the violin to the available space
+        ax.fill_betweenx(x,p,v+p,facecolor='y',alpha=0.3)
+        ax.fill_betweenx(x,p,-v+p,facecolor='y',alpha=0.3)
+    if bp:
+        ax.boxplot(data,notch=1,positions=pos,vert=1)
+
 if __name__ == "__main__":
     N = 1e5
     xdat, ydat = np.random.normal(size=N), np.random.normal(1, 0.6, size=N)
     better2D_desisty_plot(xdat, ydat)
+    plt.show()
+
+    pos = range(5)
+    data = [normal(size=100) for i in pos]
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    violin_plot(ax,data,pos, bp=1)
     plt.show()

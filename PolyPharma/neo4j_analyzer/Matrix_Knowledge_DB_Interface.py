@@ -86,7 +86,7 @@ class GO_Interface(object):
         self.GO2UP = defaultdict(list)
         self.SeedSet = set()
         self.All_GOs = []
-        self.GO2Num = {} # attention, matrices are indexed starting from 1, wheras the arrays are indexed starting from 0
+        self.GO2Num = {}
         self.Num2GO = {}
         self.total_Entropy = None
 
@@ -730,17 +730,17 @@ class GO_Interface(object):
 if __name__ == '__main__':
     filtr = ['biological_process']
 
-    KG = GO_Interface(filtr, MG.Uniprots, (0.5, 2), True, 3)
-    # KG.rebuild()
-    # print KG.pretty_time()
-    # KG.store()
-    # print KG.pretty_time()
+    KG = GO_Interface(filtr, MG.Uniprots, (0.3, 2), True, 3)
+    KG.rebuild()
+    print KG.pretty_time()
+    KG.store()
+    print KG.pretty_time()
     # experimental = ['881579','65094', '925081', '500332', '915530', '456374']
     #
-    KG.load()
-    print KG.pretty_time()
-    KG.get_indep_linear_groups()
-    KG.dump_Indep_Linset()
+    # KG.load()
+    # print KG.pretty_time()
+    # KG.get_indep_linear_groups()
+    # KG.dump_Indep_Linset()
     #
     #
     #

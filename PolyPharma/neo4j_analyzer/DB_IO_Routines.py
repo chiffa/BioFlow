@@ -12,12 +12,14 @@ def lookup_by_ID(Domain, req):
     :param Domain: Node type of the form of DatabaseGraph.Object
     :param req: requested legacy ID
     """
+    accumulator = []
     retset = Domain.index.lookup( ID = req )
     if not retset:
         print "nothing found"
     if retset:
         for item in retset:
             print item
+            accumulator.append(item)
 
 
 def count_items(Domain):
@@ -164,6 +166,7 @@ def Erase_custom_fields():
             Node.main_connex = False
             Node.save()
 
+
 def reaction_participant_getter(Reaction, main_connex_only):
     """
     Recovers all the participants of the reaction
@@ -277,6 +280,6 @@ if __name__ == "__main__":
     # print count_items(DatabaseGraph.UNIPORT)
     # lookup_by_ID(DatabaseGraph.UNIPORT, "CK2N2_HUMAN")
     # Erase_custom_fields()
-    recompute_forbidden_IDs(Forbidden_verification_dict)
+    # recompute_forbidden_IDs(Forbidden_verification_dict)
 
     print Look_up_Annot_Node('ENSG00000131981', 'UNIPROT_Ensembl')

@@ -13,13 +13,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 from copy import copy
 from random import shuffle
-from PolyPharma.Utils.better_histogram import better2D_desisty_plot
+from PolyPharma.Utils.dataviz import better2D_desisty_plot
 from itertools import combinations
 from scipy.sparse import lil_matrix
 from PolyPharma.Utils.Linalg_routines import analyze_eigvects
 
 filtr = ['biological_process']
-corrfactors = (0.5, 2)
+corrfactors = (0.3, 2)
 pprinter = PrettyPrinter(indent=4)
 MG = MatrixGetter(True, False)
 MG.fast_load()
@@ -117,6 +117,7 @@ def stats_on_existing_circsys(size, slector):
 
     :return:
     """
+    # TODO: build a comparator of actual data distribution with expected data distribution
 
     KG = KG_gen()
     MD5_hash = KG._MD5hash()
@@ -187,17 +188,19 @@ def get_estimated_time(samples, sample_sizes, operations_per_sec=2.2):
     return counter
 
 
-def linindep_GO_groups():
+def linindep_GO_groups(size):
     KG = KG_gen()
     KG.undump_Indep_Linset()
-    print KG._time()
-    analyze_eigvects(KG.Indep_Lapl, 50)
-
+    char_indexes = dict( (key, (len(KG.GO2UP_Reachable_nodes[value]), KG.GO_Legacy_IDs[value], KG.GO_Names[value])) for key, value in KG.Num2GO.iteritems())
+    print KG.pretty_time()
+    analyze_eigvects(KG.Indep_Lapl, size, char_indexes)
 
 
 if __name__ == "__main__":
     # spawn_sampler(([10, 100], [2, 1]))
-    # spawn_sampler_pool(4, [10, 25, 50, 100], [15, 10, 10, 8])
+    # spawn_sampler_pool(4, [100], [8])
     # get_estimated_time([10, 25, 50, 100,], [15, 10, 10, 8,])
-    # stats_on_existing_circsys(10, [1000, 1200])
-    linindep_GO_groups()
+    # stats_on_existing_circsys(100, [1000, 1200])
+    linindep_GO_groups(50)
+
+    pass
