@@ -641,7 +641,6 @@ class GO_Interface(object):
 
 
     def export_conduction_system(self):
-        # TODO: add an option for a different direction so that a comparison is still possible
         """
         Computes the conduction system of the GO terms and exports it to the GDF format and flushes it into a file that
         can be viewed with Gephi

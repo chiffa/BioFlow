@@ -150,8 +150,6 @@ def Erase_custom_fields():
         Unlike the method in the Matrix_retrieval cluster, this method is very time-consuming, since it iterates
         on all the elements of all the classes susceptible to have the costum field.
     """
-
-    # TODO: reconfigure to erase connexity infos later on based onthe main_connex tag on the nodes
     Node_gen = DatabaseGraph.vertices.index.lookup(costum = 'Main_Connex')
     if Node_gen:
         for Node in Node_gen:

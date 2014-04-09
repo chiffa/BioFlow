@@ -137,8 +137,6 @@ def stats_on_existing_circsys(size, slector):
     print "stats on %s samples" % count
     print show_corrs(final, slector)
 
-    # TODO: add a band filter + 2-D plot
-
 
 def decide_regeneration():
     """
@@ -202,5 +200,7 @@ if __name__ == "__main__":
     # get_estimated_time([10, 25, 50, 100,], [15, 10, 10, 8,])
     # stats_on_existing_circsys(100, [1000, 1200])
     linindep_GO_groups(50)
+
+    # TODO: get the analysis of the internode circulation/tension for different nodes =>segmentation
 
     pass

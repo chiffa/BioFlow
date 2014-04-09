@@ -501,6 +501,7 @@ def rapid_naive_group_pairwise_info_normalized(ProtNames2Importance):
 
 
 def BEA_clustering(numpy_matrix):
+    # TODO: export as a Linear algebra routine in the utils
     # Assumes a distance matrix 
     # Clusters => performs a BEA algorithm matrix clustering
     # Outputs a clustered matrix and 
