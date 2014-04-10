@@ -729,7 +729,7 @@ class GO_Interface(object):
 if __name__ == '__main__':
     filtr = ['biological_process']
 
-    KG = GO_Interface(filtr, MG.Uniprots, (0.3, 2), True, 3)
+    KG = GO_Interface(filtr, MG.Uniprots, (1, 1), True, 3)
     KG.rebuild()
     print KG.pretty_time()
     KG.store()

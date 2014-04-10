@@ -19,7 +19,7 @@ from scipy.sparse import lil_matrix
 from PolyPharma.Utils.Linalg_routines import analyze_eigvects
 
 filtr = ['biological_process']
-corrfactors = (0.3, 2)
+corrfactors = (1, 1)
 pprinter = PrettyPrinter(indent=4)
 MG = MatrixGetter(True, False)
 MG.fast_load()
@@ -59,11 +59,14 @@ def spawn_sampler_pool(pool_size, sample_size_list, interation_list_per_pool):
 
 def select(tri_array, array_column, selection_span):
     selector = np.logical_and(selection_span[0]< tri_array[array_column, :], tri_array[array_column, :]< selection_span[1])
+    if not any(selector):
+        return np.array([[0.0,0.0,0.0]])
     decvec = tri_array[:, selector]
     return decvec
 
 
-def show_corrs(tri_corr_array, selector):
+
+def show_corrs(tri_corr_array, selector, test_tri_corr_array=None):
     KG = KG_gen()
     inf_sel = (KG._infcalc(selector[0]), KG._infcalc(selector[1]))
 
@@ -71,60 +74,71 @@ def show_corrs(tri_corr_array, selector):
 
     plt.subplot(331)
     plt.title('current through nodes')
-    plt.hist(tri_corr_array[0, :], bins=100, histtype='step', log=True)
+    plt.hist(tri_corr_array[0, :], bins=100, histtype='step', log=True, color='b')
+    if test_tri_corr_array is not None:
+        plt.hist(test_tri_corr_array[0, :], bins=100, histtype='step', log=True, color='r')
 
     plt.subplot(332)
-    plt.title('current vs pure informativity')
+    plt.title('test current vs pure informativity')
     # better2D_desisty_plot(tri_corr_array[0, :], tri_corr_array[1, :])
     plt.scatter(tri_corr_array[1, :], tri_corr_array[0, :])
     plt.axvspan( inf_sel[0], inf_sel[1], facecolor='0.5', alpha=0.3)
 
     plt.subplot(333)
-    plt.title('current v.s. confusion potential')
+    plt.title('test current v.s. confusion potential')
     plt.scatter(tri_corr_array[2, :], tri_corr_array[0, :])
     plt.axvspan( selector[0], selector[1], facecolor='0.5', alpha=0.3)
 
+    if test_tri_corr_array is not None:
+        plt.subplot(334)
+        plt.title('Real circulation')
+        plt.scatter(test_tri_corr_array[1, :], test_tri_corr_array[0, :], color='r')
+        plt.axvspan( inf_sel[0], inf_sel[1], facecolor='0.5', alpha=0.3)
 
     plt.subplot(335)
     plt.title('GO_term pure informativity')
-    plt.hist(tri_corr_array[1, :], bins=100, histtype='step', log=True)
+    plt.hist(tri_corr_array[1, :], bins=100, histtype='step', log=True, color='b')
+    if test_tri_corr_array is not None:
+        plt.hist(test_tri_corr_array[1, :], bins=100, histtype='step', log=True, color='r')
 
     plt.subplot(336)
-    plt.title('Informativity vs. confusion potential')
-    plt.scatter(tri_corr_array[2, :], tri_corr_array[1, :])
-    plt.axvspan( selector[0], selector[1], facecolor='0.5', alpha=0.3)
-
-    plt.subplot(337)
     plt.title('Density of current in the highlighted area')
     plt.hist(select(tri_corr_array, 2, selector)[0, :], bins=100, histtype='step', log=True)
 
-    plt.subplot(338)
-    plt.title('Confusion v.s. informativity in the selected region')
-    plt.scatter(select(tri_corr_array, 2, selector)[2, :], select(tri_corr_array, 2, selector)[1, :])
+    if test_tri_corr_array is not None:
+        plt.subplot(337)
+        plt.title('void')
+        plt.scatter(test_tri_corr_array[2, :], test_tri_corr_array[0, :], color='r')
+        plt.axvspan( selector[0], selector[1], facecolor='0.5', alpha=0.3)
+
+    if test_tri_corr_array is not None:
+        plt.subplot(338)
+        plt.title('Density of current in the highlighted area')
+        plt.hist(select(test_tri_corr_array, 2, selector)[0, :], bins=100, histtype='step', log=True, color='r')
 
     plt.subplot(339)
     plt.title('confusion potential')
-    plt.hist(tri_corr_array[2, :], bins=100, histtype='step', log=True)
+    plt.hist(tri_corr_array[2, :], bins=100, histtype='step', log=True, color='b')
+    if test_tri_corr_array is not None:
+        plt.hist(test_tri_corr_array[2, :], bins=100, histtype='step', log=True, color='r')
 
     plt.show()
 
     return np.corrcoef(tri_corr_array)
 
 
-def stats_on_existing_circsys(size, slector):
+def compare_to_blanc(blanc_model_size, zoom_range_selector, real_knowledge_interface = None):
     """
-    Recovers the statistics on the existing circulation systems.
+    Recovers the statistics on the circulation nodes and shows the visual of a circulation system
 
     :return:
     """
-    # TODO: build a comparator of actual data distribution with expected data distribution
-
     KG = KG_gen()
     MD5_hash = KG._MD5hash()
 
     curr_inf_conf_general = []
     count = 0
-    for i, sample in enumerate(UP_rand_samp.find({'size':size, 'sys_hash' : MD5_hash})):
+    for i, sample in enumerate(UP_rand_samp.find({'blanc_model_size': blanc_model_size,'sys_hash' : MD5_hash})):
         # UP_set = pickle.loads(sample['UPs'])
         _, node_currs = pickle.loads(sample['currents'])
         # tensions = pickle.loads(sample['voltages'])
@@ -134,8 +148,17 @@ def stats_on_existing_circsys(size, slector):
         count = i
 
     final = np.concatenate(tuple(curr_inf_conf_general), axis=1)
+    curr_inf_conf = None
+    if real_knowledge_interface:
+        node_currs = real_knowledge_interface.node_current
+        Dic_system = KG.compute_conduction_system(node_currs)
+        curr_inf_conf = np.array(list(Dic_system.itervalues())).T
+
     print "stats on %s samples" % count
-    print show_corrs(final, slector)
+    print show_corrs(final, zoom_range_selector, curr_inf_conf)
+
+    # TODO: add a segmentation analysis. Show as a pyplot heatmatrix, then individual segments and finally compute
+            # the intersegment v.s intra-segment current
 
 
 def decide_regeneration():
@@ -193,13 +216,17 @@ def linindep_GO_groups(size):
     print KG.pretty_time()
     analyze_eigvects(KG.Indep_Lapl, size, char_indexes)
 
+def random_segment():
+
+    pass
+
 
 if __name__ == "__main__":
     # spawn_sampler(([10, 100], [2, 1]))
     # spawn_sampler_pool(4, [100], [8])
     # get_estimated_time([10, 25, 50, 100,], [15, 10, 10, 8,])
-    # stats_on_existing_circsys(100, [1000, 1200])
-    linindep_GO_groups(50)
+    compare_to_blanc(10, [1000, 1200])
+    # linindep_GO_groups(50)
 
     # TODO: get the analysis of the internode circulation/tension for different nodes =>segmentation
 

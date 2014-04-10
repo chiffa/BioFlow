@@ -92,6 +92,7 @@ class Dumps(object):
     and the mapping matrix holders
     """
     prefix = str(path.abspath(path.dirname(__file__)+'/dumps'))
+    postfix = '_human.dump'
     matrix_LS = prefix + '/dump5.dump'
     matrix_corrs = prefix + '/dump2.dump'
     eigen_VaMat = prefix + '/eigen_valmat.csv'
