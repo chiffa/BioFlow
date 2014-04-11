@@ -4,10 +4,13 @@ from scipy.sparse import lil_matrix, triu
 from scipy.sparse.linalg import eigsh
 import numpy as np
 from copy import copy
-from itertools import izip
+from itertools import combinations_with_replacement, combinations, product
 from random import randrange, shuffle
 from time import time
 import matplotlib.pyplot as plt
+from sklearn.cluster import spectral_clustering
+
+
 
 def Lapl_normalize(non_normalized_Laplacian):
     """
@@ -26,6 +29,33 @@ def Lapl_normalize(non_normalized_Laplacian):
     # retmat[retmat > 1.0] = 1.0
     # retmat[retmat <- 1.0] = -1.0
     return retmat
+
+
+def submatrix(matrix, indexes, show = False):
+    re_matrix = lil_matrix((len(indexes), len(indexes)))
+    main2local_idx = dict( (j, i) for i, j in enumerate(sorted(indexes)))
+
+    for index1, index2 in combinations_with_replacement(indexes, 2):
+        re_matrix[main2local_idx[index1], main2local_idx[index2]] = matrix[index1, index2]
+        re_matrix[main2local_idx[index2], main2local_idx[index1]] = matrix[index2, index1]
+
+    if show:
+        plt.imshow(re_matrix.toarray(), cmap='jet', interpolation="bilinear")
+        plt.colorbar()
+        plt.show()
+
+    return np.sum(np.triu(re_matrix.toarray(), 1)) / (re_matrix.shape[0]*(re_matrix.shape[0]-1)/2)
+
+
+def remaineder_matrix(matrix, index_sets):
+    accumulator = 0
+    counter = 0
+    for set1, set2 in combinations(index_sets,2):
+        for idx1, idx2 in product(set1, set2):
+            accumulator += matrix[idx2, idx1]
+            counter+=1
+
+    return accumulator/counter
 
 
 def show_eigenvals_and_eigenvects(eigvals, eigvects, biggest_limit, annotation, idx_chars=None):
@@ -127,6 +157,19 @@ def view_laplacian_off_terms(non_normalized_Laplacian):
     plt.show()
 
 
+def cluster_nodes(dist_laplacian, clusters=3, show=False):
+    norm_laplacian = Lapl_normalize(dist_laplacian)
+    norm_laplacian.setdiag(0)
+    norm_laplacian = -norm_laplacian
+    if show:
+        plt.imshow(norm_laplacian.toarray(), cmap='jet', interpolation="nearest")
+        plt.colorbar()
+        plt.show()
+    labels = spectral_clustering(norm_laplacian, n_clusters=clusters, eigen_solver='arpack')
+    return np.reshape(labels, (dist_laplacian.shape[0], 1))
+
+
+
 if __name__ == "__main__":
     test_lapl = lil_matrix(np.zeros((4, 4)))
     test_lapl.setdiag([1, 2, 3, 0])
@@ -138,3 +181,8 @@ if __name__ == "__main__":
     print Lapl_normalize(test_lapl).toarray()
 
     analyze_eigvects(test_lapl, 2, {0:'zero', 1:'one', 2:'two', 3: 'three'})
+
+    test_lapl[2, 3] = -0.5
+    test_lapl[3, 2] = -0.5
+
+    print cluster_nodes(test_lapl)

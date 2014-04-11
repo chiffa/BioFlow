@@ -318,7 +318,10 @@ def run_diagnostics(instruction_dict):
     """
     supercounter = 0
     for name, bulbs_class in instruction_dict.iteritems():
-        counter = bulbs_class.count()
+        counter = 0
+        if bulbs_class.get_all():
+            for bulbs_class_instance in bulbs_class.get_all():
+                counter += 1
         print name, ':', counter
         supercounter += counter
     print 'Total: ', supercounter

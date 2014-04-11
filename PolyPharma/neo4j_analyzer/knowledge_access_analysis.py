@@ -13,10 +13,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 from copy import copy
 from random import shuffle
-from PolyPharma.Utils.dataviz import better2D_desisty_plot
+from PolyPharma.Utils.dataviz import kde_compute
 from itertools import combinations
 from scipy.sparse import lil_matrix
-from PolyPharma.Utils.Linalg_routines import analyze_eigvects
+from scipy.sparse.linalg import eigsh
+from scipy.stats import kde
+from PolyPharma.Utils.Linalg_routines import analyze_eigvects, cluster_nodes, submatrix, remaineder_matrix, Lapl_normalize
+from collections import namedtuple
 
 filtr = ['biological_process']
 corrfactors = (1, 1)
@@ -66,7 +69,7 @@ def select(tri_array, array_column, selection_span):
 
 
 
-def show_corrs(tri_corr_array, selector, test_tri_corr_array=None):
+def show_corrs(tri_corr_array, meancorrs, eigvals, selector, test_tri_corr_array, test_meancorr, eigval, resamples):
     KG = KG_gen()
     inf_sel = (KG._infcalc(selector[0]), KG._infcalc(selector[1]))
 
@@ -74,60 +77,152 @@ def show_corrs(tri_corr_array, selector, test_tri_corr_array=None):
 
     plt.subplot(331)
     plt.title('current through nodes')
-    plt.hist(tri_corr_array[0, :], bins=100, histtype='step', log=True, color='b')
+    bins = np.linspace(tri_corr_array[0, :].min(), tri_corr_array[0, :].max(), 100)
     if test_tri_corr_array is not None:
-        plt.hist(test_tri_corr_array[0, :], bins=100, histtype='step', log=True, color='r')
+        bins = np.linspace(min(tri_corr_array[0, :].min(), test_tri_corr_array[0, :].min()),
+                           max(tri_corr_array[0, :].max(), test_tri_corr_array[0, :].max()),
+                           100)
+    plt.hist(tri_corr_array[0, :], bins=bins, histtype='step', log=True, color='b')
+    if test_tri_corr_array is not None:
+        plt.hist(test_tri_corr_array[0, :], bins=bins, histtype='step', log=True, color='r')
 
     plt.subplot(332)
     plt.title('test current vs pure informativity')
     # better2D_desisty_plot(tri_corr_array[0, :], tri_corr_array[1, :])
     plt.scatter(tri_corr_array[1, :], tri_corr_array[0, :])
+    if test_tri_corr_array is not None:
+        plt.scatter(test_tri_corr_array[1, :], test_tri_corr_array[0, :], color='r' , alpha=0.5)
     plt.axvspan( inf_sel[0], inf_sel[1], facecolor='0.5', alpha=0.3)
 
     plt.subplot(333)
     plt.title('test current v.s. confusion potential')
     plt.scatter(tri_corr_array[2, :], tri_corr_array[0, :])
+    if test_tri_corr_array is not None:
+        plt.scatter(test_tri_corr_array[2, :], test_tri_corr_array[0, :], color='r', alpha=0.5)
     plt.axvspan( selector[0], selector[1], facecolor='0.5', alpha=0.3)
 
+    plt.subplot(334)
+    plt.title('Gaussian KDE current_info')
+    estimator_function = kde_compute(tri_corr_array[(1,0), :], 50, resamples)
+    current_info_rel = None
     if test_tri_corr_array is not None:
-        plt.subplot(334)
-        plt.title('Real circulation')
-        plt.scatter(test_tri_corr_array[1, :], test_tri_corr_array[0, :], color='r')
-        plt.axvspan( inf_sel[0], inf_sel[1], facecolor='0.5', alpha=0.3)
+        current_info_rel = estimator_function(test_tri_corr_array[(1,0),:])
 
     plt.subplot(335)
     plt.title('GO_term pure informativity')
+    bins = np.linspace(tri_corr_array[1, :].min(), tri_corr_array[1, :].max(), 100)
+    if test_tri_corr_array is not None:
+        bins = np.linspace(min(tri_corr_array[1, :].min(), test_tri_corr_array[1, :].min()),
+                           max(tri_corr_array[1, :].max(), test_tri_corr_array[1, :].max()),
+                           100)
     plt.hist(tri_corr_array[1, :], bins=100, histtype='step', log=True, color='b')
     if test_tri_corr_array is not None:
         plt.hist(test_tri_corr_array[1, :], bins=100, histtype='step', log=True, color='r')
 
     plt.subplot(336)
     plt.title('Density of current in the highlighted area')
-    plt.hist(select(tri_corr_array, 2, selector)[0, :], bins=100, histtype='step', log=True)
-
+    bins = np.linspace(select(tri_corr_array, 2, selector)[0, :].min(),
+                       select(tri_corr_array, 2, selector)[0, :].max(),
+                       100)
     if test_tri_corr_array is not None:
-        plt.subplot(337)
-        plt.title('void')
-        plt.scatter(test_tri_corr_array[2, :], test_tri_corr_array[0, :], color='r')
-        plt.axvspan( selector[0], selector[1], facecolor='0.5', alpha=0.3)
-
+        bins = np.linspace(min(select(tri_corr_array, 2, selector)[0, :].min(),
+                               select(test_tri_corr_array, 2, selector)[0, :].min()),
+                           max(select(tri_corr_array, 2, selector)[0, :].max(),
+                               select(test_tri_corr_array, 2, selector)[0, :].max()),
+                           100)
+    plt.hist(select(tri_corr_array, 2, selector)[0, :], bins=bins, histtype='step', log=True, color='b')
     if test_tri_corr_array is not None:
-        plt.subplot(338)
-        plt.title('Density of current in the highlighted area')
-        plt.hist(select(test_tri_corr_array, 2, selector)[0, :], bins=100, histtype='step', log=True, color='r')
+        plt.hist(select(test_tri_corr_array, 2, selector)[0, :], bins=bins, histtype='step', log=True, color='r')
+
+
+    plt.subplot(337)
+    plt.title('Clustering correlation')
+    # plt.scatter(meancorrs[0, :], meancorrs[1, :], color = 'b')
+    estimator_function = kde_compute(meancorrs[(0,1), :], 50, resamples)
+    cluster_props =None
+    if test_meancorr is not None:
+        plt.scatter(test_meancorr[0,:], test_meancorr[1,:], color = 'k', alpha=0.8)
+        cluster_props = estimator_function(test_meancorr[(0,1),:])
+
+    plt.subplot(338)
+    plt.title('Eigvals_hist')
+    bins = np.linspace(eigvals.min(), eigvals.max(), 100)
+    if test_tri_corr_array is not None:
+        bins = np.linspace(min(eigvals.min(), eigval.min()),
+                           max(eigvals.max(), eigval.max()),
+                           100)
+    plt.hist(eigvals, bins=bins, histtype='step', color = 'b')
+    if eigval is not None:
+        plt.hist(eigval.tolist()*3, bins=bins, histtype='step', color = 'r')
 
     plt.subplot(339)
     plt.title('confusion potential')
-    plt.hist(tri_corr_array[2, :], bins=100, histtype='step', log=True, color='b')
+    bins = np.linspace(tri_corr_array[2, :].min(), tri_corr_array[2, :].max(), 100)
     if test_tri_corr_array is not None:
-        plt.hist(test_tri_corr_array[2, :], bins=100, histtype='step', log=True, color='r')
+        bins = np.linspace(min(tri_corr_array[2, :].min(), test_tri_corr_array[2, :].min()),
+                           max(tri_corr_array[2, :].max(), test_tri_corr_array[2, :].max()),
+                           100)
+    plt.hist(tri_corr_array[2, :], bins=bins, histtype='step', log=True, color='b')
+    if test_tri_corr_array is not None:
+        plt.hist(test_tri_corr_array[2, :], bins=bins, histtype='step', log=True, color='r')
 
     plt.show()
 
-    return np.corrcoef(tri_corr_array)
+    # pull the groups corresponding to non-random associations.
+    return current_info_rel, cluster_props
 
 
-def compare_to_blanc(blanc_model_size, zoom_range_selector, real_knowledge_interface = None):
+def perform_clustering(internode_tension, clusters, show=True):
+    """
+    Performs a clustering on the voltages of the nodes,
+
+    :param internode_tension:
+    """
+    idxgroup = list(set([ item for key in internode_tension.iterkeys() for item in key ]))
+    local_index = dict((UP, i) for i, UP in enumerate(idxgroup))
+    rev_idx = dict((i, UP) for i, UP in enumerate(idxgroup))
+    relmat = lil_matrix((len(idxgroup), len(idxgroup)))
+
+    for (UP1, UP2), tension in internode_tension.iteritems():
+        relmat[local_index[UP1], local_index[UP2]] = -1.0/tension
+        relmat[local_index[UP2], local_index[UP1]] = -1.0/tension
+        relmat[local_index[UP2], local_index[UP2]] += 1.0/tension
+        relmat[local_index[UP1], local_index[UP1]] += 1.0/tension
+
+    groups = cluster_nodes(relmat, clusters)
+
+    relmat = Lapl_normalize(relmat)
+    eigenvals, _ = eigsh(relmat)
+    relmat = -relmat
+    relmat.setdiag(1)
+
+    groupsets = []
+    group2average_offdiag = []
+    for i in range(0, clusters):
+        group_selector = groups==i
+        group_idxs = group_selector.nonzero()[0].tolist()
+        group2average_offdiag.append((tuple(rev_idx[idx] for idx in group_idxs), len(group_idxs), submatrix(relmat, group_idxs, False)))
+        groupsets.append(group_idxs)
+
+    remainder = remaineder_matrix(relmat, groupsets)
+
+    clustidx = np.array([item for itemset in groupsets for item in itemset])
+    relmat = relmat[:, clustidx]
+    relmat = relmat[clustidx, :]
+
+    mean_corr_array = np.array([[items, mean_corr] for _, items, mean_corr in group2average_offdiag])
+
+    if show:
+        plt.imshow(relmat.toarray(), cmap='jet', interpolation="nearest")
+        plt.colorbar()
+        plt.show()
+
+    return np.array(group2average_offdiag), remainder, mean_corr_array, eigenvals
+
+    # TODO: define this as a routine for the general grouping later on.
+
+
+def compare_to_blanc(blanc_model_size, zoom_range_selector, real_knowledge_interface = None, p_val=0.05):
     """
     Recovers the statistics on the circulation nodes and shows the visual of a circulation system
 
@@ -138,32 +233,62 @@ def compare_to_blanc(blanc_model_size, zoom_range_selector, real_knowledge_inter
 
     curr_inf_conf_general = []
     count = 0
-    for i, sample in enumerate(UP_rand_samp.find({'blanc_model_size': blanc_model_size,'sys_hash' : MD5_hash})):
+    meancorr_acccumulator = []
+    eigval_accumulator = []
+    for i, sample in enumerate(UP_rand_samp.find({'size': blanc_model_size,'sys_hash' : MD5_hash})):
         # UP_set = pickle.loads(sample['UPs'])
         _, node_currs = pickle.loads(sample['currents'])
-        # tensions = pickle.loads(sample['voltages'])
+        tensions = pickle.loads(sample['voltages'])
+        _, _, meancorr, eigvals = perform_clustering(tensions, 3, show=False)
+        meancorr_acccumulator.append(np.array(meancorr))
+        eigval_accumulator.append(eigvals)
         Dic_system = KG.compute_conduction_system(node_currs)
         curr_inf_conf = list(Dic_system.itervalues())
         curr_inf_conf_general.append(np.array(curr_inf_conf).T)
         count = i
 
     final = np.concatenate(tuple(curr_inf_conf_general), axis=1)
+    final_meancorrs = np.concatenate(tuple(meancorr_acccumulator), axis=0).T
+    final_eigvals = np.concatenate(tuple(eigval_accumulator), axis=0).T
     curr_inf_conf = None
+    meancorr = None
+    eigval = None
+    group2avg_offdiag = None
+    GO_node_ids = None
+    Dic_system = None
     if real_knowledge_interface:
         node_currs = real_knowledge_interface.node_current
         Dic_system = KG.compute_conduction_system(node_currs)
-        curr_inf_conf = np.array(list(Dic_system.itervalues())).T
+        curr_inf_conf_tot = np.array([[int(key)]+list(val) for key, val in Dic_system.iteritems()]).T
+        GO_node_ids, curr_inf_conf = (curr_inf_conf_tot[0, :], curr_inf_conf_tot[(1,2,3), :])
+        group2avg_offdiag, _, meancorr, eigval = perform_clustering(real_knowledge_interface.UP2UP_voltages, 3)
+
 
     print "stats on %s samples" % count
-    print show_corrs(final, zoom_range_selector, curr_inf_conf)
+    r_nodes, r_groups = show_corrs(final, final_meancorrs, final_eigvals, zoom_range_selector, curr_inf_conf, meancorr.T, eigval.T, count)
 
-    # TODO: add a segmentation analysis. Show as a pyplot heatmatrix, then individual segments and finally compute
-            # the intersegment v.s intra-segment current
+
+    GO_node_char = namedtuple('Node_Char',['current','informativity', 'confusion_potential', 'p_value'])
+    Group_char = namedtuple('Group_Char', ['UPs','num_UPs','average_connection','p_value'])
+    if r_nodes is not None:
+        not_random_nodes = [str(int(GO_id)) for GO_id in GO_node_ids[r_nodes < p_val].tolist()]
+        print group2avg_offdiag.shape, r_groups.shape
+        not_random_groups = np.concatenate((group2avg_offdiag, np.reshape(r_groups, (3,1))), axis=1)[r_groups < p_val].tolist()
+        not_random_groups = [ Group_char(*(nr_group)) for nr_group in not_random_groups]
+
+        dct = dict((GO_id,
+                      tuple([GO_node_char(*(Dic_system[GO_id] + r_nodes[GO_node_ids == float(GO_id)].tolist())),
+                              list(set(KG.GO2UP_Reachable_nodes[GO_id]).intersection(set(real_knowledge_interface.analytic_Uniprots)))]))
+                     for GO_id in not_random_nodes)
+
+        return  sorted(dct.iteritems(), key=lambda x:x[1][0][3]), not_random_groups
+
+    return  None
 
 
 def decide_regeneration():
     """
-    A script to decide at what point it is better to recompute anew a network rather then go through the time it
+    A script to decide at what point it is better to recompute a new a network rather then go through the time it
     requires to be upickled.
     The current decision is that for the samples of the size of ~ 100 Uniprots, we are better off unpickling from 4
     and more by factor 2 and by factor 10 from 9
@@ -216,18 +341,20 @@ def linindep_GO_groups(size):
     print KG.pretty_time()
     analyze_eigvects(KG.Indep_Lapl, size, char_indexes)
 
-def random_segment():
-
-    pass
-
 
 if __name__ == "__main__":
     # spawn_sampler(([10, 100], [2, 1]))
     # spawn_sampler_pool(4, [100], [8])
     # get_estimated_time([10, 25, 50, 100,], [15, 10, 10, 8,])
-    compare_to_blanc(10, [1000, 1200])
+    test_list = ['530239', '921394', '821224', '876133', '537471', '147771', '765141', '783757', '161100', '808630']
+    KG = KG_gen()
+    KG.set_Uniprot_source(test_list)
+    KG.build_extended_conduction_system()
+    KG.export_conduction_system()
+    nr_nodes, nr_groups = compare_to_blanc(10, [1000, 1200], KG, p_val=0.5)
+    for item in nr_nodes:
+        print '\t', item
+    print nr_groups
     # linindep_GO_groups(50)
-
-    # TODO: get the analysis of the internode circulation/tension for different nodes =>segmentation
 
     pass

@@ -11,6 +11,7 @@ from pprint import PrettyPrinter
 from pymongo import MongoClient
 from os import path
 import pickle
+import os.path
 
 
 Servers, Options, Sources, Predictions = parse_configs()
@@ -92,31 +93,33 @@ class Dumps(object):
     and the mapping matrix holders
     """
     prefix = str(path.abspath(path.dirname(__file__)+'/dumps'))
-    postfix = '_human.dump'
-    matrix_LS = prefix + '/dump5.dump'
-    matrix_corrs = prefix + '/dump2.dump'
+    # TODO: achtung:explosive here
+    postfix = '.dump'
+    ###################################
+    matrix_LS = prefix + '/dump5'+postfix
+    matrix_corrs = prefix + '/dump2'+postfix
     eigen_VaMat = prefix + '/eigen_valmat.csv'
     eigen_ConMat = prefix + '/eigen_conmat.csv'
-    val_eigen = prefix + '/pickleDump.dump'
-    cond_eigen = prefix + '/pickleDump_0_5.dump'
-    ValMat = prefix + '/pickleDump3.dump'
-    ConMat = prefix + '/pickleDump4.dump'
-    UniP_att = prefix + '/UP_Attach.dump'
-    Main_Connex_group = prefix + '/Connex_group.dump'
-    Forbidden_IDs = prefix + '/ForbiddenIDs.dump'
+    val_eigen = prefix + '/pickleDump'+postfix
+    cond_eigen = prefix + '/pickleDump_0_5'+postfix
+    ValMat = prefix + '/pickleDump3'+postfix
+    ConMat = prefix + '/pickleDump4'+postfix
+    UniP_att = prefix + '/UP_Attach'+postfix
+    Main_Connex_group = prefix + '/Connex_group'+postfix
+    Forbidden_IDs = prefix + '/ForbiddenIDs'+postfix
     Adj_degree = prefix + '/Adjacency_degree.csv'
-    Silverality = prefix + '/Silverality.dump'
-    InfoArray = prefix + '/sample_array'
+    Silverality = prefix + '/Silverality'+postfix
+    InfoArray = prefix + '/sample_array'+postfix
 
-    Up_dict_dump = prefix + '/Uniprot_dict.dump'
-    GO_dump = prefix + '/GO.dump'
-    GO_builder_stat = prefix + '/GO_builder_stats.dump'
-    GO_Mats = prefix + '/GO_mats.dump'
-    GO_Infos = prefix + '/GO_Infos.dump'
+    Up_dict_dump = prefix + '/Uniprot_dict'+postfix
+    GO_dump = prefix + '/GO'+postfix
+    GO_builder_stat = prefix + '/GO_builder_stats'+postfix
+    GO_Mats = prefix + '/GO_mats'+postfix
+    GO_Infos = prefix + '/GO_Infos'+postfix
     GDF_debug = prefix + '/GDF_debug.gdf'
-    GO_Inflated = prefix +'/GO_inflated.dump'
-    GO_Analysis_memoized = prefix + '/GO_memoization.dump'
-    GO_Indep_Linset = prefix + '/GO_Indep_linset.dump'
+    GO_Inflated = prefix +'/GO_inflated'+postfix
+    GO_Analysis_memoized = prefix + '/GO_memoization'+postfix
+    GO_Indep_Linset = prefix + '/GO_Indep_linset'+postfix
 
 
 class Outputs(object):
@@ -126,7 +129,10 @@ class Outputs(object):
 
 Leg_ID_Filter = ['H+', 'ATP', 'GTP', 'Pi', 'H2O', 'ADP', 'PPi', 'GDP', 'O2', 'CO2', 'NTP',]
 
-IDFilter = pickle.load(file(Dumps.Forbidden_IDs,'r'))
+IDFilter = []
+if os.path.isfile(Dumps.Forbidden_IDs):
+    IDFilter = pickle.load(file(Dumps.Forbidden_IDs,'r'))
+
 
 fudge = 1e-10
 

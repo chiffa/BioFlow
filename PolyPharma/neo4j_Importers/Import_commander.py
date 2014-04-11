@@ -22,12 +22,12 @@ import sys
 #TODO: add the derivative importance contribution
 
 # #################################
-# # redirecting all to a log file
+# redirecting all to a log file
 # f = open('../logs/Commander_logs.log','w')
 # sys.stdout = f
 # ################################
 
-# clear_all(full_dict)
+# # clear_all(full_dict)
 # run_diagnostics(full_dict)
 # insert_all()
 # run_diagnostics(full_dict)
@@ -39,5 +39,5 @@ import sys
 # import_UNIPROTS()
 #
 # cross_ref_HiNT(True)
-
+#
 # run_diagnostics(full_dict)

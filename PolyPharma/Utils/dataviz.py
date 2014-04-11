@@ -50,6 +50,27 @@ def violin_plot(ax,data,pos, bp=False):
     if bp:
         ax.boxplot(data,notch=1,positions=pos,vert=1)
 
+
+def kde_compute(bi_array, nbins=30, samples=10, show=True):
+
+    overload = bi_array.shape[1]/float(samples)
+
+    # In fact we are willing to evaluate what is the probability of encoutering at least ONE element in case of a generation;
+    # Each random pull generates not one single point, butlots of them
+
+    x, y = bi_array
+
+    # Evaluate a gaussian kde on a regular grid of nbins x nbins over data extents
+    k = gaussian_kde(bi_array)
+    xi, yi = np.mgrid[x.min():x.max():nbins*1j, y.min():y.max():nbins*1j]
+    zi = np.tanh(k(np.vstack([xi.flatten(), yi.flatten()]))*overload)
+
+    if show:
+        plt.pcolormesh(xi, yi, zi.reshape(xi.shape))
+
+    return lambda x: np.tanh(k(x)*overload)
+
+
 if __name__ == "__main__":
     N = 1e5
     xdat, ydat = np.random.normal(size=N), np.random.normal(1, 0.6, size=N)
@@ -61,4 +82,11 @@ if __name__ == "__main__":
     fig = plt.figure()
     ax = fig.add_subplot(111)
     violin_plot(ax,data,pos, bp=1)
+    plt.show()
+
+    np.random.seed(1977)
+
+    # Generate 200 correlated x,y points
+    data = np.random.multivariate_normal([0, 0], [[1, 0.5], [0.5, 3]], 200)
+    kde_compute(data.T, nbins=20)
     plt.show()
