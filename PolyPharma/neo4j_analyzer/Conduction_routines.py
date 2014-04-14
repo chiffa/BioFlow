@@ -120,7 +120,7 @@ def get_pairwise_flow(conductivity_laplacian, idxlist, cancellation=False, poten
     solver = cholesky(csc_matrix(conductivity_laplacian), fudge)
 
     for counter, (i, j) in enumerate(combinations(idxlist, 2)):
-        print 'getting pairwise flow %s out of %s' % (counter, len(idxlist)**2/2)
+        # print 'getting pairwise flow %s out of %s' % (counter, len(idxlist)**2/2)
         IO_array = build_IO_currents_array((i,j), conductivity_laplacian.shape)
         voltages = get_voltages_with_solver(solver, IO_array)
         currents_full, current_upper = get_current_matrix(conductivity_laplacian, voltages)
@@ -155,9 +155,9 @@ def get_better_pairwise_flow(conductivity_laplacian, idxlist, cancellation=True,
     Current_accumulator = lil_matrix(conductivity_laplacian.shape)
     solver = cholesky(csc_matrix(conductivity_laplacian), fudge)
 
-    for counter, (i, j) in enumerate(combinations(idxlist, 2)):
+    for counter, (i, j) in enumerate(combinations(set(idxlist), 2)):
 
-        print 'getting pairwise flow %s out of %s' % (counter, len(idxlist)**2/2)
+        # print 'getting pairwise flow %s out of %s' % (counter, len(idxlist)*(len(idxlist)-1)/2)
 
         if memory_source:
             potential_diff, current_upper = memory_source[tuple(sorted((i, j)))]
@@ -170,7 +170,11 @@ def get_better_pairwise_flow(conductivity_laplacian, idxlist, cancellation=True,
             if memoized:
                 UP_pair2voltage_current[tuple(sorted((i, j)))] = (potential_diff, current_upper)
 
-        current_upper = current_upper/potential_diff
+        if potential_diff!=0:
+            current_upper = current_upper/potential_diff
+        else:
+            print i, j
+            raise Warning('Potential difference is nul')
         Current_accumulator += sparse_abs(current_upper)
 
     if cancellation:

@@ -12,7 +12,8 @@ import numpy as np
 from copy import copy
 from time import time
 from random import shuffle, sample
-from itertools import combinations
+from collections import defaultdict
+from pprint import PrettyPrinter
 from scipy.sparse import lil_matrix
 from scipy.sparse.linalg import eigsh
 from scipy.sparse.csgraph import connected_components
@@ -92,7 +93,7 @@ class MatrixGetter(object):
         self.analytic_Uniprots = []
         self.UP2UP_voltages = {}
         self.UP2voltage_and_circ = {}
-
+        self.node_current = {}
 
 
     def pretty_time(self):
@@ -175,7 +176,7 @@ class MatrixGetter(object):
                         'UPs' : pickle.dumps(self.analytic_Uniprots),
                         'currents' : pickle.dumps((self.current_accumulator, self.node_current)),
                         'voltages' : pickle.dumps(self.UP2voltage_and_circ)}
-        dump_object(Dumps.GO_Analysis_memoized, payload)
+        dump_object(Dumps.Interactome_Analysis_memoized, payload)
 
 
     def undump_memoized(self):
@@ -183,7 +184,7 @@ class MatrixGetter(object):
         :return: undumped memoized analysis
         :rtype: dict
         """
-        return undump_object(Dumps.GO_Analysis_memoized)
+        return undump_object(Dumps.Interactome_Analysis_memoized)
 
 
     def full_load_LS(self):
@@ -303,6 +304,12 @@ class MatrixGetter(object):
 
         self.HiNT_Links, self.FullSet, c = get_expansion(self.UPSet, edge_type_filters["HiNT_Contact_interaction"])
         characterise('HiNT Links', self.HiNT_Links, self.FullSet, c)
+
+        for i in range(0,3):
+            HiNT_Links2, FullSet2, c = get_expansion(self.SecSet, edge_type_filters["HiNT_Contact_interaction"])
+            self.FullSet = FullSet2
+            self.HiNT_Links = HiNT_Links2
+            characterise('HiNT Links'+str(i)+' ', self.SecLinks, self.SecSet, c)
 
         self.Super_Links, self.ExpSet, c = get_expansion(self.FullSet, edge_type_filters["possibly_same"])
         characterise('Looks_similar Links', self.Super_Links, self.ExpSet, c)
@@ -603,9 +610,9 @@ class MatrixGetter(object):
         if not incremental or self.current_accumulator == np.zeros((2,2)):
             self.current_accumulator = lil_matrix(self.Conductance_Matrix.shape)
             self.UP2UP_voltages = {}
+            self.node_current = defaultdict(float)
             if not sourced:
                 self.UP2voltage_and_circ = {}
-
         current_accumulator, UP_pair2voltage_current = CR.get_better_pairwise_flow(self.Conductance_Matrix,
                                                                                    [self.NodeID2MatrixNumber[UP] for UP in self.analytic_Uniprots],
                                                                                    cancellation=cancellation,
@@ -615,17 +622,15 @@ class MatrixGetter(object):
             self.current_accumulator = self.current_accumulator + current_accumulator
             self.UP2voltage_and_circ.update(UP_pair2voltage_current)
             self.UP2UP_voltages.update(dict((key, val1) for key, (val1, val2) in UP_pair2voltage_current.iteritems()))
-
         else:
             self.current_accumulator = current_accumulator
             self.UP2voltage_and_circ = UP_pair2voltage_current
             self.UP2UP_voltages = dict((key, val1) for key, (val1, val2) in UP_pair2voltage_current.iteritems())
-
         if memoized:
             self.dump_memoized()
 
         index_current = CR.get_current_through_nodes(self.current_accumulator)
-        self.node_current = dict((self.MatrixNumber2NodeID[idx], val) for idx, val in enumerate(index_current))
+        self.node_current.update(dict((self.MatrixNumber2NodeID[idx], val) for idx, val in enumerate(index_current)))
 
 
     def format_Node_props(self, node_current, limit = 0.01):
@@ -633,7 +638,7 @@ class MatrixGetter(object):
         for NodeID, i in self.NodeID2MatrixNumber.iteritems():
             if node_current[NodeID] > limit:
                 charDict[NodeID] = [ node_current[NodeID],
-                                     len(self.Conductance_Matrix[i,i])]
+                                     self.Conductance_Matrix[i, i]]
         return charDict
 
 
@@ -644,19 +649,20 @@ class MatrixGetter(object):
 
         :raise Warning:
         """
-        nodecharnames = ['Current', 'Type', 'Legacy_ID', 'Names', 'Pure_informativity']
-        nodechartypes = ['DOUBLE', 'VARCHAR', 'VARCHAR', 'VARCHAR', 'DOUBLE']
+        nodecharnames = ['Current', 'Type', 'Legacy_ID', 'Names', 'Degree', 'Source']
+        nodechartypes = ['DOUBLE', 'VARCHAR', 'VARCHAR', 'VARCHAR', 'DOUBLE', 'DOUBLE']
         charDict = {}
 
-        for NodeID, i in self.NodeID2MatrixNumber.iteritems():
+        for NodeID in self.node_current.iterkeys():
+            i = self.NodeID2MatrixNumber[NodeID]
             charDict[NodeID] = [ str(self.node_current[NodeID]),
                              self.ID2Type[NodeID],
                              self.ID2LegacyId[NodeID],
-                             self.ID2displayName[NodeID].replace(',','-'),
-                             str(len(self.Conductance_Matrix[i,i]))]
+                             self.ID2displayName[NodeID].replace(',', '-'),
+                             str(self.Conductance_Matrix[i, i]),
+                             str(float(int(NodeID in self.analytic_Uniprots)))]
 
-
-        GDF_exporter = GDF_export_Interface(target_fname = Outputs.GO_GDF_output, field_names = nodecharnames,
+        GDF_exporter = GDF_export_Interface(target_fname = Outputs.Interactome_GDF_output, field_names = nodecharnames,
                                             field_types = nodechartypes, node_properties_dict = charDict,
                                             mincurrent = 0.01, Idx2Label = self.MatrixNumber2NodeID,
                                             Label2Idx = self.NodeID2MatrixNumber,
@@ -685,7 +691,7 @@ class MatrixGetter(object):
         if not len(samples_size) == len(samples_each_size):
             raise Exception('Not the same list sizes!')
 
-        self_connectable_UPs = list(self.NodeID2MatrixNumber.keys())
+        self_connectable_UPs = [NodeID for NodeID, idx in self.NodeID2MatrixNumber.iteritems() if idx<(self.Conductance_Matrix.shape[0]-1)]
 
         for sample_size, iterations in zip(samples_size, samples_each_size):
             for i in range(0, iterations):
@@ -704,7 +710,7 @@ class MatrixGetter(object):
                                      'voltages' : pickle.dumps(self.UP2UP_voltages)})
 
                 print 'Random ID: %s \t Sample size: %s \t iteration: %s\t compops: %s \t time: %s ' %(self.r_ID,
-                        sample_size, i, "{0:.2f}".format(sample_size**2/2/self._time()), self.pretty_time())
+                        sample_size, i, "{0:.2f}".format(sample_size*(sample_size-1)/2/self._time()), self.pretty_time())
 
 
 if __name__ == "__main__":
@@ -712,9 +718,22 @@ if __name__ == "__main__":
     # Mat_gter.hacky_corr()
     # Mat_gter.full_rebuild ()
     Mat_gter.fast_load()
-    # Mat_gter.get_eigenspectrum(100)
-    # Mat_gter.dump_Eigens()
 
-    print Mat_gter.ID2displayName.keys()[:50]
-    test_set = []
+    # pprinter = PrettyPrinter(indent=4)
+    # pprinter.pprint(len(Mat_gter.Uniprot_attachments.keys()))
+
+    # print Mat_gter.ID2displayName.keys()[:50]
+    # test_set = ['55618', '55619', '55616', '55614', '55615', '55612', '55613', '55342', '177791', '126879',
+    # '49913', '117670', '189117', '55292', '55293', '55290', '55291', '55296', '55297', '51269', '55295',
+    # '51267', '51265', '51263', '51261', '55762', '55763', '55760', '55761', '55766', '55767', '55764',
+    # '55765', '51064', '50641', '50647', '51062', '56239', '56238', '51283', '56235', '56234', '56237',
+    # '56236', '51289', '56230', '56233', '56232', '55908', '55909']
+    #
+    # test2 = ['55618', '55619', '55616', '55614', '55615', '55612', '55613', '55342', '177791', '126879']
+    #
+    # Mat_gter.export_subsystem(test_set, test2)
+    # Mat_gter.build_extended_conduction_system()
+    # Mat_gter.export_conduction_system()
+
+    Mat_gter.randomly_sample([10,25],[5,5])
 

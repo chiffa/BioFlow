@@ -120,6 +120,7 @@ class Dumps(object):
     Adj_degree = prefix + prefix_2 + '/Adjacency_degree.csv'
     Silverality = prefix + prefix_2 + '/Silverality'+postfix
     InfoArray = prefix + prefix_2 + '/sample_array'+postfix
+    Interactome_Analysis_memoized = prefix + prefix_2 + '/Interactome_memoization'+postfix
 
     Up_dict_dump = prefix + prefix_2 + '/Uniprot_dict'+postfix
     GO_dump = prefix + prefix_2 + '/GO'+postfix
@@ -135,6 +136,7 @@ class Dumps(object):
 class Outputs(object):
     prefix = str(path.abspath(path.dirname(__file__)+'/outputs'))
     GO_GDF_output = prefix + '/GO_Analysis_output.gdf'
+    Interactome_GDF_output = prefix + '/Interactome_Analysis_output.gdf'
 
 
 Leg_ID_Filter = ['H+', 'ATP', 'GTP', 'Pi', 'H2O', 'ADP', 'PPi', 'GDP', 'O2', 'CO2', 'NTP',]
