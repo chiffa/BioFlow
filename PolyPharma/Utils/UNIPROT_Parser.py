@@ -222,7 +222,12 @@ def get_access_dicts():
 if __name__ == '__main__':
     Uniprot = Parse_Uniprot()
     print len(Uniprot)
-    names_Dict = get_Names_dict()
-    print len(names_Dict)
-    access_dict = get_access_dicts()
-    print len(access_dict)
+    # names_Dict = get_Names_dict()
+    # print len(names_Dict)
+    # access_dict = get_access_dicts()
+    # print len(access_dict)
+    accumulator = []
+    for id, aclist in Uniprot.iteritems():
+        for item in aclist['Acnum']:
+            accumulator.append(item)
+    print accumulator

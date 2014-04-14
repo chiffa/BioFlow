@@ -3,42 +3,32 @@ __author__ = 'ank'
 Contains all the tools necessary to map GO ontology and Pathway classification from the database to an Adjacency and
 Laplacian graph.
 """
-
-from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
-import copy
-from time import time
-import pickle
-import operator
-from random import shuffle
-import math
-from scipy.stats.kde import  gaussian_kde
-import numpy as np
-from pylab import plot, hist, show
-from itertools import combinations
-from pprint import PrettyPrinter
-from math import log
-from scipy.sparse import lil_matrix
-from scipy.sparse.csgraph import shortest_path, connected_components
-from scipy.sparse.csgraph._validation import validate_graph
-from collections import defaultdict
-from itertools import chain
-from PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface import MatrixGetter
-from PolyPharma.configs import Dumps, Outputs, UP_rand_samp
-from PolyPharma.neo4j_analyzer.knowledge_access import acceleratedInsert
-from PolyPharma.neo4j_analyzer.IO_Routines import dump_object, write_to_csv, undump_object
-from PolyPharma.Utils.GDF_export import GDF_export_Interface
-import PolyPharma.neo4j_analyzer.Conduction_routines as CR
 import hashlib
 import json
 import random
 import string
-from multiprocessing import Pool
+import copy
+import pickle
+import numpy as np
+from time import time
+from random import shuffle
+from itertools import combinations, chain
+from pprint import PrettyPrinter
+from math import log
+from collections import defaultdict
+from scipy.sparse import lil_matrix
+from scipy.sparse.csgraph import shortest_path
+from PolyPharma.configs import Dumps, Outputs, UP_rand_samp
+from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
+from PolyPharma.Utils.GDF_export import GDF_export_Interface
+from PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface import MatrixGetter
+from PolyPharma.neo4j_analyzer.IO_Routines import dump_object, undump_object
+from PolyPharma.neo4j_analyzer import Conduction_routines as CR
 
 
 # Creates an instance of MatrixGetter and loads pre-computed values
 MG = MatrixGetter(True, False)
 MG.fast_load()
-
 
 # TODO: switch to the usage of Uniprot set that is independent from the Matrix_Getter, but instead is supplide by the user
     # MG.Uniprot is just an option, even though a very importatn one
@@ -219,20 +209,20 @@ class GO_Interface(object):
         dump_object(Dumps.GO_Analysis_memoized, payload)
 
 
-    def dump_Indep_Linset(self):
-        dump_object(Dumps.GO_Indep_Linset, self.Indep_Lapl)
-
-
-    def undump_Indep_Linset(self):
-        self.Indep_Lapl = undump_object(Dumps.GO_Indep_Linset)
-
-
     def undump_memoized(self):
         """
         :return: undumped memoized analysis
         :rtype: dict
         """
         return undump_object(Dumps.GO_Analysis_memoized)
+
+
+    def dump_Indep_Linset(self):
+        dump_object(Dumps.GO_Indep_Linset, self.Indep_Lapl)
+
+
+    def undump_Indep_Linset(self):
+        self.Indep_Lapl = undump_object(Dumps.GO_Indep_Linset)
 
 
     def store(self):
@@ -581,6 +571,13 @@ class GO_Interface(object):
 
 
     def set_Uniprot_source(self, Uniprots):
+        """
+        Sets the Uniprots on which the circulation computation routines will be performed by the otehr methods.
+        Avoids passing as argument large lists of parameters.
+
+        :param Uniprots: List of node IDs of the uniprots on which we would like to perform current computations
+        :raise Warning: if the uniprots were not present in the set of GOs for which we built the system or had no GO attached to them
+        """
         if not set(Uniprots) <= set(self.UP2GO_Dict.keys()):
             ex_pload = 'Following Uniprots either were not in the construction set or have no GOs attached: \n %s' % (set(Uniprots) - set(self.UP2GO_Dict.keys()))
             raise Warning(ex_pload)
@@ -591,6 +588,10 @@ class GO_Interface(object):
         """
         Builds a conduction matrix that integrates uniprots, in order to allow an easier knowledge flow analysis
 
+        :param memoized: if the tensions and individual relation matrices should be stored in the matrix and dumped at the end computation (required for submatrix recomputation)
+        :param sourced: if true, all the raltions will be looked up and not computed. Useful for the retrieval of subcirculation group, but requires the UP2voltage_and_circ to be pre-filled
+        :param incremental: if True, all the circulation computation will be added to the existing ones. Usefull for the computation of particularly big systems with intermediate dumps
+        :param cancellation: divides the final current by #Nodes**2/2, i.e. makes the currents comparable between circulation systems of differnet  sizes.
         :return: adjusted conduction system
         """
         if not incremental or self.current_accumulator == np.zeros((2,2)):
@@ -630,7 +631,7 @@ class GO_Interface(object):
         self.node_current = dict( (self.inflated_idx2lbl[idx], val) for idx, val in enumerate(index_current))
 
 
-    def compute_conduction_system(self, node_current, limit = 0.01):
+    def format_Node_props(self, node_current, limit = 0.01):
         charDict = {}
         for GO in self.GO2Num.iterkeys():
             if node_current[GO] > limit:

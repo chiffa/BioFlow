@@ -3,19 +3,25 @@ __author__ = 'ank'
 This module contains all the routines that are respojnsible for pulling
 the matrixes out of the neo4j graph and processing them.
 """
+import hashlib
+import json
 import itertools
+import pickle
+import string
 import numpy as np
 from copy import copy
 from time import time
-
+from random import shuffle, sample
+from itertools import combinations
 from scipy.sparse import lil_matrix
 from scipy.sparse.linalg import eigsh
 from scipy.sparse.csgraph import connected_components
-
+from PolyPharma.configs import edge_type_filters, Adjacency_Martix_Dict, Conductance_Matrix_Dict, Dumps, Outputs, Interactome_rand_samp
+from PolyPharma.Utils.GDF_export import GDF_export_Interface
 from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
-from PolyPharma.configs import edge_type_filters, Adjacency_Martix_Dict, Conductance_Matrix_Dict, Dumps
 from PolyPharma.neo4j_analyzer.DB_IO_Routines import reaction_participant_getter, expand_from_seed, Erase_custom_fields
 from PolyPharma.neo4j_analyzer.IO_Routines import write_to_csv, dump_object, undump_object
+from PolyPharma.neo4j_analyzer import Conduction_routines as CR
 
 # TODO: change the behavior of HiNT propagation to a several stages propagation
 #       Main connex set is 24k nodes, with 4331 UP links and 1051 Hint links
@@ -58,6 +64,7 @@ class MatrixGetter(object):
         self.NodeID2MatrixNumber = {}
         self.MatrixNumber2NodeID = {}
         self.ID2displayName = {}
+        self.ID2LegacyId = {}
         self.ID2Type = {}
         self.ID2Localization = {}
         self.Uniprots = []
@@ -78,6 +85,32 @@ class MatrixGetter(object):
         self.ExpSet = []
 
         self.Matrix_reality = Dumps.matrix_corrs
+
+        char_set = string.ascii_uppercase + string.digits
+        self.r_ID = ''.join(sample(char_set*6, 6))
+
+        self.analytic_Uniprots = []
+        self.UP2UP_voltages = {}
+        self.UP2voltage_and_circ = {}
+
+
+
+    def pretty_time(self):
+        """
+        Times the execution
+
+        :return: tuple containing the time since the creation of the Matrix_getter object and since the last cal of function formatted as string
+        :rtype: str
+        """
+        it, pt = (round(time() - self.init_time), round(time() - self.partial_time))
+        pload = 'total: %s m %s s, \t partial: %s m %s s' % (int(it) / 60, it % 60, int(pt) / 60, pt % 60)
+        self.partial_time = time()
+        return pload
+
+
+    def _time(self):
+        pt = time() - self.partial_time
+        return pt
 
 
     def dump_Matrices(self):
@@ -121,7 +154,7 @@ class MatrixGetter(object):
         """
         dump_object(Dumps.matrix_corrs,
                          (self.NodeID2MatrixNumber, self.MatrixNumber2NodeID,
-                          self.ID2displayName, self.ID2Type, self.ID2Localization,
+                          self.ID2displayName, self.ID2LegacyId, self.ID2Type, self.ID2Localization,
                           self.Uniprots, self.Uniprot_attachments, self.Uniprot_Mat_idxs))
 
 
@@ -129,20 +162,28 @@ class MatrixGetter(object):
         """
         undumps all the elements required for the mapping between the types and ids of database entries and matrix columns
         """
-        self.NodeID2MatrixNumber, self.MatrixNumber2NodeID, self.ID2displayName, self.ID2Type,\
+        self.NodeID2MatrixNumber, self.MatrixNumber2NodeID, self.ID2displayName, self.ID2LegacyId, self.ID2Type,\
         self.ID2Localization, self.Uniprots, self.Uniprot_attachments, self.Uniprot_Mat_idxs = undump_object(Dumps.matrix_corrs)
 
-    def time(self):
-        """
-        Times the execution
 
-        :return: tuple containing the time since the creation of the Matrix_getter object and since the last cal of function formatted as string
-        :rtype: str
+
+    def dump_memoized(self):
+        md5 = hashlib.md5(json.dumps( sorted(self.analytic_Uniprots), sort_keys=True)).hexdigest()
+        payload = {'UP_hash' : md5,
+                        'sys_hash' : self._MD5hash(),
+                        'size' : len(self.analytic_Uniprots),
+                        'UPs' : pickle.dumps(self.analytic_Uniprots),
+                        'currents' : pickle.dumps((self.current_accumulator, self.node_current)),
+                        'voltages' : pickle.dumps(self.UP2voltage_and_circ)}
+        dump_object(Dumps.GO_Analysis_memoized, payload)
+
+
+    def undump_memoized(self):
         """
-        it, pt = (round(time() - self.init_time), round(time() - self.partial_time))
-        pload = 'total: %s m %s s, \t partial: %s m %s s' % (int(it) / 60, it % 60, int(pt) / 60, pt % 60)
-        self.partial_time = time()
-        return pload
+        :return: undumped memoized analysis
+        :rtype: dict
+        """
+        return undump_object(Dumps.GO_Analysis_memoized)
 
 
     def full_load_LS(self):
@@ -181,6 +222,8 @@ class MatrixGetter(object):
             Seeds = set()
             count = 0
             for ReactionType in self.ReactionsList:
+                if not ReactionType.get_all():
+                    continue
                 for Reaction in ReactionType.get_all():
                     if Reaction is None:
                         continue
@@ -236,7 +279,7 @@ class MatrixGetter(object):
             """
             print '===========>', name, '<==========='
             print len(Links), len(Group), count
-            print self.time()
+            print self.pretty_time()
 
         ################################################################################################################
 
@@ -301,6 +344,7 @@ class MatrixGetter(object):
             Vertex = DatabaseGraph.vertices.get(ID)
             self.ID2displayName[ID] = Vertex.displayName
             self.ID2Type[ID] = Vertex.element_type
+            self.ID2LegacyId[ID] = Vertex.ID
             if Vertex.element_type == "UNIPROT":
                 self.Uniprots.append(ID)
                 self.Uniprot_Mat_idxs.append(counter)
@@ -340,11 +384,11 @@ class MatrixGetter(object):
         if self.full_impact:
             self.Highest_Set = self.ExpSet
 
-        print "building correspondances", self.time()
+        print "building correspondances", self.pretty_time()
 
         self.map_rows_to_names()
 
-        print "building the ValMatrix", self.time()
+        print "building the ValMatrix", self.pretty_time()
 
         loadLen = len(self.Highest_Set)
         self.Ajacency_Matrix = lil_matrix((loadLen, loadLen))
@@ -395,7 +439,7 @@ class MatrixGetter(object):
         if self.Conductance_Matrix.shape == (4,4):
             raise Exception("Matrix must be pre-loaded first")
 
-        print "entering eigenvect computation", self.time()
+        print "entering eigenvect computation", self.pretty_time()
 
         self.adj_eigenvals, self.adj_eigenvects = eigsh(self.Ajacency_Matrix, numberEigvals)
         self.cond_eigenvals, self.cond_eigenvects = eigsh(self.Conductance_Matrix, numberEigvals)
@@ -406,7 +450,7 @@ class MatrixGetter(object):
         print '<======================>'
         print np.all(eigsh(self.Conductance_Matrix)[0] > 0)
 
-        print self.time()
+        print self.pretty_time()
 
 
     def get_normalized_laplacian(self, fudge = 1E-18):
@@ -444,7 +488,7 @@ class MatrixGetter(object):
                 Node.custom = 'Main_Connex'
                 Node.main_connex = True
                 Node.save()
-        print "Marking of %s nodes for connexity was done in %s" % (str(ln), str(self.time()))
+        print "Marking of %s nodes for connexity was done in %s" % (str(ln), str(self.pretty_time()))
 
 
     def full_rebuild(self):
@@ -529,10 +573,148 @@ class MatrixGetter(object):
         self.dump_Maps()
 
 
+    def _MD5hash(self):
+        """
+        Return the MD hash of self to ensure that all the defining properties have been correctly defined before dump/retrieval
+        """
+        sorted_initset = sorted(self.NodeID2MatrixNumber.keys(), key=str.lower)
+        data = [self.Connexity_Aware, sorted_initset, self.full_impact]
+        md5 = hashlib.md5(json.dumps(data,sort_keys=True)).hexdigest()
+        return str(md5)
+
+
+    def set_Uniprot_source(self, Uniprots):
+        if not set(Uniprots) <= set(self.NodeID2MatrixNumber.iterkeys()):
+            ex_pload = 'Following Uniprots either were not in the construction set or have no GOs attached: \n %s' % (set(Uniprots) - set(self.NodeID2MatrixNumber.keys()))
+            raise Warning(ex_pload)
+        self.analytic_Uniprots = Uniprots
+
+
+    def build_extended_conduction_system(self, memoized=True, sourced=False, incremental=False, cancellation = True):
+        """
+        Builds a conduction matrix that integrates uniprots, in order to allow an easier knowledge flow analysis
+
+        :param memoized: if the tensions and individual relation matrices should be stored in the matrix and dumped at the end computation (required for submatrix recomputation)
+        :param sourced: if true, all the raltions will be looked up and not computed. Useful for the retrieval of subcirculation group, but requires the UP2voltage_and_circ to be pre-filled
+        :param incremental: if True, all the circulation computation will be added to the existing ones. Usefull for the computation of particularly big systems with intermediate dumps
+        :param cancellation: divides the final current by #Nodes**2/2, i.e. makes the currents comparable between circulation systems of differnet  sizes.
+        :return: adjusted conduction system
+        """
+        if not incremental or self.current_accumulator == np.zeros((2,2)):
+            self.current_accumulator = lil_matrix(self.Conductance_Matrix.shape)
+            self.UP2UP_voltages = {}
+            if not sourced:
+                self.UP2voltage_and_circ = {}
+
+        current_accumulator, UP_pair2voltage_current = CR.get_better_pairwise_flow(self.Conductance_Matrix,
+                                                                                   [self.NodeID2MatrixNumber[UP] for UP in self.analytic_Uniprots],
+                                                                                   cancellation=cancellation,
+                                                                                   memoized=memoized,
+                                                                                   memory_source=self.UP2voltage_and_circ)
+        if incremental:
+            self.current_accumulator = self.current_accumulator + current_accumulator
+            self.UP2voltage_and_circ.update(UP_pair2voltage_current)
+            self.UP2UP_voltages.update(dict((key, val1) for key, (val1, val2) in UP_pair2voltage_current.iteritems()))
+
+        else:
+            self.current_accumulator = current_accumulator
+            self.UP2voltage_and_circ = UP_pair2voltage_current
+            self.UP2UP_voltages = dict((key, val1) for key, (val1, val2) in UP_pair2voltage_current.iteritems())
+
+        if memoized:
+            self.dump_memoized()
+
+        index_current = CR.get_current_through_nodes(self.current_accumulator)
+        self.node_current = dict((self.MatrixNumber2NodeID[idx], val) for idx, val in enumerate(index_current))
+
+
+    def format_Node_props(self, node_current, limit = 0.01):
+        charDict = {}
+        for NodeID, i in self.NodeID2MatrixNumber.iteritems():
+            if node_current[NodeID] > limit:
+                charDict[NodeID] = [ node_current[NodeID],
+                                     len(self.Conductance_Matrix[i,i])]
+        return charDict
+
+
+    def export_conduction_system(self):
+        """
+        Computes the conduction system of the GO terms and exports it to the GDF format and flushes it into a file that
+        can be viewed with Gephi
+
+        :raise Warning:
+        """
+        nodecharnames = ['Current', 'Type', 'Legacy_ID', 'Names', 'Pure_informativity']
+        nodechartypes = ['DOUBLE', 'VARCHAR', 'VARCHAR', 'VARCHAR', 'DOUBLE']
+        charDict = {}
+
+        for NodeID, i in self.NodeID2MatrixNumber.iteritems():
+            charDict[NodeID] = [ str(self.node_current[NodeID]),
+                             self.ID2Type[NodeID],
+                             self.ID2LegacyId[NodeID],
+                             self.ID2displayName[NodeID].replace(',','-'),
+                             str(len(self.Conductance_Matrix[i,i]))]
+
+
+        GDF_exporter = GDF_export_Interface(target_fname = Outputs.GO_GDF_output, field_names = nodecharnames,
+                                            field_types = nodechartypes, node_properties_dict = charDict,
+                                            mincurrent = 0.01, Idx2Label = self.MatrixNumber2NodeID,
+                                            Label2Idx = self.NodeID2MatrixNumber,
+                                            current_Matrix = self.current_accumulator)
+        GDF_exporter.write()
+
+
+    def export_subsystem(self, UP_system, UP_subsystem):
+        current_recombinator = self.undump_memoized()
+        if not set(UP_system) == set(pickle.loads(current_recombinator['UPs'])):
+            raise Exception('Wrong UP system re-analyzed')
+        self.UP2voltage_and_circ = pickle.loads(current_recombinator['voltages'])
+        self.set_Uniprot_source(UP_subsystem)
+        self.build_extended_conduction_system(memoized = False, sourced = True)
+        self.export_conduction_system()
+
+
+    def randomly_sample(self, samples_size, samples_each_size):
+        """
+        Randomly samples the set
+
+        :param samples_size:
+        :param samples_each_size:
+        :raise Exception:
+        """
+        if not len(samples_size) == len(samples_each_size):
+            raise Exception('Not the same list sizes!')
+
+        self_connectable_UPs = list(self.NodeID2MatrixNumber.keys())
+
+        for sample_size, iterations in zip(samples_size, samples_each_size):
+            for i in range(0, iterations):
+                shuffle(self_connectable_UPs)
+                analytics_UP_list = self_connectable_UPs[:sample_size]
+                self.set_Uniprot_source(analytics_UP_list)
+                self.build_extended_conduction_system(memoized=False, sourced=False)
+
+                md5 = hashlib.md5(json.dumps( sorted(analytics_UP_list), sort_keys=True)).hexdigest()
+
+                Interactome_rand_samp.insert({'UP_hash' : md5,
+                                     'sys_hash' : self._MD5hash(),
+                                     'size' : sample_size,
+                                     'UPs' : pickle.dumps(analytics_UP_list),
+                                     'currents' : pickle.dumps((self.current_accumulator, self.node_current)),
+                                     'voltages' : pickle.dumps(self.UP2UP_voltages)})
+
+                print 'Random ID: %s \t Sample size: %s \t iteration: %s\t compops: %s \t time: %s ' %(self.r_ID,
+                        sample_size, i, "{0:.2f}".format(sample_size**2/2/self._time()), self.pretty_time())
+
+
 if __name__ == "__main__":
     Mat_gter = MatrixGetter(True, True)
     # Mat_gter.hacky_corr()
-    Mat_gter.full_rebuild ()
-    # Mat_gter.fast_load()
-    Mat_gter.get_eigenspectrum(100)
-    Mat_gter.dump_Eigens()
+    # Mat_gter.full_rebuild ()
+    Mat_gter.fast_load()
+    # Mat_gter.get_eigenspectrum(100)
+    # Mat_gter.dump_Eigens()
+
+    print Mat_gter.ID2displayName.keys()[:50]
+    test_set = []
+

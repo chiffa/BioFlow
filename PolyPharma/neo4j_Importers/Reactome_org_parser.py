@@ -525,3 +525,12 @@ def parse_all():
     parse_Pathway_Steps(root)
 
 parse_all()
+
+if __name__ == "__main__":
+    acnums = []
+    for i, (protein, chardict) in enumerate(Proteins.iteritems()):
+        if 'UniProt' in chardict['references'].keys():
+            print i, chardict['references']['UniProt']
+            acnums.append(chardict['references']['UniProt'])
+    print list(set(acnums))
+    print len(list(set(acnums)))

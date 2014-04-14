@@ -470,7 +470,7 @@ def Compute_ponderated_info_circulation(UPs_2Binding_Affs):
 if __name__ == "__main__":
     # characterise_eigenvects(100, Type = 'Cond')
     # checkMatrix()
-    # processEigenVectors(15,Type = 'Cond')
+    processEigenVectors(15,Type = 'Cond')
     # columnSort()
     # lst = [22811, 18147, 13023]
     # print compute_sample_circulation_intensity_minimal(lst)

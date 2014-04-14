@@ -61,6 +61,15 @@ def spawn_sampler_pool(pool_size, sample_size_list, interation_list_per_pool):
 
 
 def select(tri_array, array_column, selection_span):
+    """
+    Convinient small function to select a from tri_array all the elements where the column number array_column
+    is within the selection span
+
+    :param tri_array: the matrix on which we will be performing the selection
+    :param array_column: column on which the selection span will be applied
+    :param selection_span: span for which we are going to keep the column.
+    :return:
+    """
     selector = np.logical_and(selection_span[0]< tri_array[array_column, :], tri_array[array_column, :]< selection_span[1])
     if not any(selector):
         return np.array([[0.0,0.0,0.0]])
@@ -70,6 +79,26 @@ def select(tri_array, array_column, selection_span):
 
 
 def show_corrs(tri_corr_array, meancorrs, eigvals, selector, test_tri_corr_array, test_meancorr, eigval, resamples):
+
+    # TODO: there is a lot of repetition depending on which values are the biggest, test-setted or real setted.
+    # In all, we should be able to reduce it to two functions: scatterplot and histogram with two sets that
+    # should go into the dataviz module
+
+    """
+    A general function that performs demonstration of an example of random samples of the same size as our sample
+    and of our sample and conducts the statistical tests on wherther any of nodes or functional groups in our
+    sample are non-random
+
+    :param tri_corr_array: [[current, informativity, confusion_potential], ...] - characteristics of the random samples
+    :param meancorrs: [[cluster size, average internode connection], ...] - characteristics of clustering random samples with the same parameters
+    :param eigvals: eigenvalues associated to the interconnection matrix of random samples
+    :param selector: range on which we would like to visually zoom and plot a histogram
+    :param test_tri_corr_array: [[current, informativity, confusion_potential], ...] - characteristics of the true sample. If none, nothing happens
+    :param test_meancorr: [[cluster size, average internode connection], ...] - characteristics of clustering the true sample
+    :param eigval: eigenvalues associated to the interconnection matrix of the true sample
+    :param resamples: how many random samples we analyzed for the default model
+    :return:
+    """
     KG = KG_gen()
     inf_sel = (KG._infcalc(selector[0]), KG._infcalc(selector[1]))
 
@@ -134,7 +163,7 @@ def show_corrs(tri_corr_array, meancorrs, eigvals, selector, test_tri_corr_array
     if test_tri_corr_array is not None:
         plt.hist(select(test_tri_corr_array, 2, selector)[0, :], bins=bins, histtype='step', log=True, color='r')
 
-
+    # this property is better off viewed as a scatterplot of true points and default points
     plt.subplot(337)
     plt.title('Clustering correlation')
     # plt.scatter(meancorrs[0, :], meancorrs[1, :], color = 'b')
@@ -235,17 +264,19 @@ def compare_to_blanc(blanc_model_size, zoom_range_selector, real_knowledge_inter
     count = 0
     meancorr_acccumulator = []
     eigval_accumulator = []
+    # this part computes the items required for the creation of a blanc model
     for i, sample in enumerate(UP_rand_samp.find({'size': blanc_model_size,'sys_hash' : MD5_hash})):
-        # UP_set = pickle.loads(sample['UPs'])
         _, node_currs = pickle.loads(sample['currents'])
         tensions = pickle.loads(sample['voltages'])
         _, _, meancorr, eigvals = perform_clustering(tensions, 3, show=False)
         meancorr_acccumulator.append(np.array(meancorr))
         eigval_accumulator.append(eigvals)
-        Dic_system = KG.compute_conduction_system(node_currs)
+        Dic_system = KG.format_Node_props(node_currs)
         curr_inf_conf = list(Dic_system.itervalues())
         curr_inf_conf_general.append(np.array(curr_inf_conf).T)
         count = i
+
+    # This part declares the pre-operators required for the verification of a real sample
 
     final = np.concatenate(tuple(curr_inf_conf_general), axis=1)
     final_meancorrs = np.concatenate(tuple(meancorr_acccumulator), axis=0).T
@@ -258,13 +289,15 @@ def compare_to_blanc(blanc_model_size, zoom_range_selector, real_knowledge_inter
     Dic_system = None
     if real_knowledge_interface:
         node_currs = real_knowledge_interface.node_current
-        Dic_system = KG.compute_conduction_system(node_currs)
+        Dic_system = KG.format_Node_props(node_currs)
         curr_inf_conf_tot = np.array([[int(key)]+list(val) for key, val in Dic_system.iteritems()]).T
         GO_node_ids, curr_inf_conf = (curr_inf_conf_tot[0, :], curr_inf_conf_tot[(1,2,3), :])
         group2avg_offdiag, _, meancorr, eigval = perform_clustering(real_knowledge_interface.UP2UP_voltages, 3)
 
 
     print "stats on %s samples" % count
+
+    # TODO: We could and should separate the visualisation from the gaussian estimators computation
     r_nodes, r_groups = show_corrs(final, final_meancorrs, final_eigvals, zoom_range_selector, curr_inf_conf, meancorr.T, eigval.T, count)
 
 
@@ -272,7 +305,6 @@ def compare_to_blanc(blanc_model_size, zoom_range_selector, real_knowledge_inter
     Group_char = namedtuple('Group_Char', ['UPs','num_UPs','average_connection','p_value'])
     if r_nodes is not None:
         not_random_nodes = [str(int(GO_id)) for GO_id in GO_node_ids[r_nodes < p_val].tolist()]
-        print group2avg_offdiag.shape, r_groups.shape
         not_random_groups = np.concatenate((group2avg_offdiag, np.reshape(r_groups, (3,1))), axis=1)[r_groups < p_val].tolist()
         not_random_groups = [ Group_char(*(nr_group)) for nr_group in not_random_groups]
 
@@ -323,6 +355,14 @@ def decide_regeneration():
 
 
 def get_estimated_time(samples, sample_sizes, operations_per_sec=2.2):
+    """
+    Short time to estimate the time required for the generation of random saples
+
+    :param samples: size of the sample
+    :param sample_sizes: times each sample size is sampled
+    :param operations_per_sec: complex operations per second
+    :return:
+    """
     counter = 0
     for sample, sample_size in zip(samples, sample_sizes):
         counter += sample_size*sample**2/operations_per_sec
@@ -335,6 +375,11 @@ def get_estimated_time(samples, sample_sizes, operations_per_sec=2.2):
 
 
 def linindep_GO_groups(size):
+    """
+    Performs the analysis of linerly independent GO groups
+
+    :param size:
+    """
     KG = KG_gen()
     KG.undump_Indep_Linset()
     char_indexes = dict( (key, (len(KG.GO2UP_Reachable_nodes[value]), KG.GO_Legacy_IDs[value], KG.GO_Names[value])) for key, value in KG.Num2GO.iteritems())

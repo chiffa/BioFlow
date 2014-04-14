@@ -26,8 +26,8 @@ import sys
 # f = open('../logs/Commander_logs.log','w')
 # sys.stdout = f
 # ################################
-
-# # clear_all(full_dict)
+#
+# clear_all(full_dict)
 # run_diagnostics(full_dict)
 # insert_all()
 # run_diagnostics(full_dict)

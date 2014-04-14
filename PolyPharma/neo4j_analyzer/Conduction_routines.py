@@ -103,11 +103,11 @@ def get_current_through_nodes(non_redundant_current_matrix):
     return ret
 
 
-def get_pairwise_flow(conductivity_laplacian, idxlist, cancellation=False, potential_lead=True):
+def get_pairwise_flow(conductivity_laplacian, idxlist, cancellation=False, potential_dominated=True):
     """
+    Performs a pairwaise computation and summation of the
 
-
-    :param potential_lead: if set to True, the computation is done by injecting constant potential difference into the
+    :param potential_dominated: if set to True, the computation is done by injecting constant potential difference into the
                             system, not a constant current.
     :param conductivity_laplacian:  Laplacian representing the conductivity
     :param idxlist: list of the indexes acting as current sources/sinks
@@ -119,24 +119,66 @@ def get_pairwise_flow(conductivity_laplacian, idxlist, cancellation=False, poten
     Current_accumulator = lil_matrix(conductivity_laplacian.shape)
     solver = cholesky(csc_matrix(conductivity_laplacian), fudge)
 
-    counter = 0
-
-    for i, j in combinations(idxlist, 2):
-        counter+=1
-        print 'getting pairwise flow %s' % counter
+    for counter, (i, j) in enumerate(combinations(idxlist, 2)):
+        print 'getting pairwise flow %s out of %s' % (counter, len(idxlist)**2/2)
         IO_array = build_IO_currents_array((i,j), conductivity_laplacian.shape)
         voltages = get_voltages_with_solver(solver, IO_array)
         currents_full, current_upper = get_current_matrix(conductivity_laplacian, voltages)
-        if potential_lead:
+
+        if potential_dominated:
             potential_diff = abs(voltages[i,0]-voltages[j,0])
             current_upper = current_upper/potential_diff
 
         Current_accumulator += sparse_abs(current_upper)
 
     if cancellation:
-        Current_accumulator[Current_accumulator<len(idxlist)-1] = 0
+        ln = len(idxlist)
+        Current_accumulator = Current_accumulator/(ln*(ln-1)/2)
 
     return Current_accumulator
+
+
+def get_better_pairwise_flow(conductivity_laplacian, idxlist, cancellation=True, memoized=False, memory_source=None):
+    """
+    Performs a pairwaise computation and summation of the
+
+
+    :param memory_source: dictionary of memoized tension and current flow through the circuit
+    :param conductivity_laplacian:  Laplacian representing the conductivity
+    :param idxlist: list of the indexes acting as current sources/sinks
+    :param cancellation: if True, the conductance values that are induced by single nodes interactions will be cancelled.
+
+    :return: current matrix for the flow system
+    :return: current through each node.
+    """
+    UP_pair2voltage_current = {}
+    Current_accumulator = lil_matrix(conductivity_laplacian.shape)
+    solver = cholesky(csc_matrix(conductivity_laplacian), fudge)
+
+    for counter, (i, j) in enumerate(combinations(idxlist, 2)):
+
+        print 'getting pairwise flow %s out of %s' % (counter, len(idxlist)**2/2)
+
+        if memory_source:
+            potential_diff, current_upper = memory_source[tuple(sorted((i, j)))]
+
+        else:
+            IO_array = build_IO_currents_array((i, j), conductivity_laplacian.shape)
+            voltages = get_voltages_with_solver(solver, IO_array)
+            _, current_upper = get_current_matrix(conductivity_laplacian, voltages)
+            potential_diff = abs(voltages[i, 0]-voltages[j, 0])
+            if memoized:
+                UP_pair2voltage_current[tuple(sorted((i, j)))] = (potential_diff, current_upper)
+
+        current_upper = current_upper/potential_diff
+        Current_accumulator += sparse_abs(current_upper)
+
+    if cancellation:
+        ln = len(idxlist)
+        Current_accumulator = Current_accumulator/(ln*(ln-1)/2)
+
+    return Current_accumulator, UP_pair2voltage_current
+
 
 
 def sample_pairwise_flow(conductivity_laplacian, idxlist, resamples, cancellation=False):
@@ -168,7 +210,8 @@ def sample_pairwise_flow(conductivity_laplacian, idxlist, resamples, cancellatio
         Current_accumulator += sparse_abs(current_upper)
 
     if cancellation:
-        Current_accumulator[Current_accumulator < resamples] = 0
+        ln = len(resamples)
+        Current_accumulator = Current_accumulator/(ln*(ln-1)/2)
 
     return Current_accumulator, get_current_through_nodes(Current_accumulator)
 
