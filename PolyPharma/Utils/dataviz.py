@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy import histogram2d
 from scipy.stats import gaussian_kde
-from numpy.random import normal
 
 
 def better2D_desisty_plot(xdat, ydat, thresh=3, bins = (100, 100)):
@@ -72,6 +71,7 @@ def kde_compute(bi_array, nbins=30, samples=10, show=True):
 
 
 if __name__ == "__main__":
+    from numpy.random import normal
     N = 1e5
     xdat, ydat = np.random.normal(size=N), np.random.normal(1, 0.6, size=N)
     better2D_desisty_plot(xdat, ydat)

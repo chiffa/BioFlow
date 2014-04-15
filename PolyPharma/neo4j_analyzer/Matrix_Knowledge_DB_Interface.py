@@ -286,7 +286,7 @@ class GO_Interface(object):
                         self.SeedSet.add(GOID)
             if not UP_Specific_GOs:
                 UPs_without_GO += 1
-                print "Warning: UP without GO has been found. Database UP_DB_ID: %s, \t name: %s!!!!!!" % (UP_DB_ID, MG.ID2displayName[UP_DB_ID])
+                print "Warning: UP without GO has been found. Database UP_DB_ID: %s, \t name: %s!!!!!!" % (UP_DB_ID, self.UP_Names[UP_DB_ID])
                 self.UPs_without_GO.add(UP_DB_ID)
             else:
                 self.UP2GO_Dict[UP_DB_ID] = copy.copy(UP_Specific_GOs)
@@ -513,7 +513,7 @@ class GO_Interface(object):
         for elt in MG.Uniprots:
             node = DatabaseGraph.UNIPORT.get(elt)
             altID = node.ID
-            UniprotDict[altID] = (elt, MG.ID2displayName[elt])
+            UniprotDict[altID] = (elt, MG.ID2displayName[elt]) # TODO: now can be supressed
             UniprotDict[elt] = altID
         pickle.dump(UniprotDict, file(Dumps.Up_dict_dump,'w'))
         return UniprotDict
@@ -700,6 +700,7 @@ class GO_Interface(object):
             for i in range(0, iterations):
                 shuffle(self_connectable_UPs)
                 analytics_UP_list = self_connectable_UPs[:sample_size]
+                # print analytics_UP_list
                 self.set_Uniprot_source(analytics_UP_list)
                 self.build_extended_conduction_system(memoized=False, sourced=False)
 
@@ -730,12 +731,13 @@ class GO_Interface(object):
 if __name__ == '__main__':
     filtr = ['biological_process']
 
-    KG = GO_Interface(filtr, MG.Uniprots, (1, 1), True, 3)
+    # Edit to supress the MG.Uniprots values.
+    KG = GO_Interface(filtr, MG.Uniprot_complete, (1, 1), True, 3)
     KG.rebuild()
     print KG.pretty_time()
     KG.store()
     print KG.pretty_time()
-    # experimental = ['881579','65094', '925081', '500332', '915530', '456374']
+    # experimental = ['186958', '142401', '147798', '164077', '162624', '181770', '113303', '160359', '133344', '178502']
     #
     # KG.load()
     # print KG.pretty_time()
@@ -751,7 +753,7 @@ if __name__ == '__main__':
     # KG.build_extended_conduction_system()
     # KG.export_conduction_system()
     #
-    # KG.export_subsystem(experimental, ['881579','65094'])
+    # KG.export_subsystem(experimental, ['186958', '142401', '147798', '164077'])
 
 
 

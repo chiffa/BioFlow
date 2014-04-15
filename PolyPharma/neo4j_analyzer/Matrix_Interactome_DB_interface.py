@@ -69,6 +69,7 @@ class MatrixGetter(object):
         self.ID2Type = {}
         self.ID2Localization = {}
         self.Uniprots = []
+        self.Uniprot_complete = []
         self.Uniprot_attachments = {} # currently maintained for legacy reasons
         self.Uniprot_Mat_idxs = []
 
@@ -156,7 +157,7 @@ class MatrixGetter(object):
         dump_object(Dumps.matrix_corrs,
                          (self.NodeID2MatrixNumber, self.MatrixNumber2NodeID,
                           self.ID2displayName, self.ID2LegacyId, self.ID2Type, self.ID2Localization,
-                          self.Uniprots, self.Uniprot_attachments, self.Uniprot_Mat_idxs))
+                          self.Uniprots, self.Uniprot_complete, self.Uniprot_attachments, self.Uniprot_Mat_idxs))
 
 
     def undump_Maps(self):
@@ -164,7 +165,7 @@ class MatrixGetter(object):
         undumps all the elements required for the mapping between the types and ids of database entries and matrix columns
         """
         self.NodeID2MatrixNumber, self.MatrixNumber2NodeID, self.ID2displayName, self.ID2LegacyId, self.ID2Type,\
-        self.ID2Localization, self.Uniprots, self.Uniprot_attachments, self.Uniprot_Mat_idxs = undump_object(Dumps.matrix_corrs)
+        self.ID2Localization, self.Uniprots, self.Uniprot_complete, self.Uniprot_attachments, self.Uniprot_Mat_idxs = undump_object(Dumps.matrix_corrs)
 
 
 
@@ -293,11 +294,11 @@ class MatrixGetter(object):
         self.SecLinks, self.SecSet, c = get_expansion(self.GroupSet, edge_type_filters["Contact_interaction"])
         characterise('Secondary Links', self.SecLinks, self.SecSet, c)
 
-        for i in range(0,5):
+        for i in range(0, 5):
             SecLinks2, SecSet2, c = get_expansion(self.SecSet, edge_type_filters["Contact_interaction"])
             self.SecSet = SecSet2
             self.SecLinks = SecLinks2
-            characterise('Secondary Links '+str(i)+' ', self.SecLinks, self.SecSet, c)
+            characterise('Secondary Links ' + str(i) + ' ', self.SecLinks, self.SecSet, c)
 
         self.UP_Links, self.UPSet, c = get_expansion(self.SecSet, edge_type_filters["Same"])
         characterise('Uniprot Links', self.UP_Links, self.UPSet, c)
@@ -305,11 +306,11 @@ class MatrixGetter(object):
         self.HiNT_Links, self.FullSet, c = get_expansion(self.UPSet, edge_type_filters["HiNT_Contact_interaction"])
         characterise('HiNT Links', self.HiNT_Links, self.FullSet, c)
 
-        for i in range(0,3):
-            HiNT_Links2, FullSet2, c = get_expansion(self.SecSet, edge_type_filters["HiNT_Contact_interaction"])
+        for i in range(0, 5):
+            HiNT_Links2, FullSet2, c = get_expansion(self.FullSet, edge_type_filters["HiNT_Contact_interaction"])
             self.FullSet = FullSet2
             self.HiNT_Links = HiNT_Links2
-            characterise('HiNT Links'+str(i)+' ', self.SecLinks, self.SecSet, c)
+            characterise('HiNT Links ' + str(i) + ' ', self.HiNT_Links, self.FullSet, c)
 
         self.Super_Links, self.ExpSet, c = get_expansion(self.FullSet, edge_type_filters["possibly_same"])
         characterise('Looks_similar Links', self.Super_Links, self.ExpSet, c)
@@ -358,6 +359,18 @@ class MatrixGetter(object):
             if Vertex.localization is not None:
                 self.ID2Localization[ID] = request_location(LocationBufferDict, Vertex.localization)
             counter += 1
+
+        self.Uniprot_complete += self.Uniprots
+        UP_generator = DatabaseGraph.UNIPORT.get_all()
+        if UP_generator:
+            for UP_Node in UP_generator:
+                ID = str(UP_Node).split('/')[-1][:-1]
+                if ID not in self.Uniprots:
+                    self.Uniprot_complete.append(ID)
+                    self.ID2displayName[ID] = UP_Node.displayName
+                    self.ID2Type[ID] = UP_Node.element_type
+                    self.ID2LegacyId[ID] = UP_Node.ID
+
 
 
     def fast_row_insert(self, element, index_type):
@@ -715,10 +728,11 @@ class MatrixGetter(object):
 
 if __name__ == "__main__":
     Mat_gter = MatrixGetter(True, True)
+    Mat_gter.full_rebuild ()
     # Mat_gter.hacky_corr()
-    # Mat_gter.full_rebuild ()
     Mat_gter.fast_load()
-
+    print len(Mat_gter.Uniprots)
+    print len(Mat_gter.Uniprot_complete)
     # pprinter = PrettyPrinter(indent=4)
     # pprinter.pprint(len(Mat_gter.Uniprot_attachments.keys()))
 

@@ -3,23 +3,23 @@ Builds on the knowledge
 """
 __author__ = 'ank'
 
-from Matrix_Interactome_DB_interface import  MatrixGetter
-from Matrix_Knowledge_DB_Interface import GO_Interface
-from multiprocessing import Pool
-from PolyPharma.configs import UP_rand_samp
-from pprint import PrettyPrinter
 import pickle
 import numpy as np
-import matplotlib.pyplot as plt
+
 from copy import copy
 from random import shuffle
-from PolyPharma.Utils.dataviz import kde_compute
-from itertools import combinations
+from collections import namedtuple
+from multiprocessing import Pool
+from pprint import PrettyPrinter
+from matplotlib import pyplot as plt
 from scipy.sparse import lil_matrix
 from scipy.sparse.linalg import eigsh
-from scipy.stats import kde
+from Matrix_Interactome_DB_interface import  MatrixGetter
+from Matrix_Knowledge_DB_Interface import GO_Interface
+from PolyPharma.configs import UP_rand_samp
+from PolyPharma.Utils.dataviz import kde_compute
 from PolyPharma.Utils.Linalg_routines import analyze_eigvects, cluster_nodes, submatrix, remaineder_matrix, Lapl_normalize
-from collections import namedtuple
+
 
 filtr = ['biological_process']
 corrfactors = (1, 1)
@@ -29,7 +29,7 @@ MG.fast_load()
 
 
 def KG_gen():
-    KG = GO_Interface(filtr, MG.Uniprots, corrfactors, True, 3)
+    KG = GO_Interface(filtr, MG.Uniprot_complete, corrfactors, True, 3)
     KG.load()
     print KG.pretty_time()
     return KG
@@ -389,17 +389,16 @@ def linindep_GO_groups(size):
 
 if __name__ == "__main__":
     # spawn_sampler(([10, 100], [2, 1]))
-    # spawn_sampler_pool(4, [100], [8])
+    spawn_sampler_pool(6, [ 25, 50, 100], [15, 10, 10,])
     # get_estimated_time([10, 25, 50, 100,], [15, 10, 10, 8,])
-    test_list = ['530239', '921394', '821224', '876133', '537471', '147771', '765141', '783757', '161100', '808630']
-    KG = KG_gen()
-    KG.set_Uniprot_source(test_list)
-    KG.build_extended_conduction_system()
-    KG.export_conduction_system()
-    nr_nodes, nr_groups = compare_to_blanc(10, [1000, 1200], KG, p_val=0.5)
-    for item in nr_nodes:
-        print '\t', item
-    print nr_groups
+    # test_list = ['186958', '142401', '147798', '164077', '162624', '181770', '113303', '160359', '133344', '178502']
+    # KG = KG_gen()
+    # KG.set_Uniprot_source(test_list)
+    # KG.build_extended_conduction_system()
+    # KG.export_conduction_system()
+    # nr_nodes, nr_groups = compare_to_blanc(10, [1000, 1200], KG, p_val=0.5)
+    # # for item in nr_nodes:
+    # # print nr_groups
     # linindep_GO_groups(50)
 
     pass
