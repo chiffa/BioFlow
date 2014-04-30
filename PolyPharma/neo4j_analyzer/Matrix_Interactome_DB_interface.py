@@ -3,6 +3,9 @@ __author__ = 'ank'
 This module contains all the routines that are respojnsible for pulling
 the matrixes out of the neo4j graph and processing them.
 """
+import os
+from PolyPharma.configs import Chromosome_source, Chromosome_file_filter
+
 import hashlib
 import json
 import itertools
@@ -96,6 +99,11 @@ class MatrixGetter(object):
         self.UP2voltage_and_circ = {}
         self.node_current = {}
 
+        self.UP2Chrom = {}
+        self.Chrom2UP = defaultdict(list)
+
+        self.incomplete_compute = False  # used in case of sparse sampling
+
 
     def pretty_time(self):
         """
@@ -157,7 +165,8 @@ class MatrixGetter(object):
         dump_object(Dumps.matrix_corrs,
                          (self.NodeID2MatrixNumber, self.MatrixNumber2NodeID,
                           self.ID2displayName, self.ID2LegacyId, self.ID2Type, self.ID2Localization,
-                          self.Uniprots, self.Uniprot_complete, self.Uniprot_attachments, self.Uniprot_Mat_idxs))
+                          self.Uniprots, self.Uniprot_complete, self.Uniprot_attachments, self.UP2Chrom, self.Chrom2UP,
+                          self.Uniprot_Mat_idxs))
 
 
     def undump_Maps(self):
@@ -165,7 +174,8 @@ class MatrixGetter(object):
         undumps all the elements required for the mapping between the types and ids of database entries and matrix columns
         """
         self.NodeID2MatrixNumber, self.MatrixNumber2NodeID, self.ID2displayName, self.ID2LegacyId, self.ID2Type,\
-        self.ID2Localization, self.Uniprots, self.Uniprot_complete, self.Uniprot_attachments, self.Uniprot_Mat_idxs = undump_object(Dumps.matrix_corrs)
+        self.ID2Localization, self.Uniprots, self.Uniprot_complete, self.Uniprot_attachments, self.UP2Chrom,\
+        self.Chrom2UP, self.Uniprot_Mat_idxs = undump_object(Dumps.matrix_corrs)
 
 
 
@@ -371,6 +381,8 @@ class MatrixGetter(object):
                     self.ID2Type[ID] = UP_Node.element_type
                     self.ID2LegacyId[ID] = UP_Node.ID
 
+        self.Uniprot_complete = list(set(self.Uniprot_complete))
+
 
 
     def fast_row_insert(self, element, index_type):
@@ -530,9 +542,12 @@ class MatrixGetter(object):
         self.create_val_matrix()
         self.get_eigenspectrum(100)
 
+        self.map_UPs_to_chromosomes()
+
         self.dump_Maps()
         self.dump_Matrices()
         self.dump_Eigens()
+
 
     def fast_load(self):
         """
@@ -604,13 +619,13 @@ class MatrixGetter(object):
 
 
     def set_Uniprot_source(self, Uniprots):
-        if not set(Uniprots) <= set(self.NodeID2MatrixNumber.iterkeys()):
-            ex_pload = 'Following Uniprots either were not in the construction set or have no GOs attached: \n %s' % (set(Uniprots) - set(self.NodeID2MatrixNumber.keys()))
-            raise Warning(ex_pload)
-        self.analytic_Uniprots = Uniprots
+        if not set(Uniprots) <= set(self.NodeID2MatrixNumber.keys()):
+            ex_pload = 'Following Uniprots were not retrieved upon the circulation matrix construction: \n %s' % (set(Uniprots) - set(self.NodeID2MatrixNumber.keys()))
+            print Warning(ex_pload)
+        self.analytic_Uniprots =self.analytic_Uniprots = [ uniprot for uniprot in Uniprots if uniprot in self.NodeID2MatrixNumber.keys()]
 
 
-    def build_extended_conduction_system(self, memoized=True, sourced=False, incremental=False, cancellation = True):
+    def build_extended_conduction_system(self, memoized=True, sourced=False, incremental=False, cancellation=True, sparse_samples=False):
         """
         Builds a conduction matrix that integrates uniprots, in order to allow an easier knowledge flow analysis
 
@@ -618,6 +633,9 @@ class MatrixGetter(object):
         :param sourced: if true, all the raltions will be looked up and not computed. Useful for the retrieval of subcirculation group, but requires the UP2voltage_and_circ to be pre-filled
         :param incremental: if True, all the circulation computation will be added to the existing ones. Usefull for the computation of particularly big systems with intermediate dumps
         :param cancellation: divides the final current by #Nodes**2/2, i.e. makes the currents comparable between circulation systems of differnet  sizes.
+        :param sparse_samples: if set to an integer the sampling will be sparse and not dense, i.e. instead of compution
+                                for each node pair, only an estimation will be made, equal to coputing sparse_samples association with other randomly chosen nodes
+        :type sparse_samples: int
         :return: adjusted conduction system
         """
         if not incremental or self.current_accumulator == np.zeros((2,2)):
@@ -626,19 +644,26 @@ class MatrixGetter(object):
             self.node_current = defaultdict(float)
             if not sourced:
                 self.UP2voltage_and_circ = {}
-        current_accumulator, UP_pair2voltage_current = CR.get_better_pairwise_flow(self.Conductance_Matrix,
+
+        if sparse_samples:
+            current_accumulator = CR.sample_pairwise_flow(self.Conductance_Matrix,
+                                                                                   [self.NodeID2MatrixNumber[UP] for UP in self.analytic_Uniprots],
+                                                                                   resamples=sparse_samples,
+                                                                                   cancellation=cancellation)
+        else:
+            current_accumulator, UP_pair2voltage_current = CR.get_better_pairwise_flow(self.Conductance_Matrix,
                                                                                    [self.NodeID2MatrixNumber[UP] for UP in self.analytic_Uniprots],
                                                                                    cancellation=cancellation,
                                                                                    memoized=memoized,
                                                                                    memory_source=self.UP2voltage_and_circ)
-        if incremental:
-            self.current_accumulator = self.current_accumulator + current_accumulator
             self.UP2voltage_and_circ.update(UP_pair2voltage_current)
             self.UP2UP_voltages.update(dict((key, val1) for key, (val1, val2) in UP_pair2voltage_current.iteritems()))
+
+        if incremental:
+            self.current_accumulator = self.current_accumulator + current_accumulator
         else:
             self.current_accumulator = current_accumulator
-            self.UP2voltage_and_circ = UP_pair2voltage_current
-            self.UP2UP_voltages = dict((key, val1) for key, (val1, val2) in UP_pair2voltage_current.iteritems())
+
         if memoized:
             self.dump_memoized()
 
@@ -662,6 +687,10 @@ class MatrixGetter(object):
 
         :raise Warning:
         """
+
+        if self.incomplete_compute:
+            raise Warning('Computation of the information circulation was not complete, most likely due to the sampling')
+
         nodecharnames = ['Current', 'Type', 'Legacy_ID', 'Names', 'Degree', 'Source']
         nodechartypes = ['DOUBLE', 'VARCHAR', 'VARCHAR', 'VARCHAR', 'DOUBLE', 'DOUBLE']
         charDict = {}
@@ -693,12 +722,16 @@ class MatrixGetter(object):
         self.export_conduction_system()
 
 
-    def randomly_sample(self, samples_size, samples_each_size):
+    def randomly_sample(self, samples_size, samples_each_size, sparse_rounds=False, chromosome_specific=False):
         """
         Randomly samples the set
 
         :param samples_size:
         :param samples_each_size:
+        :param sparse_rounds:
+        :type sparse_rounds: int
+        :param chromosome_specific:
+        :type chromosome_specific: int
         :raise Exception:
         """
         if not len(samples_size) == len(samples_each_size):
@@ -706,18 +739,23 @@ class MatrixGetter(object):
 
         self_connectable_UPs = [NodeID for NodeID, idx in self.NodeID2MatrixNumber.iteritems() if idx<(self.Conductance_Matrix.shape[0]-1)]
 
+        if chromosome_specific:
+            self_connectable_UPs = list(set(self_connectable_UPs).intersection(set(self.Chrom2UP[str(chromosome_specific)])))
+
         for sample_size, iterations in zip(samples_size, samples_each_size):
             for i in range(0, iterations):
                 shuffle(self_connectable_UPs)
                 analytics_UP_list = self_connectable_UPs[:sample_size]
                 self.set_Uniprot_source(analytics_UP_list)
-                self.build_extended_conduction_system(memoized=False, sourced=False)
+                self.build_extended_conduction_system(memoized=False, sourced=False, sparse_samples=sparse_rounds)
 
                 md5 = hashlib.md5(json.dumps( sorted(analytics_UP_list), sort_keys=True)).hexdigest()
 
                 Interactome_rand_samp.insert({'UP_hash' : md5,
                                      'sys_hash' : self._MD5hash(),
                                      'size' : sample_size,
+                                     'chrom': str(chromosome_specific),
+                                     'sparse_rounds': sparse_rounds,
                                      'UPs' : pickle.dumps(analytics_UP_list),
                                      'currents' : pickle.dumps((self.current_accumulator, self.node_current)),
                                      'voltages' : pickle.dumps(self.UP2UP_voltages)})
@@ -726,28 +764,49 @@ class MatrixGetter(object):
                         sample_size, i, "{0:.2f}".format(sample_size*(sample_size-1)/2/self._time()), self.pretty_time())
 
 
+    def map_UPs_to_chromosomes(self):
+        """
+        Maps the Uniprot Ids to chromosomes of the organism and reversely.
+
+        """
+        resdict = {}
+        for fle in os.listdir(Chromosome_source):
+            if Chromosome_file_filter in fle:
+                source_fle = Chromosome_source+'/'+fle
+                id = fle.split('.')[0].split(Chromosome_file_filter)[1]
+                resdict[id]=open(source_fle).read()
+
+        for i, (key, val) in enumerate(Mat_gter.ID2LegacyId.iteritems()):
+            for id, textblock in resdict.iteritems():
+                if val in textblock:
+                    self.UP2Chrom[key] = id
+                    self.Chrom2UP[id].append(key)
+
+        self.Chrom2UP = dict(self.Chrom2UP)
+
+
+
 if __name__ == "__main__":
     Mat_gter = MatrixGetter(True, True)
-    Mat_gter.full_rebuild ()
+    # Mat_gter.full_rebuild ()
     # Mat_gter.hacky_corr()
     Mat_gter.fast_load()
-    print len(Mat_gter.Uniprots)
-    print len(Mat_gter.Uniprot_complete)
+    print Mat_gter.pretty_time()
+
+    # for Uniprot
     # pprinter = PrettyPrinter(indent=4)
     # pprinter.pprint(len(Mat_gter.Uniprot_attachments.keys()))
 
     # print Mat_gter.ID2displayName.keys()[:50]
-    # test_set = ['55618', '55619', '55616', '55614', '55615', '55612', '55613', '55342', '177791', '126879',
-    # '49913', '117670', '189117', '55292', '55293', '55290', '55291', '55296', '55297', '51269', '55295',
-    # '51267', '51265', '51263', '51261', '55762', '55763', '55760', '55761', '55766', '55767', '55764',
-    # '55765', '51064', '50641', '50647', '51062', '56239', '56238', '51283', '56235', '56234', '56237',
-    # '56236', '51289', '56230', '56233', '56232', '55908', '55909']
+    # test_set = ['147875', '130437', '186024', '100154', '140777', '100951', '107645', '154772']
     #
     # test2 = ['55618', '55619', '55616', '55614', '55615', '55612', '55613', '55342', '177791', '126879']
     #
+    # Mat_gter.set_Uniprot_source(test_set)
     # Mat_gter.export_subsystem(test_set, test2)
     # Mat_gter.build_extended_conduction_system()
     # Mat_gter.export_conduction_system()
 
-    Mat_gter.randomly_sample([10,25],[5,5])
+    # Mat_gter.randomly_sample([100,250],[5,5], sparse_rounds=10)
+
 

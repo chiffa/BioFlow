@@ -40,12 +40,14 @@ def submatrix(matrix, indexes, show = False):
         re_matrix[main2local_idx[index2], main2local_idx[index1]] = matrix[index2, index1]
 
     if show:
-        plt.imshow(re_matrix.toarray(), cmap='jet', interpolation="bilinear")
+        plt.imshow(re_matrix.toarray(), cmap='jet', interpolation="nearest")
         plt.colorbar()
         plt.show()
 
-    return np.sum(np.triu(re_matrix.toarray(), 1)) / (re_matrix.shape[0]*(re_matrix.shape[0]-1)/2)
-
+    if re_matrix.shape[0]>1:
+        return np.sum(np.triu(re_matrix.toarray(), 1)) / (re_matrix.shape[0]*(re_matrix.shape[0]-1)/2)
+    else:
+        return 0
 
 def remaineder_matrix(matrix, index_sets):
     accumulator = 0

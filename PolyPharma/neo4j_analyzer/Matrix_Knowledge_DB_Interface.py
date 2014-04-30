@@ -7,7 +7,7 @@ import hashlib
 import json
 import random
 import string
-import copy
+from copy import copy
 import pickle
 import numpy as np
 from time import time
@@ -126,7 +126,7 @@ class GO_Interface(object):
         self.r_ID = ''.join(random.sample(char_set*6, 6))
 
         self.Indep_Lapl = np.zeros((2,2))
-
+        self.uncomplete_compute = False
 
     def pretty_time(self):
         """
@@ -289,7 +289,7 @@ class GO_Interface(object):
                 print "Warning: UP without GO has been found. Database UP_DB_ID: %s, \t name: %s!!!!!!" % (UP_DB_ID, self.UP_Names[UP_DB_ID])
                 self.UPs_without_GO.add(UP_DB_ID)
             else:
-                self.UP2GO_Dict[UP_DB_ID] = copy.copy(UP_Specific_GOs)
+                self.UP2GO_Dict[UP_DB_ID] = copy(UP_Specific_GOs)
 
         print 'total number of UPs without a GO annotation: %s out of %s' % (UPs_without_GO, len(self.InitSet))
 
@@ -300,7 +300,7 @@ class GO_Interface(object):
 
         """
         VisitedSet = set()
-        seedList = copy.copy(list(self.SeedSet))
+        seedList = copy(list(self.SeedSet))
         while seedList:
             ID = seedList.pop()
             VisitedSet.add(ID)
@@ -369,7 +369,7 @@ class GO_Interface(object):
                     idx = (idx[1], idx[0])
                     baseMatrix[idx] = 1
 
-            self.Adjacency_matrix = copy.copy(baseMatrix)
+            self.Adjacency_matrix = copy(baseMatrix)
 
 
 
@@ -387,7 +387,7 @@ class GO_Interface(object):
                     idx = (self.GO2Num[node], self.GO2Num[node2])
                     baseMatrix[idx] = 1
 
-            self.dir_adj_matrix = copy.copy(baseMatrix)
+            self.dir_adj_matrix = copy(baseMatrix)
 
         build_adjacency()
         build_dir_adj()
@@ -490,8 +490,8 @@ class GO_Interface(object):
         :warning: accounting for regulatory relation relation between the GO terms is performed if has been done in the adjunction matrix computation
 
         """
-        baseMatrix = -copy.copy(self.dir_adj_matrix)
-        nz_list = copy.copy(zip(list(baseMatrix.nonzero()[0]), list(baseMatrix.nonzero()[1])))
+        baseMatrix = -copy(self.dir_adj_matrix)
+        nz_list = copy(zip(list(baseMatrix.nonzero()[0]), list(baseMatrix.nonzero()[1])))
 
         for idx1, idx2 in nz_list:
             minInf = min(self.GO2_Pure_Inf[self.Num2GO[idx1]],self.GO2_Pure_Inf[self.Num2GO[idx2]])
@@ -564,9 +564,9 @@ class GO_Interface(object):
                 self.inflated_Laplacian[UP2IDxs[UP], self.GO2Num[GO]] -= self.binding_intesity
 
 
-        self.inflated_lbl2idx = copy.copy(self.GO2Num)
+        self.inflated_lbl2idx = copy(self.GO2Num)
         self.inflated_lbl2idx.update(UP2IDxs)
-        self.inflated_idx2lbl = copy.copy(self.Num2GO)
+        self.inflated_idx2lbl = copy(self.Num2GO)
         self.inflated_idx2lbl.update(IDx2UPs)
 
 
@@ -580,11 +580,11 @@ class GO_Interface(object):
         """
         if not set(Uniprots) <= set(self.UP2GO_Dict.keys()):
             ex_pload = 'Following Uniprots either were not in the construction set or have no GOs attached: \n %s' % (set(Uniprots) - set(self.UP2GO_Dict.keys()))
-            raise Warning(ex_pload)
-        self.analytic_Uniprots = Uniprots
+            print Warning(ex_pload)
+        self.analytic_Uniprots = [ uniprot for uniprot in Uniprots if uniprot in self.UP2GO_Dict.keys()]
 
 
-    def build_extended_conduction_system(self, memoized=True, sourced=False, incremental=False, cancellation = True):
+    def build_extended_conduction_system(self, memoized=True, sourced=False, incremental=False, cancellation = True, sparse_samples=False):
         """
         Builds a conduction matrix that integrates uniprots, in order to allow an easier knowledge flow analysis
 
@@ -592,6 +592,9 @@ class GO_Interface(object):
         :param sourced: if true, all the raltions will be looked up and not computed. Useful for the retrieval of subcirculation group, but requires the UP2voltage_and_circ to be pre-filled
         :param incremental: if True, all the circulation computation will be added to the existing ones. Usefull for the computation of particularly big systems with intermediate dumps
         :param cancellation: divides the final current by #Nodes**2/2, i.e. makes the currents comparable between circulation systems of differnet  sizes.
+        :param sparse_samples: if set to an integer the sampling will be sparse and not dense, i.e. instead of compution
+                                for each node pair, only an estimation will be made, equal to coputing sparse_samples association with other randomly chosen nodes
+        :type sparse_samples: int
         :return: adjusted conduction system
         """
         if not incremental or self.current_accumulator == np.zeros((2,2)):
@@ -600,7 +603,17 @@ class GO_Interface(object):
             if not sourced:
                 self.UP2circ_and_voltage = {}
 
-        for UP1, UP2 in combinations(self.analytic_Uniprots, 2):
+        iterator  = []
+        if sparse_samples:
+            for _ in range(0, sparse_samples):
+                L = copy(self.analytic_Uniprots)
+                random.shuffle(L)
+                iterator += zip(L[:len(L)/2], L[len(L)/2:])
+                self.uncomplete_compute = True
+        else:
+            iterator = combinations(self.analytic_Uniprots, 2)
+
+        for UP1, UP2 in iterator:
 
             if sourced:
                 self.current_accumulator = self.current_accumulator +\
@@ -652,6 +665,9 @@ class GO_Interface(object):
         nodechartypes = ['DOUBLE', 'VARCHAR', 'VARCHAR', 'VARCHAR', 'DOUBLE', 'DOUBLE']
         charDict = {}
 
+        if self.uncomplete_compute:
+            raise Warning('Links between the elements should not be trusted: the computations was sampling and was not complete')
+
         for GO in self.GO2Num.iterkeys():
             charDict[GO] = [ str(self.node_current[GO]),
                              'GO', self.GO_Legacy_IDs[GO],
@@ -683,12 +699,16 @@ class GO_Interface(object):
         self.export_conduction_system()
 
 
-    def randomly_sample(self, samples_size, samples_each_size):
+    def randomly_sample(self, samples_size, samples_each_size, sparse_rounds=False, chromosome_specific=False):
         """
         Randomly samples the set
 
         :param samples_size:
         :param samples_each_size:
+        :param sparse_rounds:
+        :type sparse_rounds: int
+        :param chromosome_specific:
+        :type chromosome_specific: int
         :raise Exception:
         """
         if not len(samples_size) == len(samples_each_size):
@@ -696,19 +716,23 @@ class GO_Interface(object):
 
         self_connectable_UPs = list(set(self.InitSet) - set(self.UPs_without_GO))
 
+        if chromosome_specific:
+            self_connectable_UPs = list(set(self_connectable_UPs).intersection(set(MG.Chrom2UP[str(chromosome_specific)])))
+
         for sample_size, iterations in zip(samples_size, samples_each_size):
             for i in range(0, iterations):
                 shuffle(self_connectable_UPs)
                 analytics_UP_list = self_connectable_UPs[:sample_size]
-                # print analytics_UP_list
                 self.set_Uniprot_source(analytics_UP_list)
-                self.build_extended_conduction_system(memoized=False, sourced=False)
+                self.build_extended_conduction_system(memoized=False, sourced=False, sparse_samples=sparse_rounds)
 
                 md5 = hashlib.md5(json.dumps( sorted(analytics_UP_list), sort_keys=True)).hexdigest()
 
                 UP_rand_samp.insert({'UP_hash' : md5,
                                      'sys_hash' : self._MD5hash(),
                                      'size' : sample_size,
+                                     'chrom': str(chromosome_specific),
+                                     'sparse_rounds': sparse_rounds,
                                      'UPs' : pickle.dumps(analytics_UP_list),
                                      'currents' : pickle.dumps((self.current_accumulator, self.node_current)),
                                      'voltages' : pickle.dumps(self.UP2UP_voltages)})
@@ -733,24 +757,27 @@ if __name__ == '__main__':
 
     # Edit to supress the MG.Uniprots values.
     KG = GO_Interface(filtr, MG.Uniprot_complete, (1, 1), True, 3)
-    KG.rebuild()
-    print KG.pretty_time()
-    KG.store()
-    print KG.pretty_time()
+    # KG.rebuild()
+    # print KG.pretty_time()
+    # KG.store()
+    # print KG.pretty_time()
     # experimental = ['186958', '142401', '147798', '164077', '162624', '181770', '113303', '160359', '133344', '178502']
     #
-    # KG.load()
-    # print KG.pretty_time()
+    # experimental = ['55618', '55619', '55616', '55614', '55615', '55612', '55613', '55342', '177791', '126879',
+    # '49913', '117670', '189117', '55292', '55293', '55290', '55291', '55296', '55297', '51269', '55295',
+    # '51267', '51265', '51263', '51261', '55762', '55763', '55760', '55761', '55766', '55767', '55764',
+    # '55765', '51064', '50641', '50647', '51062', '56239', '56238', '51283', '56235', '56234', '56237',
+    # '56236', '51289', '56230', '56233', '56232', '55908', '55909']
+    KG.load()
+    print KG.pretty_time()
+
     # KG.get_indep_linear_groups()
     # KG.dump_Indep_Linset()
     #
-    #
-    #
-    #
-    # KG.randomly_sample([10], [5])
+    # KG.randomly_sample([10, 25], [5]*2, chromosome_specific=15)
     #
     # KG.set_Uniprot_source(experimental)
-    # KG.build_extended_conduction_system()
+    # KG.build_extended_conduction_system(sparse_samples=10)
     # KG.export_conduction_system()
     #
     # KG.export_subsystem(experimental, ['186958', '142401', '147798', '164077'])

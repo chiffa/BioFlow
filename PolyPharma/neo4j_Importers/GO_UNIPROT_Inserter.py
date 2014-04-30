@@ -128,7 +128,7 @@ def link_annotation(CH_PROT_ID, p_type, p_load):
     """
     prot_node = UniprotDict[CH_PROT_ID]
     annot_node = DatabaseGraph.AnnotNode.create(ptype = p_type, payload = p_load)
-    DatabaseGraph.is_annotated.create(prot_node,annot_node)
+    DatabaseGraph.is_annotated.create(prot_node, annot_node)
 
 
 def import_UNIPROTS():

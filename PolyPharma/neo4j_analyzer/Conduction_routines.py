@@ -203,7 +203,7 @@ def sample_pairwise_flow(conductivity_laplacian, idxlist, resamples, cancellatio
     List_of_pairs = []
 
     for _ in repeat(None, resamples):
-        L = idxlist.copy()
+        L = copy(idxlist)
         random.shuffle(L)
         List_of_pairs += zip(L[:len(L)/2], L[len(L)/2:])
 
@@ -214,10 +214,10 @@ def sample_pairwise_flow(conductivity_laplacian, idxlist, resamples, cancellatio
         Current_accumulator += sparse_abs(current_upper)
 
     if cancellation:
-        ln = len(resamples)
-        Current_accumulator = Current_accumulator/(ln*(ln-1)/2)
+        ln = len(idxlist)
+        Current_accumulator = Current_accumulator/(ln/2*resamples)
 
-    return Current_accumulator, get_current_through_nodes(Current_accumulator)
+    return Current_accumulator
 
 
 def laplacian_reachable_filter(laplacian, reachable_indexes):

@@ -35,28 +35,34 @@ def KG_gen():
     return KG
 
 
-def spawn_sampler(sample_size_list_plus_iteration_list):
+def spawn_sampler(sample_size_list_plus_iteration_list_plus_args):
     """
     Spawns a sampler initalized from the default GO_Interface
 
     :param sample_size_list_plus_iteration_list: combined list of sample swizes and iterations (requried for Pool.map usage)
     """
     KG = KG_gen()
-    sample_size_list = sample_size_list_plus_iteration_list[0]
-    iteration_list = sample_size_list_plus_iteration_list[1]
-    KG.randomly_sample(sample_size_list, iteration_list)
+    sample_size_list = sample_size_list_plus_iteration_list_plus_args[0]
+    iteration_list = sample_size_list_plus_iteration_list_plus_args[1]
+    sparse_rounds = sample_size_list_plus_iteration_list_plus_args[2]
+    chromosome_specific = sample_size_list_plus_iteration_list_plus_args[3]
+    KG.randomly_sample(sample_size_list, iteration_list, sparse_rounds, chromosome_specific)
 
 
-def spawn_sampler_pool(pool_size, sample_size_list, interation_list_per_pool):
+def spawn_sampler_pool(pool_size, sample_size_list, interation_list_per_pool, sparse_rounds=False, chromosome_specific=False):
     """
     Spawns a pool of samplers of the information flow within the GO system
 
     :param pool_size: number of processes that are performing the sample pooling and analyzing
     :param sample_size_list: size of the sample list
     :param interation_list_per_pool: number of iterations performing the pooling of the samples in each list
+    :param sparse_rounds:
+    :type sparse_rounds: int
+    :param chromosome_specific:
+    :type chromosome_specific: int
     """
     p = Pool(pool_size)
-    payload = [(sample_size_list, interation_list_per_pool)]
+    payload = [(sample_size_list, interation_list_per_pool, sparse_rounds, chromosome_specific)]
     p.map(spawn_sampler, payload * pool_size)
 
 
@@ -230,7 +236,7 @@ def perform_clustering(internode_tension, clusters, show=True):
     for i in range(0, clusters):
         group_selector = groups==i
         group_idxs = group_selector.nonzero()[0].tolist()
-        group2average_offdiag.append((tuple(rev_idx[idx] for idx in group_idxs), len(group_idxs), submatrix(relmat, group_idxs, False)))
+        group2average_offdiag.append((tuple(rev_idx[idx] for idx in group_idxs), len(group_idxs), submatrix(relmat, group_idxs)))
         groupsets.append(group_idxs)
 
     remainder = remaineder_matrix(relmat, groupsets)
@@ -264,6 +270,7 @@ def compare_to_blanc(blanc_model_size, zoom_range_selector, real_knowledge_inter
     count = 0
     meancorr_acccumulator = []
     eigval_accumulator = []
+    # TODO: make retrieval sampling depth and chromosome-specific
     # this part computes the items required for the creation of a blanc model
     for i, sample in enumerate(UP_rand_samp.find({'size': blanc_model_size,'sys_hash' : MD5_hash})):
         _, node_currs = pickle.loads(sample['currents'])
@@ -389,16 +396,21 @@ def linindep_GO_groups(size):
 
 if __name__ == "__main__":
     # spawn_sampler(([10, 100], [2, 1]))
-    spawn_sampler_pool(6, [ 25, 50, 100], [15, 10, 10,])
+    spawn_sampler_pool(4, [7], [20], sparse_rounds=3)
+
     # get_estimated_time([10, 25, 50, 100,], [15, 10, 10, 8,])
-    # test_list = ['186958', '142401', '147798', '164077', '162624', '181770', '113303', '160359', '133344', '178502']
+    # test_list = ['147875', '130437', '186024', '100154', '140777', '100951', '107645', '154772']
+    # print len(test_list)
     # KG = KG_gen()
     # KG.set_Uniprot_source(test_list)
     # KG.build_extended_conduction_system()
     # KG.export_conduction_system()
-    # nr_nodes, nr_groups = compare_to_blanc(10, [1000, 1200], KG, p_val=0.5)
-    # # for item in nr_nodes:
-    # # print nr_groups
+    # nr_nodes, nr_groups = compare_to_blanc(len(test_list), [1000, 1200], KG, p_val=0.9)
+    # for group in nr_groups:
+    #     print group
+    # for node in nr_nodes:
+    #     print node
+
     # linindep_GO_groups(50)
 
     pass

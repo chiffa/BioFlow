@@ -3,7 +3,12 @@ __author__ = 'ank'
 from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
 from PolyPharma.configs import IDFilter, Leg_ID_Filter, edge_type_filters, Dumps
 import pickle
+from pprint import PrettyPrinter
 from itertools import chain
+
+
+pp = PrettyPrinter(indent = 4)
+
 
 def lookup_by_ID(Domain, req):
     """
@@ -100,7 +105,7 @@ def unwrap_DB_ID(node_generator):
 def Look_up_Annot_Node(p_load, p_type = ''):
     """
     Looks up nodes accessible via the annotation nodes with a given annotation and given annotation type.
-    The lookup strict match, but case-insensitive.
+    The lookup strict match, but case-insensitiYOR031Wve.
 
     .. code-block: python
     >>> print Look_up_Annot_Node('ENSG00000131981', 'UNIPROT_Ensembl')
@@ -141,6 +146,15 @@ def Look_up_Annot_Node(p_load, p_type = ''):
         return run_through(node_generator)
 
     raise Exception(p_type + "is unsupported. Please refer to Anot_Node_ptypes in neo4j_typeDec for supported types")
+
+
+def look_up_Annot_set(p_load_list, p_type=''):
+    retdict = dict( (p_load, Look_up_Annot_Node(p_load, p_type)) for p_load in p_load_list)
+    retlist = [value[0][2] for value in retdict.itervalues() if value!=[]]
+    warnlist =[key for key, value in retdict.iteritems() if value == []]
+    for warnId in warnlist:
+        print Warning('following ID has no correspondance in the database: '+warnId)
+    return retdict, retlist
 
 
 def Erase_custom_fields():
@@ -278,6 +292,63 @@ if __name__ == "__main__":
     # print count_items(DatabaseGraph.UNIPORT)
     # lookup_by_ID(DatabaseGraph.UNIPORT, "CK2N2_HUMAN")
     # Erase_custom_fields()
-    recompute_forbidden_IDs(Forbidden_verification_dict)
+    # recompute_forbidden_IDs(Forbidden_verification_dict)
 
     # print Look_up_Annot_Node('ENSG00000131981', 'UNIPROT_Ensembl')
+    lst1 = [
+            'YOR031W',
+            'YOR001W',
+            'YOL107W',
+            'YOL124C',
+            'YOL040C',
+            'YOR184W',
+            'YOR374W',
+            'YOR125C',
+            'YOL087C',
+            'YOR334W',
+        ]
+
+    lst2 = [
+            'YOL084W',
+            'YOR243C',
+            'YOR281C',
+            'YOR127W',
+            'YOR250C',
+            'YOR278W',
+            'YOR354C',
+            'YOR319W',
+            'YOL114C',
+            'YOR271C',
+        ]
+
+    lst3 = [
+            'YOL040C',
+            'YOL124C',
+            'YOL155C',
+            'YOR031W',
+            'YOR080W',
+            'YOR253W',
+            'YOR316C-A',
+            'YOR332W',
+            'YOR338W',
+            'YOR339C',
+
+        ]
+
+    lst4 = [
+            'YOR339C',
+            'YOR316C-A',
+            'YOR184W',
+            'YOR167C',
+            'YOR138C',
+            'YOR031W',
+            'YOR001W',
+            'YOL124C',
+            'YOL040C',
+            'YOL015W',
+
+        ]
+    resdict, reslist = look_up_Annot_set(lst1)
+    pp.pprint(resdict)
+    print reslist
+    pass

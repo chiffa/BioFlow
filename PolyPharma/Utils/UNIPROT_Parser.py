@@ -70,13 +70,13 @@ def parse_GeneRefs(Dico,Line):
     for word in words[1:]:
         if 'ORFNames' in word:
             for subword in word.split('=')[1].strip().split(','):
-                Dico['GeneRefs']['ORFNames'].append(subword.strip())
+                Dico['GeneRefs']['ORFNames'].append(subword.strip().strip(';\n .'))
         if 'OrderedLocusNames' in word:
             for subword in word.split('=')[1].strip().split(','):
-                Dico['GeneRefs']['OrderedLocusNames'].append(subword.strip())
+                Dico['GeneRefs']['OrderedLocusNames'].append(subword.strip().strip(';\n .'))
         if 'Name=' in word or 'Synonyms=' in word:
             for subword in word.split('=')[1].strip().split(','):
-                Dico['GeneRefs']['Names'].append(subword.strip())
+                Dico['GeneRefs']['Names'].append(subword.strip().strip(';\n .'))
 
 
 def parse_Name(Dico,Line):
