@@ -351,4 +351,5 @@ if __name__ == "__main__":
     resdict, reslist = look_up_Annot_set(lst1)
     pp.pprint(resdict)
     print reslist
+    print lookup_by_ID(DatabaseGraph.UNIPORT,'YO087_YEAST')
     pass

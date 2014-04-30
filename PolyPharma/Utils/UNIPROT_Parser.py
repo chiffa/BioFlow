@@ -68,6 +68,12 @@ def parse_GeneRefs(Dico,Line):
     """
     words = filter(lambda a:a != '', str(Line.strip() + ' ').split('; '))
     for word in words[1:]:
+        if 'ORFNames' in word and 'OrderedLocusNames' in word:
+            for subword in word.split('OrderedLocusNames=')[1].split(';')[0].strip().split(','):
+                Dico['GeneRefs']['OrderedLocusNames'].append(subword.strip())
+            for subword in word.split('ORFNames=')[1].split(';')[0].strip().split(','):
+                Dico['GeneRefs']['ORFNames'].append(subword.strip())
+            continue
         if 'ORFNames' in word:
             for subword in word.split('=')[1].strip().split(','):
                 Dico['GeneRefs']['ORFNames'].append(subword.strip().strip(';\n .'))

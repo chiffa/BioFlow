@@ -55,7 +55,7 @@ Targets_dict2 = subdict2
 # pymongo_prefix = "human_"
 # pymongo_prefix = "mice_"
 pymongo_prefix = "yeast_"
-pymongo_suffix = "_v_1"
+pymongo_suffix = "_v_2"
 
 client = MongoClient(MongoDB_url)
 db = client.PolyPharma_database
