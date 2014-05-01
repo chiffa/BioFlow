@@ -5,12 +5,16 @@ __author__ = 'ank'
 
 import random
 import numpy as np
-from scipy.sparse import lil_matrix, csc_matrix, diags, triu
+from scipy.sparse import csc_matrix, diags, triu
 from PolyPharma.configs import fudge
 # noinspection PyUnresolvedReferences
 from scikits.sparse.cholmod import cholesky
 from itertools import combinations, repeat
 from copy import copy
+from PolyPharma.Utils.Linalg_routines import cluster_nodes, submatrix, remaineder_matrix, Lapl_normalize
+from scipy.sparse import lil_matrix
+from scipy.sparse.linalg import eigsh
+from matplotlib import pyplot as plt
 
 
 def sparse_abs(sparse_matrix):
@@ -167,8 +171,7 @@ def get_better_pairwise_flow(conductivity_laplacian, idxlist, cancellation=True,
             voltages = get_voltages_with_solver(solver, IO_array)
             _, current_upper = get_current_matrix(conductivity_laplacian, voltages)
             potential_diff = abs(voltages[i, 0]-voltages[j, 0])
-            if memoized:
-                UP_pair2voltage_current[tuple(sorted((i, j)))] = (potential_diff, current_upper)
+            UP_pair2voltage_current[tuple(sorted((i, j)))] = (potential_diff, current_upper)
 
         if potential_diff!=0:
             current_upper = current_upper/potential_diff
@@ -263,3 +266,51 @@ def get_current_with_reach_limitations(inflated_laplacian, Idx_pair, reach_limit
     current_upper = current_upper / potential_diff
 
     return current_upper, potential_diff
+
+
+def perform_clustering(internode_tension, clusters, show=True):
+    """
+    Performs a clustering on the voltages of the nodes,
+
+    :param internode_tension:
+    """
+    idxgroup = list(set([ item for key in internode_tension.iterkeys() for item in key ]))
+    local_index = dict((UP, i) for i, UP in enumerate(idxgroup))
+    rev_idx = dict((i, UP) for i, UP in enumerate(idxgroup))
+    relmat = lil_matrix((len(idxgroup), len(idxgroup)))
+
+    for (UP1, UP2), tension in internode_tension.iteritems():
+        relmat[local_index[UP1], local_index[UP2]] = -1.0/tension
+        relmat[local_index[UP2], local_index[UP1]] = -1.0/tension
+        relmat[local_index[UP2], local_index[UP2]] += 1.0/tension
+        relmat[local_index[UP1], local_index[UP1]] += 1.0/tension
+
+    groups = cluster_nodes(relmat, clusters)
+
+    relmat = Lapl_normalize(relmat)
+    eigenvals, _ = eigsh(relmat)
+    relmat = -relmat
+    relmat.setdiag(1)
+
+    groupsets = []
+    group2average_offdiag = []
+    for i in range(0, clusters):
+        group_selector = groups==i
+        group_idxs = group_selector.nonzero()[0].tolist()
+        group2average_offdiag.append((tuple(rev_idx[idx] for idx in group_idxs), len(group_idxs), submatrix(relmat, group_idxs)))
+        groupsets.append(group_idxs)
+
+    remainder = remaineder_matrix(relmat, groupsets)
+
+    clustidx = np.array([item for itemset in groupsets for item in itemset])
+    relmat = relmat[:, clustidx]
+    relmat = relmat[clustidx, :]
+
+    mean_corr_array = np.array([[items, mean_corr] for _, items, mean_corr in group2average_offdiag])
+
+    if show:
+        plt.imshow(relmat.toarray(), cmap='jet', interpolation="nearest")
+        plt.colorbar()
+        plt.show()
+
+    return np.array(group2average_offdiag), remainder, mean_corr_array, eigenvals

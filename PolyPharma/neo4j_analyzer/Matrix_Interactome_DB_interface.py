@@ -97,6 +97,7 @@ class MatrixGetter(object):
         self.analytic_Uniprots = []
         self.UP2UP_voltages = {}
         self.UP2voltage_and_circ = {}
+        self.current_accumulator = np.zeros((2,2))
         self.node_current = {}
 
         self.UP2Chrom = {}
@@ -656,8 +657,10 @@ class MatrixGetter(object):
                                                                                    cancellation=cancellation,
                                                                                    memoized=memoized,
                                                                                    memory_source=self.UP2voltage_and_circ)
+            print UP_pair2voltage_current
             self.UP2voltage_and_circ.update(UP_pair2voltage_current)
             self.UP2UP_voltages.update(dict((key, val1) for key, (val1, val2) in UP_pair2voltage_current.iteritems()))
+            print self.UP2UP_voltages
 
         if incremental:
             self.current_accumulator = self.current_accumulator + current_accumulator

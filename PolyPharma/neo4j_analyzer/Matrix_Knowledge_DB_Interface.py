@@ -699,7 +699,7 @@ class GO_Interface(object):
         self.export_conduction_system()
 
 
-    def randomly_sample(self, samples_size, samples_each_size, sparse_rounds=False, chromosome_specific=False):
+    def randomly_sample(self, samples_size, samples_each_size, sparse_rounds=False, chromosome_specific=False, memoized=False):
         """
         Randomly samples the set
 
@@ -720,11 +720,12 @@ class GO_Interface(object):
             self_connectable_UPs = list(set(self_connectable_UPs).intersection(set(MG.Chrom2UP[str(chromosome_specific)])))
 
         for sample_size, iterations in zip(samples_size, samples_each_size):
+            sample_size = min(sample_size, len(self_connectable_UPs))
             for i in range(0, iterations):
                 shuffle(self_connectable_UPs)
                 analytics_UP_list = self_connectable_UPs[:sample_size]
                 self.set_Uniprot_source(analytics_UP_list)
-                self.build_extended_conduction_system(memoized=False, sourced=False, sparse_samples=sparse_rounds)
+                self.build_extended_conduction_system(memoized=memoized, sourced=False, sparse_samples=sparse_rounds)
 
                 md5 = hashlib.md5(json.dumps( sorted(analytics_UP_list), sort_keys=True)).hexdigest()
 

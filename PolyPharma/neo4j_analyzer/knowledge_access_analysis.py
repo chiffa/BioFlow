@@ -12,13 +12,12 @@ from collections import namedtuple
 from multiprocessing import Pool
 from pprint import PrettyPrinter
 from matplotlib import pyplot as plt
-from scipy.sparse import lil_matrix
-from scipy.sparse.linalg import eigsh
 from Matrix_Interactome_DB_interface import  MatrixGetter
 from Matrix_Knowledge_DB_Interface import GO_Interface
 from PolyPharma.configs import UP_rand_samp
 from PolyPharma.Utils.dataviz import kde_compute
-from PolyPharma.Utils.Linalg_routines import analyze_eigvects, cluster_nodes, submatrix, remaineder_matrix, Lapl_normalize
+from PolyPharma.Utils.Linalg_routines import analyze_eigvects
+from PolyPharma.neo4j_analyzer.Conduction_routines import perform_clustering
 
 
 filtr = ['biological_process']
@@ -83,7 +82,6 @@ def select(tri_array, array_column, selection_span):
     return decvec
 
 
-
 def show_corrs(tri_corr_array, meancorrs, eigvals, selector, test_tri_corr_array, test_meancorr, eigval, resamples):
 
     # TODO: there is a lot of repetition depending on which values are the biggest, test-setted or real setted.
@@ -123,7 +121,6 @@ def show_corrs(tri_corr_array, meancorrs, eigvals, selector, test_tri_corr_array
 
     plt.subplot(332)
     plt.title('test current vs pure informativity')
-    # better2D_desisty_plot(tri_corr_array[0, :], tri_corr_array[1, :])
     plt.scatter(tri_corr_array[1, :], tri_corr_array[0, :])
     if test_tri_corr_array is not None:
         plt.scatter(test_tri_corr_array[1, :], test_tri_corr_array[0, :], color='r' , alpha=0.5)
@@ -207,57 +204,7 @@ def show_corrs(tri_corr_array, meancorrs, eigvals, selector, test_tri_corr_array
     return current_info_rel, cluster_props
 
 
-def perform_clustering(internode_tension, clusters, show=True):
-    """
-    Performs a clustering on the voltages of the nodes,
-
-    :param internode_tension:
-    """
-    idxgroup = list(set([ item for key in internode_tension.iterkeys() for item in key ]))
-    local_index = dict((UP, i) for i, UP in enumerate(idxgroup))
-    rev_idx = dict((i, UP) for i, UP in enumerate(idxgroup))
-    relmat = lil_matrix((len(idxgroup), len(idxgroup)))
-
-    for (UP1, UP2), tension in internode_tension.iteritems():
-        relmat[local_index[UP1], local_index[UP2]] = -1.0/tension
-        relmat[local_index[UP2], local_index[UP1]] = -1.0/tension
-        relmat[local_index[UP2], local_index[UP2]] += 1.0/tension
-        relmat[local_index[UP1], local_index[UP1]] += 1.0/tension
-
-    groups = cluster_nodes(relmat, clusters)
-
-    relmat = Lapl_normalize(relmat)
-    eigenvals, _ = eigsh(relmat)
-    relmat = -relmat
-    relmat.setdiag(1)
-
-    groupsets = []
-    group2average_offdiag = []
-    for i in range(0, clusters):
-        group_selector = groups==i
-        group_idxs = group_selector.nonzero()[0].tolist()
-        group2average_offdiag.append((tuple(rev_idx[idx] for idx in group_idxs), len(group_idxs), submatrix(relmat, group_idxs)))
-        groupsets.append(group_idxs)
-
-    remainder = remaineder_matrix(relmat, groupsets)
-
-    clustidx = np.array([item for itemset in groupsets for item in itemset])
-    relmat = relmat[:, clustidx]
-    relmat = relmat[clustidx, :]
-
-    mean_corr_array = np.array([[items, mean_corr] for _, items, mean_corr in group2average_offdiag])
-
-    if show:
-        plt.imshow(relmat.toarray(), cmap='jet', interpolation="nearest")
-        plt.colorbar()
-        plt.show()
-
-    return np.array(group2average_offdiag), remainder, mean_corr_array, eigenvals
-
-    # TODO: define this as a routine for the general grouping later on.
-
-
-def compare_to_blanc(blanc_model_size, zoom_range_selector, real_knowledge_interface = None, p_val=0.05):
+def compare_to_blanc(blanc_model_size, zoom_range_selector, real_knowledge_interface = None, p_val=0.05, sparse_rounds=False):
     """
     Recovers the statistics on the circulation nodes and shows the visual of a circulation system
 
@@ -270,9 +217,9 @@ def compare_to_blanc(blanc_model_size, zoom_range_selector, real_knowledge_inter
     count = 0
     meancorr_acccumulator = []
     eigval_accumulator = []
-    # TODO: make retrieval sampling depth and chromosome-specific
+
     # this part computes the items required for the creation of a blanc model
-    for i, sample in enumerate(UP_rand_samp.find({'size': blanc_model_size,'sys_hash' : MD5_hash})):
+    for i, sample in enumerate(UP_rand_samp.find({'size': blanc_model_size, 'sys_hash' : MD5_hash, 'sparse_rounds':sparse_rounds})):
         _, node_currs = pickle.loads(sample['currents'])
         tensions = pickle.loads(sample['voltages'])
         _, _, meancorr, eigvals = perform_clustering(tensions, 3, show=False)
@@ -314,7 +261,8 @@ def compare_to_blanc(blanc_model_size, zoom_range_selector, real_knowledge_inter
         not_random_nodes = [str(int(GO_id)) for GO_id in GO_node_ids[r_nodes < p_val].tolist()]
         not_random_groups = np.concatenate((group2avg_offdiag, np.reshape(r_groups, (3,1))), axis=1)[r_groups < p_val].tolist()
         not_random_groups = [ Group_char(*(nr_group)) for nr_group in not_random_groups]
-
+        # basically the second element below are the nodes that contribute to the information flow through the node that is considered as
+        # non-random
         dct = dict((GO_id,
                       tuple([GO_node_char(*(Dic_system[GO_id] + r_nodes[GO_node_ids == float(GO_id)].tolist())),
                               list(set(KG.GO2UP_Reachable_nodes[GO_id]).intersection(set(real_knowledge_interface.analytic_Uniprots)))]))
@@ -393,15 +341,29 @@ def linindep_GO_groups(size):
     print KG.pretty_time()
     analyze_eigvects(KG.Indep_Lapl, size, char_indexes)
 
+# TODO: write chromosome comparator
+
 
 if __name__ == "__main__":
     # spawn_sampler(([10, 100], [2, 1]))
-    spawn_sampler_pool(4, [7], [20], sparse_rounds=3)
+    spawn_sampler_pool(4, [200], [10], sparse_rounds=100)
+    # spawn_sampler_pool(4, [200], [10], sparse_rounds=100, chromosome_specific=15)
 
     # get_estimated_time([10, 25, 50, 100,], [15, 10, 10, 8,])
     # test_list = ['147875', '130437', '186024', '100154', '140777', '100951', '107645', '154772']
     # print len(test_list)
-    # KG = KG_gen()
+    KG = KG_gen()
+
+
+    KG.randomly_sample([200],[1],sparse_rounds=100, chromosome_specific=15)
+    print KG.current_accumulator.shape
+    nr_nodes, nr_groups = compare_to_blanc(200, [1000, 1200], KG, p_val=0.9)
+    for group in nr_groups:
+        print group
+    for node in nr_nodes:
+        print node
+
+
     # KG.set_Uniprot_source(test_list)
     # KG.build_extended_conduction_system()
     # KG.export_conduction_system()
