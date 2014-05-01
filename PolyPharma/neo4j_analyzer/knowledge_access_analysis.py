@@ -219,6 +219,7 @@ def compare_to_blanc(blanc_model_size, zoom_range_selector, real_knowledge_inter
     eigval_accumulator = []
 
     # this part computes the items required for the creation of a blanc model
+    print "samples found to test against:\t", UP_rand_samp.find({'size': blanc_model_size, 'sys_hash' : MD5_hash, 'sparse_rounds':sparse_rounds}).count()
     for i, sample in enumerate(UP_rand_samp.find({'size': blanc_model_size, 'sys_hash' : MD5_hash, 'sparse_rounds':sparse_rounds})):
         _, node_currs = pickle.loads(sample['currents'])
         tensions = pickle.loads(sample['voltages'])
@@ -346,8 +347,7 @@ def linindep_GO_groups(size):
 
 if __name__ == "__main__":
     # spawn_sampler(([10, 100], [2, 1]))
-    spawn_sampler_pool(4, [200], [10], sparse_rounds=100)
-    # spawn_sampler_pool(4, [200], [10], sparse_rounds=100, chromosome_specific=15)
+    spawn_sampler_pool(4, [201], [10], sparse_rounds=100)
 
     # get_estimated_time([10, 25, 50, 100,], [15, 10, 10, 8,])
     # test_list = ['147875', '130437', '186024', '100154', '140777', '100951', '107645', '154772']
@@ -355,9 +355,10 @@ if __name__ == "__main__":
     KG = KG_gen()
 
 
-    KG.randomly_sample([200],[1],sparse_rounds=100, chromosome_specific=15)
+    KG.randomly_sample([201],[1], chromosome_specific=15, sparse_rounds=100, memoized=True, No_add=True)
     print KG.current_accumulator.shape
-    nr_nodes, nr_groups = compare_to_blanc(200, [1000, 1200], KG, p_val=0.9)
+    KG.export_conduction_system()
+    nr_nodes, nr_groups = compare_to_blanc(201, [1000, 1200], KG, p_val=0.9)
     for group in nr_groups:
         print group
     for node in nr_nodes:

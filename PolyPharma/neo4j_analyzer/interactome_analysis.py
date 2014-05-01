@@ -144,18 +144,15 @@ def show_corrs(bi_corr_array, meancorrs, eigvals, selector, test_bi_corr_array, 
 
     plt.subplot(336)
     plt.title('Density of current in the highlighted area')
-    bins = np.linspace(select(bi_corr_array, 2, selector)[0, :].min(),
-                       select(bi_corr_array, 2, selector)[0, :].max(),
-                       100)
     if test_bi_corr_array is not None:
-        bins = np.linspace(min(select(bi_corr_array, 2, selector)[0, :].min(),
-                               select(test_bi_corr_array, 2, selector)[0, :].min()),
-                           max(select(bi_corr_array, 2, selector)[0, :].max(),
-                               select(test_bi_corr_array, 2, selector)[0, :].max()),
+        bins = np.linspace(min(select(bi_corr_array, 1, selector)[0, :].min(),
+                               select(test_bi_corr_array, 1, selector)[0, :].min()),
+                           max(select(bi_corr_array, 1, selector)[0, :].max(),
+                               select(test_bi_corr_array, 1, selector)[0, :].max()),
                            100)
-    plt.hist(select(bi_corr_array, 2, selector)[0, :], bins=bins, histtype='step', log=True, color='b')
+    plt.hist(select(bi_corr_array, 1, selector)[0, :], bins=bins, histtype='step', log=True, color='b')
     if test_bi_corr_array is not None:
-        plt.hist(select(test_bi_corr_array, 2, selector)[0, :], bins=bins, histtype='step', log=True, color='r')
+        plt.hist(select(test_bi_corr_array, 1, selector)[0, :], bins=100, histtype='step', log=True, color='r')
 
     # this property is better off viewed as a scatterplot of true points and default points
     plt.subplot(337)
@@ -201,11 +198,13 @@ def compare_to_blanc(blanc_model_size, zoom_range_selector, real_interactome_int
     meancorr_acccumulator = []
     eigval_accumulator = []
 
+    print "samples found to test against:\t", Interactome_rand_samp.find({'size': blanc_model_size, 'sys_hash' : MD5_hash, 'sparse_rounds':sparse_rounds}).count()
     # this part computes the items required for the creation of a blanc model
     for i, sample in enumerate(Interactome_rand_samp.find({'size': blanc_model_size, 'sys_hash' : MD5_hash, 'sparse_rounds':sparse_rounds})):
+        if sparse_rounds:
+            raise Exception('blanc done on sparse rounds, clustering likely to be hazardous. Process interrupted')
         _, node_currs = pickle.loads(sample['currents'])
         tensions = pickle.loads(sample['voltages'])
-        print tensions
         _, _, meancorr, eigvals = perform_clustering(tensions, clusters, show=False)
         meancorr_acccumulator.append(np.array(meancorr))
         eigval_accumulator.append(eigvals)
@@ -239,7 +238,7 @@ def compare_to_blanc(blanc_model_size, zoom_range_selector, real_interactome_int
     r_nodes, r_groups = show_corrs(final, final_meancorrs, final_eigvals, zoom_range_selector, curr_inf_conf, meancorr.T, eigval.T, count)
 
 
-    Interactome_node_char = namedtuple('Node_Char',['current', 'degree', 'p_value'])
+    Interactome_node_char = namedtuple('Node_Char',['name', 'current', 'degree', 'p_value'])
     Group_char = namedtuple('Group_Char', ['UPs','num_UPs','average_connection','p_value'])
 
     if r_nodes is not None:
@@ -248,23 +247,25 @@ def compare_to_blanc(blanc_model_size, zoom_range_selector, real_interactome_int
         not_random_groups = [ Group_char(*(nr_group)) for nr_group in not_random_groups]
         # basically the second element below are the nodes that contribute to the information flow through the node that is considered as
         # non-random
-        dct = dict((nr_node_id, Interactome_node_char(*(Dic_system[nr_node_id] + r_nodes[node_ids == float(nr_node_id)].tolist())))
+        dct = dict((nr_node_id, Interactome_node_char(MG.ID2displayName[nr_node_id],*(Dic_system[nr_node_id] + r_nodes[node_ids == float(nr_node_id)].tolist())))
                      for nr_node_id in not_random_nodes)
 
-        return  sorted(dct.iteritems(), key=lambda x:x[1][0][2]), not_random_groups
+        return  sorted(dct.iteritems(), key=lambda x:x[1][3]), not_random_groups
 
     return  None
 
 
 if __name__ == "__main__":
-    spawn_sampler_pool(4, [21], [20])
+    spawn_sampler_pool(4, [150], [10])
 
     MG1 = MG_gen()
 
-    MG1.randomly_sample([21], [1], chromosome_specific=15)
-    print MG1.current_accumulator.shape
-    nr_nodes, nr_groups = compare_to_blanc(20, [0.25, 0.33], MG1, p_val=0.9)
+    MG1.randomly_sample([150], [1], chromosome_specific=15, No_add=True)
+    nr_nodes, nr_groups = compare_to_blanc(150, [0.5, 0.6], MG1, p_val=0.9)
+    MG1.export_conduction_system()
     for group in nr_groups:
         print group
     for node in nr_nodes:
         print node
+
+    pass

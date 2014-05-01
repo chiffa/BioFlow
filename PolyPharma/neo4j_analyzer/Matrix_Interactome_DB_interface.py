@@ -357,6 +357,9 @@ class MatrixGetter(object):
         counter = 0
         LocationBufferDict = {}
 
+        self.NodeID2MatrixNumber = {}
+        self.MatrixNumber2NodeID = {}
+
         for ID in self.Highest_Set:
             self.NodeID2MatrixNumber[ID] = counter
             self.MatrixNumber2NodeID[counter] = ID
@@ -657,10 +660,8 @@ class MatrixGetter(object):
                                                                                    cancellation=cancellation,
                                                                                    memoized=memoized,
                                                                                    memory_source=self.UP2voltage_and_circ)
-            print UP_pair2voltage_current
             self.UP2voltage_and_circ.update(UP_pair2voltage_current)
             self.UP2UP_voltages.update(dict((key, val1) for key, (val1, val2) in UP_pair2voltage_current.iteritems()))
-            print self.UP2UP_voltages
 
         if incremental:
             self.current_accumulator = self.current_accumulator + current_accumulator
@@ -671,6 +672,7 @@ class MatrixGetter(object):
             self.dump_memoized()
 
         index_current = CR.get_current_through_nodes(self.current_accumulator)
+        print current_accumulator.shape
         self.node_current.update(dict((self.MatrixNumber2NodeID[idx], val) for idx, val in enumerate(index_current)))
 
 
@@ -697,6 +699,9 @@ class MatrixGetter(object):
         nodecharnames = ['Current', 'Type', 'Legacy_ID', 'Names', 'Degree', 'Source']
         nodechartypes = ['DOUBLE', 'VARCHAR', 'VARCHAR', 'VARCHAR', 'DOUBLE', 'DOUBLE']
         charDict = {}
+
+        print self.Conductance_Matrix.shape
+        print max(self.MatrixNumber2NodeID.iterkeys())
 
         for NodeID in self.node_current.iterkeys():
             i = self.NodeID2MatrixNumber[NodeID]
@@ -725,7 +730,7 @@ class MatrixGetter(object):
         self.export_conduction_system()
 
 
-    def randomly_sample(self, samples_size, samples_each_size, sparse_rounds=False, chromosome_specific=False):
+    def randomly_sample(self, samples_size, samples_each_size, sparse_rounds=False, chromosome_specific=False, No_add=False):
         """
         Randomly samples the set
 
@@ -754,7 +759,10 @@ class MatrixGetter(object):
 
                 md5 = hashlib.md5(json.dumps( sorted(analytics_UP_list), sort_keys=True)).hexdigest()
 
-                Interactome_rand_samp.insert({'UP_hash' : md5,
+                # print 'debug1 \t', self.UP2UP_voltages
+
+                if not No_add:
+                    Interactome_rand_samp.insert({'UP_hash' : md5,
                                      'sys_hash' : self._MD5hash(),
                                      'size' : sample_size,
                                      'chrom': str(chromosome_specific),
@@ -791,9 +799,9 @@ class MatrixGetter(object):
 
 if __name__ == "__main__":
     Mat_gter = MatrixGetter(True, True)
-    # Mat_gter.full_rebuild ()
+    Mat_gter.full_rebuild ()
     # Mat_gter.hacky_corr()
-    Mat_gter.fast_load()
+    # Mat_gter.fast_load()
     print Mat_gter.pretty_time()
 
     # for Uniprot

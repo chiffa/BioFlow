@@ -16,6 +16,7 @@ from itertools import combinations, chain
 from pprint import PrettyPrinter
 from math import log
 from collections import defaultdict
+from warnings import warn
 from scipy.sparse import lil_matrix
 from scipy.sparse.csgraph import shortest_path
 from PolyPharma.configs import Dumps, Outputs, UP_rand_samp
@@ -666,7 +667,7 @@ class GO_Interface(object):
         charDict = {}
 
         if self.uncomplete_compute:
-            raise Warning('Links between the elements should not be trusted: the computations was sampling and was not complete')
+            warn('Links between the elements should not be trusted: the computations was sampling and was not complete')
 
         for GO in self.GO2Num.iterkeys():
             charDict[GO] = [ str(self.node_current[GO]),
@@ -699,7 +700,7 @@ class GO_Interface(object):
         self.export_conduction_system()
 
 
-    def randomly_sample(self, samples_size, samples_each_size, sparse_rounds=False, chromosome_specific=False, memoized=False):
+    def randomly_sample(self, samples_size, samples_each_size, sparse_rounds=False, chromosome_specific=False, memoized=False, No_add=False):
         """
         Randomly samples the set
 
@@ -729,7 +730,8 @@ class GO_Interface(object):
 
                 md5 = hashlib.md5(json.dumps( sorted(analytics_UP_list), sort_keys=True)).hexdigest()
 
-                UP_rand_samp.insert({'UP_hash' : md5,
+                if not No_add:
+                    UP_rand_samp.insert({'UP_hash' : md5,
                                      'sys_hash' : self._MD5hash(),
                                      'size' : sample_size,
                                      'chrom': str(chromosome_specific),
@@ -758,29 +760,30 @@ if __name__ == '__main__':
 
     # Edit to supress the MG.Uniprots values.
     KG = GO_Interface(filtr, MG.Uniprot_complete, (1, 1), True, 3)
-    # KG.rebuild()
-    # print KG.pretty_time()
-    # KG.store()
-    # print KG.pretty_time()
+    KG.rebuild()
+    print KG.pretty_time()
+    KG.store()
+    print KG.pretty_time()
     # experimental = ['186958', '142401', '147798', '164077', '162624', '181770', '113303', '160359', '133344', '178502']
-    #
+
     # experimental = ['55618', '55619', '55616', '55614', '55615', '55612', '55613', '55342', '177791', '126879',
     # '49913', '117670', '189117', '55292', '55293', '55290', '55291', '55296', '55297', '51269', '55295',
     # '51267', '51265', '51263', '51261', '55762', '55763', '55760', '55761', '55766', '55767', '55764',
     # '55765', '51064', '50641', '50647', '51062', '56239', '56238', '51283', '56235', '56234', '56237',
     # '56236', '51289', '56230', '56233', '56232', '55908', '55909']
-    KG.load()
-    print KG.pretty_time()
+
+    # KG.load()
+    # print KG.pretty_time()
 
     # KG.get_indep_linear_groups()
     # KG.dump_Indep_Linset()
-    #
+
     # KG.randomly_sample([10, 25], [5]*2, chromosome_specific=15)
-    #
+
     # KG.set_Uniprot_source(experimental)
     # KG.build_extended_conduction_system(sparse_samples=10)
     # KG.export_conduction_system()
-    #
+
     # KG.export_subsystem(experimental, ['186958', '142401', '147798', '164077'])
 
 
