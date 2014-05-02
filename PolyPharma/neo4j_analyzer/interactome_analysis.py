@@ -256,16 +256,16 @@ def compare_to_blanc(blanc_model_size, zoom_range_selector, real_interactome_int
 
 
 if __name__ == "__main__":
-    spawn_sampler_pool(4, [150], [10])
+    # spawn_sampler_pool(4, [150], [10])
 
-    MG1 = MG_gen()
+    # MG1 = MG_gen()
 
-    MG1.randomly_sample([150], [1], chromosome_specific=15, No_add=True)
-    nr_nodes, nr_groups = compare_to_blanc(150, [0.5, 0.6], MG1, p_val=0.9)
-    MG1.export_conduction_system()
-    for group in nr_groups:
-        print group
-    for node in nr_nodes:
-        print node
+    # MG1.randomly_sample([150], [1], chromosome_specific=15, No_add=True)
+    # nr_nodes, nr_groups = compare_to_blanc(150, [0.5, 0.6], MG1, p_val=0.9)
+    # MG1.export_conduction_system()
+    # for group in nr_groups:
+    #     print group
+    # for node in nr_nodes:
+    #     print node
 
     pass

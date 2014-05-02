@@ -14,6 +14,21 @@ NameIgnore = ['Contains', 'Allergen', 'EC=', 'Flags: ', 'CD_antigen', 'INN=']
 defDict = {'Acnum':[], 'Names':{'Full':'', 'AltNames':[]}, 'GeneRefs':{'Names':[], 'OrderedLocusNames':[], 'ORFNames':[]},
            'Ensembl':[], 'KEGG':[], 'EMBL':[], 'GO':[], 'Pfam':[], 'SUPFAM':[], 'PDB':[]}
 
+
+lst1 = [
+        'YOR031W',
+        'YOR001W',
+        'YOL107W',
+        'YOL124C',
+        'YOL040C',
+        'YOR184W',
+        'YOR374W',
+        'YOR125C',
+        'YOL087C',
+        'YOR334W',
+    ]
+
+
 # TODO: refactor to avoid any call to the expensive function unless a specific function has been build
 
 # Uniprot = {}  # {SWISSPROT_ID:{
@@ -66,23 +81,17 @@ def parse_GeneRefs(Dico,Line):
     :param Dico:
     :param Line:
     """
-    words = filter(lambda a:a != '', str(Line.strip() + ' ').split('; '))
-    for word in words[1:]:
-        if 'ORFNames' in word and 'OrderedLocusNames' in word:
-            for subword in word.split('OrderedLocusNames=')[1].split(';')[0].strip().split(','):
-                Dico['GeneRefs']['OrderedLocusNames'].append(subword.strip())
-            for subword in word.split('ORFNames=')[1].split(';')[0].strip().split(','):
-                Dico['GeneRefs']['ORFNames'].append(subword.strip())
-            continue
+    words = filter(lambda a:a != '', str(Line[2:].strip() + ' ').split('; '))
+    for word in words:
         if 'ORFNames' in word:
             for subword in word.split('=')[1].strip().split(','):
-                Dico['GeneRefs']['ORFNames'].append(subword.strip().strip(';\n .'))
+                Dico['GeneRefs']['ORFNames'].append(subword.strip())
         if 'OrderedLocusNames' in word:
             for subword in word.split('=')[1].strip().split(','):
-                Dico['GeneRefs']['OrderedLocusNames'].append(subword.strip().strip(';\n .'))
+                Dico['GeneRefs']['OrderedLocusNames'].append(subword.strip())
         if 'Name=' in word or 'Synonyms=' in word:
             for subword in word.split('=')[1].strip().split(','):
-                Dico['GeneRefs']['Names'].append(subword.strip().strip(';\n .'))
+                Dico['GeneRefs']['Names'].append(subword.strip())
 
 
 def parse_Name(Dico,Line):
@@ -232,8 +241,8 @@ if __name__ == '__main__':
     # print len(names_Dict)
     # access_dict = get_access_dicts()
     # print len(access_dict)
-    accumulator = []
-    for id, aclist in Uniprot.iteritems():
-        for item in aclist['Acnum']:
-            accumulator.append(item)
-    print accumulator
+    # accumulator = []
+    # for id, aclist in Uniprot.iteritems():
+    #     for item in aclist['Acnum']:
+    #         accumulator.append(item)
+    # print accumulator

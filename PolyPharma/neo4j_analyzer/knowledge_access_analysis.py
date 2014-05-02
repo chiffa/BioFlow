@@ -347,7 +347,7 @@ def linindep_GO_groups(size):
 
 if __name__ == "__main__":
     # spawn_sampler(([10, 100], [2, 1]))
-    spawn_sampler_pool(4, [201], [10], sparse_rounds=100)
+    # spawn_sampler_pool(4, [201], [10], sparse_rounds=100)
 
     # get_estimated_time([10, 25, 50, 100,], [15, 10, 10, 8,])
     # test_list = ['147875', '130437', '186024', '100154', '140777', '100951', '107645', '154772']
