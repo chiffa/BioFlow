@@ -161,6 +161,8 @@ if os.path.isfile(Dumps.Forbidden_IDs):
 ##########################################################################
 fudge = 1e-10
 
+RNA_source = "/home/ank/Documents/External_Predictions/Ben_RNA_seq/counts.tsv"
+
 if __name__ == "__main__":
     pp=PrettyPrinter(indent=4)
     pp.pprint((Servers,Options,Sources))
