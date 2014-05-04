@@ -208,6 +208,12 @@ def compare_to_blanc(blanc_model_size, zoom_range_selector, real_knowledge_inter
     """
     Recovers the statistics on the circulation nodes and shows the visual of a circulation system
 
+    :param blanc_model_size:
+    :param zoom_range_selector:
+    :param real_knowledge_interface:
+    :param p_val:
+    :param sparse_rounds:
+    :type sparse_rounds: int
     :return:
     """
     KG = KG_gen()
@@ -219,6 +225,7 @@ def compare_to_blanc(blanc_model_size, zoom_range_selector, real_knowledge_inter
     eigval_accumulator = []
 
     # this part computes the items required for the creation of a blanc model
+    print "requested", 'size:', blanc_model_size, 'sys_hash:', MD5_hash, 'sparse_rounds:', sparse_rounds
     print "samples found to test against:\t", UP_rand_samp.find({'size': blanc_model_size, 'sys_hash' : MD5_hash, 'sparse_rounds':sparse_rounds}).count()
     for i, sample in enumerate(UP_rand_samp.find({'size': blanc_model_size, 'sys_hash' : MD5_hash, 'sparse_rounds':sparse_rounds})):
         _, node_currs = pickle.loads(sample['currents'])
@@ -358,7 +365,7 @@ if __name__ == "__main__":
     KG.randomly_sample([201],[1], chromosome_specific=15, sparse_rounds=100, memoized=True, No_add=True)
     print KG.current_accumulator.shape
     KG.export_conduction_system()
-    nr_nodes, nr_groups = compare_to_blanc(201, [1000, 1200], KG, p_val=0.9)
+    nr_nodes, nr_groups = compare_to_blanc(201, [1000, 1200], KG, p_val=0.9, sparse_rounds=100)
     for group in nr_groups:
         print group
     for node in nr_nodes:
