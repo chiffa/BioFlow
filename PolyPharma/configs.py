@@ -53,9 +53,9 @@ Targets_dict2 = subdict2
 #  Defines MongeDb properties and connections
 ################################################
 # pymongo_prefix = "human_"
-# pymongo_prefix = "mice_"
-pymongo_prefix = "yeast_"
-pymongo_suffix = "_v_2"
+pymongo_prefix = "mice_"
+# pymongo_prefix = "yeast_"
+pymongo_suffix = "_v_1"
 
 client = MongoClient(MongoDB_url)
 db = client.PolyPharma_database
@@ -104,7 +104,7 @@ class Dumps(object):
     """
     prefix = str(path.abspath(path.dirname(__file__)+'/dumps'))
     # TODO: achtung:explosive here
-    prefix_2 = '/yeast'
+    prefix_2 = '/mice'
     postfix = '.dump'
 
     if not os.path.isdir(prefix+prefix_2):
@@ -145,7 +145,7 @@ class Outputs(object):
     prefix = str(path.abspath(path.dirname(__file__)+'/outputs'))
     GO_GDF_output = prefix + '/GO_Analysis_output.gdf'
     Interactome_GDF_output = prefix + '/Interactome_Analysis_output.gdf'
-
+    RNA_pre_filter_output = prefix + '/RNA_pre_filter_output.tsv'
 
 ###########################################################################################
 #  Defines what nodes are to be masked to avoid conduction ovrload of non-informative nodes
