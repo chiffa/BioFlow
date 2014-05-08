@@ -1,8 +1,0 @@
-# Ignore all bin directories
-bin
-# Ignore all files ending with ~
-*~
-*.pyc
-# Ignore the target directory
-# Matches "target" in any subfolder
- 

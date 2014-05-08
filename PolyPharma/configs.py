@@ -44,9 +44,9 @@ Targets_File2 = ReadSourcePredictions['OVERINGTON']
 
 # ExactDict is the dictionnary used to perform a precise matching between the fuzzy target names and the SwissProt IDs required
 # for a lookup in the database
-from TargetPreProcessing.neflanavir_parser import subdict
+from PreProcessing.neflanavir_parser import subdict
 Targets_dict = subdict
-from TargetPreProcessing.Overington_parser import subdict2
+from PreProcessing.Overington_parser import subdict2
 Targets_dict2 = subdict2
 
 ################################################
@@ -136,6 +136,8 @@ class Dumps(object):
     GO_Inflated = prefix + prefix_2 + '/GO_inflated'+postfix
     GO_Analysis_memoized = prefix + prefix_2 + '/GO_memoization'+postfix
     GO_Indep_Linset = prefix + prefix_2 + '/GO_Indep_linset'+postfix
+
+    RNA_seq_counts_compare = prefix +prefix_2 + '/RNA_seq_compare'+postfix
 
 
 #########################################################################

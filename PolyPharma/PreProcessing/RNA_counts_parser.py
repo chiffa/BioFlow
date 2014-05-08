@@ -1,12 +1,31 @@
 __author__ = 'ank'
 
-from PolyPharma.configs import RNA_source, Outputs
+from PolyPharma.configs import RNA_source, Outputs, Dumps
+from PolyPharma.neo4j_analyzer.DB_IO_Routines import look_up_Annot_Node
+from PolyPharma.neo4j_analyzer.IO_Routines import dump_object
+from collections import defaultdict
 import numpy as np
+from scipy import special
 from itertools import combinations as comb
 from math import factorial
 from csv import reader, writer
 
+pre_dict = {    1:0.80,
+                2:0.89,
+                3:0.92,
+                4:0.94,
+                5:0.95,
+                6:0.96,
+                7:0.965,
+                8:0.97
+            }
+
+estimator_dilatation_table  = defaultdict(lambda:1)
+estimator_dilatation_table.update(pre_dict)
+
 # TODO:
+    # filter out the counts that cannot be mapped
+    # set a default value
     # add filters on the counts (max of mins in classes)
     # add computation of RPKM
     # add computation of average class RPKM
@@ -33,37 +52,88 @@ def list_diff(list_a, list_b):
 def import_counts_table(counts_size):
     """
     """
-    names = np.zeros((1,1))
+    names = np.zeros((1,2))
     uxon_lenghts = np.zeros((1,1))
     table = np.zeros((counts_size, 1)).T
+    initset = set()
 
+    print RNA_source
     with open(RNA_source, 'rb') as source_file:
         rdr = reader(source_file, 'excel-tab')
         rdr.next()
         for row in rdr:
-            rrw = [float(f) for f in row[2 : counts_size + 2] ]
-            table = np.concatenate( (table, np.array([rrw], dtype = np.float64)))
-            uxon_lenghts = np.concatenate( (uxon_lenghts, np.array([row[1: 2]])))
-            names = np.concatenate( (names, np.array([row[: 1]])))
+            DB_ID = look_up_Annot_Node(row[0])
+            if DB_ID:
+                DB_ID = DB_ID[0][2]
+                names = np.concatenate((names, np.array([[row[0], DB_ID]])))
+                initset.add(DB_ID)
+                rrw = [float(f) for f in row[2 : counts_size + 2] ]
+                table = np.concatenate( (table, np.array([rrw], dtype = np.float64)))
+                uxon_lenghts = np.concatenate( (uxon_lenghts, np.array([[ float(row[1])]])))
     print table.shape
-    return table[1: , :], names[1: , :]
+    return names[1: , :], uxon_lenghts[1: , :], table[1: , :]
 
 
-
-def import_data(anot_size, data_size):
+def counts_filter(table, groups, filter_level):
     """
+    Filters out genes for whom the count levels are too low in all the samples
+
+    :param table: table of counts; line is gene, row is expriment
+    :param groups: groups expriments into repeats
+    :param filter_level: minimum amount of counts in any experience for which we are going to accept a gene
+    :return: a boolean array which is True if Gene passed that test
     """
-    names = np.zeros((anot_size,1), dtype = np.float64).T
-    table = np.zeros((data_size, 1)).T
-    with open(RNA_source, 'rb') as source_file:
-        rdr = reader(source_file, 'excel-tab')
-        rdr.next()
-        for row in rdr:
-            rrw = [float(f) for f in row[anot_size : data_size + anot_size] ]
-            table = np.concatenate( (table, np.array([rrw], dtype = np.float64)))
-            names = np.concatenate( (names, np.array([row[0 : anot_size]])))
-    print table.shape
-    return table[1: , :], names[1: , :]
+    mins = np.zeros((table.shape[0], len(groups)))
+
+    for i, group in enumerate(groups):
+        mins[:, i] = np.min(table[:, group], axis=1)
+    filtr = np.max(mins, axis=1) > filter_level -1
+
+    return filtr
+
+
+def translate_to_rpkm(uxon_length, table):
+    """
+    Translates counts to the RPKMs
+
+    :param uxon_length: vector of gene lengths
+    :param table: table of counts
+    :return: table of RPKMS
+    """
+    total_series_reads = np.sum(table, axis=0)
+    re_table = table / total_series_reads[np.newaxis, :] / uxon_length[:, 0][:, np.newaxis] * 10e12
+    return re_table
+
+
+def erf_test(rpkm_table, groups, intergorups, target_p_value=0.05):
+    """
+    performs a test that uses the errfunction to determine if we can reject the hypothesis that all the genes
+    are sampled from the same distribution
+
+    :param rpkm_table: table of the rpkm values
+    :param groups: groups on indexes
+    :param target_p_value: p_value with which we want to be albe to reject the null hypothesis
+    """
+    groups_means = np.zeros((rpkm_table.shape[0], len(groups)))
+    groups_var = np.zeros((rpkm_table.shape[0], len(groups)))
+
+    for i, group in enumerate(groups):
+        groups_means[:, i] = np.mean(rpkm_table[:, group], axis=1)
+        groups_var[:, i] = np.var(rpkm_table[:, group], axis=1) / estimator_dilatation_table[len(group)]**2
+
+    group_comparison = []
+    for intergroup in intergorups:
+        ig_mean = np.fabs(groups_means[:, intergroup[0]] - groups_means[:, intergroup[1]])
+        ig_std = np.sqrt(groups_var[:, intergroup[0]] + groups_var[:, intergroup[1]])
+        p_val = 1-special.erf(ig_mean / ig_std)
+        sorted_p_vals = np.sort(p_val, axis=0)
+        li = np.array(range(0, sorted_p_vals.shape[0])) * target_p_value / sorted_p_vals.shape[0]
+        pre_filtr = sorted_p_vals <= li
+        refined_threshold =  np.max(sorted_p_vals[pre_filtr])
+        filtr = p_val < refined_threshold
+        group_comparison.append((p_val, filtr))
+
+    return  group_comparison
 
 
 def export_test_results(names, results):
@@ -126,6 +196,7 @@ def permutation_test(test, data, group_1, group_2):
     p_val[p_val < th_lim] = th_lim
     return p_val
 
+
 def test_suite_1(data, prima_test, group_1, group_2, noise_tolerance, signal_strength, p_val, min_gain):
     """
 
@@ -158,52 +229,32 @@ def test_suite_1(data, prima_test, group_1, group_2, noise_tolerance, signal_str
 
     return f_names, f_results
 
+
 if __name__ == "__main__":
-    data, names = import_data(1, 9)
+    names, lengths, counts = import_counts_table(9)
 
     groups = [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
-    prima_test = prima_filter(data, groups)
+    intergroups = [[0, 1], [0, 2]]
 
-    f_names, f_results = test_suite_1(data,prima_test, groups[0], groups[1]+groups[2], 0.1, 2, 0.05, 1.0)
+    filter = counts_filter(counts, groups,  filter_level=10)
+
+    names = names[filter,:]
+    lengths = lengths[filter,:]
+    counts = counts[filter,:]
+
+    rpkms = translate_to_rpkm(lengths, counts)
+
+    testres = erf_test(rpkms, groups, intergroups, 0.05)
+
+    filtr1, filtr2 = testres[0][1], testres[1][1]
+
+    dump_object(Dumps.RNA_seq_counts_compare, [names[filtr1, 1], names[filtr2, 1]])
+
+
+    # prima_test = prima_filter(data, groups)
+
+    # f_names, f_results = test_suite_1(data,prima_test, groups[0], groups[1]+groups[2], 0.1, 2, 0.05, 1.0)
     # 2 in signal_strength corresponds to a probability of 4.2% of mistaking noise for information in our case.
     # However, if the distribution isn't gaussian, it doesn't hold well.
 
-    export_test_results(f_names, f_results)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# def read_RNA_seq_counts():
-#     retlist = []
-#     print 'opening: ', RNA_source
-#     with open(RNA_source,'rb') as source_file:
-#         source_reader = reader(source_file, dialect='excel-tab')
-#         for row in source_reader:
-#             retlist.append(row)
-#     return retlist
-#
-# def filter_id_only(parse_table):
-#     return [sublist[0] for sublist in parse_table if 'ENS' in sublist[0]]
-#
-#
-#
-#
-
-#
-#
-#
-#
-# if __name__ == "__main__":
-#     print filter_id_only(read_RNA_seq_counts())
+    # export_test_results(f_names, f_results)

@@ -10,15 +10,18 @@ import numpy as np
 from copy import copy
 from random import shuffle
 from collections import namedtuple
+
 from multiprocessing import Pool
+
 from pprint import PrettyPrinter
 from matplotlib import pyplot as plt
 from Matrix_Interactome_DB_interface import  MatrixGetter
 from Matrix_Knowledge_DB_Interface import GO_Interface
-from PolyPharma.configs import Interactome_rand_samp
+from PolyPharma.configs import Interactome_rand_samp, Dumps
 from PolyPharma.Utils.dataviz import kde_compute
 from PolyPharma.Utils.Linalg_routines import analyze_eigvects
 from PolyPharma.neo4j_analyzer.Conduction_routines import perform_clustering
+from PolyPharma.neo4j_analyzer.IO_Routines import undump_object
 
 
 pprinter = PrettyPrinter(indent=4)
@@ -255,6 +258,33 @@ def compare_to_blanc(blanc_model_size, zoom_range_selector, real_interactome_int
     return  None
 
 
+def auto_analyze():
+    dumplist = undump_object(Dumps.RNA_seq_counts_compare)
+
+    for lst in dumplist:
+        print lst, len(lst)
+        MG1 = MG_gen()
+        MG1.set_Uniprot_source(list(lst))
+        print len(MG1.analytic_Uniprots)
+        if len(MG1.analytic_Uniprots)<200:
+            spawn_sampler_pool(4, [len(MG1.analytic_Uniprots)], [6])
+            MG1.build_extended_conduction_system()
+            nr_nodes, nr_groups = compare_to_blanc(len(MG1.analytic_Uniprots), [0.5, 0.6], MG1, p_val=0.9)
+        else:
+            sampling_depth = max(200**2/len(MG1.analytic_Uniprots), 5)
+            print 'lenght: %s \t sampling depth: %s \t, estimated_time: %s' % (len(MG1.analytic_Uniprots), sampling_depth, len(MG1.analytic_Uniprots)*sampling_depth/2/6/60)
+            spawn_sampler_pool(4, [len(MG1.analytic_Uniprots)], [6], sparse_rounds=sampling_depth)
+            MG1.build_extended_conduction_system(sparse_samples=sampling_depth)
+            MG1.export_conduction_system()
+            nr_nodes, nr_groups = compare_to_blanc(len(MG1.analytic_Uniprots), [0.5, 0.6], MG1, p_val=0.9, sparse_rounds=sampling_depth)
+
+        MG1.export_conduction_system()
+        for group in nr_groups:
+            print group
+        for node in nr_nodes:
+            print node
+
+
 if __name__ == "__main__":
     # spawn_sampler_pool(4, [150], [10])
 
@@ -268,4 +298,5 @@ if __name__ == "__main__":
     # for node in nr_nodes:
     #     print node
 
+    auto_analyze()
     pass

@@ -102,13 +102,13 @@ def unwrap_DB_ID(node_generator):
 
 
 
-def Look_up_Annot_Node(p_load, p_type = ''):
+def look_up_Annot_Node(p_load, p_type = ''):
     """
     Looks up nodes accessible via the annotation nodes with a given annotation and given annotation type.
     The lookup strict match, but case-insensitiYOR031Wve.
 
     .. code-block: python
-    >>> print Look_up_Annot_Node('ENSG00000131981', 'UNIPROT_Ensembl')
+    >>> print look_up_Annot_Node('ENSG00000131981', 'UNIPROT_Ensembl')
     >>> # TODO: add the results here when implementing the doctests
 
 
@@ -149,7 +149,7 @@ def Look_up_Annot_Node(p_load, p_type = ''):
 
 
 def look_up_Annot_set(p_load_list, p_type=''):
-    retdict = dict( (p_load, Look_up_Annot_Node(p_load, p_type)) for p_load in p_load_list)
+    retdict = dict( (p_load, look_up_Annot_Node(p_load, p_type)) for p_load in p_load_list)
     retlist = [value[0][2] for value in retdict.itervalues() if value!=[]]
     warnlist =[key for key, value in retdict.iteritems() if value == []]
     for warnId in warnlist:
@@ -295,69 +295,9 @@ if __name__ == "__main__":
     # recompute_forbidden_IDs(Forbidden_verification_dict)
 
     # print Look_up_Annot_Node('ENSG00000131981', 'UNIPROT_Ensembl')
-    lst1 = [
-            'YOR031W',
-            'YOR001W',
-            'YOL107W',
-            'YOL124C',
-            'YOL040C',
-            'YOR184W',
-            'YOR374W',
-            'YOR125C',
-            'YOL087C',
-            'YOR334W',
-        ]
 
-    lst2 = [
-            'YOL084W',
-            'YOR243C',
-            'YOR281C',
-            'YOR127W',
-            'YOR250C',
-            'YOR278W',
-            'YOR354C',
-            'YOR319W',
-            'YOL114C',
-            'YOR271C',
-        ]
 
-    lst3 = [
-            'YOL040C',
-            'YOL124C',
-            'YOL155C',
-            'YOR031W',
-            'YOR080W',
-            'YOR253W',
-            'YOR316C-A',
-            'YOR332W',
-            'YOR338W',
-            'YOR339C',
-
-        ]
-
-    lst4 = [
-            'YOR339C',
-            'YOR316C-A',
-            'YOR184W',
-            'YOR167C',
-            'YOR138C',
-            'YOR031W',
-            'YOR001W',
-            'YOL124C',
-            'YOL040C',
-            'YOL015W',
-
-        ]
-
-    lst5 = ['ENSG00000028367', 'ENSG00000031584', 'ENSG00000079436', 'ENSG00000081643',
-             'ENSMUSG00000008461', 'ENSMUSG00000057551', 'ENSMUSG00000025068', 'ENSMUSG00000072676',
-             'ENSMUSG00000095224', 'ENSMUSG00000038861', 'ENSMUSG00000039067', 'ENSMUSG00000071267',
-             'ENSMUSG00000028678', 'ENSMUSG00000019768', 'ENSMUSG00000022881', 'ENSMUSG00000029304',
-             'ENSMUSG00000054199', 'ENSMUSG00000021485', 'ENSMUSG00000022299', 'ENSMUSG00000085788',
-             'ENSMUSG00000078684', 'ENSMUSG00000018362', 'ENSMUSG00000032353', 'ENSMUSG00000026255',]
-
-    resdict, reslist = look_up_Annot_set(lst5)
+    resdict, reslist = look_up_Annot_set(lst1)
     pp.pprint(resdict)
     print reslist
-    print lookup_by_ID(DatabaseGraph.UNIPORT,'YO087_YEAST')
     pass

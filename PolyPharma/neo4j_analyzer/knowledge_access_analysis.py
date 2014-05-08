@@ -14,10 +14,11 @@ from pprint import PrettyPrinter
 from matplotlib import pyplot as plt
 from Matrix_Interactome_DB_interface import  MatrixGetter
 from Matrix_Knowledge_DB_Interface import GO_Interface
-from PolyPharma.configs import UP_rand_samp
+from PolyPharma.configs import UP_rand_samp, Dumps
 from PolyPharma.Utils.dataviz import kde_compute
 from PolyPharma.Utils.Linalg_routines import analyze_eigvects
 from PolyPharma.neo4j_analyzer.Conduction_routines import perform_clustering
+from PolyPharma.neo4j_analyzer.IO_Routines import undump_object
 
 
 filtr = ['biological_process']
@@ -349,7 +350,33 @@ def linindep_GO_groups(size):
     print KG.pretty_time()
     analyze_eigvects(KG.Indep_Lapl, size, char_indexes)
 
-# TODO: write chromosome comparator
+
+def auto_analyze():
+    dumplist = undump_object(Dumps.RNA_seq_counts_compare)
+
+    for list in dumplist:
+        MG1 = KG_gen()
+        MG1.set_Uniprot_source(list)
+        print len(MG1.analytic_Uniprots)
+        if len(MG1.analytic_Uniprots)<200:
+            spawn_sampler_pool(4, [len(MG1.analytic_Uniprots)], [6])
+            MG1.build_extended_conduction_system()
+            nr_nodes, nr_groups = compare_to_blanc(len(MG1.analytic_Uniprots), [0.5, 0.6], MG1, p_val=0.9)
+        else:
+            sampling_depth = max(200**2/len(MG1.analytic_Uniprots), 5)
+            print 'lenght: %s \t sampling depth: %s \t, estimated_time: %s' % (len(MG1.analytic_Uniprots), sampling_depth, len(MG1.analytic_Uniprots)*sampling_depth/2/6/60)
+            spawn_sampler_pool(4, [len(MG1.analytic_Uniprots)], [6], sparse_rounds=sampling_depth)
+            MG1.build_extended_conduction_system(sparse_samples=sampling_depth)
+            MG1.export_conduction_system()
+            nr_nodes, nr_groups = compare_to_blanc(len(MG1.analytic_Uniprots), [0.5, 0.6], MG1, p_val=0.9, sparse_rounds=sampling_depth)
+
+        MG1.export_conduction_system()
+        for group in nr_groups:
+            print group
+        for node in nr_nodes:
+            print node
+
+
 
 
 if __name__ == "__main__":
@@ -359,17 +386,17 @@ if __name__ == "__main__":
     # get_estimated_time([10, 25, 50, 100,], [15, 10, 10, 8,])
     # test_list = ['147875', '130437', '186024', '100154', '140777', '100951', '107645', '154772']
     # print len(test_list)
-    KG = KG_gen()
-
-
-    KG.randomly_sample([201],[1], chromosome_specific=15, sparse_rounds=100, memoized=True, No_add=True)
-    print KG.current_accumulator.shape
-    KG.export_conduction_system()
-    nr_nodes, nr_groups = compare_to_blanc(201, [1000, 1200], KG, p_val=0.9, sparse_rounds=100)
-    for group in nr_groups:
-        print group
-    for node in nr_nodes:
-        print node
+    # KG = KG_gen()
+    #
+    #
+    # KG.randomly_sample([201],[1], chromosome_specific=15, sparse_rounds=100, memoized=True, No_add=True)
+    # print KG.current_accumulator.shape
+    # KG.export_conduction_system()
+    # nr_nodes, nr_groups = compare_to_blanc(201, [1000, 1200], KG, p_val=0.9, sparse_rounds=100)
+    # for group in nr_groups:
+    #     print group
+    # for node in nr_nodes:
+    #     print node
 
 
     # KG.set_Uniprot_source(test_list)
@@ -382,5 +409,7 @@ if __name__ == "__main__":
     #     print node
 
     # linindep_GO_groups(50)
+
+    auto_analyze()
 
     pass
