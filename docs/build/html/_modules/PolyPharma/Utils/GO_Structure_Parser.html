@@ -1,0 +1,181 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>PolyPharma.Utils.GO_Structure_Parser &mdash; PolyPharma 0.2a3 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.2a3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="PolyPharma 0.2a3 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">PolyPharma 0.2a3 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for PolyPharma.Utils.GO_Structure_Parser</h1><div class="highlight"><pre>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">Created on Jul 2, 2013</span>
+
+<span class="sd">@author: andrei</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="kn">import</span> <span class="nn">PolyPharma.configs</span> <span class="kn">as</span> <span class="nn">conf</span>
+
+
+<div class="viewcode-block" id="fill_GO_Terms"><a class="viewcode-back" href="../../../PolyPharma.Utils.GO_Structure_Parser.html#PolyPharma.Utils.GO_Structure_Parser.fill_GO_Terms">[docs]</a><span class="k">def</span> <span class="nf">fill_GO_Terms</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parse dictionary is of the type GO_Term_ID: {}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">GO_Terms</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c"># {id:</span>
+        <span class="c"># {&#39;id&#39;:&#39;&#39;</span>
+        <span class="c"># &#39;name&#39;:&#39;&#39;</span>
+        <span class="c"># &#39;def&#39;:&#39;&#39;</span>
+        <span class="c"># &#39;namespace&#39;:&#39;&#39;}}</span>
+        <span class="c">#</span>
+        <span class="c"># Ignored</span>
+        <span class="c"># [&#39;subset&#39;, =&gt; ignore</span>
+        <span class="c"># &#39;comment&#39;, =&gt; ignore</span>
+        <span class="c"># &#39;exact_synonym&#39;,=&gt; Ignore</span>
+        <span class="c"># &#39;consider&#39;, =&gt; ignore</span>
+        <span class="c"># &#39;related_synonym&#39;, =&gt; ignore</span>
+        <span class="c"># &#39;narrow_synonym&#39;, =&gt; ignore</span>
+        <span class="c"># &#39;broad_synonym&#39;, =&gt; ignore</span>
+        <span class="c"># &#39;replaced_by&#39;, =&gt; ignore</span>
+        <span class="c"># &#39;alt_id&#39;, =&gt; ignore</span>
+        <span class="c"># &#39;xref_analog&#39;] =&gt; ignore</span>
+
+    <span class="n">GO_Terms_Structure</span> <span class="o">=</span> <span class="p">[]</span> <span class="c"># [(Node1,relation,Node2)]</span>
+        <span class="c">#  Where relation in:</span>
+        <span class="c"># &#39;is_a&#39;</span>
+        <span class="c"># &#39;relationship&#39;,</span>
+        <span class="c">#    &#39;part_of&#39;</span>
+        <span class="c">#    &#39;regulates&#39;</span>
+        <span class="c">#    &#39;positively_regulates&#39;</span>
+        <span class="c">#    &#39;negatively_regulates&#39;</span>
+
+    <span class="n">docu</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">conf</span><span class="o">.</span><span class="n">GeneOntology</span><span class="p">,</span> <span class="s">&quot;r&quot;</span><span class="p">)</span>
+    <span class="n">localDictionary</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">LocalRelations</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">blocks</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">Block</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">Obsolete</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="n">docu</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">line</span><span class="p">:</span>
+            <span class="k">break</span>
+        <span class="k">if</span> <span class="n">line</span> <span class="o">==</span> <span class="s">&#39;[Term]</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">:</span>
+            <span class="n">blocks</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">Block</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="n">Obsolete</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="c"># reset the temporary dictionary</span>
+            <span class="n">localDictionary</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">LocalRelations</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">else</span> <span class="p">:</span>
+            <span class="k">if</span> <span class="n">line</span> <span class="o">==</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">:</span>
+                <span class="n">Block</span> <span class="o">=</span> <span class="bp">False</span>
+                <span class="c"># perform a flush of all the informations</span>
+                <span class="k">if</span> <span class="n">blocks</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">Obsolete</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">localDictionary</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                        <span class="k">if</span> <span class="n">localDictionary</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">==</span> <span class="p">[]:</span>
+                            <span class="k">del</span> <span class="n">localDictionary</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+                    <span class="n">GO_Terms</span><span class="p">[</span><span class="n">localDictionary</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">localDictionary</span>
+                    <span class="n">GO_Terms_Structure</span> <span class="o">=</span> <span class="n">GO_Terms_Structure</span> <span class="o">+</span> <span class="n">LocalRelations</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">Block</span><span class="p">:</span>
+                    <span class="n">header</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;: &#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                    <span class="n">payload</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+                    <span class="n">payload</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;: &#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="s">&#39;CHEBI:&#39;</span> <span class="ow">in</span> <span class="n">payload</span><span class="p">:</span>
+                        <span class="n">localDictionary</span><span class="p">[</span><span class="s">&#39;CHEBI&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;CHEBI:&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;,&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;]&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">header</span> <span class="o">==</span> <span class="s">&#39;id&#39;</span><span class="p">:</span>
+                        <span class="n">localDictionary</span><span class="p">[</span><span class="n">header</span><span class="p">]</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;:&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">header</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">,</span> <span class="s">&#39;namespace&#39;</span><span class="p">,</span> <span class="s">&#39;def&#39;</span><span class="p">]:</span>
+                        <span class="n">localDictionary</span><span class="p">[</span><span class="n">header</span><span class="p">]</span> <span class="o">=</span> <span class="n">payload</span>
+                    <span class="k">if</span> <span class="n">header</span> <span class="o">==</span> <span class="s">&#39;is_a&#39;</span><span class="p">:</span>
+                        <span class="n">payload</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;!&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;:&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                        <span class="n">LocalRelations</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">localDictionary</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">],</span> <span class="n">header</span><span class="p">,</span> <span class="n">payload</span><span class="p">))</span>
+                    <span class="k">if</span> <span class="n">header</span> <span class="o">==</span> <span class="s">&#39;is_obsolete&#39;</span><span class="p">:</span>
+                        <span class="n">Obsolete</span> <span class="o">=</span> <span class="bp">True</span>
+                    <span class="k">if</span> <span class="n">header</span> <span class="o">==</span> <span class="s">&#39;relationship&#39;</span><span class="p">:</span>
+                        <span class="n">header</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">payload</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+                        <span class="n">payload</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">payload</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;:&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+                        <span class="n">LocalRelations</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">localDictionary</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">],</span> <span class="n">header</span><span class="p">,</span> <span class="n">payload</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">GO_Terms</span><span class="p">,</span> <span class="n">GO_Terms_Structure</span>
+</pre></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">PolyPharma 0.2a3 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Andrei Kucharavy.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

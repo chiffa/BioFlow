@@ -1,0 +1,218 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>PolyPharma.Utils.GDF_export &mdash; PolyPharma 0.2a3 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.2a3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="PolyPharma 0.2a3 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">PolyPharma 0.2a3 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for PolyPharma.Utils.GDF_export</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Module containing an objet that allows an easy export of the matrix-encoded information to GDF without the need to export the whole relation matrix</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s">&#39;ank&#39;</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy.sparse</span> <span class="kn">import</span> <span class="n">lil_matrix</span>
+<span class="kn">from</span> <span class="nn">PolyPharma.configs</span> <span class="kn">import</span> <span class="n">Dumps</span>
+
+
+<div class="viewcode-block" id="GDF_export_Interface"><a class="viewcode-back" href="../../../PolyPharma.Utils.GDF_export.html#PolyPharma.Utils.GDF_export.GDF_export_Interface">[docs]</a><span class="k">class</span> <span class="nc">GDF_export_Interface</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An interface allowing the export of the matrix relatioin object and node characteristics to a GDF format, compatible</span>
+<span class="sd">    with visualization with appropriate tools.</span>
+
+<span class="sd">    :param target_fname: name of the file to which the GDF file will be written to</span>
+<span class="sd">    :param field_names: Names of different fields for the node description</span>
+<span class="sd">    :param field_types: Types of different nodes for the node description</span>
+<span class="sd">    :param node_properties_dict: dictionary mapping the node labels to outputs</span>
+<span class="sd">    :param mincurrent: minimal current below which we are not rendering the links anymore</span>
+<span class="sd">    :param Idx2Label: Mapping from the indexes curent matrix lines/columns to the node labels</span>
+<span class="sd">    :param current_Matrix: matrix of currents from which we wish to rendred the GDF</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">Authorised_names</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;VARCHAR&#39;</span><span class="p">,</span> <span class="s">&#39;DOUBLE&#39;</span><span class="p">,</span> <span class="s">&#39;BOOLEAN&#39;</span><span class="p">,</span> <span class="s">&#39;DOUBLE&#39;</span><span class="p">]</span>
+
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_fname</span><span class="p">,</span> <span class="n">field_names</span><span class="p">,</span> <span class="n">field_types</span><span class="p">,</span> <span class="n">node_properties_dict</span><span class="p">,</span> <span class="n">mincurrent</span><span class="p">,</span> <span class="n">Idx2Label</span><span class="p">,</span> <span class="n">Label2Idx</span><span class="p">,</span> <span class="n">current_Matrix</span><span class="p">,</span> <span class="n">directed</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">target_fname</span><span class="p">,</span> <span class="s">&#39;w&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">field_types</span> <span class="o">=</span> <span class="n">field_types</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">field_names</span> <span class="o">=</span> <span class="n">field_names</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">node_properties</span> <span class="o">=</span> <span class="n">node_properties_dict</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Idx2Label</span> <span class="o">=</span> <span class="n">Idx2Label</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Label2Idx</span> <span class="o">=</span> <span class="n">Label2Idx</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_Matrix</span> <span class="o">=</span> <span class="n">lil_matrix</span><span class="p">(</span><span class="n">current_Matrix</span><span class="p">)</span> <span class="c"># matrix where M[i,j] = current intesitu from i to j. Triangular superior, if current is from j to i, current is negative</span>
+        <span class="c"># current retrieval for the output should be done by getting all the non-zero terms of the current matrix and then filtering out terms/lines that have too little absolute current</span>
+        <span class="c"># rebuilding a new current Matrix and creating a dict to map the relations from the previous matrix into a new one.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mincurrent</span> <span class="o">=</span> <span class="n">mincurrent</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">current_Matrix</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current_Matrix</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()]</span><span class="o">.</span><span class="n">toarray</span><span class="p">()</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+        <span class="c"># minimal current for which we will be performing filtering out of the conductances and nodes through whichthe trafic is below that limit</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">directed</span> <span class="o">=</span> <span class="n">directed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">verify</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="GDF_export_Interface.verify"><a class="viewcode-back" href="../../../PolyPharma.Utils.GDF_export.html#PolyPharma.Utils.GDF_export.GDF_export_Interface.verify">[docs]</a>    <span class="k">def</span> <span class="nf">verify</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :raises Exception: &quot;GDF Node declaration is wrong!&quot; - of the length of field names and field type differ</span>
+<span class="sd">        :raises Exception: &quot;Wrong Types were declared, ....&quot; - if the declared types are not in the Authorised names</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">field_types</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">field_types</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;GDF Node declaration is wrong&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Authorised_names</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">field_types</span><span class="p">):</span>
+            <span class="k">raise</span>  <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;Wrong types were declared. please refer to the module for authorized types list&#39;</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="GDF_export_Interface.write_nodedefs"><a class="viewcode-back" href="../../../PolyPharma.Utils.GDF_export.html#PolyPharma.Utils.GDF_export.GDF_export_Interface.write_nodedefs">[docs]</a>    <span class="k">def</span> <span class="nf">write_nodedefs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Takes in the dictionary that maps and returns the nodedefs line</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">accumulator</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">node_name</span><span class="p">,</span> <span class="n">node_type</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">field_names</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">field_types</span><span class="p">):</span>
+            <span class="n">accumulator</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">node_name</span><span class="o">+</span><span class="s">&#39; &#39;</span><span class="o">+</span><span class="n">node_type</span><span class="p">)</span>
+        <span class="n">retstring</span> <span class="o">=</span> <span class="s">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">accumulator</span><span class="p">)</span>
+        <span class="n">retstring</span> <span class="o">=</span> <span class="s">&#39;nodedef&gt; name VARCHAR, &#39;</span><span class="o">+</span><span class="n">retstring</span><span class="o">+</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">retstring</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="GDF_export_Interface.write_nodes"><a class="viewcode-back" href="../../../PolyPharma.Utils.GDF_export.html#PolyPharma.Utils.GDF_export.GDF_export_Interface.write_nodes">[docs]</a>    <span class="k">def</span> <span class="nf">write_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Write the nodes with associated informations</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">nodename</span><span class="p">,</span> <span class="n">nodeprops</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">node_properties</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">float</span><span class="p">(</span><span class="n">nodeprops</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">mincurrent</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">target_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">nodename</span> <span class="o">+</span><span class="s">&#39;, &#39;</span><span class="o">+</span><span class="s">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">nodeprops</span><span class="p">)</span><span class="o">+</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="GDF_export_Interface.write_edgedefs"><a class="viewcode-back" href="../../../PolyPharma.Utils.GDF_export.html#PolyPharma.Utils.GDF_export.GDF_export_Interface.write_edgedefs">[docs]</a>    <span class="k">def</span> <span class="nf">write_edgedefs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Write defintions for the edges. Right now, the information passing through the edges is restricted to the current</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">retstring</span> <span class="o">=</span> <span class="s">&#39;edgedef&gt; node1 VARCHAR, node1 VARCHAR, weight DOUBLE, directed BOOLEAN</span><span class="se">\n</span><span class="s">&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">retstring</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="GDF_export_Interface.write_edges"><a class="viewcode-back" href="../../../PolyPharma.Utils.GDF_export.html#PolyPharma.Utils.GDF_export.GDF_export_Interface.write_edges">[docs]</a>    <span class="k">def</span> <span class="nf">write_edges</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Writes informations about edges connections. These informations are pulled from the conductance matrix.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">nz</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_Matrix</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">nz</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">nz</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_Matrix</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">])</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">mincurrent</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">directed</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">target_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Idx2Label</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">+</span><span class="s">&#39;, &#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">Idx2Label</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">+</span><span class="s">&#39;, &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_Matrix</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">])</span><span class="o">+</span><span class="s">&#39;, &#39;</span><span class="o">+</span><span class="s">&#39;true&#39;</span><span class="o">+</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">target_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Idx2Label</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">+</span><span class="s">&#39;, &#39;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">Idx2Label</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">+</span><span class="s">&#39;, &#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_Matrix</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">])</span><span class="o">+</span><span class="s">&#39;, &#39;</span><span class="o">+</span><span class="s">&#39;false&#39;</span><span class="o">+</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="GDF_export_Interface.write"><a class="viewcode-back" href="../../../PolyPharma.Utils.GDF_export.html#PolyPharma.Utils.GDF_export.GDF_export_Interface.write">[docs]</a>    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_nodedefs</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_nodes</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_edgedefs</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_edges</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+</div></div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">premat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span><span class="mi">4</span><span class="p">))</span>
+
+    <span class="n">premat</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="n">premat</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mf">4.0</span>
+    <span class="n">premat</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.5</span>
+    <span class="n">premat</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.01</span>
+
+    <span class="n">GDFW</span> <span class="o">=</span> <span class="n">GDF_export_Interface</span><span class="p">(</span> <span class="n">Dumps</span><span class="o">.</span><span class="n">GDF_debug</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;test&#39;</span><span class="p">],[</span><span class="s">&#39;VARCHAR&#39;</span><span class="p">],</span>
+                                 <span class="p">{</span><span class="s">&#39;test1&#39;</span><span class="p">:[</span><span class="s">&#39;test one&#39;</span><span class="p">],</span> <span class="s">&#39;test2&#39;</span><span class="p">:[</span><span class="s">&#39;test two&#39;</span><span class="p">],</span> <span class="s">&#39;test3&#39;</span><span class="p">:[</span><span class="s">&#39;test three&#39;</span><span class="p">],</span> <span class="s">&#39;test4&#39;</span><span class="p">:[</span><span class="s">&#39;test four&#39;</span><span class="p">]},</span>
+                                 <span class="mf">0.1</span><span class="p">,</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span><span class="s">&#39;test1&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span><span class="s">&#39;test2&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span><span class="s">&#39;test3&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span><span class="s">&#39;test4&#39;</span><span class="p">},</span>
+                                 <span class="p">{</span><span class="s">&#39;test1&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span> <span class="s">&#39;test2&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="s">&#39;test3&#39;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span> <span class="s">&#39;test4&#39;</span><span class="p">:</span><span class="mi">3</span><span class="p">},</span>
+                                 <span class="n">premat</span> <span class="p">)</span>
+
+    <span class="n">GDFW</span><span class="o">.</span><span class="n">write_nodedefs</span><span class="p">()</span>
+    <span class="n">GDFW</span><span class="o">.</span><span class="n">write_nodes</span><span class="p">()</span>
+    <span class="n">GDFW</span><span class="o">.</span><span class="n">write_edgedefs</span><span class="p">()</span>
+    <span class="n">GDFW</span><span class="o">.</span><span class="n">write_edges</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">PolyPharma 0.2a3 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Andrei Kucharavy.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,239 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>PolyPharma.neo4j_analyzer.DataCleaning &mdash; PolyPharma 0.2a3 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.2a3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="PolyPharma 0.2a3 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">PolyPharma 0.2a3 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for PolyPharma.neo4j_analyzer.DataCleaning</h1><div class="highlight"><pre>
+<span class="n">__author__</span><span class="o">=</span><span class="s">&#39;ank&#39;</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">:author: Andrei</span>
+
+<span class="sd">:warning: **DEPRECATED**</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">PolyPharma.neo4j_Declarations.Graph_Declarator</span> <span class="kn">import</span> <span class="n">DatabaseGraph</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">import</span> <span class="nn">operator</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
+
+<div class="viewcode-block" id="displayNameClusters"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.DataCleaning.html#PolyPharma.neo4j_analyzer.DataCleaning.displayNameClusters">[docs]</a><span class="k">def</span> <span class="nf">displayNameClusters</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="n">displayNameClusters</span><span class="o">=</span><span class="p">{}</span>
+    
+    <span class="k">for</span> <span class="n">Meta</span> <span class="ow">in</span> <span class="n">func</span><span class="o">.</span><span class="n">get_all</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">Meta</span><span class="o">.</span><span class="n">displayName</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">displayNameClusters</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">displayNameClusters</span><span class="p">[</span><span class="n">Meta</span><span class="o">.</span><span class="n">displayName</span><span class="p">]</span><span class="o">=</span><span class="p">[]</span>
+        <span class="n">displayNameClusters</span><span class="p">[</span><span class="n">Meta</span><span class="o">.</span><span class="n">displayName</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Meta</span><span class="p">)</span>
+    
+    <span class="k">for</span> <span class="n">clusterKey</span> <span class="ow">in</span> <span class="n">displayNameClusters</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">displayNameClusters</span><span class="p">[</span><span class="n">clusterKey</span><span class="p">])</span><span class="o">&lt;</span><span class="mi">2</span><span class="p">:</span>
+            <span class="k">del</span> <span class="n">displayNameClusters</span><span class="p">[</span><span class="n">clusterKey</span><span class="p">]</span>
+    
+    <span class="k">return</span> <span class="n">displayNameClusters</span>
+
+</div>
+<div class="viewcode-block" id="crossLinkClusters"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.DataCleaning.html#PolyPharma.neo4j_analyzer.DataCleaning.crossLinkClusters">[docs]</a><span class="k">def</span> <span class="nf">crossLinkClusters</span><span class="p">(</span><span class="n">dictionary</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">commonDispName</span> <span class="ow">in</span> <span class="n">dictionary</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">print</span> <span class="s">&#39;enterCopy&#39;</span>
+        <span class="n">lst</span><span class="o">=</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">dictionary</span><span class="p">[</span><span class="n">commonDispName</span><span class="p">])</span>
+        <span class="k">while</span> <span class="n">lst</span><span class="o">!=</span><span class="p">[]:</span>
+            <span class="n">elt</span><span class="o">=</span><span class="n">lst</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+            <span class="k">print</span> <span class="s">&#39;popped &#39;</span><span class="p">,</span> <span class="n">elt</span>
+            <span class="k">for</span> <span class="n">elt2</span> <span class="ow">in</span> <span class="n">lst</span><span class="p">:</span>
+                <span class="k">print</span> <span class="s">&#39;</span><span class="se">\t</span><span class="s"> interated over&#39;</span><span class="p">,</span> <span class="n">elt2</span>
+                <span class="n">DatabaseGraph</span><span class="o">.</span><span class="n">is_possiby_same</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">elt</span><span class="p">,</span><span class="n">elt2</span><span class="p">)</span>
+        
+
+
+<span class="c"># ProtNameCollections=displayNameClusters(GD.DatabaseGraph.Protein)</span>
+<span class="c"># print len(ProtNameCollections)</span>
+<span class="c"># </span>
+<span class="c"># Prot_CollNameCollections=displayNameClusters(GD.DatabaseGraph.Protein_Collection)</span>
+<span class="c"># print len(Prot_CollNameCollections)</span>
+</div>
+<div class="viewcode-block" id="recount_dict"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.DataCleaning.html#PolyPharma.neo4j_analyzer.DataCleaning.recount_dict">[docs]</a><span class="k">def</span> <span class="nf">recount_dict</span><span class="p">(</span><span class="n">dico</span><span class="p">):</span>
+    <span class="n">correctDic</span><span class="o">=</span><span class="p">{}</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">dico</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">val</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">correctDic</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">correctDic</span><span class="p">[</span><span class="n">val</span><span class="p">]</span><span class="o">=</span><span class="mi">0</span>
+        <span class="n">correctDic</span><span class="p">[</span><span class="n">val</span><span class="p">]</span><span class="o">+=</span><span class="mi">1</span>
+    <span class="k">return</span> <span class="n">correctDic</span>
+</div>
+<div class="viewcode-block" id="resume_dict"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.DataCleaning.html#PolyPharma.neo4j_analyzer.DataCleaning.resume_dict">[docs]</a><span class="k">def</span> <span class="nf">resume_dict</span><span class="p">(</span><span class="n">dico</span><span class="p">):</span>
+    <span class="n">resumeDic</span><span class="o">=</span><span class="p">{}</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">dico</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">val</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">resumeDic</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">resumeDic</span><span class="p">[</span><span class="n">val</span><span class="p">]</span><span class="o">=</span><span class="p">[]</span>
+        <span class="n">resumeDic</span><span class="p">[</span><span class="n">val</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">resumeDic</span>
+</div>
+<div class="viewcode-block" id="recoverGenerated"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.DataCleaning.html#PolyPharma.neo4j_analyzer.DataCleaning.recoverGenerated">[docs]</a><span class="k">def</span> <span class="nf">recoverGenerated</span><span class="p">(</span><span class="n">generator</span><span class="p">):</span>
+    <span class="n">lst</span><span class="o">=</span><span class="p">[]</span>
+    <span class="k">if</span> <span class="n">generator</span><span class="o">!=</span><span class="bp">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">elt</span> <span class="ow">in</span> <span class="n">generator</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">elt</span><span class="o">!=</span><span class="bp">None</span><span class="p">:</span>
+                <span class="n">lst</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">elt</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">lst</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">lst</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">lst</span>
+</div>
+<div class="viewcode-block" id="updateDic"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.DataCleaning.html#PolyPharma.neo4j_analyzer.DataCleaning.updateDic">[docs]</a><span class="k">def</span> <span class="nf">updateDic</span><span class="p">(</span><span class="n">dico</span><span class="p">,</span> <span class="n">lst</span><span class="p">,</span> <span class="n">multiplicator</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">elt</span> <span class="ow">in</span> <span class="n">lst</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">elt</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">dico</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">dico</span><span class="p">[</span><span class="n">elt</span><span class="p">]</span><span class="o">=</span><span class="mi">0</span>
+        <span class="n">dico</span><span class="p">[</span><span class="n">elt</span><span class="p">]</span><span class="o">+=</span><span class="n">multiplicator</span>
+</div>
+<div class="viewcode-block" id="updateDic_experimental"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.DataCleaning.html#PolyPharma.neo4j_analyzer.DataCleaning.updateDic_experimental">[docs]</a><span class="k">def</span> <span class="nf">updateDic_experimental</span><span class="p">(</span><span class="n">dico</span><span class="p">,</span> <span class="n">lst</span><span class="p">,</span> <span class="n">multiplicator</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">elt</span> <span class="ow">in</span> <span class="n">lst</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">elt</span> <span class="ow">in</span> <span class="n">dico</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">dico</span><span class="p">[</span><span class="n">elt</span><span class="p">]</span><span class="o">+=</span><span class="n">multiplicator</span>
+</div>
+<div class="viewcode-block" id="Connected_to_Reactions"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.DataCleaning.html#PolyPharma.neo4j_analyzer.DataCleaning.Connected_to_Reactions">[docs]</a><span class="k">def</span> <span class="nf">Connected_to_Reactions</span><span class="p">(</span><span class="n">ReactionType</span><span class="p">):</span>
+    <span class="n">dico</span><span class="o">=</span><span class="p">{}</span>
+    <span class="k">for</span> <span class="n">Reaction</span> <span class="ow">in</span> <span class="n">ReactionType</span><span class="o">.</span><span class="n">get_all</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">Reaction</span><span class="o">!=</span><span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">Reaction</span><span class="o">.</span><span class="n">bothV</span><span class="p">(</span><span class="s">&quot;is_Catalysant&quot;</span><span class="p">)</span><span class="o">!=</span><span class="bp">None</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">elt</span> <span class="ow">in</span> <span class="n">Reaction</span><span class="o">.</span><span class="n">bothV</span><span class="p">(</span><span class="s">&quot;is_Catalysant&quot;</span><span class="p">):</span>
+                    <span class="n">ID</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">elt</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">ID</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">dico</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                        <span class="n">dico</span><span class="p">[</span><span class="n">ID</span><span class="p">]</span><span class="o">=</span><span class="mi">0</span> 
+                    <span class="n">dico</span><span class="p">[</span><span class="n">ID</span><span class="p">]</span><span class="o">+=</span><span class="mi">1</span>   
+            <span class="k">if</span> <span class="n">Reaction</span><span class="o">.</span><span class="n">bothV</span><span class="p">(</span><span class="s">&quot;is_reaction_particpant&quot;</span><span class="p">)</span><span class="o">!=</span><span class="bp">None</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">elt</span> <span class="ow">in</span> <span class="n">Reaction</span><span class="o">.</span><span class="n">bothV</span><span class="p">(</span><span class="s">&quot;is_reaction_particpant&quot;</span><span class="p">):</span>
+                    <span class="n">ID</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">elt</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">ID</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">dico</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                        <span class="n">dico</span><span class="p">[</span><span class="n">ID</span><span class="p">]</span><span class="o">=</span><span class="mi">0</span> 
+                    <span class="n">dico</span><span class="p">[</span><span class="n">ID</span><span class="p">]</span><span class="o">+=</span><span class="mi">1</span>
+    <span class="k">print</span> <span class="n">recount_dict</span><span class="p">(</span><span class="n">dico</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">dico</span>
+
+
+<span class="c"># TODO: perform a join over the displayNames and eliminate elements of Collections that are not encountered in the other reactions</span></div>
+<div class="viewcode-block" id="propagate_Connections"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.DataCleaning.html#PolyPharma.neo4j_analyzer.DataCleaning.propagate_Connections">[docs]</a><span class="k">def</span> <span class="nf">propagate_Connections</span><span class="p">(</span><span class="n">dico</span><span class="p">):</span>
+    <span class="n">dict2</span><span class="o">=</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">dico</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">component_id</span> <span class="ow">in</span> <span class="n">dico</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">component_object</span><span class="o">=</span><span class="n">DatabaseGraph</span><span class="o">.</span><span class="n">vertices</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">component_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">component_object</span><span class="o">==</span><span class="bp">None</span><span class="p">:</span>
+            <span class="k">print</span> <span class="n">component_id</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c">#updateDic(dict2,recoverGenerated(component_object.bothV(&#39;is_annotated&#39;)),dico[component_id])</span>
+            <span class="n">updateDic</span><span class="p">(</span><span class="n">dict2</span><span class="p">,</span><span class="n">recoverGenerated</span><span class="p">(</span><span class="n">component_object</span><span class="o">.</span><span class="n">bothV</span><span class="p">(</span><span class="s">&#39;is_part_of_complex&#39;</span><span class="p">)),</span><span class="n">dico</span><span class="p">[</span><span class="n">component_id</span><span class="p">])</span>
+            <span class="c">#updateDic(dict2,recoverGenerated(component_object.bothV(&#39;is_localized&#39;)),dico[component_id])</span>
+            <span class="c">#updateDic(dict2,recoverGenerated(component_object.bothV(&#39;is_able_to_modify&#39;)),dico[component_id])</span>
+            <span class="n">updateDic</span><span class="p">(</span><span class="n">dict2</span><span class="p">,</span><span class="n">recoverGenerated</span><span class="p">(</span><span class="n">component_object</span><span class="o">.</span><span class="n">bothV</span><span class="p">(</span><span class="s">&#39;is_Regulant&#39;</span><span class="p">)),</span><span class="n">dico</span><span class="p">[</span><span class="n">component_id</span><span class="p">])</span>
+            <span class="n">updateDic</span><span class="p">(</span><span class="n">dict2</span><span class="p">,</span><span class="n">recoverGenerated</span><span class="p">(</span><span class="n">component_object</span><span class="o">.</span><span class="n">bothV</span><span class="p">(</span><span class="s">&#39;is_part_of_collection&#39;</span><span class="p">)),</span><span class="n">dico</span><span class="p">[</span><span class="n">component_id</span><span class="p">])</span>
+            <span class="n">updateDic</span><span class="p">(</span><span class="n">dict2</span><span class="p">,</span><span class="n">recoverGenerated</span><span class="p">(</span><span class="n">component_object</span><span class="o">.</span><span class="n">bothV</span><span class="p">(</span><span class="s">&#39;is_possibly_same&#39;</span><span class="p">)),</span><span class="n">dico</span><span class="p">[</span><span class="n">component_id</span><span class="p">])</span>
+    <span class="k">print</span> <span class="n">recount_dict</span><span class="p">(</span><span class="n">dict2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">dict2</span>
+</div>
+<div class="viewcode-block" id="merge_dictionaries"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.DataCleaning.html#PolyPharma.neo4j_analyzer.DataCleaning.merge_dictionaries">[docs]</a><span class="k">def</span> <span class="nf">merge_dictionaries</span><span class="p">(</span><span class="n">dicoList</span><span class="p">):</span>
+    <span class="n">result</span><span class="o">=</span><span class="p">{}</span>
+    <span class="k">for</span> <span class="n">dico</span> <span class="ow">in</span> <span class="n">dicoList</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">elt</span> <span class="ow">in</span> <span class="n">dico</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">elt</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">result</span><span class="p">[</span><span class="n">elt</span><span class="p">]</span><span class="o">=</span><span class="mi">0</span>
+            <span class="n">result</span><span class="p">[</span><span class="n">elt</span><span class="p">]</span><span class="o">+=</span><span class="n">dico</span><span class="p">[</span><span class="n">elt</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">result</span>
+
+</div>
+<div class="viewcode-block" id="get_most_connected_elements"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.DataCleaning.html#PolyPharma.neo4j_analyzer.DataCleaning.get_most_connected_elements">[docs]</a><span class="k">def</span> <span class="nf">get_most_connected_elements</span><span class="p">():</span>
+    <span class="n">TR1</span><span class="o">=</span><span class="n">Connected_to_Reactions</span><span class="p">(</span><span class="n">DatabaseGraph</span><span class="o">.</span><span class="n">TemplateReaction</span><span class="p">)</span>
+    <span class="n">D1</span><span class="o">=</span><span class="n">Connected_to_Reactions</span><span class="p">(</span><span class="n">DatabaseGraph</span><span class="o">.</span><span class="n">Degradation</span><span class="p">)</span>
+    <span class="n">BR1</span><span class="o">=</span><span class="n">Connected_to_Reactions</span><span class="p">(</span><span class="n">DatabaseGraph</span><span class="o">.</span><span class="n">BiochemicalReaction</span><span class="p">)</span>
+     
+     
+    <span class="n">merge1</span><span class="o">=</span><span class="n">merge_dictionaries</span><span class="p">([</span><span class="n">TR1</span><span class="p">,</span><span class="n">D1</span><span class="p">,</span><span class="n">BR1</span><span class="p">])</span>
+    <span class="n">merge2</span><span class="o">=</span><span class="n">propagate_Connections</span><span class="p">(</span><span class="n">merge1</span><span class="p">)</span>
+    
+    <span class="n">pickleDump2</span><span class="o">=</span><span class="nb">file</span><span class="p">(</span><span class="s">&#39;pickleDump2.dump&#39;</span><span class="p">,</span><span class="s">&#39;r&#39;</span><span class="p">)</span>
+    <span class="n">NodeID2MatrixNumber</span><span class="p">,</span> <span class="n">MatrixNumber2NodeID</span><span class="p">,</span> <span class="n">ID2displayName</span><span class="p">,</span> <span class="n">ID2Type</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">pickleDump2</span><span class="p">)</span>
+    
+    <span class="n">srtd</span><span class="o">=</span><span class="nb">sorted</span><span class="p">(</span><span class="n">merge2</span><span class="o">.</span><span class="n">iteritems</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="n">operator</span><span class="o">.</span><span class="n">itemgetter</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span><span class="n">reverse</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">srtd</span><span class="p">[:</span><span class="mi">100</span><span class="p">]:</span>
+        <span class="k">print</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span>
+        <span class="k">print</span> <span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span><span class="p">,</span> <span class="n">ID2Type</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">ID2displayName</span><span class="p">[</span><span class="n">key</span><span class="p">]</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">PolyPharma 0.2a3 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Andrei Kucharavy.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

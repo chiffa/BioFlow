@@ -1,0 +1,167 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>PolyPharma.GOInfoCirculation.PythonIsNotForOOP &mdash; PolyPharma 0.2a3 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.2a3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="PolyPharma 0.2a3 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">PolyPharma 0.2a3 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for PolyPharma.GOInfoCirculation.PythonIsNotForOOP</h1><div class="highlight"><pre>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">Created on Mar 25, 2013</span>
+
+<span class="sd">@author: Andrei Kucharavy, achiffa @ github</span>
+
+<span class="sd">This small example demonstrates why Python is NOT suited for Object Oriented Programming</span>
+<span class="sd">due to it&#39;s random switching between referencing objects and new object creation</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+
+<span class="c">#We consider names are UIDs</span>
+<span class="n">Parents2Children</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;George&#39;</span><span class="p">:[</span><span class="s">&#39;Chloe&#39;</span><span class="p">,</span><span class="s">&#39;Baptiste&#39;</span><span class="p">],</span><span class="s">&#39;Alexandre&#39;</span><span class="p">:[</span><span class="s">&#39;Joseph&#39;</span><span class="p">,</span><span class="s">&#39;Melissa&#39;</span><span class="p">,</span><span class="s">&#39;Jonny&#39;</span><span class="p">],</span><span class="s">&#39;Serge&#39;</span><span class="p">:[</span><span class="s">&#39;Josphine&#39;</span><span class="p">]}</span>
+
+
+<div class="viewcode-block" id="Person"><a class="viewcode-back" href="../../../PolyPharma.GOInfoCirculation.PythonIsNotForOOP.html#PolyPharma.GOInfoCirculation.PythonIsNotForOOP.Person">[docs]</a><span class="k">class</span> <span class="nc">Person</span><span class="p">:</span>
+    <span class="n">name</span><span class="o">=</span><span class="s">&#39;null&#39;</span>
+    <span class="n">children</span><span class="o">=</span><span class="p">[]</span>
+      
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">name</span><span class="p">,</span><span class="n">children</span><span class="o">=</span><span class="p">[]):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="o">=</span><span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="o">=</span><span class="n">children</span>
+    
+<div class="viewcode-block" id="Person.addChild"><a class="viewcode-back" href="../../../PolyPharma.GOInfoCirculation.PythonIsNotForOOP.html#PolyPharma.GOInfoCirculation.PythonIsNotForOOP.Person.addChild">[docs]</a>    <span class="k">def</span> <span class="nf">addChild</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">childObject</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">childObject</span><span class="p">)</span>
+    </div>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;&lt;Person(&#39;</span><span class="si">%s</span><span class="s">&#39;,&#39;</span><span class="si">%s</span><span class="s">&#39;)&gt;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                                        <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="Society"><a class="viewcode-back" href="../../../PolyPharma.GOInfoCirculation.PythonIsNotForOOP.html#PolyPharma.GOInfoCirculation.PythonIsNotForOOP.Society">[docs]</a><span class="k">class</span> <span class="nc">Society</span><span class="p">:</span>
+    <span class="n">Name2Person</span><span class="o">=</span><span class="p">{}</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">P2Ch</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">Parent</span> <span class="ow">in</span> <span class="n">Parents2Children</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Name2Person</span><span class="p">[</span><span class="n">Parent</span><span class="p">]</span><span class="o">=</span><span class="n">Person</span><span class="p">(</span><span class="n">Parent</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">Children</span> <span class="ow">in</span> <span class="n">Parents2Children</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">Child</span> <span class="ow">in</span> <span class="n">Children</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">Name2Person</span><span class="p">[</span><span class="n">Child</span><span class="p">]</span><span class="o">=</span><span class="n">Person</span><span class="p">(</span><span class="n">Child</span><span class="p">)</span>
+
+
+<span class="c">#&lt;====================&gt;</span></div>
+<span class="n">Soc</span><span class="o">=</span><span class="n">Society</span><span class="p">(</span><span class="n">Parents2Children</span><span class="p">)</span>
+
+<span class="k">print</span> <span class="n">Soc</span><span class="o">.</span><span class="n">Name2Person</span>
+
+<span class="k">for</span> <span class="n">ParentName</span> <span class="ow">in</span> <span class="n">Parents2Children</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+    <span class="k">for</span> <span class="n">ChildName</span> <span class="ow">in</span> <span class="n">Parents2Children</span><span class="p">[</span><span class="n">ParentName</span><span class="p">]:</span>
+        <span class="n">Soc</span><span class="o">.</span><span class="n">Name2Person</span><span class="p">[</span><span class="n">ParentName</span><span class="p">]</span><span class="o">.</span><span class="n">addChild</span><span class="p">(</span><span class="n">Soc</span><span class="o">.</span><span class="n">Name2Person</span><span class="p">[</span><span class="n">ChildName</span><span class="p">])</span>
+
+<span class="k">print</span> <span class="n">Soc</span><span class="o">.</span><span class="n">Name2Person</span>
+
+
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">Expected Output:</span>
+<span class="sd">{&#39;Baptiste&#39;: &lt;Person(&#39;Baptiste&#39;,&#39;0&#39;)&gt;, &#39;Chloe&#39;: &lt;Person(&#39;Chloe&#39;,&#39;0&#39;)&gt;, &#39;Josphine&#39;: &lt;Person(&#39;Josphine&#39;,&#39;0&#39;)&gt;, &#39;Alexandre&#39;: &lt;Person(&#39;Alexandre&#39;,&#39;0&#39;)&gt;, &#39;Joseph&#39;: &lt;Person(&#39;Joseph&#39;,&#39;0&#39;)&gt;, &#39;Melissa&#39;: &lt;Person(&#39;Melissa&#39;,&#39;0&#39;)&gt;, &#39;Jonny&#39;: &lt;Person(&#39;Jonny&#39;,&#39;0&#39;)&gt;, &#39;George&#39;: &lt;Person(&#39;George&#39;,&#39;0&#39;)&gt;, &#39;Serge&#39;: &lt;Person(&#39;Serge&#39;,&#39;0&#39;)&gt;}</span>
+<span class="sd">{&#39;Baptiste&#39;: &lt;Person(&#39;Baptiste&#39;,&#39;0&#39;)&gt;, &#39;Chloe&#39;: &lt;Person(&#39;Chloe&#39;,&#39;0&#39;)&gt;, &#39;Josphine&#39;: &lt;Person(&#39;Josphine&#39;,&#39;0&#39;)&gt;, &#39;Alexandre&#39;: &lt;Person(&#39;Alexandre&#39;,&#39;3&#39;)&gt;, &#39;Joseph&#39;: &lt;Person(&#39;Joseph&#39;,&#39;0&#39;)&gt;, &#39;Melissa&#39;: &lt;Person(&#39;Melissa&#39;,&#39;0&#39;)&gt;, &#39;Jonny&#39;: &lt;Person(&#39;Jonny&#39;,&#39;0&#39;)&gt;, &#39;George&#39;: &lt;Person(&#39;George&#39;,&#39;2&#39;)&gt;, &#39;Serge&#39;: &lt;Person(&#39;Serge&#39;,&#39;1&#39;)&gt;}</span>
+
+<span class="sd">Real Output:</span>
+<span class="sd">{&#39;Baptiste&#39;: &lt;Person(&#39;Baptiste&#39;,&#39;0&#39;)&gt;, &#39;Chloe&#39;: &lt;Person(&#39;Chloe&#39;,&#39;0&#39;)&gt;, &#39;Josphine&#39;: &lt;Person(&#39;Josphine&#39;,&#39;0&#39;)&gt;, &#39;Alexandre&#39;: &lt;Person(&#39;Alexandre&#39;,&#39;0&#39;)&gt;, &#39;Joseph&#39;: &lt;Person(&#39;Joseph&#39;,&#39;0&#39;)&gt;, &#39;Melissa&#39;: &lt;Person(&#39;Melissa&#39;,&#39;0&#39;)&gt;, &#39;Jonny&#39;: &lt;Person(&#39;Jonny&#39;,&#39;0&#39;)&gt;, &#39;George&#39;: &lt;Person(&#39;George&#39;,&#39;0&#39;)&gt;, &#39;Serge&#39;: &lt;Person(&#39;Serge&#39;,&#39;0&#39;)&gt;}</span>
+<span class="sd">{&#39;Baptiste&#39;: &lt;Person(&#39;Baptiste&#39;,&#39;6&#39;)&gt;, &#39;Chloe&#39;: &lt;Person(&#39;Chloe&#39;,&#39;6&#39;)&gt;, &#39;Josphine&#39;: &lt;Person(&#39;Josphine&#39;,&#39;6&#39;)&gt;, &#39;Alexandre&#39;: &lt;Person(&#39;Alexandre&#39;,&#39;6&#39;)&gt;, &#39;Joseph&#39;: &lt;Person(&#39;Joseph&#39;,&#39;6&#39;)&gt;, &#39;Melissa&#39;: &lt;Person(&#39;Melissa&#39;,&#39;6&#39;)&gt;, &#39;Jonny&#39;: &lt;Person(&#39;Jonny&#39;,&#39;6&#39;)&gt;, &#39;George&#39;: &lt;Person(&#39;George&#39;,&#39;6&#39;)&gt;, &#39;Serge&#39;: &lt;Person(&#39;Serge&#39;,&#39;6&#39;)&gt;}</span>
+
+
+<span class="sd">apparently, for Python2.7 all the [] in __init__ sequence of a class </span>
+<span class="sd">are deemed as referring to the same object.</span>
+
+<span class="sd">Mind = &#39;Blown&#39;</span>
+
+<span class="sd">Apparently, __init__ instance&#39;s parameters are created once and for all</span>
+<span class="sd">and are not called again each time this function is called, as simple logic would suggest it.</span>
+
+<span class="sd">In order to make it work, you have to shallow copy the void list each time it you call the</span>
+<span class="sd">&#39;default&#39; values in __init__ method. for instance here, line 21 should be changed as following:</span>
+
+<span class="sd">self.children=children =&gt; self.children=children[:]</span>
+<span class="sd">&#39;&#39;&#39;</span> 
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">PolyPharma 0.2a3 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Andrei Kucharavy.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

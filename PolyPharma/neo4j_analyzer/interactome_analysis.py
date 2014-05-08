@@ -6,20 +6,13 @@ __author__ = 'ank'
 
 import pickle
 import numpy as np
-
-from copy import copy
-from random import shuffle
 from collections import namedtuple
-
 from multiprocessing import Pool
-
 from pprint import PrettyPrinter
 from matplotlib import pyplot as plt
 from Matrix_Interactome_DB_interface import  MatrixGetter
-from Matrix_Knowledge_DB_Interface import GO_Interface
 from PolyPharma.configs import Interactome_rand_samp, Dumps
 from PolyPharma.Utils.dataviz import kde_compute
-from PolyPharma.Utils.Linalg_routines import analyze_eigvects
 from PolyPharma.neo4j_analyzer.Conduction_routines import perform_clustering
 from PolyPharma.neo4j_analyzer.IO_Routines import undump_object
 
@@ -30,6 +23,11 @@ MG.fast_load()
 
 
 def MG_gen():
+    """
+    Retrieves an "interactome_interface" object
+
+    :return:
+    """
     MG = MatrixGetter(True, False)
     MG.fast_load()
     print MG.pretty_time()
@@ -192,7 +190,14 @@ def compare_to_blanc(blanc_model_size, zoom_range_selector, real_interactome_int
     """
     Recovers the statistics on the circulation nodes and shows the visual of a circulation system
 
-    :return:
+    :param blanc_model_size: the number of uniprots in the blanc model
+    :param zoom_range_selector: tuple representing the coverage range for which we would want to see the histogram of current distributions
+    :param real_interactome_interface: The interactome_Interface that has run the current computation
+    :param p_val: desired p_value for the returned terms
+    :param sparse_rounds: if set to a number, sparse computation technique would be used with the number of rounds equal to the number
+    :type sparse_rounds: int
+    :param clusters: specifies the number of clusters we want to have
+    :return: None if no significant nodes, the node and group characterisitc dictionaries otherwise
     """
     MD5_hash = MG._MD5hash()
 
@@ -247,7 +252,7 @@ def compare_to_blanc(blanc_model_size, zoom_range_selector, real_interactome_int
     if r_nodes is not None:
         not_random_nodes = [str(int(node_id)) for node_id in node_ids[r_nodes < p_val].tolist()]
         not_random_groups = np.concatenate((group2avg_offdiag, np.reshape(r_groups, (3,1))), axis=1)[r_groups < p_val].tolist()
-        not_random_groups = [ Group_char(*(nr_group)) for nr_group in not_random_groups]
+        not_random_groups = [ Group_char(*nr_group) for nr_group in not_random_groups]
         # basically the second element below are the nodes that contribute to the information flow through the node that is considered as
         # non-random
         dct = dict((nr_node_id, Interactome_node_char(MG.ID2displayName[nr_node_id],*(Dic_system[nr_node_id] + r_nodes[node_ids == float(nr_node_id)].tolist())))
@@ -259,8 +264,13 @@ def compare_to_blanc(blanc_model_size, zoom_range_selector, real_interactome_int
 
 
 def auto_analyze():
+    """
+    Automatically analyzes the itneractome synergetic action of the RNA_seq results
+
+    """
     dumplist = undump_object(Dumps.RNA_seq_counts_compare)
 
+    # noinspection PyTypeChecker
     for lst in dumplist:
         print lst, len(lst)
         MG1 = MG_gen()

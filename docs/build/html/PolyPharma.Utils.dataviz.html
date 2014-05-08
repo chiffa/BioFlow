@@ -1,0 +1,232 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>PolyPharma.Utils.dataviz module &mdash; PolyPharma 0.2a3 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.2a3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="PolyPharma 0.2a3 documentation" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="index.html">PolyPharma 0.2a3 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-PolyPharma.Utils.dataviz">
+<span id="polypharma-utils-dataviz-module"></span><h1>PolyPharma.Utils.dataviz module<a class="headerlink" href="#module-PolyPharma.Utils.dataviz" title="Permalink to this headline">¶</a></h1>
+<p>All credits for the implementation and suggestions go to sega_sai (stackoverflow):
+<a class="reference external" href="http://stackoverflow.com/questions/10439961/efficiently-create-a-density-plot-for-high-density-regions-points-for-sparse-re">http://stackoverflow.com/questions/10439961/efficiently-create-a-density-plot-for-high-density-regions-points-for-sparse-re</a></p>
+<dl class="function">
+<dt id="PolyPharma.Utils.dataviz.better2D_desisty_plot">
+<tt class="descclassname">PolyPharma.Utils.dataviz.</tt><tt class="descname">better2D_desisty_plot</tt><big>(</big><em>xdat</em>, <em>ydat</em>, <em>thresh=3</em>, <em>bins=(100</em>, <em>100)</em><big>)</big><a class="reference internal" href="_modules/PolyPharma/Utils/dataviz.html#better2D_desisty_plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.Utils.dataviz.better2D_desisty_plot" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="PolyPharma.Utils.dataviz.kde_compute">
+<tt class="descclassname">PolyPharma.Utils.dataviz.</tt><tt class="descname">kde_compute</tt><big>(</big><em>bi_array</em>, <em>nbins=30</em>, <em>samples=10</em>, <em>show=True</em><big>)</big><a class="reference internal" href="_modules/PolyPharma/Utils/dataviz.html#kde_compute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.Utils.dataviz.kde_compute" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="PolyPharma.Utils.dataviz.normal">
+<tt class="descclassname">PolyPharma.Utils.dataviz.</tt><tt class="descname">normal</tt><big>(</big><em>loc=0.0</em>, <em>scale=1.0</em>, <em>size=None</em><big>)</big><a class="headerlink" href="#PolyPharma.Utils.dataviz.normal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draw random samples from a normal (Gaussian) distribution.</p>
+<p>The probability density function of the normal distribution, first
+derived by De Moivre and 200 years later by both Gauss and Laplace
+independently <a class="footnote-reference" href="#id5" id="id1">[2]</a>, is often called the bell curve because of
+its characteristic shape (see the example below).</p>
+<p>The normal distributions occurs often in nature.  For example, it
+describes the commonly occurring distribution of samples influenced
+by a large number of tiny, random disturbances, each with its own
+unique distribution <a class="footnote-reference" href="#id5" id="id2">[2]</a>.</p>
+<div class="system-message">
+<p class="system-message-title">System Message: SEVERE/4 (<tt class="docutils">/home/ank/PycharmProjects/PolyPharma/PolyPharma/Utils/dataviz.py:docstring of PolyPharma.Utils.dataviz.normal</tt>, line 14)</p>
+<p>Unexpected section title.</p>
+<div class="highlight-python"><div class="highlight"><pre>Parameters
+----------
+</pre></div>
+</div>
+</div>
+<dl class="docutils">
+<dt>loc <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>Mean (&#8220;centre&#8221;) of the distribution.</dd>
+<dt>scale <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>Standard deviation (spread or &#8220;width&#8221;) of the distribution.</dd>
+<dt>size <span class="classifier-delimiter">:</span> <span class="classifier">tuple of ints</span></dt>
+<dd>Output shape.  If the given shape is, e.g., <tt class="docutils literal"><span class="pre">(m,</span> <span class="pre">n,</span> <span class="pre">k)</span></tt>, then
+<tt class="docutils literal"><span class="pre">m</span> <span class="pre">*</span> <span class="pre">n</span> <span class="pre">*</span> <span class="pre">k</span></tt> samples are drawn.</dd>
+</dl>
+<div class="system-message">
+<p class="system-message-title">System Message: SEVERE/4 (<tt class="docutils">/home/ank/PycharmProjects/PolyPharma/PolyPharma/Utils/dataviz.py:docstring of PolyPharma.Utils.dataviz.normal</tt>, line 24)</p>
+<p>Unexpected section title.</p>
+<div class="highlight-python"><div class="highlight"><pre>See Also
+--------
+</pre></div>
+</div>
+</div>
+<dl class="docutils">
+<dt>scipy.stats.distributions.norm <span class="classifier-delimiter">:</span> <span class="classifier">probability density function,</span></dt>
+<dd>distribution or cumulative density function, etc.</dd>
+</dl>
+<div class="system-message">
+<p class="system-message-title">System Message: SEVERE/4 (<tt class="docutils">/home/ank/PycharmProjects/PolyPharma/PolyPharma/Utils/dataviz.py:docstring of PolyPharma.Utils.dataviz.normal</tt>, line 29)</p>
+<p>Unexpected section title.</p>
+<div class="highlight-python"><div class="highlight"><pre>Notes
+-----
+</pre></div>
+</div>
+</div>
+<p>The probability density for the Gaussian distribution is</p>
+<div class="math">
+<p><span class="math">p(x) = \frac{1}{\sqrt{ 2 \pi \sigma^2 }}
+e^{ - \frac{ (x - \mu)^2 } {2 \sigma^2} },</span></p>
+</div><p>where <span class="math">\mu</span> is the mean and <span class="math">\sigma</span> the standard deviation.
+The square of the standard deviation, <span class="math">\sigma^2</span>, is called the
+variance.</p>
+<p>The function has its peak at the mean, and its &#8220;spread&#8221; increases with
+the standard deviation (the function reaches 0.607 times its maximum at
+<span class="math">x + \sigma</span> and <span class="math">x - \sigma</span> <a class="footnote-reference" href="#id5" id="id3">[2]</a>).  This implies that
+<cite>numpy.random.normal</cite> is more likely to return samples lying close to the
+mean, rather than those far away.</p>
+<div class="system-message">
+<p class="system-message-title">System Message: SEVERE/4 (<tt class="docutils">/home/ank/PycharmProjects/PolyPharma/PolyPharma/Utils/dataviz.py:docstring of PolyPharma.Utils.dataviz.normal</tt>, line 46)</p>
+<p>Unexpected section title.</p>
+<div class="highlight-python"><div class="highlight"><pre>References
+----------
+</pre></div>
+</div>
+</div>
+<table class="docutils footnote" frame="void" id="id4" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[1]</td><td>Wikipedia, &#8220;Normal distribution&#8221;,
+<a class="reference external" href="http://en.wikipedia.org/wiki/Normal_distribution">http://en.wikipedia.org/wiki/Normal_distribution</a></td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="id5" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[2]</td><td><em>(<a class="fn-backref" href="#id1">1</a>, <a class="fn-backref" href="#id2">2</a>, <a class="fn-backref" href="#id3">3</a>)</em> P. R. Peebles Jr., &#8220;Central Limit Theorem&#8221; in &#8220;Probability, Random
+Variables and Random Signal Principles&#8221;, 4th ed., 2001,
+pp. 51, 51, 125.</td></tr>
+</tbody>
+</table>
+<div class="system-message">
+<p class="system-message-title">System Message: SEVERE/4 (<tt class="docutils">/home/ank/PycharmProjects/PolyPharma/PolyPharma/Utils/dataviz.py:docstring of PolyPharma.Utils.dataviz.normal</tt>, line 54)</p>
+<p>Unexpected section title.</p>
+<div class="highlight-python"><div class="highlight"><pre>Examples
+--------
+</pre></div>
+</div>
+</div>
+<p>Draw samples from the distribution:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">0.1</span> <span class="c"># mean and standard deviation</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Verify the mean and the variance:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="nb">abs</span><span class="p">(</span><span class="n">mu</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">s</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mf">0.01</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="nb">abs</span><span class="p">(</span><span class="n">sigma</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">ddof</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mf">0.01</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<p>Display the histogram of the samples, along with
+the probability density function:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">count</span><span class="p">,</span> <span class="n">bins</span><span class="p">,</span> <span class="n">ignored</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="n">normed</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">bins</span><span class="p">,</span> <span class="mi">1</span><span class="o">/</span><span class="p">(</span><span class="n">sigma</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">))</span> <span class="o">*</span>
+<span class="gp">... </span>               <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span> <span class="o">-</span> <span class="p">(</span><span class="n">bins</span> <span class="o">-</span> <span class="n">mu</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">sigma</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="p">),</span>
+<span class="gp">... </span>         <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s">&#39;r&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="PolyPharma.Utils.dataviz.violin_plot">
+<tt class="descclassname">PolyPharma.Utils.dataviz.</tt><tt class="descname">violin_plot</tt><big>(</big><em>ax</em>, <em>data</em>, <em>pos</em>, <em>bp=False</em><big>)</big><a class="reference internal" href="_modules/PolyPharma/Utils/dataviz.html#violin_plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.Utils.dataviz.violin_plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>create violin plots on an axis</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/PolyPharma.Utils.dataviz.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="index.html">PolyPharma 0.2a3 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Andrei Kucharavy.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

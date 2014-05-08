@@ -1,0 +1,408 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>PolyPharma.neo4j_analyzer.Matrix_Puller module &mdash; PolyPharma 0.2a3 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.2a3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="PolyPharma 0.2a3 documentation" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="index.html">PolyPharma 0.2a3 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-PolyPharma.neo4j_analyzer.Matrix_Puller">
+<span id="polypharma-neo4j-analyzer-matrix-puller-module"></span><h1>PolyPharma.neo4j_analyzer.Matrix_Puller module<a class="headerlink" href="#module-PolyPharma.neo4j_analyzer.Matrix_Puller" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Puller.Analyze_relations">
+<tt class="descclassname">PolyPharma.neo4j_analyzer.Matrix_Puller.</tt><tt class="descname">Analyze_relations</tt><big>(</big><em>Current</em>, <em>number</em>, <em>AdditionalInfos=None</em><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Puller.html#Analyze_relations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Puller.Analyze_relations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Just a way to print out the nodes making pass the most of the current.</p>
+<p>Historically a reporting function, not essential for the matrix manipulation. Should be moved elsewhere.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>Current</strong> (<em>numpy array</em>) &#8211; current running through the graph laplacian of a current system.</li>
+<li><strong>number</strong> (<em>integer</em>) &#8211; the number of the most important relations one wants to observe</li>
+<li><strong>AdditionalInfos</strong> &#8211; controls if additional informations will be added to the output. Defaults to None</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Puller.Compute_and_Store_circulation">
+<tt class="descclassname">PolyPharma.neo4j_analyzer.Matrix_Puller.</tt><tt class="descname">Compute_and_Store_circulation</tt><big>(</big><em>handle</em>, <em>List_of_UPs</em>, <em>mongo_db_collection</em><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Puller.html#Compute_and_Store_circulation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Puller.Compute_and_Store_circulation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes information circulation for a set of uniprots, then pickles the result stores them in a mongoDB</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>handle</strong> &#8211; name of the entity to store under the ID</li>
+<li><strong>List_of_UPs</strong> &#8211; list of Uniprot Nodes on which we are willing to perform the retrieval and storage</li>
+<li><strong>mongo_db_collection</strong> &#8211; pymongo mongoDB client attachement</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Informativity array that was stored</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Puller.Compute_circulation_intensity">
+<tt class="descclassname">PolyPharma.neo4j_analyzer.Matrix_Puller.</tt><tt class="descname">Compute_circulation_intensity</tt><big>(</big><em>epsilon=1e-10</em><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Puller.html#Compute_circulation_intensity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Puller.Compute_circulation_intensity" title="Permalink to this definition">¶</a></dt>
+<dd><p>performs the information circulation calculation in agreement with the publication by Misiuro et al, but with algorithm slightly modified for 
+more rapid computation of information circulation</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Warning:</th><td class="field-body">this method performs the computation on the whole set Uniprots, and thus it&#8217;s convergence time as a single process is overa month.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Parameters:</th><td class="field-body"><strong>epsilon</strong> (<em>float</em>) &#8211; corrective factor for the calculation of Cholesky matrix. defaults to 1e-10</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Puller.Compute_ponderated_info_circulation">
+<tt class="descclassname">PolyPharma.neo4j_analyzer.Matrix_Puller.</tt><tt class="descname">Compute_ponderated_info_circulation</tt><big>(</big><em>UPs_2Binding_Affs</em><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Puller.html#Compute_ponderated_info_circulation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Puller.Compute_ponderated_info_circulation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Should compute the information circulation wehre the flowing information is ponderated by the importance a given
+protein has for our analysis.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>UPs_2Binding_Affs</strong> &#8211; Dictionary linking UniprotNode_IDs to their relative importances for the ponderated information circ. calculation</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Raises NotImplementedError:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body">It is not implemented yet</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Puller.Compute_random_sample">
+<tt class="descclassname">PolyPharma.neo4j_analyzer.Matrix_Puller.</tt><tt class="descname">Compute_random_sample</tt><big>(</big><em>sample_size</em>, <em>iterations</em>, <em>epsilon=1e-10</em>, <em>name_version=''</em><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Puller.html#Compute_random_sample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Puller.Compute_random_sample" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs the information circulation calculation in agreement with the publication by Misiuro et al, but with algorithm slightly modified for
+more rapid computation of information circulation
+Unlike them Method above, if the sample size is under 170, it converges in an hour instead of months.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Warning:</th><td class="field-body"><p class="first">it&#8217;s computations are not reliable, since it computes a full informativity within a restricted set of proteins.</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>sample_size</strong> &#8211; Size of elements to randomly pull out of the uniprot list</li>
+<li><strong>iterations</strong> &#8211; Number of random pulls to perform from the uniprot list to get all the interesing thigns</li>
+<li><strong>name_version</strong> &#8211; suffix to add to the name before the storage to distinguish from the previous iterations.</li>
+<li><strong>epsilon</strong> (<em>float</em>) &#8211; corrective factor for the calculation of Cholesky matrix. defaults to 1e-10</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Puller.Compute_truly_random_sample">
+<tt class="descclassname">PolyPharma.neo4j_analyzer.Matrix_Puller.</tt><tt class="descname">Compute_truly_random_sample</tt><big>(</big><em>rounds</em>, <em>iterations</em>, <em>epsilon</em>, <em>name_version=''</em><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Puller.html#Compute_truly_random_sample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Puller.Compute_truly_random_sample" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs a computation of information circulation for pairs of randomly selected pairs of nodes.
+Unlike the previous method, it doesn&#8217;t have a group biais; and the whole matrix is supressed for n repetitions of
+information transfer. Only the nodes that transport any information in addition to their own (i.e.) non-isolated
+and non-leaf nodes. The result is returned and dumped as a new array that is name-versionned with the name_version
+argument.</p>
+<p>Historically this method was used to calibrate the information circulation and rapidly find proteins that were
+transporting the most information</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>rounds</strong> &#8211; times random pairs will be selected</li>
+<li><strong>iterations</strong> &#8211; full rounds of informativity computation, each time informativity being added. More or less redoundant with rounds: the total number of iterations is iterations*rounds</li>
+<li><strong>epsilon</strong> &#8211; fudge, preventing overflow</li>
+<li><strong>name_version</strong> &#8211; calculation-specific string allowing to differnetiate the dump from the rest</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Puller.Info_circulation_for_Single_Node">
+<tt class="descclassname">PolyPharma.neo4j_analyzer.Matrix_Puller.</tt><tt class="descname">Info_circulation_for_Single_Node</tt><big>(</big><em>source_MatrixID</em>, <em>sinks_MatrixIDs</em>, <em>epsilon=1e-10</em><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Puller.html#Info_circulation_for_Single_Node"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Puller.Info_circulation_for_Single_Node" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the information circulation for a single node, according to a slightly improved method compared to the one described by Missiuro</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>source_MatrixID</strong> (<em>int</em>) &#8211; number of the row/line of the source node within the conductance matrix corresponding to the source</li>
+<li><strong>sinks_MatrixIDs</strong> (<em>list of ints</em>) &#8211; list of numbers of the rows/lines within the conductance matrix corresponding to sinks</li>
+<li><strong>epsilon</strong> (<em>float</em>) &#8211; corrective factor for the calculation of Cholesky matrix. defaults to 1e-10</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Puller.analyze_Silverality">
+<tt class="descclassname">PolyPharma.neo4j_analyzer.Matrix_Puller.</tt><tt class="descname">analyze_Silverality</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Puller.html#analyze_Silverality"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Puller.analyze_Silverality" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots the results of the Silverality Analysis, after undumping them</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Puller.characterise_eigenvects">
+<tt class="descclassname">PolyPharma.neo4j_analyzer.Matrix_Puller.</tt><tt class="descname">characterise_eigenvects</tt><big>(</big><em>N_of_eigenvectors_to_characterise</em>, <em>Type='Adj'</em><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Puller.html#characterise_eigenvects"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Puller.characterise_eigenvects" title="Permalink to this definition">¶</a></dt>
+<dd><p>Recovers statistics over eigenvectors in order to remove excessively connected nodes.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>N_of_eigenvectors_to_characterise</strong> &#8211; number of eigenvectors we would like to characterise</li>
+<li><strong>Type</strong> &#8211; if Type=&#8217;Adj&#8217;, the adjacency matrix eigenvectors will be processed. Otherwise a discrete laplacian will be used</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Names of the elements in the 100 biggest eigenvectors in the adjacency matrix</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Puller.checkMatrix">
+<tt class="descclassname">PolyPharma.neo4j_analyzer.Matrix_Puller.</tt><tt class="descname">checkMatrix</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Puller.html#checkMatrix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Puller.checkMatrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Verifyes that the adjacency matrix has no elements with unexpected values. If there are, prints them, then throws
+an exception</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Note:</th><td class="field-body">this constitutes one of the possible partitioning of the matrix into functional clusters.</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Raises Exception:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body">&#8220;Unexpected behavior among adjacency nodes!&#8221; if adjacency matrix has unexpected elements</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Puller.check_Silverality">
+<tt class="descclassname">PolyPharma.neo4j_analyzer.Matrix_Puller.</tt><tt class="descname">check_Silverality</tt><big>(</big><em>sample_size</em>, <em>iterations</em><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Puller.html#check_Silverality"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Puller.check_Silverality" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks how rapidly the information passing through the neighbouring proteins decreases
+with the distance between them</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sample_size</strong> &#8211; number of roots for the Silverality verification</li>
+<li><strong>iterations</strong> &#8211; how many passes for the Silverality verification</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Puller.columnSort">
+<tt class="descclassname">PolyPharma.neo4j_analyzer.Matrix_Puller.</tt><tt class="descname">columnSort</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Puller.html#columnSort"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Puller.columnSort" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the degree of adjacency for each node and writes it out in a human-readable format to a file specified in
+Dumps.Adj_degree</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Puller.compute_sample_circulation_intensity">
+<tt class="descclassname">PolyPharma.neo4j_analyzer.Matrix_Puller.</tt><tt class="descname">compute_sample_circulation_intensity</tt><big>(</big><em>Sample</em>, <em>epsilon=1e-10</em>, <em>array_v=''</em><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Puller.html#compute_sample_circulation_intensity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Puller.compute_sample_circulation_intensity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Attention, this method shoyld never be called. Normally all the major IO operations on information arrays should be performed with the compute and store
+circulation method</p>
+<p>performs the information circulation calculation in agreement with the publication by Misiuro et al, but with algorithm slightly modified for 
+more rapid computation of information circulation</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>array_v</strong> &#8211; Array version, allowing it to vbe differentiated from other arrays on storage</li>
+<li><strong>Sample</strong> (<em>list of ints</em>) &#8211; List of row/column numbers that are to be used in the computation (~170 for a computation converging in less then an hour)</li>
+<li><strong>epsilon</strong> (<em>float</em>) &#8211; corrective factor for the calculation of Cholesky matrix. defaults to 1e-10</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Puller.compute_sample_circulation_intensity_minimal">
+<tt class="descclassname">PolyPharma.neo4j_analyzer.Matrix_Puller.</tt><tt class="descname">compute_sample_circulation_intensity_minimal</tt><big>(</big><em>Sample</em>, <em>epsilon=1e-10</em><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Puller.html#compute_sample_circulation_intensity_minimal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Puller.compute_sample_circulation_intensity_minimal" title="Permalink to this definition">¶</a></dt>
+<dd><p>performs the information circulation calculation in agreement with the publication by Misiuro et al, but with algorithm slightly modified for 
+more rapid computation of information circulation.</p>
+<p>The informativities are calculated only by using the uniprot proteins as the source and extraction points.
+This reduces the number of interations from  25k to 5 and the number of LU decompositions in a similar manner</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>Sample</strong> (<em>list of ints</em>) &#8211; List of row/column numbers that are to be used in the computation (~170 for a computation converging in less then an hour)</li>
+<li><strong>epsilon</strong> (<em>float</em>) &#8211; corrective factor for the calculation of Cholesky matrix. defaults to 1e-10</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">the informativity array</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Puller.get_Current_all">
+<tt class="descclassname">PolyPharma.neo4j_analyzer.Matrix_Puller.</tt><tt class="descname">get_Current_all</tt><big>(</big><em>Voltages</em>, <em>J</em><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Puller.html#get_Current_all"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Puller.get_Current_all" title="Permalink to this definition">¶</a></dt>
+<dd><p>Recovers the current for all the nodes</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>J</strong> (<em>numpy array</em>) &#8211; Conductance matrix</li>
+<li><strong>Voltages</strong> (<em>numpy array</em>) &#8211; Informativity gradient in each node obtained by the solution of the matrix equation ConductanceMatrix*Voltage = J</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Currents throug each node.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">csc_matrix</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Puller.processEigenVectors">
+<tt class="descclassname">PolyPharma.neo4j_analyzer.Matrix_Puller.</tt><tt class="descname">processEigenVectors</tt><big>(</big><em>nbiggest</em>, <em>Type='Adj'</em><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Puller.html#processEigenVectors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Puller.processEigenVectors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Recovers &#8220;nbiggest&#8221; elements with the biggest association to a given eigenvector and returns them.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>nbiggest</strong> &#8211; number of biggest elements in a eigenvector to analyse</li>
+<li><strong>Type</strong> &#8211; if Type=&#8217;Adj&#8217;, the adjacency matrix eigenvectors will be processed. Otherwise a discrete laplacian will be used</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">biggest element indexes in colums, where each column corresponds to the eigenvector and each column contains nbiggest elements</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/PolyPharma.neo4j_analyzer.Matrix_Puller.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="index.html">PolyPharma 0.2a3 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Andrei Kucharavy.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

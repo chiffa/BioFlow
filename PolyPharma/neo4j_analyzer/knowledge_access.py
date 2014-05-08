@@ -555,7 +555,7 @@ def get_Max_Informativities(FilteringAbsolute, FilteringFraction):
 # CANCEL: add the modules for matrix operations over the GO annotation
 # DONE: add the propagation of the informativity along different GO Terms
 
-# CANCEL: possible acceleration with by using the reverse_dicitonary filter: count how many targets are present in the filter.
+# CANCEL: possible acceleration with by using the reverse_dicitonary flter: count how many targets are present in the flter.
 # However the use of a fully accelerated Dict is pretty much as efficient.
 
 

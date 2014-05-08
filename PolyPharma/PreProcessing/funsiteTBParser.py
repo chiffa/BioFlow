@@ -1,14 +1,16 @@
 """
 funsite here refers to funsite.sdsc.org
+
+This module is no more functional a nd was kept for the legacy reasons
 """
 __author__ = 'ank'
 
 
-from DBLoader import TableBuilder
+# from DBLoader import TableBuilder
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-import configs as Conf
+import PolyPharma.configs as Conf
 
 lite_engine = create_engine(Conf.dbLocation, echo=False)
 

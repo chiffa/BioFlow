@@ -1,0 +1,262 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>PolyPharma.neo4j_analyzer.knowledge_access_analysis module &mdash; PolyPharma 0.2a3 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.2a3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="PolyPharma 0.2a3 documentation" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="index.html">PolyPharma 0.2a3 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-PolyPharma.neo4j_analyzer.knowledge_access_analysis">
+<span id="polypharma-neo4j-analyzer-knowledge-access-analysis-module"></span><h1>PolyPharma.neo4j_analyzer.knowledge_access_analysis module<a class="headerlink" href="#module-PolyPharma.neo4j_analyzer.knowledge_access_analysis" title="Permalink to this headline">¶</a></h1>
+<p>Builds on the knowledge</p>
+<dl class="function">
+<dt id="PolyPharma.neo4j_analyzer.knowledge_access_analysis.KG_gen">
+<tt class="descclassname">PolyPharma.neo4j_analyzer.knowledge_access_analysis.</tt><tt class="descname">KG_gen</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/knowledge_access_analysis.html#KG_gen"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.knowledge_access_analysis.KG_gen" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="PolyPharma.neo4j_analyzer.knowledge_access_analysis.compare_to_blanc">
+<tt class="descclassname">PolyPharma.neo4j_analyzer.knowledge_access_analysis.</tt><tt class="descname">compare_to_blanc</tt><big>(</big><em>blanc_model_size</em>, <em>zoom_range_selector</em>, <em>real_knowledge_interface=None</em>, <em>p_val=0.05</em><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/knowledge_access_analysis.html#compare_to_blanc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.knowledge_access_analysis.compare_to_blanc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Recovers the statistics on the circulation nodes and shows the visual of a circulation system</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="PolyPharma.neo4j_analyzer.knowledge_access_analysis.decide_regeneration">
+<tt class="descclassname">PolyPharma.neo4j_analyzer.knowledge_access_analysis.</tt><tt class="descname">decide_regeneration</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/knowledge_access_analysis.html#decide_regeneration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.knowledge_access_analysis.decide_regeneration" title="Permalink to this definition">¶</a></dt>
+<dd><p>A script to decide at what point it is better to recompute a new a network rather then go through the time it
+requires to be upickled.
+The current decision is that for the samples of the size of ~ 100 Uniprots, we are better off unpickling from 4
+and more by factor 2 and by factor 10 from 9
+Previous experimets have shown that memoization with pickling incurred no noticeable delay on samples of up to
+50 UPs, but that the storage limit on mongo DB was rapidly exceeded, leading us to create an allocated dump file.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="PolyPharma.neo4j_analyzer.knowledge_access_analysis.get_estimated_time">
+<tt class="descclassname">PolyPharma.neo4j_analyzer.knowledge_access_analysis.</tt><tt class="descname">get_estimated_time</tt><big>(</big><em>samples</em>, <em>sample_sizes</em>, <em>operations_per_sec=2.2</em><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/knowledge_access_analysis.html#get_estimated_time"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.knowledge_access_analysis.get_estimated_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Short time to estimate the time required for the generation of random saples</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>samples</strong> &#8211; size of the sample</li>
+<li><strong>sample_sizes</strong> &#8211; times each sample size is sampled</li>
+<li><strong>operations_per_sec</strong> &#8211; complex operations per second</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="PolyPharma.neo4j_analyzer.knowledge_access_analysis.linindep_GO_groups">
+<tt class="descclassname">PolyPharma.neo4j_analyzer.knowledge_access_analysis.</tt><tt class="descname">linindep_GO_groups</tt><big>(</big><em>size</em><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/knowledge_access_analysis.html#linindep_GO_groups"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.knowledge_access_analysis.linindep_GO_groups" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs the analysis of linerly independent GO groups</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>size</strong> &#8211; </td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="PolyPharma.neo4j_analyzer.knowledge_access_analysis.perform_clustering">
+<tt class="descclassname">PolyPharma.neo4j_analyzer.knowledge_access_analysis.</tt><tt class="descname">perform_clustering</tt><big>(</big><em>internode_tension</em>, <em>clusters</em>, <em>show=True</em><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/knowledge_access_analysis.html#perform_clustering"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.knowledge_access_analysis.perform_clustering" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs a clustering on the voltages of the nodes,</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>internode_tension</strong> &#8211; </td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="PolyPharma.neo4j_analyzer.knowledge_access_analysis.select">
+<tt class="descclassname">PolyPharma.neo4j_analyzer.knowledge_access_analysis.</tt><tt class="descname">select</tt><big>(</big><em>tri_array</em>, <em>array_column</em>, <em>selection_span</em><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/knowledge_access_analysis.html#select"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.knowledge_access_analysis.select" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convinient small function to select a from tri_array all the elements where the column number array_column
+is within the selection span</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>tri_array</strong> &#8211; the matrix on which we will be performing the selection</li>
+<li><strong>array_column</strong> &#8211; column on which the selection span will be applied</li>
+<li><strong>selection_span</strong> &#8211; span for which we are going to keep the column.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="PolyPharma.neo4j_analyzer.knowledge_access_analysis.show_corrs">
+<tt class="descclassname">PolyPharma.neo4j_analyzer.knowledge_access_analysis.</tt><tt class="descname">show_corrs</tt><big>(</big><em>tri_corr_array</em>, <em>meancorrs</em>, <em>eigvals</em>, <em>selector</em>, <em>test_tri_corr_array</em>, <em>test_meancorr</em>, <em>eigval</em>, <em>resamples</em><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/knowledge_access_analysis.html#show_corrs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.knowledge_access_analysis.show_corrs" title="Permalink to this definition">¶</a></dt>
+<dd><p>A general function that performs demonstration of an example of random samples of the same size as our sample
+and of our sample and conducts the statistical tests on wherther any of nodes or functional groups in our
+sample are non-random</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>tri_corr_array</strong> &#8211; [[current, informativity, confusion_potential], ...] - characteristics of the random samples</li>
+<li><strong>meancorrs</strong> &#8211; [[cluster size, average internode connection], ...] - characteristics of clustering random samples with the same parameters</li>
+<li><strong>eigvals</strong> &#8211; eigenvalues associated to the interconnection matrix of random samples</li>
+<li><strong>selector</strong> &#8211; range on which we would like to visually zoom and plot a histogram</li>
+<li><strong>test_tri_corr_array</strong> &#8211; [[current, informativity, confusion_potential], ...] - characteristics of the true sample. If none, nothing happens</li>
+<li><strong>test_meancorr</strong> &#8211; [[cluster size, average internode connection], ...] - characteristics of clustering the true sample</li>
+<li><strong>eigval</strong> &#8211; eigenvalues associated to the interconnection matrix of the true sample</li>
+<li><strong>resamples</strong> &#8211; how many random samples we analyzed for the default model</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="PolyPharma.neo4j_analyzer.knowledge_access_analysis.spawn_sampler">
+<tt class="descclassname">PolyPharma.neo4j_analyzer.knowledge_access_analysis.</tt><tt class="descname">spawn_sampler</tt><big>(</big><em>sample_size_list_plus_iteration_list</em><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/knowledge_access_analysis.html#spawn_sampler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.knowledge_access_analysis.spawn_sampler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Spawns a sampler initalized from the default GO_Interface</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>sample_size_list_plus_iteration_list</strong> &#8211; combined list of sample swizes and iterations (requried for Pool.map usage)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="PolyPharma.neo4j_analyzer.knowledge_access_analysis.spawn_sampler_pool">
+<tt class="descclassname">PolyPharma.neo4j_analyzer.knowledge_access_analysis.</tt><tt class="descname">spawn_sampler_pool</tt><big>(</big><em>pool_size</em>, <em>sample_size_list</em>, <em>interation_list_per_pool</em><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/knowledge_access_analysis.html#spawn_sampler_pool"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.knowledge_access_analysis.spawn_sampler_pool" title="Permalink to this definition">¶</a></dt>
+<dd><p>Spawns a pool of samplers of the information flow within the GO system</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pool_size</strong> &#8211; number of processes that are performing the sample pooling and analyzing</li>
+<li><strong>sample_size_list</strong> &#8211; size of the sample list</li>
+<li><strong>interation_list_per_pool</strong> &#8211; number of iterations performing the pooling of the samples in each list</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/PolyPharma.neo4j_analyzer.knowledge_access_analysis.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="index.html">PolyPharma 0.2a3 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Andrei Kucharavy.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>
