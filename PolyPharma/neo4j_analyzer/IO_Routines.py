@@ -1,7 +1,7 @@
 __author__ = 'ank'
 
 import pickle
-from PolyPharma.configs import tmp_coll
+# from PolyPharma.configs import tmp_coll
 
 
 def write_to_csv(filename, array):
@@ -46,29 +46,29 @@ def undump_object(dump_filename):
     return pickle.load(DF)
 
 
-def dump_object_to_mongoDB(object, object_properties_dict):
-    """
-    A general interface to dump the objects to the mongo database
-
-    :param object: object we are willing to dump
-    :param object_properties_dict: string dict of properties of the object we are willing to dump
-    """
-    object_properties_dict.update({'Payload':pickle.dumps(object)})
-    tmp_coll.insert(object_properties_dict)
-
-
-def recover_and_undump_from_MongoDB(property_index_dict, upper_bound = 30):
-    """
-    A general interface to recover the objects from the mongo database based on a property list
-
-    :param upper_bound: upper bound on how many payload-containing packages the request could return
-    :param property_index_dict: string dict mapping the property keys to the property values
-    :return: list of object containers responding to the property
-    """
-    if tmp_coll.find(property_index_dict).count()>upper_bound:
-        return Exception('Number of obejcts covered by this cursor exceeds the upper bound specified in the paramenters')
-    postlist = []
-    for post in tmp_coll.find(property_index_dict):
-        postlist.append(post)
-
-    return postlist
+# def dump_object_to_mongoDB(object, object_properties_dict):
+#     """
+#     A general interface to dump the objects to the mongo database
+#
+#     :param object: object we are willing to dump
+#     :param object_properties_dict: string dict of properties of the object we are willing to dump
+#     """
+#     object_properties_dict.update({'Payload':pickle.dumps(object)})
+#     tmp_coll.insert(object_properties_dict)
+#
+#
+# def recover_and_undump_from_MongoDB(property_index_dict, upper_bound = 30):
+#     """
+#     A general interface to recover the objects from the mongo database based on a property list
+#
+#     :param upper_bound: upper bound on how many payload-containing packages the request could return
+#     :param property_index_dict: string dict mapping the property keys to the property values
+#     :return: list of object containers responding to the property
+#     """
+#     if tmp_coll.find(property_index_dict).count()>upper_bound:
+#         return Exception('Number of obejcts covered by this cursor exceeds the upper bound specified in the paramenters')
+#     postlist = []
+#     for post in tmp_coll.find(property_index_dict):
+#         postlist.append(post)
+#
+#     return postlist

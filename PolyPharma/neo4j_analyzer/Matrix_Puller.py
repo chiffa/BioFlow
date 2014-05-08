@@ -51,7 +51,7 @@ def characterise_eigenvects(N_of_eigenvectors_to_characterise, Type='Adj'):
         norm = np.linalg.norm(MG.adj_eigenvects, axis = 1)
     else:
         norm = np.linalg.norm(MG.cond_eigenvects, axis = 1)
-    sbigest_args = np.argsort(norm)[-N_of_eigenvectors_to_characterise:]
+    sbigest_args = np.argsort(norm)[- N_of_eigenvectors_to_characterise:]
 
     for arg in reversed(sbigest_args):
         print 'Matrix row: %s, \t Row Norm: %s, \t Description: %s' % (arg,  norm[arg],  MG.get_descriptor_for_index(arg))
@@ -470,7 +470,7 @@ def Compute_ponderated_info_circulation(UPs_2Binding_Affs):
 if __name__ == "__main__":
     # characterise_eigenvects(100, Type = 'Cond')
     # checkMatrix()
-    # processEigenVectors(15,Type = 'Cond')
+    processEigenVectors(15,Type = 'Cond')
     # columnSort()
     # lst = [22811, 18147, 13023]
     # print compute_sample_circulation_intensity_minimal(lst)

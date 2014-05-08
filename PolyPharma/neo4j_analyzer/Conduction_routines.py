@@ -5,12 +5,16 @@ __author__ = 'ank'
 
 import random
 import numpy as np
-from scipy.sparse import lil_matrix, csc_matrix, diags, triu
+from scipy.sparse import csc_matrix, diags, triu
 from PolyPharma.configs import fudge
 # noinspection PyUnresolvedReferences
 from scikits.sparse.cholmod import cholesky
 from itertools import combinations, repeat
 from copy import copy
+from PolyPharma.Utils.Linalg_routines import cluster_nodes, submatrix, remaineder_matrix, Lapl_normalize
+from scipy.sparse import lil_matrix
+from scipy.sparse.linalg import eigsh
+from matplotlib import pyplot as plt
 
 
 def sparse_abs(sparse_matrix):
@@ -103,11 +107,11 @@ def get_current_through_nodes(non_redundant_current_matrix):
     return ret
 
 
-def get_pairwise_flow(conductivity_laplacian, idxlist, cancellation=False, potential_lead=True):
+def get_pairwise_flow(conductivity_laplacian, idxlist, cancellation=False, potential_dominated=True):
     """
+    Performs a pairwaise computation and summation of the
 
-
-    :param potential_lead: if set to True, the computation is done by injecting constant potential difference into the
+    :param potential_dominated: if set to True, the computation is done by injecting constant potential difference into the
                             system, not a constant current.
     :param conductivity_laplacian:  Laplacian representing the conductivity
     :param idxlist: list of the indexes acting as current sources/sinks
@@ -119,24 +123,69 @@ def get_pairwise_flow(conductivity_laplacian, idxlist, cancellation=False, poten
     Current_accumulator = lil_matrix(conductivity_laplacian.shape)
     solver = cholesky(csc_matrix(conductivity_laplacian), fudge)
 
-    counter = 0
-
-    for i, j in combinations(idxlist, 2):
-        counter+=1
-        print 'getting pairwise flow %s' % counter
+    for counter, (i, j) in enumerate(combinations(idxlist, 2)):
+        # print 'getting pairwise flow %s out of %s' % (counter, len(idxlist)**2/2)
         IO_array = build_IO_currents_array((i,j), conductivity_laplacian.shape)
         voltages = get_voltages_with_solver(solver, IO_array)
         currents_full, current_upper = get_current_matrix(conductivity_laplacian, voltages)
-        if potential_lead:
+
+        if potential_dominated:
             potential_diff = abs(voltages[i,0]-voltages[j,0])
             current_upper = current_upper/potential_diff
 
         Current_accumulator += sparse_abs(current_upper)
 
     if cancellation:
-        Current_accumulator[Current_accumulator<len(idxlist)-1] = 0
+        ln = len(idxlist)
+        Current_accumulator = Current_accumulator/(ln*(ln-1)/2)
 
     return Current_accumulator
+
+
+def get_better_pairwise_flow(conductivity_laplacian, idxlist, cancellation=True, memoized=False, memory_source=None):
+    """
+    Performs a pairwaise computation and summation of the
+
+
+    :param memory_source: dictionary of memoized tension and current flow through the circuit
+    :param conductivity_laplacian:  Laplacian representing the conductivity
+    :param idxlist: list of the indexes acting as current sources/sinks
+    :param cancellation: if True, the conductance values that are induced by single nodes interactions will be cancelled.
+
+    :return: current matrix for the flow system
+    :return: current through each node.
+    """
+    UP_pair2voltage_current = {}
+    Current_accumulator = lil_matrix(conductivity_laplacian.shape)
+    solver = cholesky(csc_matrix(conductivity_laplacian), fudge)
+
+    for counter, (i, j) in enumerate(combinations(set(idxlist), 2)):
+
+        # print 'getting pairwise flow %s out of %s' % (counter, len(idxlist)*(len(idxlist)-1)/2)
+
+        if memory_source:
+            potential_diff, current_upper = memory_source[tuple(sorted((i, j)))]
+
+        else:
+            IO_array = build_IO_currents_array((i, j), conductivity_laplacian.shape)
+            voltages = get_voltages_with_solver(solver, IO_array)
+            _, current_upper = get_current_matrix(conductivity_laplacian, voltages)
+            potential_diff = abs(voltages[i, 0]-voltages[j, 0])
+            UP_pair2voltage_current[tuple(sorted((i, j)))] = (potential_diff, current_upper)
+
+        if potential_diff!=0:
+            current_upper = current_upper/potential_diff
+        else:
+            print i, j
+            raise Warning('Potential difference is nul')
+        Current_accumulator += sparse_abs(current_upper)
+
+    if cancellation:
+        ln = len(idxlist)
+        Current_accumulator = Current_accumulator/(ln*(ln-1)/2)
+
+    return Current_accumulator, UP_pair2voltage_current
+
 
 
 def sample_pairwise_flow(conductivity_laplacian, idxlist, resamples, cancellation=False):
@@ -157,7 +206,7 @@ def sample_pairwise_flow(conductivity_laplacian, idxlist, resamples, cancellatio
     List_of_pairs = []
 
     for _ in repeat(None, resamples):
-        L = idxlist.copy()
+        L = copy(idxlist)
         random.shuffle(L)
         List_of_pairs += zip(L[:len(L)/2], L[len(L)/2:])
 
@@ -168,9 +217,10 @@ def sample_pairwise_flow(conductivity_laplacian, idxlist, resamples, cancellatio
         Current_accumulator += sparse_abs(current_upper)
 
     if cancellation:
-        Current_accumulator[Current_accumulator < resamples] = 0
+        ln = len(idxlist)
+        Current_accumulator = Current_accumulator/(ln/2*resamples)
 
-    return Current_accumulator, get_current_through_nodes(Current_accumulator)
+    return Current_accumulator
 
 
 def laplacian_reachable_filter(laplacian, reachable_indexes):
@@ -216,3 +266,51 @@ def get_current_with_reach_limitations(inflated_laplacian, Idx_pair, reach_limit
     current_upper = current_upper / potential_diff
 
     return current_upper, potential_diff
+
+
+def perform_clustering(internode_tension, clusters, show=True):
+    """
+    Performs a clustering on the voltages of the nodes,
+
+    :param internode_tension:
+    """
+    idxgroup = list(set([ item for key in internode_tension.iterkeys() for item in key ]))
+    local_index = dict((UP, i) for i, UP in enumerate(idxgroup))
+    rev_idx = dict((i, UP) for i, UP in enumerate(idxgroup))
+    relmat = lil_matrix((len(idxgroup), len(idxgroup)))
+
+    for (UP1, UP2), tension in internode_tension.iteritems():
+        relmat[local_index[UP1], local_index[UP2]] = -1.0/tension
+        relmat[local_index[UP2], local_index[UP1]] = -1.0/tension
+        relmat[local_index[UP2], local_index[UP2]] += 1.0/tension
+        relmat[local_index[UP1], local_index[UP1]] += 1.0/tension
+
+    groups = cluster_nodes(relmat, clusters)
+
+    relmat = Lapl_normalize(relmat)
+    eigenvals, _ = eigsh(relmat)
+    relmat = -relmat
+    relmat.setdiag(1)
+
+    groupsets = []
+    group2average_offdiag = []
+    for i in range(0, clusters):
+        group_selector = groups==i
+        group_idxs = group_selector.nonzero()[0].tolist()
+        group2average_offdiag.append((tuple(rev_idx[idx] for idx in group_idxs), len(group_idxs), submatrix(relmat, group_idxs)))
+        groupsets.append(group_idxs)
+
+    remainder = remaineder_matrix(relmat, groupsets)
+
+    clustidx = np.array([item for itemset in groupsets for item in itemset])
+    relmat = relmat[:, clustidx]
+    relmat = relmat[clustidx, :]
+
+    mean_corr_array = np.array([[items, mean_corr] for _, items, mean_corr in group2average_offdiag])
+
+    if show:
+        plt.imshow(relmat.toarray(), cmap='jet', interpolation="nearest")
+        plt.colorbar()
+        plt.show()
+
+    return np.array(group2average_offdiag), remainder, mean_corr_array, eigenvals

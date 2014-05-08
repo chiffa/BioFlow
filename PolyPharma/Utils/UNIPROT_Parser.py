@@ -14,6 +14,21 @@ NameIgnore = ['Contains', 'Allergen', 'EC=', 'Flags: ', 'CD_antigen', 'INN=']
 defDict = {'Acnum':[], 'Names':{'Full':'', 'AltNames':[]}, 'GeneRefs':{'Names':[], 'OrderedLocusNames':[], 'ORFNames':[]},
            'Ensembl':[], 'KEGG':[], 'EMBL':[], 'GO':[], 'Pfam':[], 'SUPFAM':[], 'PDB':[]}
 
+
+lst1 = [
+        'YOR031W',
+        'YOR001W',
+        'YOL107W',
+        'YOL124C',
+        'YOL040C',
+        'YOR184W',
+        'YOR374W',
+        'YOR125C',
+        'YOL087C',
+        'YOR334W',
+    ]
+
+
 # TODO: refactor to avoid any call to the expensive function unless a specific function has been build
 
 # Uniprot = {}  # {SWISSPROT_ID:{
@@ -66,8 +81,8 @@ def parse_GeneRefs(Dico,Line):
     :param Dico:
     :param Line:
     """
-    words = filter(lambda a:a != '', str(Line.strip() + ' ').split('; '))
-    for word in words[1:]:
+    words = filter(lambda a:a != '', str(Line[2:].strip() + ' ').split('; '))
+    for word in words:
         if 'ORFNames' in word:
             for subword in word.split('=')[1].strip().split(','):
                 Dico['GeneRefs']['ORFNames'].append(subword.strip())
@@ -222,7 +237,12 @@ def get_access_dicts():
 if __name__ == '__main__':
     Uniprot = Parse_Uniprot()
     print len(Uniprot)
-    names_Dict = get_Names_dict()
-    print len(names_Dict)
-    access_dict = get_access_dicts()
-    print len(access_dict)
+    # names_Dict = get_Names_dict()
+    # print len(names_Dict)
+    # access_dict = get_access_dicts()
+    # print len(access_dict)
+    # accumulator = []
+    # for id, aclist in Uniprot.iteritems():
+    #     for item in aclist['Acnum']:
+    #         accumulator.append(item)
+    # print accumulator

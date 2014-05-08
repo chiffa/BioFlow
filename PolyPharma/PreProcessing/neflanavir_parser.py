@@ -1,8 +1,8 @@
-'''
-Created on Jul 23, 2013
+"""
 
-@author: andrei
-'''
+"""
+__author__ = 'ank'
+
 
 subdict={
 'cell division protein kinase 6' : 'cell division protein kinase 6',

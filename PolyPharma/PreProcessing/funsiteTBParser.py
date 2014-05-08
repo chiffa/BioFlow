@@ -1,10 +1,8 @@
-'''
-Created on Mar 18, 2013
-
-@author: akucahravy
-
+"""
 funsite here refers to funsite.sdsc.org
-'''
+"""
+__author__ = 'ank'
+
 
 from DBLoader import TableBuilder
 from sqlalchemy import create_engine

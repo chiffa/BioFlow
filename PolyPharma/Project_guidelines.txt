@@ -231,16 +231,30 @@ Unit-testing
     is working as expected.
     - Create smaller unit-tests to check if matrix manipulations work correctly
 
+
 Traceback of programming decisions:
 ===================================
 
 GO Analysis and visualization
 #############################
 
-Size and memoization pattern of the GO current system:
-******************************************************
+GO Terms analysis techniques
+----------------------------
+* Perform the statistics on the flow amount and the relation betweeen the flow, informativity and confusion potential
+* Perform the statistics on the flow amount and tension for the partitions of initial set of proteins to analyse
+* Recover the analysis of the idependent linear groups of the GO terms.
 
-The current decision is that for the samples of the size of ~ 100 Uniprots, we are better off unpickling from 4
-    and more by factor 2 and by factor 10 from 9
-    Previous experimets have shown that memoization with pickling incurred no noticeable delay on samples of up to
-    50 UPs, but that the storage limit on mongo DB was rapidly exceeded, leading us to create an allocated dump file.
+* Mutual information about the flow and different characteristics, such as informativity and confusion potential (which are
+in fact bijective)
+
+
+
+
+Size and memoization pattern of the GO current system:
+------------------------------------------------------
+
+The current decision is that for the samples of the size of ~ 100 Uniprots, we are better off unpickling from 4 and more
+by factor 2 and by factor 10 from 9. Previous experimets have shown that memoization with pickling incurred no noticeable
+delay on samples of up to 50 UPs, but that the storage limit on mongo DB was rapidly exceeded, leading us to create an
+allocated dump file.
+

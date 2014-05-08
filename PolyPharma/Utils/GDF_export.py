@@ -4,6 +4,7 @@ Module containing an objet that allows an easy export of the matrix-encoded info
 __author__ = 'ank'
 
 import numpy as np
+from scipy.sparse import lil_matrix
 from PolyPharma.configs import Dumps
 
 
@@ -21,7 +22,7 @@ class GDF_export_Interface(object):
     :param current_Matrix: matrix of currents from which we wish to rendred the GDF
     """
 
-    Authorised_names = ['VARCHAR', 'DOUBLE', 'BOOLEAN', 'DOUBLE']
+    Authorised_names = ['VARCHAR', 'DOUBLE', 'BOOLEAN']
 
 
     def __init__(self, target_fname, field_names, field_types, node_properties_dict, mincurrent, Idx2Label, Label2Idx, current_Matrix, directed=False):
@@ -31,10 +32,11 @@ class GDF_export_Interface(object):
         self.node_properties = node_properties_dict
         self.Idx2Label = Idx2Label
         self.Label2Idx = Label2Idx
-        self.mincurrent = mincurrent*current_Matrix.max() # minimal current for which we will be performing filtering out of the conductances and nodes through whichthe trafic is below that limit
-        self.current_Matrix = current_Matrix # matrix where M[i,j] = current intesitu from i to j. Triangular superior, if current is from j to i, current is negative
+        self.current_Matrix = lil_matrix(current_Matrix) # matrix where M[i,j] = current intesitu from i to j. Triangular superior, if current is from j to i, current is negative
         # current retrieval for the output should be done by getting all the non-zero terms of the current matrix and then filtering out terms/lines that have too little absolute current
         # rebuilding a new current Matrix and creating a dict to map the relations from the previous matrix into a new one.
+        self.mincurrent = mincurrent*self.current_Matrix[self.current_Matrix.nonzero()].toarray().max()
+        # minimal current for which we will be performing filtering out of the conductances and nodes through whichthe trafic is below that limit
         self.directed = directed
         self.verify()
 
@@ -97,6 +99,10 @@ class GDF_export_Interface(object):
 
 
     def write(self):
+        """
+        Performs all the writing routines and output file closing all at once
+
+        """
         self.write_nodedefs()
         self.write_nodes()
         self.write_edgedefs()

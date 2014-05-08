@@ -1,8 +1,8 @@
-'''
-Created on Aug 1, 2013
+"""
 
-@author: andrei
-'''
+"""
+__author__ = 'ank'
+
 
 subdict2={
 'Thymidylate synthase' : 'thymidylate synthase',
