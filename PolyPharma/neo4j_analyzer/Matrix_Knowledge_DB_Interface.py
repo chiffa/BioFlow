@@ -647,8 +647,9 @@ class GO_Interface(object):
         :return: {GO:[node current, pure GO informativity, Number of reachable nodes]}
         """
         charDict = {}
+        limcurr = max(node_current.values())*limit
         for GO in self.GO2Num.iterkeys():
-            if node_current[GO] > limit:
+            if node_current[GO] > limcurr:
                 charDict[GO] = [ node_current[GO],
                                  self.GO2_Pure_Inf[GO],
                                  len(self.GO2UP_Reachable_nodes[GO])]

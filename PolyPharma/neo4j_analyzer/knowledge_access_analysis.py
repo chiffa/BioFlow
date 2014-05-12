@@ -238,12 +238,17 @@ def compare_to_blanc(blanc_model_size, zoom_range_selector, real_knowledge_inter
         _, node_currs = pickle.loads(sample['currents'])
         tensions = pickle.loads(sample['voltages'])
         _, _, meancorr, eigvals = perform_clustering(tensions, 3, show=False)
-        meancorr_acccumulator.append(np.array(meancorr))
-        eigval_accumulator.append(eigvals)
+        meancorr_acccumulator.append(np.array(meancorr)) ###
+        eigval_accumulator.append(eigvals)              ###
         Dic_system = KG.format_Node_props(node_currs)
         curr_inf_conf = list(Dic_system.itervalues())
-        curr_inf_conf_general.append(np.array(curr_inf_conf).T)
+        curr_inf_conf_general.append(np.array(curr_inf_conf).T)  ###
         count = i
+        if Dic_system == {}:
+            del meancorr_acccumulator[-1]
+            del curr_inf_conf_general[-1]
+            del eigval_accumulator[-1]
+            print "exceptional state: nothing in Dic_system."
 
     # This part declares the pre-operators required for the verification of a real sample
 
@@ -372,14 +377,14 @@ def auto_analyze():
         if len(MG1.analytic_Uniprots)<200:
             spawn_sampler_pool(4, [len(MG1.analytic_Uniprots)], [6])
             MG1.build_extended_conduction_system()
-            nr_nodes, nr_groups = compare_to_blanc(len(MG1.analytic_Uniprots), [0.5, 0.6], MG1, p_val=0.9)
+            nr_nodes, nr_groups = compare_to_blanc(len(MG1.analytic_Uniprots), [1100, 1300], MG1, p_val=0.9)
         else:
             sampling_depth = max(200**2/len(MG1.analytic_Uniprots), 5)
             print 'lenght: %s \t sampling depth: %s \t, estimated_time: %s' % (len(MG1.analytic_Uniprots), sampling_depth, len(MG1.analytic_Uniprots)*sampling_depth/2/6/60)
-            spawn_sampler_pool(4, [len(MG1.analytic_Uniprots)], [6], sparse_rounds=sampling_depth)
+            # spawn_sampler_pool(4, [len(MG1.analytic_Uniprots)], [6], sparse_rounds=sampling_depth)
             MG1.build_extended_conduction_system(sparse_samples=sampling_depth)
             MG1.export_conduction_system()
-            nr_nodes, nr_groups = compare_to_blanc(len(MG1.analytic_Uniprots), [0.5, 0.6], MG1, p_val=0.9, sparse_rounds=sampling_depth)
+            nr_nodes, nr_groups = compare_to_blanc(len(MG1.analytic_Uniprots), [1100, 1300], MG1, p_val=0.9, sparse_rounds=sampling_depth)
 
         MG1.export_conduction_system()
         for group in nr_groups:

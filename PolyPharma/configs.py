@@ -30,6 +30,7 @@ Hint_csv = ReadSourceDBs['HINT']  #attention, for me it is tab-separated
 Protein_aboundances = ReadSourceDBs['ABOUNDANCES']
 sedEffFileName = ReadSourceDBs['SIDER']  #TODO: improve mappings from Drugs to secondary effects.
 Chromosome_source = ReadSourceDBs['CHROMOSOMES']
+BioGRID = ReadSourceDBs['BIOGIRD']
 Chromosome_file_filter = Sources['CHROMOSOMES']['namepattern']
 
 ReadSourcePredictions = sourcefile_compilator(Predictions)
@@ -67,12 +68,14 @@ Interactome_rand_samp = db[pymongo_prefix+"Interactome_samples"+pymongo_suffix]
 #  Defines how much confidence we have into the different interactions
 #######################################################################
 # Refers to the groups of links between the nodes that should be treated in the same manner
+# TODO: refactor to use more sane maps
 edge_type_filters = {
     "Group" : ["is_part_of_collection"],                                  # Group relation group
     "Same" : ["is_same"],                                                 # Same relation group
     "Reaction" : ["is_Catalysant", "is_reaction_particpant"],             # Reaction relation group
     "Contact_interaction" : ["is_part_of_complex", "is_Regulant"],        # Contact_interaction relation group
     "HiNT_Contact_interaction" : ["is_interacting"],                      # Contact_interaction relation group
+    "BioGRID_Contact_interaction": ["is_weakly_interacting"],
     "possibly_same" : ["is_possibly_same"],
     }
 
@@ -82,6 +85,7 @@ Adjacency_Martix_Dict = {"Group":0.5,
              "Same":1,
              "Reaction":0.33,
              "Contact_interaction":0.33,
+             "weak_contact": 0.15,
              "possibly_same":0.1,
              }
 
@@ -91,6 +95,7 @@ Conductance_Matrix_Dict = {"Group":0.5,
              "Same":100,
              "Reaction":1,
              "Contact_interaction":1,
+             "weak_contact":0.5,
              "possibly_same":0.1,
              }
 

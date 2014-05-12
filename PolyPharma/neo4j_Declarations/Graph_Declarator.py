@@ -88,6 +88,7 @@ class Graph(Neo4jGraph):
         
         # Interacts physically:
         self.is_interacting = self.build_proxy(DDT.is_interacting)
+        self.is_weakly_interacting = self.build_proxy(DDT.is_weakly_interacting)
         
 
 DatabaseGraph = Graph()

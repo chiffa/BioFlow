@@ -196,6 +196,11 @@ class is_same(CostumLink):
 class is_interacting(CostumLink):   # According to the Yu lab hint database for humans there is one-to-one interaction
     label = "is_interacting"
 
+class is_weakly_interacting(CostumLink): # interaction according to BioGRID
+    label = "is_weakly_interacting"
+    throughput = String()      # high or all
+    confidence = Float()        # float
+
 Anot_Node_ptypes = [    'name',
                         'eCNumber',
                         'ENSEMBL',
@@ -211,5 +216,6 @@ Anot_Node_ptypes = [    'name',
                         'UNIPROT_EMBL_AC|~',
                         'UNIPROT_EMBL_ID|~',
                         'UNIPROT_PDB',
+                        'UNIPROT_GeneID',
 
         ]

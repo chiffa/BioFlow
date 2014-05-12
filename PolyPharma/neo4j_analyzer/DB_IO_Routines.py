@@ -154,7 +154,7 @@ def look_up_Annot_set(p_load_list, p_type=''):
     warnlist =[key for key, value in retdict.iteritems() if value == []]
     for warnId in warnlist:
         print Warning('following ID has no correspondance in the database: '+warnId)
-    return retdict, retlist
+    return warnlist, retdict, retlist
 
 
 def Erase_custom_fields():
@@ -297,7 +297,7 @@ if __name__ == "__main__":
     # print Look_up_Annot_Node('ENSG00000131981', 'UNIPROT_Ensembl')
 
 
-    resdict, reslist = look_up_Annot_set(lst1)
+    _, resdict, reslist = look_up_Annot_set(['MYPN'])
     pp.pprint(resdict)
     print reslist
     pass

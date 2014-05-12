@@ -314,14 +314,23 @@ class MatrixGetter(object):
         self.UP_Links, self.UPSet, c = get_expansion(self.SecSet, edge_type_filters["Same"])
         characterise('Uniprot Links', self.UP_Links, self.UPSet, c)
 
-        self.HiNT_Links, self.FullSet, c = get_expansion(self.UPSet, edge_type_filters["HiNT_Contact_interaction"])
-        characterise('HiNT Links', self.HiNT_Links, self.FullSet, c)
+        self.HiNT_Links, self.pre_FullSet, c = get_expansion(self.UPSet, edge_type_filters["HiNT_Contact_interaction"])
+        characterise('HiNT Links', self.HiNT_Links, self.pre_FullSet, c)
 
         for i in range(0, 5):
-            HiNT_Links2, FullSet2, c = get_expansion(self.FullSet, edge_type_filters["HiNT_Contact_interaction"])
-            self.FullSet = FullSet2
+            HiNT_Links2, FullSet2, c = get_expansion(self.pre_FullSet, edge_type_filters["HiNT_Contact_interaction"])
+            self.pre_FullSet = FullSet2
             self.HiNT_Links = HiNT_Links2
-            characterise('HiNT Links ' + str(i) + ' ', self.HiNT_Links, self.FullSet, c)
+            characterise('HiNT Links ' + str(i) + ' ', self.HiNT_Links, self.pre_FullSet, c)
+
+        self.BioGRID_Links, self.FullSet, c = get_expansion(self.pre_FullSet, edge_type_filters["BioGRID_Contact_interaction"])
+        characterise('BioGRID Links', self.BioGRID_Links, self.FullSet, c)
+
+        for i in range(0, 5):
+            BioGRID_Links2, FullSet2, c = get_expansion(self.FullSet, edge_type_filters["BioGRID_Contact_interaction"])
+            self.FullSet = FullSet2
+            self.BioGRID_Links = BioGRID_Links2
+            characterise('HiNT Links ' + str(i) + ' ', self.BioGRID_Links, self.FullSet, c)
 
         self.Super_Links, self.ExpSet, c = get_expansion(self.FullSet, edge_type_filters["possibly_same"])
         characterise('Looks_similar Links', self.Super_Links, self.ExpSet, c)
@@ -454,6 +463,11 @@ class MatrixGetter(object):
             for val in self.HiNT_Links[key]:
                 element = (self.NodeID2MatrixNumber[key], self.NodeID2MatrixNumber[val])
                 self.fast_row_insert(element, "Contact_interaction")
+
+        for key in self.BioGRID_Links.keys():
+            for val in self.BioGRID_Links[key]:
+                element = (self.NodeID2MatrixNumber[key], self.NodeID2MatrixNumber[val])
+                self.fast_row_insert(element, "weak_contact")
 
         if self.full_impact:
             for key in self.Super_Links.keys():
