@@ -681,7 +681,7 @@ class MatrixGetter(object):
                                                                                    cancellation=cancellation,
                                                                                    memoized=memoized,
                                                                                    memory_source=self.UP2voltage_and_circ)
-            self.UP2voltage_and_circ.update(UP_pair2voltage_current)
+            # self.UP2voltage_and_circ.update(UP_pair2voltage_current)
             self.UP2UP_voltages.update(dict((key, val1) for key, (val1, val2) in UP_pair2voltage_current.iteritems()))
 
         if incremental:
@@ -706,8 +706,9 @@ class MatrixGetter(object):
         :return: {Entity:[node current, node degree]}
         """
         charDict = {}
+        limcurr = max(node_current.values())*limit
         for NodeID, i in self.NodeID2MatrixNumber.iteritems():
-            if node_current[NodeID] > limit:
+            if node_current[NodeID] > limcurr:
                 charDict[NodeID] = [ node_current[NodeID],
                                      self.Conductance_Matrix[i, i]]
         return charDict

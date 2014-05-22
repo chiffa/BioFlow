@@ -153,6 +153,7 @@ class Outputs(object):
     GO_GDF_output = prefix + '/GO_Analysis_output.gdf'
     Interactome_GDF_output = prefix + '/Interactome_Analysis_output.gdf'
     RNA_pre_filter_output = prefix + '/RNA_pre_filter_output.tsv'
+    cross_refs = prefix + '/cross_refs.tsv'
 
 ###########################################################################################
 #  Defines what nodes are to be masked to avoid conduction ovrload of non-informative nodes
@@ -169,6 +170,7 @@ if os.path.isfile(Dumps.Forbidden_IDs):
 fudge = 1e-10
 
 RNA_source = "/home/ank/Documents/External_Predictions/Ben_RNA_seq/counts.tsv"
+
 
 if __name__ == "__main__":
     pp=PrettyPrinter(indent=4)

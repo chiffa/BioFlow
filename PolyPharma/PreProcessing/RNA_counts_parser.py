@@ -4,13 +4,16 @@ in genes.
 """
 __author__ = 'ank'
 
-from PolyPharma.configs import RNA_source, Dumps
-from PolyPharma.neo4j_analyzer.DB_IO_Routines import look_up_Annot_Node
+from PolyPharma.configs import RNA_source, Dumps, Outputs
+from PolyPharma.neo4j_analyzer.DB_IO_Routines import look_up_Annot_Node, recover_annotation, transcription
 from PolyPharma.neo4j_analyzer.IO_Routines import dump_object
 from collections import defaultdict
 import numpy as np
 from scipy import special
-from csv import reader
+from csv import reader, writer
+from pprint import PrettyPrinter
+
+pp = PrettyPrinter(indent=4)
 
 pre_dict = {    1:0.80,
                 2:0.89,
@@ -53,6 +56,13 @@ def import_counts_table(counts_size):
                 uxon_lenghts = np.concatenate( (uxon_lenghts, np.array([[ float(row[1])]])))
     print table.shape
     return gene_names[1: , :], uxon_lenghts[1: , :], table[1: , :]
+
+
+def write_out_annotation(Node_Id_list):
+
+    with open(Outputs.cross_refs,'w') as outfile:
+        _writer = writer(outfile, dialect='excel-tab')
+        _writer.writerows(Node_Id_list)
 
 
 def counts_filter(table, experiment_groups, filter_level):
@@ -117,7 +127,7 @@ def erf_test(rpkm_table, experiment_groups, intergorups, target_p_value=0.05):
         filtr = p_val < refined_threshold
         group_comparison.append((p_val, filtr))
 
-    return  group_comparison
+    return  group_comparison,
 
 
 def run_test_suite(experiments, experimental_groups, intergroups, count_filter_level, false_discovery_rate):
@@ -146,6 +156,8 @@ def run_test_suite(experiments, experimental_groups, intergroups, count_filter_l
 
     dump_object(Dumps.RNA_seq_counts_compare, [names[filtr1, 1], names[filtr2, 1]])
 
+    return
+
 
 if __name__ == "__main__":
 
@@ -153,4 +165,29 @@ if __name__ == "__main__":
     exp_groups = [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
     intergroups = [[0, 1], [0, 2]]
 
-    run_test_suite(9, exp_groups, intergroups, 10, 0.05)
+    # run_test_suite(9, exp_groups, intergroups, 10, 0.05)
+
+
+
+    names, lengths, counts = import_counts_table(9)
+    flter = counts_filter(counts, exp_groups,  filter_level=10)
+
+    names = names[flter, :]
+    lengths = lengths[flter, :]
+    counts = counts[flter, :]
+
+    rpkms = translate_to_rpkm(lengths, counts)
+
+    annot = np.array(recover_annotation(transcription,'UNIPROT_Ensembl')[1])
+
+    fltr2 = np.in1d(names[:,0], annot[:,0])
+    fltr3 = np.in1d(annot[:,0], names[:,0])
+
+    reslist = np.concatenate((names[fltr2, :], rpkms[fltr2, :]), axis=1)
+    reannot = annot[fltr3,:]
+
+
+    write_out_annotation(np.concatenate((reannot[reannot[:,0].argsort()],reslist[reslist[:,0].argsort()]), axis=1).tolist())
+
+
+
