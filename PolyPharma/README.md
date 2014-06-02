@@ -61,3 +61,14 @@ On *Debian*:   ```  $ sudo apt-get install suitesparse suitesparse-dev ```
 
 On *Fedora* / *RHCP* / *CentOS*:    ```  $ sudo yum install suitesparse suitesparse_devel ```
 
+
+
+Required files:
+===============
+
+**Databases:**
+* OBO 1.2 file of GO terms and relations, available at: http://www.geneontology.org/GO.downloads.ontology.shtml
+* UNIUPROT-SWISSPROT text database file available at: http://www.uniprot.org/downloads
+* Reactome.org "Events in the BioPax level 3" file, available at: http://www.reactome.org/download/index.html
+* HiNT binary interaction files for the organisms of interest, availble at: http://hint.yulab.org/batch.html
+* BioGRID files in the tab2 format, available at http://thebiogrid.org/download.php
