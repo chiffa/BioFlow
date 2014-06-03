@@ -44,6 +44,3 @@ nosetests.xml
 
 # All the config Files that contain private information
 *_private.ini
-
-# For the moment all the config Files
-*.ini

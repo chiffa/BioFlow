@@ -42,7 +42,6 @@ Project dependencies:
 * JPype (x86_64 build)
 * Cython
 * neo4j-embedded (x86_64 build)
-* SQLAlchemy (latests x86_64 build)
 * NumPy (latest x86_64)
 * SciPy (latest x86_64)
 * bulbs (via pip)
