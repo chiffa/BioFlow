@@ -1,0 +1,320 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>PolyPharma.neo4j_Importers.GO_UNIPROT_Inserter &mdash; PolyPharma 0.2a3 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.2a3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="PolyPharma 0.2a3 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">PolyPharma 0.2a3 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for PolyPharma.neo4j_Importers.GO_UNIPROT_Inserter</h1><div class="highlight"><pre>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">Created on Jul 5, 2013</span>
+
+<span class="sd">@author: andrei</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="kn">from</span> <span class="nn">PolyPharma.Utils.GO_Structure_Parser</span> <span class="kn">import</span> <span class="n">fill_GO_Terms</span>
+<span class="kn">from</span> <span class="nn">PolyPharma.Utils.UNIPROT_Parser</span> <span class="kn">import</span> <span class="n">Parse_Uniprot</span>
+<span class="kn">from</span> <span class="nn">PolyPharma.neo4j_Declarations.Graph_Declarator</span> <span class="kn">import</span> <span class="n">DatabaseGraph</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">,</span>
+                    <span class="n">format</span><span class="o">=</span><span class="s">&#39;</span><span class="si">%(levelname)-8s</span><span class="s"> </span><span class="si">%(message)s</span><span class="s">&#39;</span><span class="p">,</span>
+                    <span class="n">datefmt</span><span class="o">=</span><span class="s">&#39;%m-</span><span class="si">%d</span><span class="s"> %H:%M&#39;</span><span class="p">,</span>
+                    <span class="n">filename</span><span class="o">=</span><span class="s">&#39;Go_UP_insert_log.log&#39;</span><span class="p">,</span>
+                    <span class="n">filemode</span><span class="o">=</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
+
+
+<span class="n">console</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">StreamHandler</span><span class="p">()</span>
+<span class="n">console</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>
+<span class="n">formatter</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%(levelname)-8s</span><span class="s"> </span><span class="si">%(message)s</span><span class="s">&#39;</span><span class="p">)</span>
+<span class="n">console</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">formatter</span><span class="p">)</span>
+<span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">console</span><span class="p">)</span>
+
+
+<span class="n">GODict</span> <span class="o">=</span> <span class="p">{}</span> <span class="c"># Stores relations between GO IDs and the objects in the neo4j database</span>
+<span class="n">UniprotDict</span> <span class="o">=</span> <span class="p">{}</span> <span class="c"># Stores relations between the SWISSPROT UNIPROT IDs and the neo4j database objects</span>
+
+
+<div class="viewcode-block" id="import_GOs"><a class="viewcode-back" href="../../../PolyPharma.neo4j_Importers.GO_UNIPROT_Inserter.html#PolyPharma.neo4j_Importers.GO_UNIPROT_Inserter.import_GOs">[docs]</a><span class="k">def</span> <span class="nf">import_GOs</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Imports GOs by loading GO_Terms and GO_Terms structure from Utils.GO_Structure_Parser</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c"># generate terms:</span>
+    <span class="n">GO_Terms</span><span class="p">,</span> <span class="n">GO_Terms_Structure</span> <span class="o">=</span> <span class="n">fill_GO_Terms</span><span class="p">()</span>
+    <span class="c"># Create Terms</span>
+    <span class="n">leng</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">GO_Terms</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">GO_Term</span> <span class="ow">in</span> <span class="n">GO_Terms</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;GO </span><span class="si">%s</span><span class="s">&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="s">&quot;{0:.2f}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">leng</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)))</span>
+        <span class="n">primary</span> <span class="o">=</span> <span class="n">DatabaseGraph</span><span class="o">.</span><span class="n">GOTerm</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">ID</span> <span class="o">=</span> <span class="n">GO_Terms</span><span class="p">[</span><span class="n">GO_Term</span><span class="p">][</span><span class="s">&#39;id&#39;</span><span class="p">],</span>
+                                              <span class="n">Name</span> <span class="o">=</span> <span class="n">GO_Terms</span><span class="p">[</span><span class="n">GO_Term</span><span class="p">][</span><span class="s">&#39;name&#39;</span><span class="p">],</span>
+                                              <span class="n">displayName</span> <span class="o">=</span> <span class="n">GO_Terms</span><span class="p">[</span><span class="n">GO_Term</span><span class="p">][</span><span class="s">&#39;name&#39;</span><span class="p">],</span>
+                                              <span class="n">Namespace</span> <span class="o">=</span> <span class="n">GO_Terms</span><span class="p">[</span><span class="n">GO_Term</span><span class="p">][</span><span class="s">&#39;namespace&#39;</span><span class="p">],</span>
+                                              <span class="n">Definition</span> <span class="o">=</span> <span class="n">GO_Terms</span><span class="p">[</span><span class="n">GO_Term</span><span class="p">][</span><span class="s">&#39;def&#39;</span><span class="p">])</span>
+        <span class="n">GODict</span><span class="p">[</span><span class="n">GO_Term</span><span class="p">]</span> <span class="o">=</span> <span class="n">primary</span>
+    <span class="c"># Create the structure between them:</span>
+    <span class="n">leng</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">GO_Terms_Structure</span><span class="p">)</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">relation</span> <span class="ow">in</span> <span class="n">GO_Terms_Structure</span><span class="p">:</span>
+        <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;rel </span><span class="si">%s</span><span class="s">&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="s">&quot;{0:.2f}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">leng</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)))</span>
+        <span class="n">primary</span> <span class="o">=</span> <span class="n">GODict</span><span class="p">[</span><span class="n">relation</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+        <span class="n">secondary</span> <span class="o">=</span> <span class="n">GODict</span><span class="p">[</span><span class="n">relation</span><span class="p">[</span><span class="mi">2</span><span class="p">]]</span>
+        <span class="n">Type</span> <span class="o">=</span> <span class="n">relation</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">Type</span> <span class="o">==</span> <span class="s">&#39;is_a&#39;</span><span class="p">:</span>
+            <span class="n">DatabaseGraph</span><span class="o">.</span><span class="n">is_a_go</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">primary</span><span class="p">,</span> <span class="n">secondary</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">Type</span> <span class="o">==</span> <span class="s">&#39;part_of&#39;</span><span class="p">:</span>
+            <span class="n">DatabaseGraph</span><span class="o">.</span><span class="n">is_part_of_go</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">primary</span><span class="p">,</span> <span class="n">secondary</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s">&#39;regul&#39;</span> <span class="ow">in</span> <span class="n">Type</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">Type</span> <span class="o">==</span> <span class="s">&#39;positively_regulates&#39;</span><span class="p">:</span>
+                <span class="n">DatabaseGraph</span><span class="o">.</span><span class="n">is_regulant</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">primary</span><span class="p">,</span> <span class="n">secondary</span><span class="p">,</span>
+                                                 <span class="n">controlType</span> <span class="o">=</span> <span class="s">&#39;ACTIVATES&#39;</span><span class="p">,</span>
+                                                 <span class="n">ID</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="s">&#39;GO&#39;</span> <span class="o">+</span> <span class="n">primary</span><span class="o">.</span><span class="n">ID</span> <span class="o">+</span> <span class="n">secondary</span><span class="o">.</span><span class="n">ID</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">Type</span> <span class="o">==</span> <span class="s">&#39;negatively_regulates&#39;</span><span class="p">:</span>
+                <span class="n">DatabaseGraph</span><span class="o">.</span><span class="n">is_regulant</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">primary</span><span class="p">,</span> <span class="n">secondary</span><span class="p">,</span>
+                                                 <span class="n">controlType</span> <span class="o">=</span> <span class="s">&#39;INHIBITS&#39;</span><span class="p">,</span>
+                                                 <span class="n">ID</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="s">&#39;GO&#39;</span> <span class="o">+</span> <span class="n">primary</span><span class="o">.</span><span class="n">ID</span> <span class="o">+</span> <span class="n">secondary</span><span class="o">.</span><span class="n">ID</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">DatabaseGraph</span><span class="o">.</span><span class="n">is_regulant</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">primary</span><span class="p">,</span> <span class="n">secondary</span><span class="p">,</span>
+                                                 <span class="n">ID</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="s">&#39;GO&#39;</span> <span class="o">+</span> <span class="n">primary</span><span class="o">.</span><span class="n">ID</span> <span class="o">+</span> <span class="n">secondary</span><span class="o">.</span><span class="n">ID</span><span class="p">))</span>
+
+</div>
+<div class="viewcode-block" id="getExistingAcnums"><a class="viewcode-back" href="../../../PolyPharma.neo4j_Importers.GO_UNIPROT_Inserter.html#PolyPharma.neo4j_Importers.GO_UNIPROT_Inserter.getExistingAcnums">[docs]</a><span class="k">def</span> <span class="nf">getExistingAcnums</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Attemtps to retrieve acnums from the neo4j database</span>
+
+<span class="sd">    :return: dict that maps acnums to nodes in the database to which they point (Reactome proteins)</span>
+
+<span class="sd">    :raise Exception: if the generator that performs a lookup of existing uniprot acnum annotation nodes is null (Reactome</span>
+<span class="sd">    wasn&#39;t imported yet)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">annot_node_with_acc_nums_generator</span> <span class="o">=</span> <span class="n">DatabaseGraph</span><span class="o">.</span><span class="n">AnnotNode</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">lookup</span><span class="p">(</span><span class="n">ptype</span> <span class="o">=</span> <span class="s">&#39;UniProt&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">annot_node_with_acc_nums_generator</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;Reactome was not loaded or contains no acc_num x-refs to Uniprot&quot;</span><span class="p">)</span>
+    <span class="n">AcnumList</span> <span class="o">=</span> <span class="p">{}</span> <span class="c">#acnum to AnnotNode</span>
+    <span class="k">for</span> <span class="n">annot_node</span> <span class="ow">in</span> <span class="n">annot_node_with_acc_nums_generator</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">annot_node</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">annot_node_ID</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">annot_node</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">AnnotObj</span> <span class="o">=</span> <span class="n">DatabaseGraph</span><span class="o">.</span><span class="n">vertices</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">annot_node_ID</span><span class="p">)</span>
+            <span class="n">AcnumList</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">AnnotObj</span><span class="o">.</span><span class="n">payload</span><span class="p">)]</span> <span class="o">=</span> <span class="n">AnnotObj</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">AcnumList</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;Reactome was not loaded or contains no acc_num x-refs to Uniprot&quot;</span><span class="p">)</span>
+    <span class="n">ReactProtList</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">acc_num</span> <span class="ow">in</span> <span class="n">AcnumList</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">ReactProtGen</span> <span class="o">=</span> <span class="n">AcnumList</span><span class="p">[</span><span class="n">acc_num</span><span class="p">]</span><span class="o">.</span><span class="n">bothV</span><span class="p">()</span>
+        <span class="n">ReactProtList</span><span class="p">[</span><span class="n">acc_num</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">ReactProtGen</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">vertex</span> <span class="ow">in</span> <span class="n">ReactProtGen</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">vertex</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="n">ReactProtList</span><span class="p">[</span><span class="n">acc_num</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">vertex</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;1 </span><span class="si">%s</span><span class="s">&#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">ReactProtList</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">ReactProtList</span>
+    
+</div>
+<div class="viewcode-block" id="manage_acnums"><a class="viewcode-back" href="../../../PolyPharma.neo4j_Importers.GO_UNIPROT_Inserter.html#PolyPharma.neo4j_Importers.GO_UNIPROT_Inserter.manage_acnums">[docs]</a><span class="k">def</span> <span class="nf">manage_acnums</span><span class="p">(</span><span class="n">acnum</span><span class="p">,</span> <span class="n">Acnum2RProts</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    implements an accelerated dict-assisted buffering on retrieval of relations between accession numbers and uniprot IDs</span>
+
+<span class="sd">    :param acnum: accession number</span>
+<span class="sd">    :param Acnum2RProts: Buffering dictionary mapping accession numbers to protein IDs</span>
+<span class="sd">    :return: protein list if acession number has been buffered, nothing otherwise</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">acnum</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">Acnum2RProts</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">return</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">acnum</span> <span class="ow">in</span> <span class="n">Acnum2RProts</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">Acnum2RProts</span><span class="p">[</span><span class="n">acnum</span><span class="p">]</span>
+
+</div>
+<div class="viewcode-block" id="link_annotation"><a class="viewcode-back" href="../../../PolyPharma.neo4j_Importers.GO_UNIPROT_Inserter.html#PolyPharma.neo4j_Importers.GO_UNIPROT_Inserter.link_annotation">[docs]</a><span class="k">def</span> <span class="nf">link_annotation</span><span class="p">(</span><span class="n">CH_PROT_ID</span><span class="p">,</span> <span class="n">p_type</span><span class="p">,</span> <span class="n">p_load</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Links a uniprote node to an annotation node</span>
+
+<span class="sd">    :param CH_PROT_ID: swissprot ID</span>
+<span class="sd">    :param p_type: type of the annotation</span>
+<span class="sd">    :param p_load: content of the annotation</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">prot_node</span> <span class="o">=</span> <span class="n">UniprotDict</span><span class="p">[</span><span class="n">CH_PROT_ID</span><span class="p">]</span>
+    <span class="n">annot_node</span> <span class="o">=</span> <span class="n">DatabaseGraph</span><span class="o">.</span><span class="n">AnnotNode</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">ptype</span> <span class="o">=</span> <span class="n">p_type</span><span class="p">,</span> <span class="n">payload</span> <span class="o">=</span> <span class="n">p_load</span><span class="p">)</span>
+    <span class="n">DatabaseGraph</span><span class="o">.</span><span class="n">is_annotated</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">prot_node</span><span class="p">,</span><span class="n">annot_node</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="import_UNIPROTS"><a class="viewcode-back" href="../../../PolyPharma.neo4j_Importers.GO_UNIPROT_Inserter.html#PolyPharma.neo4j_Importers.GO_UNIPROT_Inserter.import_UNIPROTS">[docs]</a><span class="k">def</span> <span class="nf">import_UNIPROTS</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Imports the whole parsed uniprot dictionary from the utils.uniprot parser into the database</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">Uniprot</span> <span class="o">=</span> <span class="n">Parse_Uniprot</span><span class="p">()</span>
+    <span class="n">Acnums2RProts</span> <span class="o">=</span> <span class="n">getExistingAcnums</span><span class="p">()</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">leng</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">Acnums2RProts</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="k">for</span> <span class="n">CH_PROT_ID</span> <span class="ow">in</span> <span class="n">Uniprot</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">set1</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">Uniprot</span><span class="p">[</span><span class="n">CH_PROT_ID</span><span class="p">][</span><span class="s">&#39;Acnum&#39;</span><span class="p">])</span>
+        <span class="n">set2</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">Acnums2RProts</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="c">#Create uniprot terms</span>
+        <span class="n">primary</span> <span class="o">=</span> <span class="n">DatabaseGraph</span><span class="o">.</span><span class="n">UNIPORT</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">ID</span> <span class="o">=</span> <span class="n">CH_PROT_ID</span><span class="p">,</span>
+                                       <span class="n">displayName</span> <span class="o">=</span> <span class="n">Uniprot</span><span class="p">[</span><span class="n">CH_PROT_ID</span><span class="p">][</span><span class="s">&#39;Names&#39;</span><span class="p">][</span><span class="s">&#39;Full&#39;</span><span class="p">],</span>
+                                       <span class="n">main_connex</span> <span class="o">=</span> <span class="bp">False</span><span class="p">)</span>
+        <span class="c"># check inclusion in Reactome</span>
+        <span class="c"># TODO: if all explodes on the next import, check the line below and revert the import behavior of Uniprot</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">set1</span><span class="o">.</span><span class="n">isdisjoint</span><span class="p">(</span><span class="n">set2</span><span class="p">):</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Uniprot </span><span class="si">%s</span><span class="s"> intersects Reactome on the following acnums: </span><span class="si">%s</span><span class="s">&#39;</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">CH_PROT_ID</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">set1</span><span class="p">)))</span>
+            <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">primary</span><span class="o">.</span><span class="n">involved</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="c"># TODO: if all explodes on the next import, check the line above and revert the import behavior of Uniprot</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;UNIPROT </span><span class="si">%s</span><span class="s">&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="s">&quot;{0:.2f}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">leng</span><span class="p">)</span><span class="o">*</span><span class="mi">100</span><span class="p">)))</span>
+        <span class="c"># Add the newly created uniprot to the buffer</span>
+        <span class="n">UniprotDict</span><span class="p">[</span><span class="n">CH_PROT_ID</span><span class="p">]</span> <span class="o">=</span> <span class="n">primary</span>
+        <span class="c"># Insert references to GOs</span>
+        <span class="k">for</span> <span class="n">GO_Term</span> <span class="ow">in</span> <span class="n">Uniprot</span><span class="p">[</span><span class="n">CH_PROT_ID</span><span class="p">][</span><span class="s">&#39;GO&#39;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">GO_Term</span> <span class="ow">in</span> <span class="n">GODict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">secondary</span> <span class="o">=</span> <span class="n">GODict</span><span class="p">[</span><span class="n">GO_Term</span><span class="p">]</span>
+                <span class="n">DatabaseGraph</span><span class="o">.</span><span class="n">is_go_annotation</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">primary</span><span class="p">,</span> <span class="n">secondary</span><span class="p">)</span>
+        <span class="c"># Find intersection between logged acnums and acnums pointed out by the Reactome.org. Create a direct bridge between a reactome ID and a SWISSPROT ID</span>
+        <span class="k">for</span> <span class="n">acnum</span> <span class="ow">in</span> <span class="n">Uniprot</span><span class="p">[</span><span class="n">CH_PROT_ID</span><span class="p">][</span><span class="s">&#39;Acnum&#39;</span><span class="p">]:</span>
+            <span class="n">proteins</span> <span class="o">=</span> <span class="n">manage_acnums</span><span class="p">(</span><span class="n">acnum</span><span class="p">,</span> <span class="n">Acnums2RProts</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">proteins</span> <span class="ow">is</span> <span class="ow">not</span> <span class="p">[]:</span>
+                <span class="k">for</span> <span class="n">prot</span> <span class="ow">in</span> <span class="n">proteins</span><span class="p">:</span>
+                    <span class="n">secondary</span> <span class="o">=</span> <span class="n">prot</span>
+                    <span class="n">DatabaseGraph</span><span class="o">.</span><span class="n">is_same</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">primary</span><span class="p">,</span> <span class="n">secondary</span><span class="p">)</span>
+                    <span class="n">j</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">for</span> <span class="n">acc_num</span> <span class="ow">in</span> <span class="n">Uniprot</span><span class="p">[</span><span class="n">CH_PROT_ID</span><span class="p">][</span><span class="s">&#39;Acnum&#39;</span><span class="p">]:</span> <span class="c"># Already linked via reactome, but with a different identifier</span>
+            <span class="n">link_annotation</span><span class="p">(</span><span class="n">CH_PROT_ID</span><span class="p">,</span> <span class="s">&#39;UNIPROT_Accnum&#39;</span><span class="p">,</span> <span class="n">acc_num</span><span class="p">)</span>
+        <span class="n">link_annotation</span><span class="p">(</span><span class="n">CH_PROT_ID</span><span class="p">,</span> <span class="s">&#39;UNIPROT_Name&#39;</span><span class="p">,</span> <span class="n">Uniprot</span><span class="p">[</span><span class="n">CH_PROT_ID</span><span class="p">][</span><span class="s">&#39;Names&#39;</span><span class="p">][</span><span class="s">&#39;Full&#39;</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">Uniprot</span><span class="p">[</span><span class="n">CH_PROT_ID</span><span class="p">][</span><span class="s">&#39;Names&#39;</span><span class="p">][</span><span class="s">&#39;AltNames&#39;</span><span class="p">]:</span>
+            <span class="n">link_annotation</span><span class="p">(</span><span class="n">CH_PROT_ID</span><span class="p">,</span> <span class="s">&#39;UNIPROT_Name&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">.</span><span class="n">upper</span><span class="p">())</span>
+
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">Uniprot</span><span class="p">[</span><span class="n">CH_PROT_ID</span><span class="p">][</span><span class="s">&#39;GeneRefs&#39;</span><span class="p">][</span><span class="s">&#39;Names&#39;</span><span class="p">]:</span>
+            <span class="n">link_annotation</span><span class="p">(</span><span class="n">CH_PROT_ID</span><span class="p">,</span> <span class="s">&#39;UNIPROT_GeneName&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">.</span><span class="n">upper</span><span class="p">())</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">Uniprot</span><span class="p">[</span><span class="n">CH_PROT_ID</span><span class="p">][</span><span class="s">&#39;GeneRefs&#39;</span><span class="p">][</span><span class="s">&#39;OrderedLocusNames&#39;</span><span class="p">]:</span>
+            <span class="n">link_annotation</span><span class="p">(</span><span class="n">CH_PROT_ID</span><span class="p">,</span> <span class="s">&#39;UNIPROT_GeneOL&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">.</span><span class="n">upper</span><span class="p">())</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">Uniprot</span><span class="p">[</span><span class="n">CH_PROT_ID</span><span class="p">][</span><span class="s">&#39;GeneRefs&#39;</span><span class="p">][</span><span class="s">&#39;ORFNames&#39;</span><span class="p">]:</span>
+            <span class="n">link_annotation</span><span class="p">(</span><span class="n">CH_PROT_ID</span><span class="p">,</span> <span class="s">&#39;UNIPROT_GeneORF&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">.</span><span class="n">upper</span><span class="p">())</span>
+
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">Uniprot</span><span class="p">[</span><span class="n">CH_PROT_ID</span><span class="p">][</span><span class="s">&#39;Ensembl&#39;</span><span class="p">]):</span>
+            <span class="n">link_annotation</span><span class="p">(</span><span class="n">CH_PROT_ID</span><span class="p">,</span> <span class="s">&#39;UNIPROT_Ensembl&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">.</span><span class="n">upper</span><span class="p">())</span>
+
+        <span class="k">for</span> <span class="n">dico</span> <span class="ow">in</span> <span class="n">Uniprot</span><span class="p">[</span><span class="n">CH_PROT_ID</span><span class="p">][</span><span class="s">&#39;EMBL&#39;</span><span class="p">]:</span>
+            <span class="n">link_annotation</span><span class="p">(</span><span class="n">CH_PROT_ID</span><span class="p">,</span> <span class="s">&#39;UNIPROT_EMBL_AC|&#39;</span><span class="o">+</span><span class="n">dico</span><span class="p">[</span><span class="s">&#39;status&#39;</span><span class="p">]</span><span class="o">+</span><span class="s">&#39;|&#39;</span><span class="o">+</span><span class="n">dico</span><span class="p">[</span><span class="s">&#39;type&#39;</span><span class="p">],</span> <span class="n">dico</span><span class="p">[</span><span class="s">&#39;Accession&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">())</span>
+            <span class="n">link_annotation</span><span class="p">(</span><span class="n">CH_PROT_ID</span><span class="p">,</span> <span class="s">&#39;UNIPROT_EMBL_ID|&#39;</span><span class="o">+</span><span class="n">dico</span><span class="p">[</span><span class="s">&#39;status&#39;</span><span class="p">]</span><span class="o">+</span><span class="s">&#39;|&#39;</span><span class="o">+</span><span class="n">dico</span><span class="p">[</span><span class="s">&#39;type&#39;</span><span class="p">],</span> <span class="n">dico</span><span class="p">[</span><span class="s">&#39;ID&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">())</span>
+
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">Uniprot</span><span class="p">[</span><span class="n">CH_PROT_ID</span><span class="p">][</span><span class="s">&#39;PDB&#39;</span><span class="p">]:</span>
+            <span class="n">link_annotation</span><span class="p">(</span><span class="n">CH_PROT_ID</span><span class="p">,</span> <span class="s">&#39;UNIPROT_PDB&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">.</span><span class="n">upper</span><span class="p">())</span>
+
+
+</div>
+<div class="viewcode-block" id="getGOs"><a class="viewcode-back" href="../../../PolyPharma.neo4j_Importers.GO_UNIPROT_Inserter.html#PolyPharma.neo4j_Importers.GO_UNIPROT_Inserter.getGOs">[docs]</a><span class="k">def</span> <span class="nf">getGOs</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    re-loads GO</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ObjectType</span> <span class="o">=</span> <span class="n">DatabaseGraph</span><span class="o">.</span><span class="n">GOTerm</span>
+    <span class="k">for</span> <span class="n">elt</span> <span class="ow">in</span> <span class="n">ObjectType</span><span class="o">.</span><span class="n">get_all</span><span class="p">():</span>
+        <span class="n">ID</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">elt</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">primary</span> <span class="o">=</span> <span class="n">ObjectType</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ID</span><span class="p">)</span>
+        <span class="n">GODict</span><span class="p">[</span><span class="n">primary</span><span class="o">.</span><span class="n">ID</span><span class="p">]</span> <span class="o">=</span> <span class="n">primary</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;GO Loaded&#39;</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="getUniprots"><a class="viewcode-back" href="../../../PolyPharma.neo4j_Importers.GO_UNIPROT_Inserter.html#PolyPharma.neo4j_Importers.GO_UNIPROT_Inserter.getUniprots">[docs]</a><span class="k">def</span> <span class="nf">getUniprots</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Pre-loads uniprots</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ObjectType</span> <span class="o">=</span> <span class="n">DatabaseGraph</span><span class="o">.</span><span class="n">UNIPORT</span>
+    <span class="k">for</span> <span class="n">elt</span> <span class="ow">in</span> <span class="n">ObjectType</span><span class="o">.</span><span class="n">get_all</span><span class="p">():</span>
+        <span class="n">CH_PROT_ID</span> <span class="o">=</span> <span class="n">elt</span><span class="o">.</span><span class="n">ID</span>
+        <span class="n">ID</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">elt</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">primary</span> <span class="o">=</span> <span class="n">ObjectType</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ID</span><span class="p">)</span>
+        <span class="n">UniprotDict</span><span class="p">[</span><span class="n">CH_PROT_ID</span><span class="p">]</span> <span class="o">=</span> <span class="n">primary</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;UNIPROT Loaded&#39;</span><span class="p">)</span>
+    
+</div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">import_UNIPROTS</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">PolyPharma 0.2a3 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Andrei Kucharavy.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

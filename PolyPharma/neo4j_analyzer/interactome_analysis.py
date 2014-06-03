@@ -1,25 +1,18 @@
+"""
+New analytical routines for the interactome
+"""
 __author__ = 'ank'
 
 
-# reimplements the routines from the knowledge access analysis
-# for the reactome elements
-
 import pickle
 import numpy as np
-
-from copy import copy
-from random import shuffle
 from collections import namedtuple
-
 from multiprocessing import Pool
-
 from pprint import PrettyPrinter
 from matplotlib import pyplot as plt
 from Matrix_Interactome_DB_interface import  MatrixGetter
-from Matrix_Knowledge_DB_Interface import GO_Interface
 from PolyPharma.configs import Interactome_rand_samp, Dumps
 from PolyPharma.Utils.dataviz import kde_compute
-from PolyPharma.Utils.Linalg_routines import analyze_eigvects
 from PolyPharma.neo4j_analyzer.Conduction_routines import perform_clustering
 from PolyPharma.neo4j_analyzer.IO_Routines import undump_object
 
@@ -30,6 +23,11 @@ MG.fast_load()
 
 
 def MG_gen():
+    """
+    Retrieves an "interactome_interface" object
+
+    :return:
+    """
     MG = MatrixGetter(True, False)
     MG.fast_load()
     print MG.pretty_time()
@@ -192,7 +190,14 @@ def compare_to_blanc(blanc_model_size, zoom_range_selector, real_interactome_int
     """
     Recovers the statistics on the circulation nodes and shows the visual of a circulation system
 
-    :return:
+    :param blanc_model_size: the number of uniprots in the blanc model
+    :param zoom_range_selector: tuple representing the coverage range for which we would want to see the histogram of current distributions
+    :param real_interactome_interface: The interactome_Interface that has run the current computation
+    :param p_val: desired p_value for the returned terms
+    :param sparse_rounds: if set to a number, sparse computation technique would be used with the number of rounds equal to the number
+    :type sparse_rounds: int
+    :param clusters: specifies the number of clusters we want to have
+    :return: None if no significant nodes, the node and group characterisitc dictionaries otherwise
     """
     MD5_hash = MG._MD5hash()
 
@@ -247,7 +252,7 @@ def compare_to_blanc(blanc_model_size, zoom_range_selector, real_interactome_int
     if r_nodes is not None:
         not_random_nodes = [str(int(node_id)) for node_id in node_ids[r_nodes < p_val].tolist()]
         not_random_groups = np.concatenate((group2avg_offdiag, np.reshape(r_groups, (3,1))), axis=1)[r_groups < p_val].tolist()
-        not_random_groups = [ Group_char(*(nr_group)) for nr_group in not_random_groups]
+        not_random_groups = [ Group_char(*nr_group) for nr_group in not_random_groups]
         # basically the second element below are the nodes that contribute to the information flow through the node that is considered as
         # non-random
         dct = dict((nr_node_id, Interactome_node_char(MG.ID2displayName[nr_node_id],*(Dic_system[nr_node_id] + r_nodes[node_ids == float(nr_node_id)].tolist())))
@@ -258,9 +263,12 @@ def compare_to_blanc(blanc_model_size, zoom_range_selector, real_interactome_int
     return  None
 
 
-def auto_analyze():
-    dumplist = undump_object(Dumps.RNA_seq_counts_compare)
+def auto_analyze(dumplist):
+    """
+    Automatically analyzes the itneractome synergetic action of the RNA_seq results
 
+    """
+    # noinspection PyTypeChecker
     for lst in dumplist:
         print lst, len(lst)
         MG1 = MG_gen()
@@ -286,9 +294,48 @@ def auto_analyze():
 
 
 if __name__ == "__main__":
-    # spawn_sampler_pool(4, [150], [10])
 
-    # MG1 = MG_gen()
+    # dumplist = undump_object(Dumps.RNA_seq_counts_compare)
+
+    transcription = ['1005777', '1001874', '842142', '836106', '1014143', '1058552', '821021', '826066', '886586',
+                     '865200', '835714', '766912', '900540', '811360', '816278', '1079377', '740496', '1002986',
+                     '778615', '1000616', '950906', '996907', '1033828', '971819', '809996', '781060', '874882', '758558',
+                     '740148', '758263', '926744', '907135', '990196', '743186', '1011403', '979456', '1073345', '913095',
+                     '805935', '777825', '1028447', '951846', '1075746', '882269', '888669', '1029555', '941071', '751245',
+                     '986669', '927801', '783375', '1066551', '797230', '859473', '914620', '1083041', '837861', '901826',
+                     '906807', '913721', '991031', '831309', '810280', '856443', '986631', '800198', '832809', '774804',
+                     '1048252', '935385', '920480', '952510', '988829', '744318', '1001042', '1069894', '848924', '949209',
+                     '1035740', '770322', '749382', '1003600', '889200', '1071170', '841076', '822788', '810700', '801219',
+                     '801191', '964332', '935139', '1071008', '1002847', '1022239', '875186', '848997', '966988', '1008725',
+                     '899845', '763208', '823114', '1078022', '969713', '892913', '1104135', '794981', '1005373', '767473',
+                     '820454', '1066442', '753200', '1000686', '800665', '991315', '817329', '885986', '1019819', '871354',
+                     '1073014', '886044', '1004612', '871049', '1034170', '860442', '848198', '878608', '844231', '794289',
+                     '1016545', '1023218', '1103896', '785577', '995803', '912780', '897083', '886840', '750127', '945831',
+                     '916664', '864667', '746441', '1039958', '1101959', '956599', '875904', '1073318', '909015', '974199',
+                     '1037879', '964653', '784732', '949392', '1091093', '1081714', '837765', '973051', '772194', '765760',
+                     '973374', '893485', '838733', '942660', '798235', '996784', '914154', '1055665', '935238', '780699',
+                     '1016715', '991271', '955633', '895017', '794788', '1091063', '1046353', '986976', '826048', '859213',
+                     '839038', '783622', '760894', '853760', '1106249', '819917', '1062291', '815494', '862693', '814921',
+                     '938485', '783138', '885381', '903943', '772264', '980817', '823252', '962633', '758463', '755526',
+                     '757978', '765208', '863431', '1042302', '905303', '811490', '939476', '846291', '993567', '819257',
+                     '886290', '1013510', '827509', '991517', '1026799', '766799', '1029295', '806975', '911764', '1070622',
+                     '891117', '782645', '994623', '1013051', '830556', '844362', '1040267', '933951', '876062', '1060754',
+                     '826120', '973468', '949926', '789918', '747228', '764653', '1056009', '893389', '828460', '780732',
+                     '1061892', '748295', '890461', '800707', '896612', '1061111', '1038976', '1026861', '892596', '994512',
+                     '908624', '819172', '949891', '1015019', '802349', '752772', '1041116', '920885', '851881', '758797',
+                     '898171', '844767', '775297', '936117', '1089489', '970498', '854601', '932389', '911677', '773272',
+                     '964086', '837996', '968860', '954895', '847543']
+
+    translation = ['860713', '1054645', '1050811', '1010442', '746034', '960074', '841626', '989237', '992333', '885431',
+                   '1049088', '1005233', '742678', '1025641', '1081901', '940598', '1004992', '738650', '1018277',
+                   '997379', '745984', '1051693', '758243', '1085622', '933193', '1070658', '932056', '774142',
+                   '1001023', '1030061', '743020', '905602', '998094', '932332', '996254', '823270', '856693',
+                   '1017722', '976875', '960939', '890389', '1099836', '829293', '957345', '1020969', '905383',
+                   '1009002', '771146', '1081329', '985624', '904324', '1019095', '937024', '1051946', '854456',
+                   '1076560', '741935', '1102657', '1021881', '1041371', '757039', '997830', '942299', '773580',
+                   '902901', '1069785', '1023488', '1077664', '864199', '815792', '947643', '983830', '1049137',
+                   '821120', '1094403', '958096', '877347', '870065', '779276', '998107', '966557', '876290', '782349',
+                   '886637', '973293', '943484', '840896']
 
     # MG1.randomly_sample([150], [1], chromosome_specific=15, No_add=True)
     # nr_nodes, nr_groups = compare_to_blanc(150, [0.5, 0.6], MG1, p_val=0.9)
@@ -298,5 +345,5 @@ if __name__ == "__main__":
     # for node in nr_nodes:
     #     print node
 
-    auto_analyze()
+    auto_analyze([translation])
     pass

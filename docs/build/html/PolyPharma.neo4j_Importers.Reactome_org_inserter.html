@@ -1,0 +1,309 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>PolyPharma.neo4j_Importers.Reactome_org_inserter module &mdash; PolyPharma 0.2a3 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.2a3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="PolyPharma 0.2a3 documentation" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="index.html">PolyPharma 0.2a3 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-PolyPharma.neo4j_Importers.Reactome_org_inserter">
+<span id="polypharma-neo4j-importers-reactome-org-inserter-module"></span><h1>PolyPharma.neo4j_Importers.Reactome_org_inserter module<a class="headerlink" href="#module-PolyPharma.neo4j_Importers.Reactome_org_inserter" title="Permalink to this headline">¶</a></h1>
+<p>Created on Jun 15, 2013</p>
+<p>&#64;author: andrei</p>
+<dl class="function">
+<dt id="PolyPharma.neo4j_Importers.Reactome_org_inserter.CatalysisInsert">
+<tt class="descclassname">PolyPharma.neo4j_Importers.Reactome_org_inserter.</tt><tt class="descname">CatalysisInsert</tt><big>(</big><em>catalysises_dict</em><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_Importers/Reactome_org_inserter.html#CatalysisInsert"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_Importers.Reactome_org_inserter.CatalysisInsert" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserts all the catalysis links from one meta-element to an another</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>catalysises_dict</strong> &#8211; </td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="PolyPharma.neo4j_Importers.Reactome_org_inserter.CollectionRefsInsert">
+<tt class="descclassname">PolyPharma.neo4j_Importers.Reactome_org_inserter.</tt><tt class="descname">CollectionRefsInsert</tt><big>(</big><em>primaryCollection</em><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_Importers/Reactome_org_inserter.html#CollectionRefsInsert"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_Importers.Reactome_org_inserter.CollectionRefsInsert" title="Permalink to this definition">¶</a></dt>
+<dd><p>Links a collection object reference to the members of the collection.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>primaryCollection</strong> &#8211; </td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="PolyPharma.neo4j_Importers.Reactome_org_inserter.ComplexPartsInsert">
+<tt class="descclassname">PolyPharma.neo4j_Importers.Reactome_org_inserter.</tt><tt class="descname">ComplexPartsInsert</tt><big>(</big><em>complexes_dict</em><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_Importers/Reactome_org_inserter.html#ComplexPartsInsert"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_Importers.Reactome_org_inserter.ComplexPartsInsert" title="Permalink to this definition">¶</a></dt>
+<dd><p>Links part of a complex to the complex</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>complexes_dict</strong> &#8211; </td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="PolyPharma.neo4j_Importers.Reactome_org_inserter.InsertCellLocations">
+<tt class="descclassname">PolyPharma.neo4j_Importers.Reactome_org_inserter.</tt><tt class="descname">InsertCellLocations</tt><big>(</big><em>Cell_locations_dict</em><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_Importers/Reactome_org_inserter.html#InsertCellLocations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_Importers.Reactome_org_inserter.InsertCellLocations" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>Cell_locations_dict</strong> &#8211; </td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="PolyPharma.neo4j_Importers.Reactome_org_inserter.MetaInsert">
+<tt class="descclassname">PolyPharma.neo4j_Importers.Reactome_org_inserter.</tt><tt class="descname">MetaInsert</tt><big>(</big><em>bulbs_graph_class</em>, <em>property_source_dict</em><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_Importers/Reactome_org_inserter.html#MetaInsert"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_Importers.Reactome_org_inserter.MetaInsert" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserst a Meta-Object (I.e. any physical entity or collection thereof) as a member of a bulbs class and pumping the
+source information from the property source</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>bulbs_graph_class</strong> &#8211; </li>
+<li><strong>property_source_dict</strong> &#8211; </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="PolyPharma.neo4j_Importers.Reactome_org_inserter.MinimalAnnotInsert">
+<tt class="descclassname">PolyPharma.neo4j_Importers.Reactome_org_inserter.</tt><tt class="descname">MinimalAnnotInsert</tt><big>(</big><em>annotated_node</em>, <em>payload_list</em><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_Importers/Reactome_org_inserter.html#MinimalAnnotInsert"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_Importers.Reactome_org_inserter.MinimalAnnotInsert" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserts a minimal annotation provided the annotated_node Node (it requires the direct, local DB ID and thus)
+needs to be inserted at the same time as the annotated object</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>annotated_node</strong> &#8211; </li>
+<li><strong>payload_list</strong> &#8211; </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="PolyPharma.neo4j_Importers.Reactome_org_inserter.ModulationInsert">
+<tt class="descclassname">PolyPharma.neo4j_Importers.Reactome_org_inserter.</tt><tt class="descname">ModulationInsert</tt><big>(</big><em>modulations_dict</em><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_Importers/Reactome_org_inserter.html#ModulationInsert"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_Importers.Reactome_org_inserter.ModulationInsert" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserts all the Modulation links from one meta-element to an another</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>modulations_dict</strong> &#8211; </td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="PolyPharma.neo4j_Importers.Reactome_org_inserter.Pathways_Insert">
+<tt class="descclassname">PolyPharma.neo4j_Importers.Reactome_org_inserter.</tt><tt class="descname">Pathways_Insert</tt><big>(</big><em>pathway_steps</em>, <em>pathways</em><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_Importers/Reactome_org_inserter.html#Pathways_Insert"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_Importers.Reactome_org_inserter.Pathways_Insert" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserts all the Pathways, linking and chaining subpathways
+Attention, it have to be imported at the same time as the reactions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pathway_steps</strong> &#8211; </li>
+<li><strong>pathways</strong> &#8211; </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="PolyPharma.neo4j_Importers.Reactome_org_inserter.ReactionInsert">
+<tt class="descclassname">PolyPharma.neo4j_Importers.Reactome_org_inserter.</tt><tt class="descname">ReactionInsert</tt><big>(</big><em>bulbs_graph_class</em>, <em>property_source_dict</em><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_Importers/Reactome_org_inserter.html#ReactionInsert"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_Importers.Reactome_org_inserter.ReactionInsert" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inserst a Reaction-Object (I.e. any reaction or type of reactions) as a member of a bulbs class and pumping the
+source information from the property source</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>bulbs_graph_class</strong> &#8211; </li>
+<li><strong>property_source_dict</strong> &#8211; </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="PolyPharma.neo4j_Importers.Reactome_org_inserter.clear_all">
+<tt class="descclassname">PolyPharma.neo4j_Importers.Reactome_org_inserter.</tt><tt class="descname">clear_all</tt><big>(</big><em>instruction_dict</em><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_Importers/Reactome_org_inserter.html#clear_all"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_Importers.Reactome_org_inserter.clear_all" title="Permalink to this definition">¶</a></dt>
+<dd><p>empties the whole BioPax-bound node set.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>instruction_dict</strong> &#8211; </td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="PolyPharma.neo4j_Importers.Reactome_org_inserter.getAllMetaSets">
+<tt class="descclassname">PolyPharma.neo4j_Importers.Reactome_org_inserter.</tt><tt class="descname">getAllMetaSets</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_Importers/Reactome_org_inserter.html#getAllMetaSets"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_Importers.Reactome_org_inserter.getAllMetaSets" title="Permalink to this definition">¶</a></dt>
+<dd><p>In case the MetaObjects were already inserted, reloads them all to the local dictionary for futher annoation</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="PolyPharma.neo4j_Importers.Reactome_org_inserter.getOneMetaSet">
+<tt class="descclassname">PolyPharma.neo4j_Importers.Reactome_org_inserter.</tt><tt class="descname">getOneMetaSet</tt><big>(</big><em>function</em><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_Importers/Reactome_org_inserter.html#getOneMetaSet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_Importers.Reactome_org_inserter.getOneMetaSet" title="Permalink to this definition">¶</a></dt>
+<dd><p>In case a MetaObject was already inserted, reloads it to the local dictionary for futher annoation</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>function</strong> &#8211; </td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="PolyPharma.neo4j_Importers.Reactome_org_inserter.insert_all">
+<tt class="descclassname">PolyPharma.neo4j_Importers.Reactome_org_inserter.</tt><tt class="descname">insert_all</tt><big>(</big><em>Skip='N'</em><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_Importers/Reactome_org_inserter.html#insert_all"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_Importers.Reactome_org_inserter.insert_all" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs the massive import of the Reactome database into the local neo4j database.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>Skip</strong> &#8211; <ul class="simple">
+<li>N =&gt; will skip nothing and implement the import once and for all.</li>
+<li>M =&gt; skips meta import, recovers the metas and resumes from the Reactions import.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="PolyPharma.neo4j_Importers.Reactome_org_inserter.run_diagnostics">
+<tt class="descclassname">PolyPharma.neo4j_Importers.Reactome_org_inserter.</tt><tt class="descname">run_diagnostics</tt><big>(</big><em>instruction_dict</em><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_Importers/Reactome_org_inserter.html#run_diagnostics"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_Importers.Reactome_org_inserter.run_diagnostics" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks the number of nodes of each type.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>instruction_dict</strong> &#8211; </td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/PolyPharma.neo4j_Importers.Reactome_org_inserter.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="index.html">PolyPharma 0.2a3 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Andrei Kucharavy.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

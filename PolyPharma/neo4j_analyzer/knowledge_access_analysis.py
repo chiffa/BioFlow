@@ -29,6 +29,11 @@ MG.fast_load()
 
 
 def KG_gen():
+    """
+    Generates a Matrix_Knowledge_DB interface for the use in the spawner
+
+    :return: a GO_interface object
+    """
     KG = GO_Interface(filtr, MG.Uniprot_complete, corrfactors, True, 3)
     KG.load()
     print KG.pretty_time()
@@ -39,7 +44,7 @@ def spawn_sampler(sample_size_list_plus_iteration_list_plus_args):
     """
     Spawns a sampler initalized from the default GO_Interface
 
-    :param sample_size_list_plus_iteration_list: combined list of sample swizes and iterations (requried for Pool.map usage)
+    :param sample_size_list_plus_iteration_list_plus_args: combined list of sample swizes and iterations (requried for Pool.map usage)
     """
     KG = KG_gen()
     sample_size_list = sample_size_list_plus_iteration_list_plus_args[0]
@@ -148,9 +153,9 @@ def show_corrs(tri_corr_array, meancorrs, eigvals, selector, test_tri_corr_array
         bins = np.linspace(min(tri_corr_array[1, :].min(), test_tri_corr_array[1, :].min()),
                            max(tri_corr_array[1, :].max(), test_tri_corr_array[1, :].max()),
                            100)
-    plt.hist(tri_corr_array[1, :], bins=100, histtype='step', log=True, color='b')
+    plt.hist(tri_corr_array[1, :], bins=bins, histtype='step', log=True, color='b')
     if test_tri_corr_array is not None:
-        plt.hist(test_tri_corr_array[1, :], bins=100, histtype='step', log=True, color='r')
+        plt.hist(test_tri_corr_array[1, :], bins=bins, histtype='step', log=True, color='r')
 
     plt.subplot(336)
     plt.title('Density of current in the highlighted area')
@@ -205,17 +210,18 @@ def show_corrs(tri_corr_array, meancorrs, eigvals, selector, test_tri_corr_array
     return current_info_rel, cluster_props
 
 
-def compare_to_blanc(blanc_model_size, zoom_range_selector, real_knowledge_interface = None, p_val=0.05, sparse_rounds=False):
+def compare_to_blanc(blanc_model_size, zoom_range_selector, real_knowledge_interface = None, p_val=0.05, sparse_rounds=False, clusters=3):
     """
     Recovers the statistics on the circulation nodes and shows the visual of a circulation system
 
-    :param blanc_model_size:
-    :param zoom_range_selector:
-    :param real_knowledge_interface:
-    :param p_val:
-    :param sparse_rounds:
+    :param blanc_model_size: the number of uniprots in the blanc model
+    :param zoom_range_selector: tuple representing the coverage range for which we would want to see the histogram of current distributions
+    :param real_knowledge_interface: The GO_Interface that has run the current computation
+    :param p_val: desired p_value for the returned terms
+    :param sparse_rounds: if set to a number, sparse computation technique would be used with the number of rounds equal to the number
     :type sparse_rounds: int
-    :return:
+    :param clusters: specifies the number of clusters we want to have
+    :return: None if no significant nodes, the node and group characterisitc dictionaries otherwise
     """
     KG = KG_gen()
     MD5_hash = KG._MD5hash()
@@ -232,12 +238,17 @@ def compare_to_blanc(blanc_model_size, zoom_range_selector, real_knowledge_inter
         _, node_currs = pickle.loads(sample['currents'])
         tensions = pickle.loads(sample['voltages'])
         _, _, meancorr, eigvals = perform_clustering(tensions, 3, show=False)
-        meancorr_acccumulator.append(np.array(meancorr))
-        eigval_accumulator.append(eigvals)
+        meancorr_acccumulator.append(np.array(meancorr)) ###
+        eigval_accumulator.append(eigvals)              ###
         Dic_system = KG.format_Node_props(node_currs)
         curr_inf_conf = list(Dic_system.itervalues())
-        curr_inf_conf_general.append(np.array(curr_inf_conf).T)
+        curr_inf_conf_general.append(np.array(curr_inf_conf).T)  ###
         count = i
+        if Dic_system == {}:
+            del meancorr_acccumulator[-1]
+            del curr_inf_conf_general[-1]
+            del eigval_accumulator[-1]
+            print "exceptional state: nothing in Dic_system."
 
     # This part declares the pre-operators required for the verification of a real sample
 
@@ -255,7 +266,7 @@ def compare_to_blanc(blanc_model_size, zoom_range_selector, real_knowledge_inter
         Dic_system = KG.format_Node_props(node_currs)
         curr_inf_conf_tot = np.array([[int(key)]+list(val) for key, val in Dic_system.iteritems()]).T
         GO_node_ids, curr_inf_conf = (curr_inf_conf_tot[0, :], curr_inf_conf_tot[(1,2,3), :])
-        group2avg_offdiag, _, meancorr, eigval = perform_clustering(real_knowledge_interface.UP2UP_voltages, 3)
+        group2avg_offdiag, _, meancorr, eigval = perform_clustering(real_knowledge_interface.UP2UP_voltages, clusters)
 
 
     print "stats on %s samples" % count
@@ -269,7 +280,7 @@ def compare_to_blanc(blanc_model_size, zoom_range_selector, real_knowledge_inter
     if r_nodes is not None:
         not_random_nodes = [str(int(GO_id)) for GO_id in GO_node_ids[r_nodes < p_val].tolist()]
         not_random_groups = np.concatenate((group2avg_offdiag, np.reshape(r_groups, (3,1))), axis=1)[r_groups < p_val].tolist()
-        not_random_groups = [ Group_char(*(nr_group)) for nr_group in not_random_groups]
+        not_random_groups = [ Group_char(*nr_group) for nr_group in not_random_groups]
         # basically the second element below are the nodes that contribute to the information flow through the node that is considered as
         # non-random
         dct = dict((GO_id,
@@ -342,7 +353,7 @@ def linindep_GO_groups(size):
     """
     Performs the analysis of linerly independent GO groups
 
-    :param size:
+    :param size: number of most prominent eigenvectors contributing to an eigenvalue we would want to see
     """
     KG = KG_gen()
     KG.undump_Indep_Linset()
@@ -352,8 +363,13 @@ def linindep_GO_groups(size):
 
 
 def auto_analyze():
+    """
+    Automatically analyzes the GO annotation of the RNA_seq results.
+
+    """
     dumplist = undump_object(Dumps.RNA_seq_counts_compare)
 
+    # noinspection PyTypeChecker
     for list in dumplist:
         MG1 = KG_gen()
         MG1.set_Uniprot_source(list)
@@ -361,14 +377,14 @@ def auto_analyze():
         if len(MG1.analytic_Uniprots)<200:
             spawn_sampler_pool(4, [len(MG1.analytic_Uniprots)], [6])
             MG1.build_extended_conduction_system()
-            nr_nodes, nr_groups = compare_to_blanc(len(MG1.analytic_Uniprots), [0.5, 0.6], MG1, p_val=0.9)
+            nr_nodes, nr_groups = compare_to_blanc(len(MG1.analytic_Uniprots), [1100, 1300], MG1, p_val=0.9)
         else:
             sampling_depth = max(200**2/len(MG1.analytic_Uniprots), 5)
             print 'lenght: %s \t sampling depth: %s \t, estimated_time: %s' % (len(MG1.analytic_Uniprots), sampling_depth, len(MG1.analytic_Uniprots)*sampling_depth/2/6/60)
             spawn_sampler_pool(4, [len(MG1.analytic_Uniprots)], [6], sparse_rounds=sampling_depth)
             MG1.build_extended_conduction_system(sparse_samples=sampling_depth)
             MG1.export_conduction_system()
-            nr_nodes, nr_groups = compare_to_blanc(len(MG1.analytic_Uniprots), [0.5, 0.6], MG1, p_val=0.9, sparse_rounds=sampling_depth)
+            nr_nodes, nr_groups = compare_to_blanc(len(MG1.analytic_Uniprots), [1100, 1300], MG1, p_val=0.9, sparse_rounds=sampling_depth)
 
         MG1.export_conduction_system()
         for group in nr_groups:

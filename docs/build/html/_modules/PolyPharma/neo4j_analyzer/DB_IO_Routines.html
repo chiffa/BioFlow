@@ -1,0 +1,375 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>PolyPharma.neo4j_analyzer.DB_IO_Routines &mdash; PolyPharma 0.2a3 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.2a3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="PolyPharma 0.2a3 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">PolyPharma 0.2a3 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for PolyPharma.neo4j_analyzer.DB_IO_Routines</h1><div class="highlight"><pre>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s">&#39;ank&#39;</span>
+
+<span class="kn">from</span> <span class="nn">PolyPharma.neo4j_Declarations.Graph_Declarator</span> <span class="kn">import</span> <span class="n">DatabaseGraph</span>
+<span class="kn">from</span> <span class="nn">PolyPharma.configs</span> <span class="kn">import</span> <span class="n">IDFilter</span><span class="p">,</span> <span class="n">Leg_ID_Filter</span><span class="p">,</span> <span class="n">edge_type_filters</span><span class="p">,</span> <span class="n">Dumps</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">chain</span>
+
+<div class="viewcode-block" id="lookup_by_ID"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.DB_IO_Routines.html#PolyPharma.neo4j_analyzer.DB_IO_Routines.lookup_by_ID">[docs]</a><span class="k">def</span> <span class="nf">lookup_by_ID</span><span class="p">(</span><span class="n">Domain</span><span class="p">,</span> <span class="n">req</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Looks up a node by legacy ID and prints it&#39;s access url. The lookup is a case-sensitive strict match.</span>
+
+<span class="sd">    :param Domain: Node type of the form of DatabaseGraph.Object</span>
+<span class="sd">    :param req: requested legacy ID</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">accumulator</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">retset</span> <span class="o">=</span> <span class="n">Domain</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">lookup</span><span class="p">(</span> <span class="n">ID</span> <span class="o">=</span> <span class="n">req</span> <span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">retset</span><span class="p">:</span>
+        <span class="k">print</span> <span class="s">&quot;nothing found&quot;</span>
+    <span class="k">if</span> <span class="n">retset</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">retset</span><span class="p">:</span>
+            <span class="k">print</span> <span class="n">item</span>
+            <span class="n">accumulator</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="count_items"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.DB_IO_Routines.html#PolyPharma.neo4j_analyzer.DB_IO_Routines.count_items">[docs]</a><span class="k">def</span> <span class="nf">count_items</span><span class="p">(</span><span class="n">Domain</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Stupid counter that gets the number of items in a given domain</span>
+
+<span class="sd">    :warning: this method is highly underoptimal</span>
+
+<span class="sd">    :param Domain: Domain of the DatabaseGraph.Object whose objects we are going to count</span>
+<span class="sd">    :return: number of objects in the domain</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">elt</span> <span class="ow">in</span> <span class="n">Domain</span><span class="o">.</span><span class="n">get_all</span><span class="p">():</span>
+        <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">i</span>
+
+</div>
+<div class="viewcode-block" id="Look_up_by_ID_for_a_set"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.DB_IO_Routines.html#PolyPharma.neo4j_analyzer.DB_IO_Routines.Look_up_by_ID_for_a_set">[docs]</a><span class="k">def</span> <span class="nf">Look_up_by_ID_for_a_set</span><span class="p">(</span><span class="n">Domain</span><span class="p">,</span> <span class="n">ID_set</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Looks up nodes by legacy IDs from an ID_set list and prints their access url. The lookup is a case-sensitive strict match.</span>
+
+<span class="sd">    :param Domain: Node type of the form of DatabaseGraph.Object</span>
+<span class="sd">    :param Domain: Node type of the form of DatabaseGraph.Object</span>
+<span class="sd">    :param ID_set: list of requested legacy ID</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">ID</span> <span class="ow">in</span> <span class="n">ID_set</span><span class="p">:</span>
+        <span class="k">print</span> <span class="s">&quot;scanning for:&quot;</span><span class="p">,</span> <span class="n">ID</span>
+        <span class="n">lookup_by_ID</span><span class="p">(</span><span class="n">Domain</span><span class="p">,</span> <span class="n">ID</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;==================&quot;</span>
+
+</div>
+<div class="viewcode-block" id="run_through"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.DB_IO_Routines.html#PolyPharma.neo4j_analyzer.DB_IO_Routines.run_through">[docs]</a><span class="k">def</span> <span class="nf">run_through</span><span class="p">(</span><span class="n">node_generator</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Supporting function. Gets the nodes that are referenced by the annot_nodes in the generator</span>
+
+<span class="sd">    :param node_generator: iterator over annot_nodes</span>
+<span class="sd">    :return: the list of object nodes accessible from this set of annot_nodes</span>
+<span class="sd">    :raise Warning: if an annotation node is not bound to a real node. This might happen if some object nodes were manually</span>
+<span class="sd">                    deleted, but not their annotation nodes. Tu curb this a full database reload is required</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">node_generator</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="n">retset</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">node_generator</span><span class="p">:</span>
+        <span class="n">gen_2</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">inV</span><span class="p">(</span><span class="s">&quot;is_annotated&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">gen_2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Warning</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;is floating alone in the wild. He feels lonely.&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">rel_node</span> <span class="ow">in</span> <span class="n">gen_2</span><span class="p">:</span>
+            <span class="n">node_db_ID</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">rel_node</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">node_ID</span> <span class="o">=</span> <span class="n">rel_node</span><span class="o">.</span><span class="n">ID</span>
+            <span class="n">node_type</span> <span class="o">=</span> <span class="n">rel_node</span><span class="o">.</span><span class="n">element_type</span>
+            <span class="n">node_display</span> <span class="o">=</span> <span class="n">rel_node</span><span class="o">.</span><span class="n">displayName</span>
+            <span class="n">retset</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">node_type</span><span class="p">,</span> <span class="n">node_display</span><span class="p">,</span> <span class="n">node_db_ID</span><span class="p">,</span> <span class="n">node_ID</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">retset</span>
+
+</div>
+<div class="viewcode-block" id="unwrap_DB_ID"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.DB_IO_Routines.html#PolyPharma.neo4j_analyzer.DB_IO_Routines.unwrap_DB_ID">[docs]</a><span class="k">def</span> <span class="nf">unwrap_DB_ID</span><span class="p">(</span><span class="n">node_generator</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Supporting function. Gets the nodes that are referenced by the annot_nodes in the generator</span>
+
+<span class="sd">    :param node_generator: iterator over annot_nodes</span>
+<span class="sd">    :return: the DB_IDs list of object nodes accessible from this set of annot_nodes</span>
+<span class="sd">    :raise Warning: if an annotation node is not bound to a real node. This might happen if some object nodes were manually</span>
+<span class="sd">                    deleted, but not their annotation nodes. Tu curb this a full database reload is required</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">node_generator</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="n">retset</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">node_generator</span><span class="p">:</span>
+        <span class="n">node_db_ID</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">node</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">retset</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">node_db_ID</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">retset</span>
+
+
+</div>
+<div class="viewcode-block" id="Look_up_Annot_Node"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.DB_IO_Routines.html#PolyPharma.neo4j_analyzer.DB_IO_Routines.Look_up_Annot_Node">[docs]</a><span class="k">def</span> <span class="nf">Look_up_Annot_Node</span><span class="p">(</span><span class="n">p_load</span><span class="p">,</span> <span class="n">p_type</span> <span class="o">=</span> <span class="s">&#39;&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Looks up nodes accessible via the annotation nodes with a given annotation and given annotation type.</span>
+<span class="sd">    The lookup strict match, but case-insensitive.</span>
+
+<span class="sd">    .. code-block: python</span>
+<span class="sd">    &gt;&gt;&gt; print Look_up_Annot_Node(&#39;ENSG00000131981&#39;, &#39;UNIPROT_Ensembl&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; # TODO: add the results here when implementing the doctests</span>
+
+
+<span class="sd">    :param p_load: payload</span>
+<span class="sd">    :param p_type: payload type</span>
+<span class="sd">    :return: node type, node&#39;s displayName, node&#39;s db_ID, node&#39;s legacy ID</span>
+<span class="sd">    :rtype: 4- tuple</span>
+<span class="sd">    :raise Exception: &quot;p_type unsupported&quot;, in case a p_type is not on the supported list specified in the neo4j_Declarations.neo4j_typeDec</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">double_index_search</span><span class="p">(</span><span class="n">pload</span><span class="p">,</span> <span class="n">ptype</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Supporting fucntion. Performs a search in the annotation nodes over both a payload and a ptype</span>
+
+<span class="sd">        :param pload: payload</span>
+<span class="sd">        :param ptype: payload type</span>
+<span class="sd">        :return: list of found annotation nodes satisfying both payload content and payload type conditions</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">node_generator</span> <span class="o">=</span> <span class="n">DatabaseGraph</span><span class="o">.</span><span class="n">AnnotNode</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">lookup</span><span class="p">(</span><span class="n">payload</span> <span class="o">=</span> <span class="n">pload</span><span class="p">)</span>
+        <span class="n">retset</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">node_generator</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">node_generator</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">ptype</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">ptype</span><span class="p">:</span>
+                    <span class="n">retset</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">retset</span>
+
+    <span class="kn">from</span> <span class="nn">PolyPharma.neo4j_Declarations.neo4j_typeDec</span> <span class="kn">import</span> <span class="n">Anot_Node_ptypes</span>
+    <span class="n">pload</span> <span class="o">=</span> <span class="n">p_load</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">p_type</span> <span class="o">==</span> <span class="s">&#39;&#39;</span><span class="p">:</span>
+        <span class="n">node_generator</span> <span class="o">=</span> <span class="n">DatabaseGraph</span><span class="o">.</span><span class="n">AnnotNode</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">lookup</span><span class="p">(</span><span class="n">payload</span> <span class="o">=</span> <span class="n">pload</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">run_through</span><span class="p">(</span><span class="n">node_generator</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">p_type</span> <span class="ow">in</span> <span class="n">Anot_Node_ptypes</span><span class="p">:</span>
+        <span class="n">node_generator</span> <span class="o">=</span>  <span class="n">double_index_search</span><span class="p">(</span><span class="n">pload</span><span class="p">,</span> <span class="n">p_type</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">run_through</span><span class="p">(</span><span class="n">node_generator</span><span class="p">)</span>
+
+    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="n">p_type</span> <span class="o">+</span> <span class="s">&quot;is unsupported. Please refer to Anot_Node_ptypes in neo4j_typeDec for supported types&quot;</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="Erase_custom_fields"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.DB_IO_Routines.html#PolyPharma.neo4j_analyzer.DB_IO_Routines.Erase_custom_fields">[docs]</a><span class="k">def</span> <span class="nf">Erase_custom_fields</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resets the .costum field of all the Nodes on which we have iterated here. Usefull to perform</span>
+<span class="sd">        after node set or node connectivity were modfied.</span>
+<span class="sd">        Unlike the method in the Matrix_retrieval cluster, this method is very time-consuming, since it iterates</span>
+<span class="sd">        on all the elements of all the classes susceptible to have the costum field.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">Node_gen</span> <span class="o">=</span> <span class="n">DatabaseGraph</span><span class="o">.</span><span class="n">vertices</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">lookup</span><span class="p">(</span><span class="n">costum</span> <span class="o">=</span> <span class="s">&#39;Main_Connex&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">Node_gen</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">Node</span> <span class="ow">in</span> <span class="n">Node_gen</span><span class="p">:</span>
+            <span class="n">Node</span><span class="o">.</span><span class="n">custom</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+            <span class="n">Node</span><span class="o">.</span><span class="n">main_connex</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="n">Node</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+
+    <span class="n">Node_gen</span> <span class="o">=</span> <span class="n">DatabaseGraph</span><span class="o">.</span><span class="n">vertices</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">lookup</span><span class="p">(</span><span class="n">main_connex</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">Node_gen</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">Node</span> <span class="ow">in</span> <span class="n">Node_gen</span><span class="p">:</span>
+            <span class="n">Node</span><span class="o">.</span><span class="n">custom</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+            <span class="n">Node</span><span class="o">.</span><span class="n">main_connex</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="n">Node</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+
+</div>
+<div class="viewcode-block" id="reaction_participant_getter"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.DB_IO_Routines.html#PolyPharma.neo4j_analyzer.DB_IO_Routines.reaction_participant_getter">[docs]</a><span class="k">def</span> <span class="nf">reaction_participant_getter</span><span class="p">(</span><span class="n">Reaction</span><span class="p">,</span> <span class="n">main_connex_only</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Recovers all the participants of the reaction</span>
+
+<span class="sd">    :param Reaction: Reaction node for which we are willing to get the participants</span>
+<span class="sd">    :param main_connex_only: If set to true, will only pull elements from the reaction that are in the main connex_set</span>
+<span class="sd">    :type main_connex_only: bool</span>
+<span class="sd">    :return: List of found nodes, number of found nodes</span>
+<span class="sd">    :rtype: 2- tuple</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">edge_type_filter</span> <span class="o">=</span> <span class="n">edge_type_filters</span><span class="p">[</span><span class="s">&quot;Reaction&quot;</span><span class="p">]</span>
+    <span class="n">LocalList</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">edge_type</span> <span class="ow">in</span> <span class="n">edge_type_filter</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">Reaction</span><span class="o">.</span><span class="n">bothV</span><span class="p">(</span><span class="n">edge_type</span><span class="p">)</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">for</span> <span class="n">elt</span> <span class="ow">in</span> <span class="n">Reaction</span><span class="o">.</span><span class="n">bothV</span><span class="p">(</span><span class="n">edge_type</span><span class="p">):</span>
+            <span class="n">Connex</span> <span class="o">=</span> <span class="bp">True</span>
+
+            <span class="k">if</span> <span class="n">main_connex_only</span><span class="p">:</span>
+                <span class="n">Connex</span> <span class="o">=</span> <span class="bp">False</span>
+                <span class="k">if</span> <span class="n">elt</span><span class="o">.</span><span class="n">main_connex</span><span class="p">:</span>
+                    <span class="n">Connex</span> <span class="o">=</span> <span class="bp">True</span>
+
+            <span class="n">ID</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">elt</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">ID</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">IDFilter</span> <span class="ow">and</span> <span class="n">Connex</span><span class="p">:</span>
+                <span class="n">LocalList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ID</span><span class="p">)</span>
+                <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">LocalList</span><span class="p">,</span> <span class="n">count</span>
+
+</div>
+<div class="viewcode-block" id="expand_from_seed"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.DB_IO_Routines.html#PolyPharma.neo4j_analyzer.DB_IO_Routines.expand_from_seed">[docs]</a><span class="k">def</span> <span class="nf">expand_from_seed</span><span class="p">(</span><span class="n">Seed_Node_ID</span><span class="p">,</span> <span class="n">edge_filter</span><span class="p">,</span> <span class="n">main_connex_only</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Recovers all the nodes accessible in one jump from a seed_node with a given database ID by jumping only via the relations</span>
+<span class="sd">        of type specified in the edge_filter</span>
+
+<span class="sd">    :param Seed_Node_ID: the database ID of the initial node from which we are observing accessibility</span>
+<span class="sd">    :param edge_filter: the list of relation types for which the jumps are authorised</span>
+<span class="sd">    :return: List of found nodes database ID, number of found nodes</span>
+<span class="sd">    :rtype: 2- tuple</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">Seed_Node</span> <span class="o">=</span> <span class="n">DatabaseGraph</span><span class="o">.</span><span class="n">vertices</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">Seed_Node_ID</span><span class="p">)</span>
+    <span class="n">LocalList</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">edge_type</span> <span class="ow">in</span> <span class="n">edge_filter</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">Seed_Node</span><span class="o">.</span><span class="n">bothV</span><span class="p">(</span><span class="n">edge_type</span><span class="p">)</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">elt</span> <span class="ow">in</span> <span class="n">Seed_Node</span><span class="o">.</span><span class="n">bothV</span><span class="p">(</span><span class="n">edge_type</span><span class="p">):</span>
+                <span class="n">Connex</span> <span class="o">=</span> <span class="bp">True</span>
+
+                <span class="k">if</span> <span class="n">main_connex_only</span><span class="p">:</span>
+                    <span class="n">Connex</span> <span class="o">=</span> <span class="bp">False</span>
+                    <span class="k">if</span> <span class="n">elt</span><span class="o">.</span><span class="n">main_connex</span><span class="p">:</span>
+                        <span class="n">Connex</span> <span class="o">=</span> <span class="bp">True</span>
+
+                <span class="n">ID</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">elt</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">ID</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">IDFilter</span> <span class="ow">and</span> <span class="n">Connex</span><span class="p">:</span>
+                    <span class="n">LocalList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ID</span><span class="p">)</span>
+                    <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">LocalList</span><span class="p">,</span> <span class="n">count</span>
+
+</div>
+<div class="viewcode-block" id="recompute_forbidden_IDs"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.DB_IO_Routines.html#PolyPharma.neo4j_analyzer.DB_IO_Routines.recompute_forbidden_IDs">[docs]</a><span class="k">def</span> <span class="nf">recompute_forbidden_IDs</span><span class="p">(</span><span class="n">Node_Type_Dict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Recomputes the list of nodes that contain overloaded terms that would bring too close together the reactions that are normally not,</span>
+<span class="sd">    just because of participation of ultra-aboundant elements, such as H2O, H+ or ATP</span>
+
+<span class="sd">    :param Node_Type_List: Dictionary mapping the names of entities to their corresponding bulbs classes</span>
+<span class="sd">    :type Node_Type_Dict: dict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">retlist</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">bulbs_type</span> <span class="ow">in</span> <span class="n">Node_Type_Dict</span><span class="o">.</span><span class="n">itervalues</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">forbidden_Legacy_ID</span> <span class="ow">in</span> <span class="n">Leg_ID_Filter</span><span class="p">:</span>
+            <span class="n">generator</span> <span class="o">=</span> <span class="n">bulbs_type</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">lookup</span><span class="p">(</span><span class="n">displayName</span> <span class="o">=</span> <span class="n">forbidden_Legacy_ID</span><span class="p">)</span>
+            <span class="n">UNW</span> <span class="o">=</span> <span class="n">unwrap_DB_ID</span><span class="p">(</span><span class="n">generator</span><span class="p">)</span>
+            <span class="n">retlist</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">UNW</span><span class="p">)</span>
+    <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">retlist</span><span class="p">,</span> <span class="nb">file</span><span class="p">(</span><span class="n">Dumps</span><span class="o">.</span><span class="n">Forbidden_IDs</span><span class="p">,</span><span class="s">&#39;w&#39;</span><span class="p">))</span>
+
+</div>
+<div class="viewcode-block" id="recover_UP_chars"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.DB_IO_Routines.html#PolyPharma.neo4j_analyzer.DB_IO_Routines.recover_UP_chars">[docs]</a><span class="k">def</span> <span class="nf">recover_UP_chars</span><span class="p">(</span><span class="n">UP_Nodes</span><span class="p">,</span> <span class="n">UP_are_IDs</span><span class="p">):</span>
+    <span class="n">retdict</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">if</span> <span class="n">UP_are_IDs</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">node_Id</span> <span class="ow">in</span> <span class="n">UP_Nodes</span><span class="p">:</span>
+            <span class="n">node</span> <span class="o">=</span> <span class="n">DatabaseGraph</span><span class="o">.</span><span class="n">UNIPORT</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">node_Id</span><span class="p">)</span>
+            <span class="n">retdict</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">node</span><span class="o">.</span><span class="n">ID</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">displayName</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">retdict</span>
+
+    <span class="k">for</span> <span class="n">node_leg_Id</span> <span class="ow">in</span> <span class="n">UP_Nodes</span><span class="p">:</span>
+        <span class="n">generator</span> <span class="o">=</span> <span class="n">DatabaseGraph</span><span class="o">.</span><span class="n">UNIPORT</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">lookup</span><span class="p">(</span><span class="n">ID</span> <span class="o">=</span> <span class="n">node_leg_Id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">generator</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="n">retlist</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">generator</span><span class="p">:</span>
+            <span class="n">retlist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">displayName</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">retlist</span><span class="p">)</span><span class="o">!=</span><span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;Something went wrong with the UP retrieval for the UP </span><span class="si">%s</span><span class="s">, too many display names: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span>
+                            <span class="p">(</span><span class="n">node_leg_Id</span><span class="p">,</span><span class="n">retlist</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">retdict</span><span class="p">[</span><span class="n">node_leg_Id</span><span class="p">]</span> <span class="o">=</span> <span class="n">retlist</span>
+    <span class="k">return</span> <span class="n">retdict</span>
+
+</div>
+<span class="n">Forbidden_verification_dict</span> <span class="o">=</span> <span class="p">{</span>   <span class="s">&#39;Small Molecule&#39;</span><span class="p">:</span><span class="n">DatabaseGraph</span><span class="o">.</span><span class="n">SmallMolecule</span><span class="p">,</span>
+                                  <span class="s">&#39;Small Molecule Collection&#39;</span><span class="p">:</span><span class="n">DatabaseGraph</span><span class="o">.</span><span class="n">SmallMolecule_Collection</span><span class="p">,</span>
+                                  <span class="s">&#39;Physical Entity&#39;</span><span class="p">:</span><span class="n">DatabaseGraph</span><span class="o">.</span><span class="n">PhysicalEntity</span><span class="p">,</span>
+                                  <span class="s">&#39;Physical Entity Collection&#39;</span><span class="p">:</span><span class="n">DatabaseGraph</span><span class="o">.</span><span class="n">PhysicalEntity_Collection</span><span class="p">,</span>
+                                <span class="p">}</span>
+
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="c"># print count_items(DatabaseGraph.UNIPORT)</span>
+    <span class="c"># lookup_by_ID(DatabaseGraph.UNIPORT, &quot;CK2N2_HUMAN&quot;)</span>
+    <span class="c"># Erase_custom_fields()</span>
+    <span class="n">recompute_forbidden_IDs</span><span class="p">(</span><span class="n">Forbidden_verification_dict</span><span class="p">)</span>
+
+    <span class="c"># print Look_up_Annot_Node(&#39;ENSG00000131981&#39;, &#39;UNIPROT_Ensembl&#39;)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">PolyPharma 0.2a3 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Andrei Kucharavy.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

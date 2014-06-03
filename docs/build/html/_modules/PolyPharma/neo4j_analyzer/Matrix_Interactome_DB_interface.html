@@ -1,0 +1,844 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface &mdash; PolyPharma 0.2a3 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.2a3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="PolyPharma 0.2a3 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">PolyPharma 0.2a3 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface</h1><div class="highlight"><pre>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s">&#39;ank&#39;</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module contains all the routines that are respojnsible for pulling</span>
+<span class="sd">the matrixes out of the neo4j graph and processing them.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">hashlib</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">import</span> <span class="nn">string</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">copy</span>
+<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">time</span>
+<span class="kn">from</span> <span class="nn">random</span> <span class="kn">import</span> <span class="n">shuffle</span><span class="p">,</span> <span class="n">sample</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span> <span class="nn">pprint</span> <span class="kn">import</span> <span class="n">PrettyPrinter</span>
+<span class="kn">from</span> <span class="nn">scipy.sparse</span> <span class="kn">import</span> <span class="n">lil_matrix</span>
+<span class="kn">from</span> <span class="nn">scipy.sparse.linalg</span> <span class="kn">import</span> <span class="n">eigsh</span>
+<span class="kn">from</span> <span class="nn">scipy.sparse.csgraph</span> <span class="kn">import</span> <span class="n">connected_components</span>
+<span class="kn">from</span> <span class="nn">PolyPharma.configs</span> <span class="kn">import</span> <span class="n">edge_type_filters</span><span class="p">,</span> <span class="n">Adjacency_Martix_Dict</span><span class="p">,</span> <span class="n">Conductance_Matrix_Dict</span><span class="p">,</span> <span class="n">Dumps</span><span class="p">,</span> <span class="n">Outputs</span><span class="p">,</span> <span class="n">Interactome_rand_samp</span>
+<span class="kn">from</span> <span class="nn">PolyPharma.Utils.GDF_export</span> <span class="kn">import</span> <span class="n">GDF_export_Interface</span>
+<span class="kn">from</span> <span class="nn">PolyPharma.neo4j_Declarations.Graph_Declarator</span> <span class="kn">import</span> <span class="n">DatabaseGraph</span>
+<span class="kn">from</span> <span class="nn">PolyPharma.neo4j_analyzer.DB_IO_Routines</span> <span class="kn">import</span> <span class="n">reaction_participant_getter</span><span class="p">,</span> <span class="n">expand_from_seed</span><span class="p">,</span> <span class="n">Erase_custom_fields</span>
+<span class="kn">from</span> <span class="nn">PolyPharma.neo4j_analyzer.IO_Routines</span> <span class="kn">import</span> <span class="n">write_to_csv</span><span class="p">,</span> <span class="n">dump_object</span><span class="p">,</span> <span class="n">undump_object</span>
+<span class="kn">from</span> <span class="nn">PolyPharma.neo4j_analyzer</span> <span class="kn">import</span> <span class="n">Conduction_routines</span> <span class="k">as</span> <span class="n">CR</span>
+
+<span class="c"># TODO: change the behavior of HiNT propagation to a several stages propagation</span>
+<span class="c">#       Main connex set is 24k nodes, with 4331 UP links and 1051 Hint links</span>
+<span class="c">#       With the full UP import, the main connex set is 25k Nodes, with 4336 UP Links and 1191 HiNT links</span>
+<span class="c">#       With forbidding overloaded items: 24k771 Nodes, 4293 UP Links, 1186 HiNT links</span>
+
+
+<div class="viewcode-block" id="MatrixGetter"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.html#PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.MatrixGetter">[docs]</a><span class="k">class</span> <span class="nc">MatrixGetter</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Builds an object that is used ans an interface between matrix representation of an interactome and the</span>
+
+<span class="sd">    :param Connexity_Aware: if set to True, loads only the elements of the main connex set of the database</span>
+<span class="sd">    :type Connexity_Aware: bool</span>
+<span class="sd">    :param full_impact: if set to True, will compare the names of entities and link the entities that has the same \</span>
+<span class="sd">            name with the &quot;Possibily the same&quot; relation</span>
+<span class="sd">    :type full_impact: bool</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># # List of all the reaction types present in the DatabaseGraph that will be</span>
+    <span class="c"># # used as roots to build the interaction network (not all nodes are necessary</span>
+    <span class="c"># # within the connex part of the graph)</span>
+    <span class="n">ReactionsList</span> <span class="o">=</span> <span class="p">[</span><span class="n">DatabaseGraph</span><span class="o">.</span><span class="n">TemplateReaction</span><span class="p">,</span> <span class="n">DatabaseGraph</span><span class="o">.</span><span class="n">Degradation</span><span class="p">,</span> <span class="n">DatabaseGraph</span><span class="o">.</span><span class="n">BiochemicalReaction</span><span class="p">]</span>
+
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Connexity_Aware</span><span class="p">,</span> <span class="n">full_impact</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Connexity_Aware</span> <span class="o">=</span> <span class="n">Connexity_Aware</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">full_impact</span> <span class="o">=</span> <span class="n">full_impact</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">init_time</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">partial_time</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">Ajacency_Matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span><span class="mi">4</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Conductance_Matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span><span class="mi">4</span><span class="p">))</span>    <span class="c"># This is just non-normalized laplacian matrix</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">adj_eigenvects</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span><span class="mi">4</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">adj_eigenvals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span><span class="mi">4</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cond_eigenvects</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span><span class="mi">4</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cond_eigenvals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span><span class="mi">4</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">NodeID2MatrixNumber</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">MatrixNumber2NodeID</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ID2displayName</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ID2LegacyId</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ID2Type</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ID2Localization</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Uniprots</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Uniprot_complete</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Uniprot_attachments</span> <span class="o">=</span> <span class="p">{}</span> <span class="c"># currently maintained for legacy reasons</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Uniprot_Mat_idxs</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">ReactLinks</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">InitSet</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">GroupLinks</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">GroupSet</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">SecLinks</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">SecSet</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">UP_Links</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">UPSet</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">HiNT_Links</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">FullSet</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Super_Links</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ExpSet</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">Matrix_reality</span> <span class="o">=</span> <span class="n">Dumps</span><span class="o">.</span><span class="n">matrix_corrs</span>
+
+        <span class="n">char_set</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">ascii_uppercase</span> <span class="o">+</span> <span class="n">string</span><span class="o">.</span><span class="n">digits</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">r_ID</span> <span class="o">=</span> <span class="s">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">sample</span><span class="p">(</span><span class="n">char_set</span><span class="o">*</span><span class="mi">6</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">analytic_Uniprots</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">UP2UP_voltages</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">UP2voltage_and_circ</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">node_current</span> <span class="o">=</span> <span class="p">{}</span>
+
+
+<div class="viewcode-block" id="MatrixGetter.pretty_time"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.html#PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.MatrixGetter.pretty_time">[docs]</a>    <span class="k">def</span> <span class="nf">pretty_time</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Times the execution</span>
+
+<span class="sd">        :return: tuple containing the time since the creation of the Matrix_getter object and since the last cal of function formatted as string</span>
+<span class="sd">        :rtype: str</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">it</span><span class="p">,</span> <span class="n">pt</span> <span class="o">=</span> <span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">init_time</span><span class="p">),</span> <span class="nb">round</span><span class="p">(</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">partial_time</span><span class="p">))</span>
+        <span class="n">pload</span> <span class="o">=</span> <span class="s">&#39;total: </span><span class="si">%s</span><span class="s"> m </span><span class="si">%s</span><span class="s"> s, </span><span class="se">\t</span><span class="s"> partial: </span><span class="si">%s</span><span class="s"> m </span><span class="si">%s</span><span class="s"> s&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">it</span><span class="p">)</span> <span class="o">/</span> <span class="mi">60</span><span class="p">,</span> <span class="n">it</span> <span class="o">%</span> <span class="mi">60</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">pt</span><span class="p">)</span> <span class="o">/</span> <span class="mi">60</span><span class="p">,</span> <span class="n">pt</span> <span class="o">%</span> <span class="mi">60</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">partial_time</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">pload</span>
+
+</div>
+    <span class="k">def</span> <span class="nf">_time</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">pt</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">partial_time</span>
+        <span class="k">return</span> <span class="n">pt</span>
+
+
+<div class="viewcode-block" id="MatrixGetter.dump_Matrices"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.html#PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.MatrixGetter.dump_Matrices">[docs]</a>    <span class="k">def</span> <span class="nf">dump_Matrices</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        dumps self.Ajacency_Matrix and self.Conductance_Matrix</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dump_object</span><span class="p">(</span><span class="n">Dumps</span><span class="o">.</span><span class="n">ValMat</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Ajacency_Matrix</span><span class="p">)</span>
+        <span class="n">dump_object</span><span class="p">(</span><span class="n">Dumps</span><span class="o">.</span><span class="n">ConMat</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Conductance_Matrix</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="MatrixGetter.undump_Matrices"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.html#PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.MatrixGetter.undump_Matrices">[docs]</a>    <span class="k">def</span> <span class="nf">undump_Matrices</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        undumps self.Ajacency_Matrix and self.Conductance_Matrix</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Ajacency_Matrix</span> <span class="o">=</span> <span class="n">undump_object</span><span class="p">(</span><span class="n">Dumps</span><span class="o">.</span><span class="n">ValMat</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Conductance_Matrix</span> <span class="o">=</span> <span class="n">undump_object</span><span class="p">(</span><span class="n">Dumps</span><span class="o">.</span><span class="n">ConMat</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="MatrixGetter.dump_Eigens"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.html#PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.MatrixGetter.dump_Eigens">[docs]</a>    <span class="k">def</span> <span class="nf">dump_Eigens</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        dumps self.adj_eigenvals and self.Conductance_Matrix and writes them to csv</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">write_to_csv</span><span class="p">(</span><span class="n">Dumps</span><span class="o">.</span><span class="n">eigen_VaMat</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">adj_eigenvals</span><span class="p">)</span>
+        <span class="n">write_to_csv</span><span class="p">(</span><span class="n">Dumps</span><span class="o">.</span><span class="n">eigen_ConMat</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cond_eigenvals</span><span class="p">)</span>
+        <span class="n">dump_object</span><span class="p">(</span><span class="n">Dumps</span><span class="o">.</span><span class="n">val_eigen</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">adj_eigenvals</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">adj_eigenvects</span><span class="p">))</span>
+        <span class="n">dump_object</span><span class="p">(</span><span class="n">Dumps</span><span class="o">.</span><span class="n">cond_eigen</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cond_eigenvals</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cond_eigenvects</span><span class="p">))</span>
+
+</div>
+<div class="viewcode-block" id="MatrixGetter.undump_Eigens"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.html#PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.MatrixGetter.undump_Eigens">[docs]</a>    <span class="k">def</span> <span class="nf">undump_Eigens</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        undumps self.adj_eigenvals and self.Conductance_Matrix</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">adj_eigenvals</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">adj_eigenvects</span> <span class="o">=</span> <span class="n">undump_object</span><span class="p">(</span><span class="n">Dumps</span><span class="o">.</span><span class="n">val_eigen</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cond_eigenvals</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cond_eigenvects</span> <span class="o">=</span> <span class="n">undump_object</span><span class="p">(</span><span class="n">Dumps</span><span class="o">.</span><span class="n">cond_eigen</span><span class="p">)</span>
+
+
+</div>
+<div class="viewcode-block" id="MatrixGetter.dump_Maps"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.html#PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.MatrixGetter.dump_Maps">[docs]</a>    <span class="k">def</span> <span class="nf">dump_Maps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        dumps all the elements required for the mapping between the types and ids of database entries and matrix columns</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dump_object</span><span class="p">(</span><span class="n">Dumps</span><span class="o">.</span><span class="n">matrix_corrs</span><span class="p">,</span>
+                         <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">NodeID2MatrixNumber</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">MatrixNumber2NodeID</span><span class="p">,</span>
+                          <span class="bp">self</span><span class="o">.</span><span class="n">ID2displayName</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ID2LegacyId</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ID2Type</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ID2Localization</span><span class="p">,</span>
+                          <span class="bp">self</span><span class="o">.</span><span class="n">Uniprots</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Uniprot_complete</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Uniprot_attachments</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Uniprot_Mat_idxs</span><span class="p">))</span>
+
+</div>
+<div class="viewcode-block" id="MatrixGetter.undump_Maps"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.html#PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.MatrixGetter.undump_Maps">[docs]</a>    <span class="k">def</span> <span class="nf">undump_Maps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        undumps all the elements required for the mapping between the types and ids of database entries and matrix columns</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">NodeID2MatrixNumber</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">MatrixNumber2NodeID</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ID2displayName</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ID2LegacyId</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ID2Type</span><span class="p">,</span>\
+        <span class="bp">self</span><span class="o">.</span><span class="n">ID2Localization</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Uniprots</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Uniprot_complete</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Uniprot_attachments</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Uniprot_Mat_idxs</span> <span class="o">=</span> <span class="n">undump_object</span><span class="p">(</span><span class="n">Dumps</span><span class="o">.</span><span class="n">matrix_corrs</span><span class="p">)</span>
+
+
+</div>
+<div class="viewcode-block" id="MatrixGetter.dump_memoized"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.html#PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.MatrixGetter.dump_memoized">[docs]</a>    <span class="k">def</span> <span class="nf">dump_memoized</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">md5</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">md5</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">analytic_Uniprots</span><span class="p">),</span> <span class="n">sort_keys</span><span class="o">=</span><span class="bp">True</span><span class="p">))</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+        <span class="n">payload</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;UP_hash&#39;</span> <span class="p">:</span> <span class="n">md5</span><span class="p">,</span>
+                        <span class="s">&#39;sys_hash&#39;</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_MD5hash</span><span class="p">(),</span>
+                        <span class="s">&#39;size&#39;</span> <span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">analytic_Uniprots</span><span class="p">),</span>
+                        <span class="s">&#39;UPs&#39;</span> <span class="p">:</span> <span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">analytic_Uniprots</span><span class="p">),</span>
+                        <span class="s">&#39;currents&#39;</span> <span class="p">:</span> <span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">current_accumulator</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">node_current</span><span class="p">)),</span>
+                        <span class="s">&#39;voltages&#39;</span> <span class="p">:</span> <span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">UP2voltage_and_circ</span><span class="p">)}</span>
+        <span class="n">dump_object</span><span class="p">(</span><span class="n">Dumps</span><span class="o">.</span><span class="n">Interactome_Analysis_memoized</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="MatrixGetter.undump_memoized"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.html#PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.MatrixGetter.undump_memoized">[docs]</a>    <span class="k">def</span> <span class="nf">undump_memoized</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :return: undumped memoized analysis</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">undump_object</span><span class="p">(</span><span class="n">Dumps</span><span class="o">.</span><span class="n">Interactome_Analysis_memoized</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="MatrixGetter.full_load_LS"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.html#PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.MatrixGetter.full_load_LS">[docs]</a>    <span class="k">def</span> <span class="nf">full_load_LS</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Performs the loading of all the objects and the relations in the database according to the following algorithm:</span>
+<span class="sd">            - get all the reaction nodes, i.e. reactions specified in the self.Reaction_List.</span>
+<span class="sd">            - For each reaction, add the participants to the &quot;seeds&quot; list and create a set of groups linking them all together</span>
+<span class="sd">            - for each element of hte &quot;seeds&quot; list, crawl the objects reachable from this seed by specific relations,</span>
+<span class="sd">            add those new elements to the list and remember as reachable from the current element of the seed list.</span>
+
+<span class="sd">            The relations are crawled in the following order:</span>
+<span class="sd">                * &quot;Group&quot;</span>
+<span class="sd">                * &quot;Same&quot;</span>
+<span class="sd">                * &quot;Contact_interaction&quot; (repeated 5 times to increase as much as possible the main connex size, even for the knowledge groups that are badly represented in the interactome database)</span>
+<span class="sd">                * &quot;HiNT Contact_interaction&quot;</span>
+<span class="sd">                * &quot;possibly_same&quot;</span>
+<span class="sd">            The exact relations in each group of relation abbreviations are specified in the configs.py file,</span>
+
+<span class="sd">        This function fills in the self.Set and self.Links elements of the MatrixGetter object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">def</span> <span class="nf">get_Reaction_blocks</span><span class="p">():</span>
+            <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Recovers the blocks if interaction that are due to a common set of reactions</span>
+<span class="sd">            for the elements. They will be used as roots to build the complete interaction</span>
+<span class="sd">            tree later on.</span>
+
+<span class="sd">            :return:* Reagent Clusters (list of lists, where each list represents a set of</span>
+<span class="sd">                    reagents participating to the same reaction),</span>
+<span class="sd">                    * Seeds list,</span>
+<span class="sd">                    * number of elements in the seeds list</span>
+<span class="sd">            :rtype: 3- tuple</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="n">ReagentClusters</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">Seeds</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+            <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">ReactionType</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ReactionsList</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">ReactionType</span><span class="o">.</span><span class="n">get_all</span><span class="p">():</span>
+                    <span class="k">continue</span>
+                <span class="k">for</span> <span class="n">Reaction</span> <span class="ow">in</span> <span class="n">ReactionType</span><span class="o">.</span><span class="n">get_all</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="n">Reaction</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                        <span class="k">continue</span>
+                    <span class="n">LocalList</span><span class="p">,</span> <span class="n">cnt</span> <span class="o">=</span> <span class="n">reaction_participant_getter</span><span class="p">(</span><span class="n">Reaction</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Connexity_Aware</span><span class="p">)</span>
+                    <span class="n">count</span> <span class="o">+=</span> <span class="n">cnt</span>
+
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">LocalList</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                        <span class="n">ReagentClusters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">copy</span><span class="p">(</span><span class="n">LocalList</span><span class="p">))</span>
+                        <span class="n">Seeds</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">LocalList</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">ReagentClusters</span><span class="p">,</span> <span class="n">Seeds</span><span class="p">,</span> <span class="n">count</span>
+
+        <span class="k">def</span> <span class="nf">get_expansion</span><span class="p">(</span> <span class="n">SubSeed</span><span class="p">,</span> <span class="n">edge_type_filter</span><span class="p">):</span>
+            <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">            Recovers all the nodes reached from the SubSeed according to a the relations listed</span>
+<span class="sd">            in edge_type_filter</span>
+
+<span class="sd">            :param SubSeed: set of NodeIDs that serve as a root for searching further relations</span>
+<span class="sd">            :type SubSeed: set of NodeIDs</span>
+
+<span class="sd">            :param edge_type_filter: type of relations according to which the graph will be explored</span>
+<span class="sd">            :type edge_type_filter: relations of the type bulbsGraph.Relationtype (these are well python objects)</span>
+
+<span class="sd">            :return Clusters: * Clusters (Dictionary of lists, where key is the NodeID from the SubSeed)</span>
+<span class="sd">                              * SuperSeed (List of NodeIDs attained from the SubSet by the relation types from the edge_type_filter)</span>
+<span class="sd">                              * count (number of elements added to the SuperSeed compared to the SubSeed)</span>
+<span class="sd">            :rtype: 3- tuple</span>
+<span class="sd">            &#39;&#39;&#39;</span>
+            <span class="n">Clusters</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">SuperSeed</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+            <span class="n">SuperSeed</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">SubSeed</span><span class="p">)</span>
+            <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">SubSeed</span><span class="p">:</span>
+                <span class="n">LocalList</span><span class="p">,</span> <span class="n">count_increase</span> <span class="o">=</span> <span class="n">expand_from_seed</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="n">edge_type_filter</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Connexity_Aware</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">LocalList</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">Clusters</span><span class="p">[</span><span class="n">element</span><span class="p">]</span> <span class="o">=</span> <span class="n">copy</span><span class="p">(</span><span class="n">LocalList</span><span class="p">)</span>
+                    <span class="n">SuperSeed</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">LocalList</span><span class="p">)</span>
+                    <span class="n">count</span> <span class="o">+=</span> <span class="n">count_increase</span>
+            <span class="k">return</span> <span class="n">Clusters</span><span class="p">,</span> <span class="n">SuperSeed</span><span class="p">,</span> <span class="n">count</span>
+
+
+        <span class="k">def</span> <span class="nf">characterise</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">Links</span><span class="p">,</span> <span class="n">Group</span><span class="p">,</span> <span class="n">count</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Prints a charectristics of a return object from the get_Reaction_blocks or get_expansion</span>
+
+<span class="sd">            :param name: name of the object characterised</span>
+<span class="sd">            :type name: str</span>
+<span class="sd">            :param Links: element 1 of the return tuple (Links between objects)</span>
+<span class="sd">            :param Group: element 2 of the return tuple (SuperSeed)</span>
+<span class="sd">            :type Group: set or list</span>
+<span class="sd">            :param count: element 3 of the return tuple (count)</span>
+<span class="sd">            :type count: int</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="k">print</span> <span class="s">&#39;===========&gt;&#39;</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="s">&#39;&lt;===========&#39;</span>
+            <span class="k">print</span> <span class="nb">len</span><span class="p">(</span><span class="n">Links</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">Group</span><span class="p">),</span> <span class="n">count</span>
+            <span class="k">print</span> <span class="bp">self</span><span class="o">.</span><span class="n">pretty_time</span><span class="p">()</span>
+
+        <span class="c">################################################################################################################</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">ReactLinks</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">InitSet</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="n">get_Reaction_blocks</span><span class="p">()</span>
+        <span class="n">characterise</span><span class="p">(</span><span class="s">&#39;Reactions&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ReactLinks</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">InitSet</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">GroupLinks</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">GroupSet</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="n">get_expansion</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">InitSet</span><span class="p">,</span> <span class="n">edge_type_filters</span><span class="p">[</span><span class="s">&quot;Group&quot;</span><span class="p">])</span>
+        <span class="n">characterise</span><span class="p">(</span><span class="s">&#39;Groups&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">GroupLinks</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">GroupSet</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">SecLinks</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">SecSet</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="n">get_expansion</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">GroupSet</span><span class="p">,</span> <span class="n">edge_type_filters</span><span class="p">[</span><span class="s">&quot;Contact_interaction&quot;</span><span class="p">])</span>
+        <span class="n">characterise</span><span class="p">(</span><span class="s">&#39;Secondary Links&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">SecLinks</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">SecSet</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">):</span>
+            <span class="n">SecLinks2</span><span class="p">,</span> <span class="n">SecSet2</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="n">get_expansion</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">SecSet</span><span class="p">,</span> <span class="n">edge_type_filters</span><span class="p">[</span><span class="s">&quot;Contact_interaction&quot;</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">SecSet</span> <span class="o">=</span> <span class="n">SecSet2</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">SecLinks</span> <span class="o">=</span> <span class="n">SecLinks2</span>
+            <span class="n">characterise</span><span class="p">(</span><span class="s">&#39;Secondary Links &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39; &#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">SecLinks</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">SecSet</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">UP_Links</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">UPSet</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="n">get_expansion</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">SecSet</span><span class="p">,</span> <span class="n">edge_type_filters</span><span class="p">[</span><span class="s">&quot;Same&quot;</span><span class="p">])</span>
+        <span class="n">characterise</span><span class="p">(</span><span class="s">&#39;Uniprot Links&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">UP_Links</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">UPSet</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">HiNT_Links</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">FullSet</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="n">get_expansion</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">UPSet</span><span class="p">,</span> <span class="n">edge_type_filters</span><span class="p">[</span><span class="s">&quot;HiNT_Contact_interaction&quot;</span><span class="p">])</span>
+        <span class="n">characterise</span><span class="p">(</span><span class="s">&#39;HiNT Links&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">HiNT_Links</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">FullSet</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">):</span>
+            <span class="n">HiNT_Links2</span><span class="p">,</span> <span class="n">FullSet2</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="n">get_expansion</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">FullSet</span><span class="p">,</span> <span class="n">edge_type_filters</span><span class="p">[</span><span class="s">&quot;HiNT_Contact_interaction&quot;</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">FullSet</span> <span class="o">=</span> <span class="n">FullSet2</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">HiNT_Links</span> <span class="o">=</span> <span class="n">HiNT_Links2</span>
+            <span class="n">characterise</span><span class="p">(</span><span class="s">&#39;HiNT Links &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39; &#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">HiNT_Links</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">FullSet</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">Super_Links</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ExpSet</span><span class="p">,</span> <span class="n">c</span> <span class="o">=</span> <span class="n">get_expansion</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">FullSet</span><span class="p">,</span> <span class="n">edge_type_filters</span><span class="p">[</span><span class="s">&quot;possibly_same&quot;</span><span class="p">])</span>
+        <span class="n">characterise</span><span class="p">(</span><span class="s">&#39;Looks_similar Links&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Super_Links</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ExpSet</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="MatrixGetter.map_rows_to_names"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.html#PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.MatrixGetter.map_rows_to_names">[docs]</a>    <span class="k">def</span> <span class="nf">map_rows_to_names</span><span class="p">(</span><span class="bp">self</span><span class="p">,):</span>
+        <span class="sd">&quot;&quot;&quot; Maps Node Database IDs, Legacy IDs, display names and types to matrix row/column indexes; &quot;&quot;&quot;</span>
+
+        <span class="k">def</span> <span class="nf">request_location</span><span class="p">(</span><span class="n">Location_Buffer_Dict</span><span class="p">,</span> <span class="n">location</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Just a Buffered lookup of location, since the number of cellular location is relatively small</span>
+<span class="sd">            (~80), it makes sense to buffer the IOs on it.</span>
+<span class="sd">            Normally should be moved out as a buffering decorator</span>
+
+<span class="sd">            :type Location_Buffer_Dict: dict</span>
+<span class="sd">            :param Location_Buffer_Dict: Buffered location</span>
+<span class="sd">            :param location: location Node Lagacy ID we are willing to verify</span>
+<span class="sd">            :return: displayName of the requested location</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="n">location</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">location</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">location</span> <span class="ow">in</span> <span class="n">Location_Buffer_Dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">return</span> <span class="n">Location_Buffer_Dict</span><span class="p">[</span><span class="n">location</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">generator</span> <span class="o">=</span> <span class="n">DatabaseGraph</span><span class="o">.</span><span class="n">Location</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">lookup</span><span class="p">(</span><span class="n">ID</span> <span class="o">=</span> <span class="n">location</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">generator</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">elt</span> <span class="ow">in</span> <span class="n">generator</span><span class="p">:</span>
+                        <span class="n">Location_Buffer_Dict</span><span class="p">[</span><span class="n">location</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">elt</span><span class="o">.</span><span class="n">displayName</span><span class="p">)</span>
+                        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">elt</span><span class="o">.</span><span class="n">displayName</span><span class="p">)</span>
+
+        <span class="c">######################################################################################################################</span>
+
+
+        <span class="n">counter</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">LocationBufferDict</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">for</span> <span class="n">ID</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">Highest_Set</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">NodeID2MatrixNumber</span><span class="p">[</span><span class="n">ID</span><span class="p">]</span> <span class="o">=</span> <span class="n">counter</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">MatrixNumber2NodeID</span><span class="p">[</span><span class="n">counter</span><span class="p">]</span> <span class="o">=</span> <span class="n">ID</span>
+            <span class="n">Vertex</span> <span class="o">=</span> <span class="n">DatabaseGraph</span><span class="o">.</span><span class="n">vertices</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ID</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ID2displayName</span><span class="p">[</span><span class="n">ID</span><span class="p">]</span> <span class="o">=</span> <span class="n">Vertex</span><span class="o">.</span><span class="n">displayName</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ID2Type</span><span class="p">[</span><span class="n">ID</span><span class="p">]</span> <span class="o">=</span> <span class="n">Vertex</span><span class="o">.</span><span class="n">element_type</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ID2LegacyId</span><span class="p">[</span><span class="n">ID</span><span class="p">]</span> <span class="o">=</span> <span class="n">Vertex</span><span class="o">.</span><span class="n">ID</span>
+            <span class="k">if</span> <span class="n">Vertex</span><span class="o">.</span><span class="n">element_type</span> <span class="o">==</span> <span class="s">&quot;UNIPROT&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">Uniprots</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ID</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">Uniprot_Mat_idxs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">counter</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">Vertex</span><span class="o">.</span><span class="n">localization</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ID2Localization</span><span class="p">[</span><span class="n">ID</span><span class="p">]</span> <span class="o">=</span> <span class="n">request_location</span><span class="p">(</span><span class="n">LocationBufferDict</span><span class="p">,</span> <span class="n">Vertex</span><span class="o">.</span><span class="n">localization</span><span class="p">)</span>
+            <span class="n">counter</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">Uniprot_complete</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Uniprots</span>
+        <span class="n">UP_generator</span> <span class="o">=</span> <span class="n">DatabaseGraph</span><span class="o">.</span><span class="n">UNIPORT</span><span class="o">.</span><span class="n">get_all</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">UP_generator</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">UP_Node</span> <span class="ow">in</span> <span class="n">UP_generator</span><span class="p">:</span>
+                <span class="n">ID</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">UP_Node</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">ID</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">Uniprots</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">Uniprot_complete</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ID</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">ID2displayName</span><span class="p">[</span><span class="n">ID</span><span class="p">]</span> <span class="o">=</span> <span class="n">UP_Node</span><span class="o">.</span><span class="n">displayName</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">ID2Type</span><span class="p">[</span><span class="n">ID</span><span class="p">]</span> <span class="o">=</span> <span class="n">UP_Node</span><span class="o">.</span><span class="n">element_type</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">ID2LegacyId</span><span class="p">[</span><span class="n">ID</span><span class="p">]</span> <span class="o">=</span> <span class="n">UP_Node</span><span class="o">.</span><span class="n">ID</span>
+
+
+</div>
+<div class="viewcode-block" id="MatrixGetter.fast_row_insert"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.html#PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.MatrixGetter.fast_row_insert">[docs]</a>    <span class="k">def</span> <span class="nf">fast_row_insert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element</span><span class="p">,</span> <span class="n">index_type</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Performs an correct insertion of an edge to the matrix.</span>
+
+<span class="sd">        :param element: tuple of indexes designating elements we are willing to link</span>
+<span class="sd">        :type element: 2- tuple of ints</span>
+<span class="sd">        :param index_type: type of the insert, so that the matrix coefficient can be looked up in the Adjacency_Martix_Dict</span>
+<span class="sd">                            or Conductance_Martix_Dict from the configs file</span>
+<span class="sd">        :type index_type: str</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Ajacency_Matrix</span><span class="p">[</span><span class="n">element</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">element</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Ajacency_Matrix</span><span class="p">[</span><span class="n">element</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">element</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">+</span> <span class="n">Adjacency_Martix_Dict</span><span class="p">[</span><span class="n">index_type</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Ajacency_Matrix</span><span class="p">[</span><span class="n">element</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">element</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Ajacency_Matrix</span><span class="p">[</span><span class="n">element</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">element</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">+</span> <span class="n">Adjacency_Martix_Dict</span><span class="p">[</span><span class="n">index_type</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">Conductance_Matrix</span><span class="p">[</span><span class="n">element</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">element</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">-=</span> <span class="n">Conductance_Matrix_Dict</span><span class="p">[</span><span class="n">index_type</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Conductance_Matrix</span><span class="p">[</span><span class="n">element</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">element</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">-=</span> <span class="n">Conductance_Matrix_Dict</span><span class="p">[</span><span class="n">index_type</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Conductance_Matrix</span><span class="p">[</span><span class="n">element</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">element</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">+=</span> <span class="n">Conductance_Matrix_Dict</span><span class="p">[</span><span class="n">index_type</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Conductance_Matrix</span><span class="p">[</span><span class="n">element</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">element</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">+=</span> <span class="n">Conductance_Matrix_Dict</span><span class="p">[</span><span class="n">index_type</span><span class="p">]</span>
+
+</div>
+<div class="viewcode-block" id="MatrixGetter.create_val_matrix"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.html#PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.MatrixGetter.create_val_matrix">[docs]</a>    <span class="k">def</span> <span class="nf">create_val_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates anew self.Ajacency_Matrix and self.Conductance_Matrix</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">full_load_LS</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">Highest_Set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">FullSet</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_impact</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Highest_Set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ExpSet</span>
+
+        <span class="k">print</span> <span class="s">&quot;building correspondances&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pretty_time</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">map_rows_to_names</span><span class="p">()</span>
+
+        <span class="k">print</span> <span class="s">&quot;building the ValMatrix&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pretty_time</span><span class="p">()</span>
+
+        <span class="n">loadLen</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Highest_Set</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Ajacency_Matrix</span> <span class="o">=</span> <span class="n">lil_matrix</span><span class="p">((</span><span class="n">loadLen</span><span class="p">,</span> <span class="n">loadLen</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Conductance_Matrix</span> <span class="o">=</span> <span class="n">lil_matrix</span><span class="p">((</span><span class="n">loadLen</span><span class="p">,</span> <span class="n">loadLen</span><span class="p">))</span>
+
+        <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ReactLinks</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">elt</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">combinations</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
+                <span class="n">element</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">NodeID2MatrixNumber</span><span class="p">[</span><span class="n">elt</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="bp">self</span><span class="o">.</span><span class="n">NodeID2MatrixNumber</span><span class="p">[</span><span class="n">elt</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">fast_row_insert</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="s">&quot;Reaction&quot;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">GroupLinks</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">GroupLinks</span><span class="p">[</span><span class="n">key</span><span class="p">]:</span>
+                <span class="n">element</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">NodeID2MatrixNumber</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">NodeID2MatrixNumber</span><span class="p">[</span><span class="n">val</span><span class="p">])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">fast_row_insert</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="s">&quot;Group&quot;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">SecLinks</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">SecLinks</span><span class="p">[</span><span class="n">key</span><span class="p">]:</span>
+                <span class="n">element</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">NodeID2MatrixNumber</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">NodeID2MatrixNumber</span><span class="p">[</span><span class="n">val</span><span class="p">])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">fast_row_insert</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="s">&quot;Contact_interaction&quot;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">UP_Links</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">UP_Links</span><span class="p">[</span><span class="n">key</span><span class="p">]:</span>
+                <span class="n">element</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">NodeID2MatrixNumber</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">NodeID2MatrixNumber</span><span class="p">[</span><span class="n">val</span><span class="p">])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">fast_row_insert</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="s">&quot;Same&quot;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">HiNT_Links</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">HiNT_Links</span><span class="p">[</span><span class="n">key</span><span class="p">]:</span>
+                <span class="n">element</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">NodeID2MatrixNumber</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">NodeID2MatrixNumber</span><span class="p">[</span><span class="n">val</span><span class="p">])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">fast_row_insert</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="s">&quot;Contact_interaction&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_impact</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">Super_Links</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">Super_Links</span><span class="p">[</span><span class="n">key</span><span class="p">]:</span>
+                    <span class="n">element</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">NodeID2MatrixNumber</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">NodeID2MatrixNumber</span><span class="p">[</span><span class="n">val</span><span class="p">])</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">fast_row_insert</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="s">&quot;possibly_same&quot;</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="MatrixGetter.get_eigenspectrum"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.html#PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.MatrixGetter.get_eigenspectrum">[docs]</a>    <span class="k">def</span> <span class="nf">get_eigenspectrum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">numberEigvals</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Recovers the eigenspectrum associated to the *n* biggest eigenvalues, where *n* is specified by numberEigvals.</span>
+<span class="sd">            If the Adjacency and conductance matrix haven&#39;t been preloaded first, will raise an Exception</span>
+
+<span class="sd">        :param numberEigvals: specifies how many biggest eigenvalues we are willing to get.</span>
+<span class="sd">        :type numberEigvals: int</span>
+<span class="sd">        :raise Exception: &quot;Matrix must be pre-loaded first&quot; if self.Ajacency_Matrix and self.Conductance_Matrix have not</span>
+<span class="sd">                            been computed anew or pre-loaded first</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">Conductance_Matrix</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">4</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&quot;Matrix must be pre-loaded first&quot;</span><span class="p">)</span>
+
+        <span class="k">print</span> <span class="s">&quot;entering eigenvect computation&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pretty_time</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">adj_eigenvals</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">adj_eigenvects</span> <span class="o">=</span> <span class="n">eigsh</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Ajacency_Matrix</span><span class="p">,</span> <span class="n">numberEigvals</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cond_eigenvals</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cond_eigenvects</span> <span class="o">=</span> <span class="n">eigsh</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Conductance_Matrix</span><span class="p">,</span> <span class="n">numberEigvals</span><span class="p">)</span>
+
+        <span class="k">print</span> <span class="bp">self</span><span class="o">.</span><span class="n">adj_eigenvals</span>
+        <span class="k">print</span> <span class="s">&#39;&lt;======================&gt;&#39;</span>
+        <span class="k">print</span> <span class="bp">self</span><span class="o">.</span><span class="n">cond_eigenvals</span>
+        <span class="k">print</span> <span class="s">&#39;&lt;======================&gt;&#39;</span>
+        <span class="k">print</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">eigsh</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Conductance_Matrix</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">print</span> <span class="bp">self</span><span class="o">.</span><span class="n">pretty_time</span><span class="p">()</span>
+
+</div>
+<div class="viewcode-block" id="MatrixGetter.get_normalized_laplacian"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.html#PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.MatrixGetter.get_normalized_laplacian">[docs]</a>    <span class="k">def</span> <span class="nf">get_normalized_laplacian</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fudge</span> <span class="o">=</span> <span class="mf">1E-18</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the normalized conductance matrix (Conductance matrix is actually the matrix laplacian of the associated</span>
+<span class="sd">        Graph)</span>
+
+<span class="sd">        :param fudge: Cancells out the action of eigenvalues that are too low.</span>
+<span class="sd">        :return: normalized matrix</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">d</span><span class="p">,</span> <span class="n">V</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eigh</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Conductance_Matrix</span><span class="p">)</span>
+        <span class="n">D</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">d</span> <span class="o">+</span> <span class="n">fudge</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">V</span><span class="p">,</span> <span class="n">D</span><span class="p">),</span> <span class="n">V</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="MatrixGetter.Write_Connexity_Infos"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.html#PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.MatrixGetter.Write_Connexity_Infos">[docs]</a>    <span class="k">def</span> <span class="nf">Write_Connexity_Infos</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Writes the infos about connexity of different components of a graph into the database for the future use.</span>
+<span class="sd">            This execution is the main reason for the existance of the Adjacency Matrix.</span>
+
+<span class="sd">            :warning: This process has to ber re-run each time the underlying database is changed in a way that migh affect the main connex graph</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">CCOmps</span> <span class="o">=</span> <span class="n">connected_components</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Ajacency_Matrix</span><span class="p">,</span> <span class="n">directed</span> <span class="o">=</span> <span class="bp">False</span><span class="p">)</span>
+
+        <span class="n">counters</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">CCOmps</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">elt</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">CCOmps</span><span class="p">[</span><span class="mi">1</span><span class="p">])):</span>
+            <span class="n">counters</span><span class="p">[</span><span class="n">CCOmps</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">elt</span><span class="p">],</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">major_Index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">counters</span><span class="p">)</span>
+
+        <span class="n">ln</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">CCOmps</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">CCOmps</span><span class="p">[</span><span class="mi">1</span><span class="p">])):</span>
+            <span class="k">print</span> <span class="s">&#39;Marking graph main connex elements: </span><span class="si">%s</span><span class="s"> done&#39;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="s">&quot;{0:.2f}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">ln</span><span class="p">)</span><span class="o">*</span><span class="mi">100</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">CCOmps</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">major_Index</span><span class="p">:</span>
+                <span class="n">Node</span> <span class="o">=</span> <span class="n">DatabaseGraph</span><span class="o">.</span><span class="n">vertices</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">MatrixNumber2NodeID</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                <span class="n">Node</span><span class="o">.</span><span class="n">custom</span> <span class="o">=</span> <span class="s">&#39;Main_Connex&#39;</span>
+                <span class="n">Node</span><span class="o">.</span><span class="n">main_connex</span> <span class="o">=</span> <span class="bp">True</span>
+                <span class="n">Node</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+        <span class="k">print</span> <span class="s">&quot;Marking of </span><span class="si">%s</span><span class="s"> nodes for connexity was done in </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ln</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pretty_time</span><span class="p">()))</span>
+
+</div>
+<div class="viewcode-block" id="MatrixGetter.full_rebuild"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.html#PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.MatrixGetter.full_rebuild">[docs]</a>    <span class="k">def</span> <span class="nf">full_rebuild</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Performs the initial loading routines that set up in place the sytem of dump files to allow fast loading in the</span>
+<span class="sd">        future</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">CA</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Connexity_Aware</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Connexity_Aware</span> <span class="o">=</span> <span class="bp">False</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">create_val_matrix</span><span class="p">()</span>
+
+        <span class="n">Erase_custom_fields</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Write_Connexity_Infos</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">compute_Uniprot_Attachments</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Connexity_Aware</span> <span class="o">=</span> <span class="n">CA</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">create_val_matrix</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_eigenspectrum</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dump_Maps</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dump_Matrices</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dump_Eigens</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="MatrixGetter.fast_load"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.html#PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.MatrixGetter.fast_load">[docs]</a>    <span class="k">def</span> <span class="nf">fast_load</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Preloads mappings, matrices and eigenvalues</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">undump_Maps</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">undump_Matrices</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">undump_Eigens</span><span class="p">()</span>
+
+</div>
+<div class="viewcode-block" id="MatrixGetter.get_descriptor_for_index"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.html#PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.MatrixGetter.get_descriptor_for_index">[docs]</a>    <span class="k">def</span> <span class="nf">get_descriptor_for_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Recovers a descriptor set for a given index in the current matrix mapping</span>
+
+<span class="sd">        :param index: idenx for which return a descirptor</span>
+<span class="sd">        :return: Type, displayName and if a localization is given, returns display name too.</span>
+<span class="sd">        :rtype: tuple</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">MatrixNumber2NodeID</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ID2Localization</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ID2Type</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">MatrixNumber2NodeID</span><span class="p">[</span><span class="n">index</span><span class="p">]],</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">ID2displayName</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">MatrixNumber2NodeID</span><span class="p">[</span><span class="n">index</span><span class="p">]],</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">ID2Localization</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">MatrixNumber2NodeID</span><span class="p">[</span><span class="n">index</span><span class="p">]])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ID2Type</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">MatrixNumber2NodeID</span><span class="p">[</span><span class="n">index</span><span class="p">]],</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">ID2displayName</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">MatrixNumber2NodeID</span><span class="p">[</span><span class="n">index</span><span class="p">]])</span>
+
+</div>
+<div class="viewcode-block" id="MatrixGetter.compute_Uniprot_Attachments"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.html#PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.MatrixGetter.compute_Uniprot_Attachments">[docs]</a>    <span class="k">def</span> <span class="nf">compute_Uniprot_Attachments</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Computes the dictionarry of attachements between the Uniprots and Reactome proteins</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">SP_Node_ID</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">Uniprots</span><span class="p">:</span>
+            <span class="n">Vertex</span> <span class="o">=</span> <span class="n">DatabaseGraph</span><span class="o">.</span><span class="n">UNIPORT</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">SP_Node_ID</span><span class="p">)</span>
+            <span class="n">Generator</span> <span class="o">=</span> <span class="n">Vertex</span><span class="o">.</span><span class="n">bothV</span><span class="p">(</span><span class="s">&quot;is_same&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">Generator</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">Uniprot_attachments</span><span class="p">[</span><span class="n">SP_Node_ID</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">Generator</span><span class="p">:</span>
+                    <span class="n">ID</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">item</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">Uniprot_attachments</span><span class="p">[</span><span class="n">SP_Node_ID</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ID</span><span class="p">)</span>
+                <span class="k">print</span> <span class="s">&#39;attached </span><span class="si">%s</span><span class="s"> Reactome proteins to the node </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Uniprot_attachments</span><span class="p">[</span><span class="n">SP_Node_ID</span><span class="p">]),</span> <span class="n">SP_Node_ID</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">print</span> <span class="s">&#39;No attachement for the node </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">SP_Node_ID</span>
+
+</div>
+<div class="viewcode-block" id="MatrixGetter.hacky_corr"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.html#PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.MatrixGetter.hacky_corr">[docs]</a>    <span class="k">def</span> <span class="nf">hacky_corr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Hacky method that should remain unused but by the devs.</span>
+<span class="sd">        Generate the Uniprot_Mat_idxs from the loaded Uniprot List. Prefents a 90-minute full database reload to compute</span>
+<span class="sd">        Sthing quickly.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">undump_Maps</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Uniprot_Mat_idxs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">SP_Id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">Uniprots</span><span class="p">:</span>
+            <span class="n">Node</span> <span class="o">=</span> <span class="n">DatabaseGraph</span><span class="o">.</span><span class="n">UNIPORT</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">SP_Id</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">Node</span><span class="o">.</span><span class="n">main_connex</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">Uniprot_Mat_idxs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">NodeID2MatrixNumber</span><span class="p">[</span><span class="n">SP_Id</span><span class="p">])</span>
+        <span class="k">print</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Uniprot_Mat_idxs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dump_Maps</span><span class="p">()</span>
+
+</div>
+    <span class="k">def</span> <span class="nf">_MD5hash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the MD hash of self to ensure that all the defining properties have been correctly defined before dump/retrieval</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">sorted_initset</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">NodeID2MatrixNumber</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="nb">str</span><span class="o">.</span><span class="n">lower</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">Connexity_Aware</span><span class="p">,</span> <span class="n">sorted_initset</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_impact</span><span class="p">]</span>
+        <span class="n">md5</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">md5</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">,</span><span class="n">sort_keys</span><span class="o">=</span><span class="bp">True</span><span class="p">))</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">md5</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="MatrixGetter.set_Uniprot_source"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.html#PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.MatrixGetter.set_Uniprot_source">[docs]</a>    <span class="k">def</span> <span class="nf">set_Uniprot_source</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Uniprots</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="n">Uniprots</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">NodeID2MatrixNumber</span><span class="o">.</span><span class="n">iterkeys</span><span class="p">()):</span>
+            <span class="n">ex_pload</span> <span class="o">=</span> <span class="s">&#39;Following Uniprots either were not in the construction set or have no GOs attached: </span><span class="se">\n</span><span class="s"> </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">Uniprots</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">NodeID2MatrixNumber</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+            <span class="k">raise</span> <span class="ne">Warning</span><span class="p">(</span><span class="n">ex_pload</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">analytic_Uniprots</span> <span class="o">=</span> <span class="n">Uniprots</span>
+
+</div>
+<div class="viewcode-block" id="MatrixGetter.build_extended_conduction_system"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.html#PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.MatrixGetter.build_extended_conduction_system">[docs]</a>    <span class="k">def</span> <span class="nf">build_extended_conduction_system</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memoized</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">sourced</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">incremental</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">cancellation</span> <span class="o">=</span> <span class="bp">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Builds a conduction matrix that integrates uniprots, in order to allow an easier knowledge flow analysis</span>
+
+<span class="sd">        :param memoized: if the tensions and individual relation matrices should be stored in the matrix and dumped at the end computation (required for submatrix recomputation)</span>
+<span class="sd">        :param sourced: if true, all the raltions will be looked up and not computed. Useful for the retrieval of subcirculation group, but requires the UP2voltage_and_circ to be pre-filled</span>
+<span class="sd">        :param incremental: if True, all the circulation computation will be added to the existing ones. Usefull for the computation of particularly big systems with intermediate dumps</span>
+<span class="sd">        :param cancellation: divides the final current by #Nodes**2/2, i.e. makes the currents comparable between circulation systems of differnet  sizes.</span>
+<span class="sd">        :return: adjusted conduction system</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">incremental</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_accumulator</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">current_accumulator</span> <span class="o">=</span> <span class="n">lil_matrix</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Conductance_Matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">UP2UP_voltages</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">node_current</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">sourced</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">UP2voltage_and_circ</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">current_accumulator</span><span class="p">,</span> <span class="n">UP_pair2voltage_current</span> <span class="o">=</span> <span class="n">CR</span><span class="o">.</span><span class="n">get_better_pairwise_flow</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Conductance_Matrix</span><span class="p">,</span>
+                                                                                   <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">NodeID2MatrixNumber</span><span class="p">[</span><span class="n">UP</span><span class="p">]</span> <span class="k">for</span> <span class="n">UP</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">analytic_Uniprots</span><span class="p">],</span>
+                                                                                   <span class="n">cancellation</span><span class="o">=</span><span class="n">cancellation</span><span class="p">,</span>
+                                                                                   <span class="n">memoized</span><span class="o">=</span><span class="n">memoized</span><span class="p">,</span>
+                                                                                   <span class="n">memory_source</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">UP2voltage_and_circ</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">incremental</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">current_accumulator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_accumulator</span> <span class="o">+</span> <span class="n">current_accumulator</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">UP2voltage_and_circ</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">UP_pair2voltage_current</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">UP2UP_voltages</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">dict</span><span class="p">((</span><span class="n">key</span><span class="p">,</span> <span class="n">val1</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="p">(</span><span class="n">val1</span><span class="p">,</span> <span class="n">val2</span><span class="p">)</span> <span class="ow">in</span> <span class="n">UP_pair2voltage_current</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">current_accumulator</span> <span class="o">=</span> <span class="n">current_accumulator</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">UP2voltage_and_circ</span> <span class="o">=</span> <span class="n">UP_pair2voltage_current</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">UP2UP_voltages</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">((</span><span class="n">key</span><span class="p">,</span> <span class="n">val1</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="p">(</span><span class="n">val1</span><span class="p">,</span> <span class="n">val2</span><span class="p">)</span> <span class="ow">in</span> <span class="n">UP_pair2voltage_current</span><span class="o">.</span><span class="n">iteritems</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">memoized</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dump_memoized</span><span class="p">()</span>
+
+        <span class="n">index_current</span> <span class="o">=</span> <span class="n">CR</span><span class="o">.</span><span class="n">get_current_through_nodes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_accumulator</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">node_current</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">dict</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">MatrixNumber2NodeID</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">val</span><span class="p">)</span> <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">index_current</span><span class="p">)))</span>
+
+</div>
+<div class="viewcode-block" id="MatrixGetter.format_Node_props"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.html#PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.MatrixGetter.format_Node_props">[docs]</a>    <span class="k">def</span> <span class="nf">format_Node_props</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node_current</span><span class="p">,</span> <span class="n">limit</span> <span class="o">=</span> <span class="mf">0.01</span><span class="p">):</span>
+        <span class="n">charDict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">NodeID</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">NodeID2MatrixNumber</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">node_current</span><span class="p">[</span><span class="n">NodeID</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">limit</span><span class="p">:</span>
+                <span class="n">charDict</span><span class="p">[</span><span class="n">NodeID</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span> <span class="n">node_current</span><span class="p">[</span><span class="n">NodeID</span><span class="p">],</span>
+                                     <span class="bp">self</span><span class="o">.</span><span class="n">Conductance_Matrix</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="p">]]</span>
+        <span class="k">return</span> <span class="n">charDict</span>
+
+</div>
+<div class="viewcode-block" id="MatrixGetter.export_conduction_system"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.html#PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.MatrixGetter.export_conduction_system">[docs]</a>    <span class="k">def</span> <span class="nf">export_conduction_system</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Computes the conduction system of the GO terms and exports it to the GDF format and flushes it into a file that</span>
+<span class="sd">        can be viewed with Gephi</span>
+
+<span class="sd">        :raise Warning:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">nodecharnames</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;Current&#39;</span><span class="p">,</span> <span class="s">&#39;Type&#39;</span><span class="p">,</span> <span class="s">&#39;Legacy_ID&#39;</span><span class="p">,</span> <span class="s">&#39;Names&#39;</span><span class="p">,</span> <span class="s">&#39;Degree&#39;</span><span class="p">,</span> <span class="s">&#39;Source&#39;</span><span class="p">]</span>
+        <span class="n">nodechartypes</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;DOUBLE&#39;</span><span class="p">,</span> <span class="s">&#39;VARCHAR&#39;</span><span class="p">,</span> <span class="s">&#39;VARCHAR&#39;</span><span class="p">,</span> <span class="s">&#39;VARCHAR&#39;</span><span class="p">,</span> <span class="s">&#39;DOUBLE&#39;</span><span class="p">,</span> <span class="s">&#39;DOUBLE&#39;</span><span class="p">]</span>
+        <span class="n">charDict</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">for</span> <span class="n">NodeID</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">node_current</span><span class="o">.</span><span class="n">iterkeys</span><span class="p">():</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">NodeID2MatrixNumber</span><span class="p">[</span><span class="n">NodeID</span><span class="p">]</span>
+            <span class="n">charDict</span><span class="p">[</span><span class="n">NodeID</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">node_current</span><span class="p">[</span><span class="n">NodeID</span><span class="p">]),</span>
+                             <span class="bp">self</span><span class="o">.</span><span class="n">ID2Type</span><span class="p">[</span><span class="n">NodeID</span><span class="p">],</span>
+                             <span class="bp">self</span><span class="o">.</span><span class="n">ID2LegacyId</span><span class="p">[</span><span class="n">NodeID</span><span class="p">],</span>
+                             <span class="bp">self</span><span class="o">.</span><span class="n">ID2displayName</span><span class="p">[</span><span class="n">NodeID</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;,&#39;</span><span class="p">,</span> <span class="s">&#39;-&#39;</span><span class="p">),</span>
+                             <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Conductance_Matrix</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="p">]),</span>
+                             <span class="nb">str</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">NodeID</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">analytic_Uniprots</span><span class="p">)))]</span>
+
+        <span class="n">GDF_exporter</span> <span class="o">=</span> <span class="n">GDF_export_Interface</span><span class="p">(</span><span class="n">target_fname</span> <span class="o">=</span> <span class="n">Outputs</span><span class="o">.</span><span class="n">Interactome_GDF_output</span><span class="p">,</span> <span class="n">field_names</span> <span class="o">=</span> <span class="n">nodecharnames</span><span class="p">,</span>
+                                            <span class="n">field_types</span> <span class="o">=</span> <span class="n">nodechartypes</span><span class="p">,</span> <span class="n">node_properties_dict</span> <span class="o">=</span> <span class="n">charDict</span><span class="p">,</span>
+                                            <span class="n">mincurrent</span> <span class="o">=</span> <span class="mf">0.01</span><span class="p">,</span> <span class="n">Idx2Label</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">MatrixNumber2NodeID</span><span class="p">,</span>
+                                            <span class="n">Label2Idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">NodeID2MatrixNumber</span><span class="p">,</span>
+                                            <span class="n">current_Matrix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_accumulator</span><span class="p">)</span>
+        <span class="n">GDF_exporter</span><span class="o">.</span><span class="n">write</span><span class="p">()</span>
+
+</div>
+<div class="viewcode-block" id="MatrixGetter.export_subsystem"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.html#PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.MatrixGetter.export_subsystem">[docs]</a>    <span class="k">def</span> <span class="nf">export_subsystem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">UP_system</span><span class="p">,</span> <span class="n">UP_subsystem</span><span class="p">):</span>
+        <span class="n">current_recombinator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">undump_memoized</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="n">UP_system</span><span class="p">)</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span><span class="n">pickle</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">current_recombinator</span><span class="p">[</span><span class="s">&#39;UPs&#39;</span><span class="p">])):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;Wrong UP system re-analyzed&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">UP2voltage_and_circ</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">current_recombinator</span><span class="p">[</span><span class="s">&#39;voltages&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_Uniprot_source</span><span class="p">(</span><span class="n">UP_subsystem</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">build_extended_conduction_system</span><span class="p">(</span><span class="n">memoized</span> <span class="o">=</span> <span class="bp">False</span><span class="p">,</span> <span class="n">sourced</span> <span class="o">=</span> <span class="bp">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">export_conduction_system</span><span class="p">()</span>
+
+</div>
+<div class="viewcode-block" id="MatrixGetter.randomly_sample"><a class="viewcode-back" href="../../../PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.html#PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface.MatrixGetter.randomly_sample">[docs]</a>    <span class="k">def</span> <span class="nf">randomly_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">samples_size</span><span class="p">,</span> <span class="n">samples_each_size</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Randomly samples the set</span>
+
+<span class="sd">        :param samples_size:</span>
+<span class="sd">        :param samples_each_size:</span>
+<span class="sd">        :raise Exception:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">samples_size</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">samples_each_size</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;Not the same list sizes!&#39;</span><span class="p">)</span>
+
+        <span class="n">self_connectable_UPs</span> <span class="o">=</span> <span class="p">[</span><span class="n">NodeID</span> <span class="k">for</span> <span class="n">NodeID</span><span class="p">,</span> <span class="n">idx</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">NodeID2MatrixNumber</span><span class="o">.</span><span class="n">iteritems</span><span class="p">()</span> <span class="k">if</span> <span class="n">idx</span><span class="o">&lt;</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Conductance_Matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">)]</span>
+
+        <span class="k">for</span> <span class="n">sample_size</span><span class="p">,</span> <span class="n">iterations</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">samples_size</span><span class="p">,</span> <span class="n">samples_each_size</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">iterations</span><span class="p">):</span>
+                <span class="n">shuffle</span><span class="p">(</span><span class="n">self_connectable_UPs</span><span class="p">)</span>
+                <span class="n">analytics_UP_list</span> <span class="o">=</span> <span class="n">self_connectable_UPs</span><span class="p">[:</span><span class="n">sample_size</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">set_Uniprot_source</span><span class="p">(</span><span class="n">analytics_UP_list</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">build_extended_conduction_system</span><span class="p">(</span><span class="n">memoized</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">sourced</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+
+                <span class="n">md5</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">md5</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">analytics_UP_list</span><span class="p">),</span> <span class="n">sort_keys</span><span class="o">=</span><span class="bp">True</span><span class="p">))</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+
+                <span class="n">Interactome_rand_samp</span><span class="o">.</span><span class="n">insert</span><span class="p">({</span><span class="s">&#39;UP_hash&#39;</span> <span class="p">:</span> <span class="n">md5</span><span class="p">,</span>
+                                     <span class="s">&#39;sys_hash&#39;</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_MD5hash</span><span class="p">(),</span>
+                                     <span class="s">&#39;size&#39;</span> <span class="p">:</span> <span class="n">sample_size</span><span class="p">,</span>
+                                     <span class="s">&#39;UPs&#39;</span> <span class="p">:</span> <span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">analytics_UP_list</span><span class="p">),</span>
+                                     <span class="s">&#39;currents&#39;</span> <span class="p">:</span> <span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">current_accumulator</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">node_current</span><span class="p">)),</span>
+                                     <span class="s">&#39;voltages&#39;</span> <span class="p">:</span> <span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">UP2UP_voltages</span><span class="p">)})</span>
+
+                <span class="k">print</span> <span class="s">&#39;Random ID: </span><span class="si">%s</span><span class="s"> </span><span class="se">\t</span><span class="s"> Sample size: </span><span class="si">%s</span><span class="s"> </span><span class="se">\t</span><span class="s"> iteration: </span><span class="si">%s</span><span class="se">\t</span><span class="s"> compops: </span><span class="si">%s</span><span class="s"> </span><span class="se">\t</span><span class="s"> time: </span><span class="si">%s</span><span class="s"> &#39;</span> <span class="o">%</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">r_ID</span><span class="p">,</span>
+                        <span class="n">sample_size</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="s">&quot;{0:.2f}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">sample_size</span><span class="o">*</span><span class="p">(</span><span class="n">sample_size</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">_time</span><span class="p">()),</span> <span class="bp">self</span><span class="o">.</span><span class="n">pretty_time</span><span class="p">())</span>
+
+</div></div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">Mat_gter</span> <span class="o">=</span> <span class="n">MatrixGetter</span><span class="p">(</span><span class="bp">True</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+    <span class="n">Mat_gter</span><span class="o">.</span><span class="n">full_rebuild</span> <span class="p">()</span>
+    <span class="c"># Mat_gter.hacky_corr()</span>
+    <span class="n">Mat_gter</span><span class="o">.</span><span class="n">fast_load</span><span class="p">()</span>
+    <span class="k">print</span> <span class="nb">len</span><span class="p">(</span><span class="n">Mat_gter</span><span class="o">.</span><span class="n">Uniprots</span><span class="p">)</span>
+    <span class="k">print</span> <span class="nb">len</span><span class="p">(</span><span class="n">Mat_gter</span><span class="o">.</span><span class="n">Uniprot_complete</span><span class="p">)</span>
+    <span class="c"># pprinter = PrettyPrinter(indent=4)</span>
+    <span class="c"># pprinter.pprint(len(Mat_gter.Uniprot_attachments.keys()))</span>
+
+    <span class="c"># print Mat_gter.ID2displayName.keys()[:50]</span>
+    <span class="c"># test_set = [&#39;55618&#39;, &#39;55619&#39;, &#39;55616&#39;, &#39;55614&#39;, &#39;55615&#39;, &#39;55612&#39;, &#39;55613&#39;, &#39;55342&#39;, &#39;177791&#39;, &#39;126879&#39;,</span>
+    <span class="c"># &#39;49913&#39;, &#39;117670&#39;, &#39;189117&#39;, &#39;55292&#39;, &#39;55293&#39;, &#39;55290&#39;, &#39;55291&#39;, &#39;55296&#39;, &#39;55297&#39;, &#39;51269&#39;, &#39;55295&#39;,</span>
+    <span class="c"># &#39;51267&#39;, &#39;51265&#39;, &#39;51263&#39;, &#39;51261&#39;, &#39;55762&#39;, &#39;55763&#39;, &#39;55760&#39;, &#39;55761&#39;, &#39;55766&#39;, &#39;55767&#39;, &#39;55764&#39;,</span>
+    <span class="c"># &#39;55765&#39;, &#39;51064&#39;, &#39;50641&#39;, &#39;50647&#39;, &#39;51062&#39;, &#39;56239&#39;, &#39;56238&#39;, &#39;51283&#39;, &#39;56235&#39;, &#39;56234&#39;, &#39;56237&#39;,</span>
+    <span class="c"># &#39;56236&#39;, &#39;51289&#39;, &#39;56230&#39;, &#39;56233&#39;, &#39;56232&#39;, &#39;55908&#39;, &#39;55909&#39;]</span>
+    <span class="c">#</span>
+    <span class="c"># test2 = [&#39;55618&#39;, &#39;55619&#39;, &#39;55616&#39;, &#39;55614&#39;, &#39;55615&#39;, &#39;55612&#39;, &#39;55613&#39;, &#39;55342&#39;, &#39;177791&#39;, &#39;126879&#39;]</span>
+    <span class="c">#</span>
+    <span class="c"># Mat_gter.export_subsystem(test_set, test2)</span>
+    <span class="c"># Mat_gter.build_extended_conduction_system()</span>
+    <span class="c"># Mat_gter.export_conduction_system()</span>
+
+    <span class="n">Mat_gter</span><span class="o">.</span><span class="n">randomly_sample</span><span class="p">([</span><span class="mi">10</span><span class="p">,</span><span class="mi">25</span><span class="p">],[</span><span class="mi">5</span><span class="p">,</span><span class="mi">5</span><span class="p">])</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">PolyPharma 0.2a3 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Andrei Kucharavy.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

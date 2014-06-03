@@ -1,0 +1,2 @@
+sphinx-apidoc -f -e -o ./source ../PolyPharma/
+make html

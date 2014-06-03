@@ -147,13 +147,6 @@ class GO_Interface(object):
         return pt
 
 
-    def call_show(self):
-        self.call_coutner +=1
-        print '*',
-        if self.call_coutner % 100 == 99:
-            print ''
-
-
     def dump_statics(self):
         dump_object(Dumps.GO_builder_stat, (self.Filtr, self.InitSet ,self.corrfactor, self.ultraspec_cleaned, self.ultraspec_lvl))
 
@@ -646,9 +639,17 @@ class GO_Interface(object):
 
 
     def format_Node_props(self, node_current, limit = 0.01):
+        """
+        Formats the nodes for the analysis by in the knowledge_access_analysis module
+
+        :param node_current: Current throug the GO nodes
+        :param limit: hard limit to filter out the GO terms with too little current (co   mpensates the minor currents in the gird)
+        :return: {GO:[node current, pure GO informativity, Number of reachable nodes]}
+        """
         charDict = {}
+        limcurr = max(node_current.values())*limit
         for GO in self.GO2Num.iterkeys():
-            if node_current[GO] > limit:
+            if node_current[GO] > limcurr:
                 charDict[GO] = [ node_current[GO],
                                  self.GO2_Pure_Inf[GO],
                                  len(self.GO2UP_Reachable_nodes[GO])]
@@ -667,7 +668,7 @@ class GO_Interface(object):
         charDict = {}
 
         if self.uncomplete_compute:
-            warn('Links between the elements should not be trusted: the computations was sampling and was not complete')
+            warn('Links between the elements should not be trusted: the computations wa   s sampling and was not complete')
 
         for GO in self.GO2Num.iterkeys():
             charDict[GO] = [ str(self.node_current[GO]),
@@ -691,6 +692,16 @@ class GO_Interface(object):
 
 
     def export_subsystem(self, UP_system, UP_subsystem):
+        """
+        Exports the subsystem of Uniprots and circulation between them based on a larger precalculated system.This is
+        possible only of the memoization parameter was on during the execution of "build_extended_circulation_system()"
+        function execution.
+
+        :param UP_system: The set of uniprots for which the larger system was calculated
+        :param UP_subsystem: the set of Uniprots we are interested in
+        :raise Exception: if the set of uniprots for which the larger system was calculated doesn't correspond to what
+                            is stored in the dumps
+        """
         current_recombinator = self.undump_memoized()
         if not set(UP_system) == set(pickle.loads(current_recombinator['UPs'])):
             raise Exception('Wrong UP system re-analyzed')
@@ -702,15 +713,20 @@ class GO_Interface(object):
 
     def randomly_sample(self, samples_size, samples_each_size, sparse_rounds=False, chromosome_specific=False, memoized=False, No_add=False):
         """
-        Randomly samples the set
+        Randomly samples the set of Uniprots used to create the model. This is the null model creation routine
 
-        :param samples_size:
-        :param samples_each_size:
-        :param sparse_rounds:
+
+        :param samples_size: list of numbers of uniprots we would like to create the model for
+        :param samples_each_size: how many times we would like to sample each unirot number
+        :param sparse_rounds:  if we want to use sparse sampling (usefull in case of large uniprot sets),
+        we would use this option
         :type sparse_rounds: int
-        :param chromosome_specific:
+        :param chromosome_specific: if we want the sampling to be chromosome-specific, set this parameter to the
+        number of chromosome to sample from
         :type chromosome_specific: int
-        :raise Exception:
+        :param memoized: if set to True, the sampling would be rememberd for export. Usefull in case of the chromosome comparison
+        :param No_add: if set to True, the result of sampling will not be added to the database of samples. Usefull if re-running tests with similar parameters several times.
+        :raise Exception: if the number of items in the samples size ann saples_each size are different
         """
         if not len(samples_size) == len(samples_each_size):
             raise Exception('Not the same list sizes!')
@@ -745,6 +761,11 @@ class GO_Interface(object):
 
 
     def get_indep_linear_groups(self):
+        """
+        Recovers independent linear groups of the GO terms. Independent linear groups are those that share a
+        significant amount of Uniprots in common
+
+        """
         self.Indep_Lapl = lil_matrix((len(self.All_GOs), len(self.All_GOs)))
         for GO_list in self.UP2GO_Reachable_nodes.itervalues():
             for GO1, GO2 in combinations(GO_list,2):
@@ -758,19 +779,20 @@ class GO_Interface(object):
 if __name__ == '__main__':
     filtr = ['biological_process']
 
-    # Edit to supress the MG.Uniprots values.
     KG = GO_Interface(filtr, MG.Uniprot_complete, (1, 1), True, 3)
     KG.rebuild()
     print KG.pretty_time()
     KG.store()
     print KG.pretty_time()
-    # experimental = ['186958', '142401', '147798', '164077', '162624', '181770', '113303', '160359', '133344', '178502']
 
-    # experimental = ['55618', '55619', '55616', '55614', '55615', '55612', '55613', '55342', '177791', '126879',
-    # '49913', '117670', '189117', '55292', '55293', '55290', '55291', '55296', '55297', '51269', '55295',
-    # '51267', '51265', '51263', '51261', '55762', '55763', '55760', '55761', '55766', '55767', '55764',
-    # '55765', '51064', '50641', '50647', '51062', '56239', '56238', '51283', '56235', '56234', '56237',
-    # '56236', '51289', '56230', '56233', '56232', '55908', '55909']
+    ## loading takes 1-6 seconds.
+    ## fill for reach only is done in 2 seconds,
+    ## tepping takes another 15,
+    ## inverting + info computation - 1 more second
+    ## Laplacian building =>
+    ##
+    ## full computation - 3 minutes 18 seconds; save 7 seconds, retrieval - 3 seconds
+
 
     # KG.load()
     # print KG.pretty_time()
@@ -788,49 +810,6 @@ if __name__ == '__main__':
 
 
 
-
-    # TODO: build a theoretic "surprise" level estimator, comapare with experimental "surprise" of the GO terms with certain confusion/informativity observation
-
-    # TODO: estimate how likely it is to get a term with informativity x at a size N and what is the expectend number of terms, use the Benjamin-Hoechberg method
-            # to remove the most unlikely ones.
-
-    # Non-trivial interesting GOs: reach between 3 and 200. For them, we should calculate the hidden strong importance
-    # terms, i.e. routing over X percent of information => UP importance for GO terms.
-
-    # loading takes 1-6 seconds.
-    # fill for reach only is done in 2 seconds,
-    # tepping takes another 15,
-    # inverting + info computation - 1 more second
-    # Laplacian building =>
-
-    # full computation - 3 minutes 18 seconds; save 7 seconds, retrieval - 3 seconds
-
     # data_array = np.array([log(val) for val in KG.GO2_Pure_Inf.itervalues()])
     # hist(data_array, 100, log=True)
     # show()
-
-    # UP confusion matrix by GO Term?
-        # => coefficient of corelation?
-    # GO specificity (i.e. how fully the given UP set covers a given GO term )
-    # GO recall (i.e. how many UPs a given GO term covers from a given set? )
-    # GO confusion power: i.e. knowing just that GO terms, how many terms out of this set would we retrieve? in case of
-    # an equiprobable pulling out of all the UP terms you know are annotated with such a GO?
-
-    # How can we scale it with introducing credibility values for the Uniprots?
-
-    # Sorting on the probability of confusion with a random sample, of addition of a random sample of a given size to the
-    # GO analysis system?
-
-    # what would be the probability of a set with a given informativity popping out on random for a given selection of terms?
-
-    # in order to perform the correct implementation, we need to draw a graph of the correlation between the confusion
-    # of the minimal informativity GO term of a set and the tension required to transmit the information
-
-    # Problem: ultraspecificity requires a pretty strong re-manipulation of both GOs and matrix construction routines after
-    # the matrices have been build.
-
-    # Wouldn't it be easier just to repress the informativity they induce by modifying the correction factors in the
-    # information functions?
-        # => Now, the distortion the uinduce is more then 10 times stronger. In addition the presence of this terms
-        # would greatly slow the matrix computation performance. (there are almost 3000 of them: a third of all the GO terms)
-    # What we could do is just to ceil the informativity of terms on the x-term informaitivity

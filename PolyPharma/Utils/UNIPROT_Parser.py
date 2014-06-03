@@ -9,10 +9,10 @@ import copy
 
 Interesting_TaxIDs = [TaxID.strip() for TaxID in conf.Sources['UNIPROT']['tax_ids'].split(',') if TaxID not in ('',' ')]
 Interesting_lines = ['ID', 'AC', 'DE', 'GN', 'OX', 'DR']
-Interesing_xrefs = ['EMBL', 'GO', 'Pfam', 'Ensembl', 'KEGG', 'PDB']
+Interesing_xrefs = ['EMBL', 'GO', 'Pfam', 'Ensembl', 'KEGG', 'PDB', 'GeneID']
 NameIgnore = ['Contains', 'Allergen', 'EC=', 'Flags: ', 'CD_antigen', 'INN=']
 defDict = {'Acnum':[], 'Names':{'Full':'', 'AltNames':[]}, 'GeneRefs':{'Names':[], 'OrderedLocusNames':[], 'ORFNames':[]},
-           'Ensembl':[], 'KEGG':[], 'EMBL':[], 'GO':[], 'Pfam':[], 'SUPFAM':[], 'PDB':[]}
+           'Ensembl':[], 'KEGG':[], 'EMBL':[], 'GO':[], 'Pfam':[], 'SUPFAM':[], 'PDB':[], 'GeneID':[]}
 
 
 lst1 = [
@@ -73,6 +73,8 @@ def parse_Xref(Dico,Line):
         Dico['KEGG'].append(Line.split(';')[1].strip())
     if 'PDB; ' in Line:
         Dico['PDB'].append(Line.split(';')[1].strip())
+    if 'GeneID; ' in Line:
+        Dico['GeneID'].append(Line.split(';')[1].strip())
 
 
 def parse_GeneRefs(Dico,Line):

@@ -1,0 +1,281 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>PolyPharma.neo4j_Importers.Matrix_Knowledge_DB_Interface &mdash; PolyPharma 0.2a3 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.2a3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="PolyPharma 0.2a3 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">PolyPharma 0.2a3 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for PolyPharma.neo4j_Importers.Matrix_Knowledge_DB_Interface</h1><div class="highlight"><pre>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s">&#39;ank&#39;</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Contains all the tools necessary to map GO ontology and Pathway classification from the database to an Adjacency and</span>
+<span class="sd">Laplacian graph.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">PolyPharma.neo4j_Declarations.Graph_Declarator</span> <span class="kn">import</span> <span class="n">DatabaseGraph</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">time</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">import</span> <span class="nn">operator</span>
+<span class="kn">from</span> <span class="nn">random</span> <span class="kn">import</span> <span class="n">shuffle</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">from</span> <span class="nn">scipy.stats.kde</span> <span class="kn">import</span>  <span class="n">gaussian_kde</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">pylab</span> <span class="kn">import</span> <span class="n">plot</span><span class="p">,</span> <span class="n">hist</span><span class="p">,</span> <span class="n">show</span>
+<span class="kn">from</span> <span class="nn">PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface</span> <span class="kn">import</span> <span class="n">MatrixGetter</span>
+<span class="kn">from</span> <span class="nn">PolyPharma.configs</span> <span class="kn">import</span> <span class="n">Dumps</span>
+<span class="kn">from</span> <span class="nn">PolyPharma.neo4j_analyzer.knowledge_access</span> <span class="kn">import</span> <span class="n">acceleratedInsert</span>
+
+<span class="c"># Creates an instance of MatrixGetter and loads pre-computed values</span>
+<span class="n">MG</span> <span class="o">=</span> <span class="n">MatrixGetter</span><span class="p">(</span><span class="bp">True</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+<span class="n">MG</span><span class="o">.</span><span class="n">fast_load</span><span class="p">()</span>
+
+<span class="c"># specify the relations that lead to a more general or to an equally regulated node.</span>
+<span class="n">GOUpTypes</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;is_a_go&quot;</span><span class="p">,</span> <span class="s">&quot;is_part_of_go&quot;</span><span class="p">]</span>
+<span class="n">GORegTypes</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;is_Regulant&quot;</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="GO_Interface"><a class="viewcode-back" href="../../../PolyPharma.neo4j_Importers.Matrix_Knowledge_DB_Interface.html#PolyPharma.neo4j_Importers.Matrix_Knowledge_DB_Interface.GO_Interface">[docs]</a><span class="k">class</span> <span class="nc">GO_Interface</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    General calss to recover all the informations associated with GO from database and buffer them for further use.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+<div class="viewcode-block" id="GO_Interface.get_GO_access"><a class="viewcode-back" href="../../../PolyPharma.neo4j_Importers.Matrix_Knowledge_DB_Interface.html#PolyPharma.neo4j_Importers.Matrix_Knowledge_DB_Interface.GO_Interface.get_GO_access">[docs]</a>    <span class="k">def</span> <span class="nf">get_GO_access</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Filtr</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Loads all of the relations between the UNIPROTs and GOs as one giant dictionary</span>
+
+<span class="sd">        :param Filtr: the List of GO types we would like to get loaded into our analysis</span>
+<span class="sd">        :type Filtr: list of strings</span>
+
+<span class="sd">        :return: RelDict, NodeID -&gt; list of IDs of GO annotations nodes associated to it</span>
+<span class="sd">        :return: SeedSet, List of GO nodes reached from the NodeID</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">RelDict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">SeedSet</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="n">UPs_without_GO</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">ID</span> <span class="ow">in</span> <span class="n">MG</span><span class="o">.</span><span class="n">Uniprots</span><span class="p">:</span>
+            <span class="n">UP_Specific_GOs</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">Root</span> <span class="o">=</span> <span class="n">DatabaseGraph</span><span class="o">.</span><span class="n">UNIPORT</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ID</span><span class="p">)</span>
+            <span class="n">Node_gen</span> <span class="o">=</span> <span class="n">Root</span><span class="o">.</span><span class="n">bothV</span><span class="p">(</span><span class="s">&quot;is_go_annotation&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">Node_gen</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">GO</span> <span class="ow">in</span> <span class="n">Node_gen</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">GO</span><span class="o">.</span><span class="n">Namespace</span> <span class="ow">in</span> <span class="n">Filtr</span><span class="p">:</span>
+                        <span class="n">GOID</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">GO</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                        <span class="n">UP_Specific_GOs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">GOID</span><span class="p">)</span>
+                        <span class="n">SeedSet</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">GOID</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">UP_Specific_GOs</span> <span class="o">==</span> <span class="p">[]:</span>
+                <span class="n">UPs_without_GO</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">print</span> <span class="s">&quot;Warning: UP without GO has been found. Database ID: </span><span class="si">%s</span><span class="s">, name: </span><span class="si">%s</span><span class="s">!!!!!!&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">ID</span><span class="p">,</span> <span class="n">MG</span><span class="o">.</span><span class="n">ID2displayName</span><span class="p">[</span><span class="n">ID</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">RelDict</span><span class="p">[</span><span class="n">ID</span><span class="p">]</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">UP_Specific_GOs</span><span class="p">)</span>
+        <span class="k">print</span> <span class="n">UPs_without_GO</span>
+        <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">((</span><span class="n">RelDict</span><span class="p">,</span> <span class="n">SeedSet</span><span class="p">),</span> <span class="nb">file</span><span class="p">(</span><span class="n">Dumps</span><span class="o">.</span><span class="n">GO_dump</span><span class="p">,</span> <span class="s">&#39;w&#39;</span><span class="p">))</span>  <span class="c">#TODO&quot;: correct dumping here</span>
+        <span class="k">return</span> <span class="n">RelDict</span><span class="p">,</span> <span class="n">SeedSet</span>
+</div>
+<div class="viewcode-block" id="GO_Interface.get_GO_structure"><a class="viewcode-back" href="../../../PolyPharma.neo4j_Importers.Matrix_Knowledge_DB_Interface.html#PolyPharma.neo4j_Importers.Matrix_Knowledge_DB_Interface.GO_Interface.get_GO_structure">[docs]</a>    <span class="k">def</span> <span class="nf">get_GO_structure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Filtr</span><span class="p">,</span><span class="n">seedSet</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Loads all of the relations between the GOs that are generalisation of the seedList GOs and that are withing the types specified in Filtr</span>
+
+<span class="sd">        :param Filtr: the List of GO types we would like to get loaded into our analysis</span>
+<span class="sd">        :type Filtr: list of strings</span>
+<span class="sd">        :param seedSet: set of GO types we would like to get loaded into our analysis. It is assumed that seedList obeys the Filtr rules</span>
+<span class="sd">        :type seedSet: set of strings</span>
+
+<span class="sd">        :return: GeneralDict, ID -&gt; Local Ontology List, Local Regulation List</span>
+<span class="sd">        :rtype: dict</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">GeneralDict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">VisitedSet</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="n">seedList</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">seedSet</span><span class="p">)</span>
+        <span class="n">GO_Names</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">GO_IDs</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">rev_GO_IDs</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">while</span> <span class="n">seedList</span><span class="p">:</span>
+            <span class="n">ID</span> <span class="o">=</span> <span class="n">seedList</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+            <span class="n">VisitedSet</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">ID</span><span class="p">)</span>
+            <span class="n">LocUpList</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">LocRegList</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">GONode</span> <span class="o">=</span> <span class="n">DatabaseGraph</span><span class="o">.</span><span class="n">GOTerm</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ID</span><span class="p">)</span>
+            <span class="n">GO_Names</span><span class="p">[</span><span class="n">ID</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">GONode</span><span class="o">.</span><span class="n">displayName</span><span class="p">)</span>
+            <span class="n">GO_IDs</span><span class="p">[</span><span class="n">ID</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">GONode</span><span class="o">.</span><span class="n">ID</span><span class="p">)</span>
+            <span class="n">rev_GO_IDs</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">GONode</span><span class="o">.</span><span class="n">ID</span><span class="p">)]</span> <span class="o">=</span> <span class="n">ID</span>
+            <span class="k">for</span> <span class="n">Typ</span> <span class="ow">in</span> <span class="n">GOUpTypes</span><span class="p">:</span>
+                <span class="n">generator</span> <span class="o">=</span> <span class="n">GONode</span><span class="o">.</span><span class="n">outV</span><span class="p">(</span><span class="n">Typ</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">generator</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">elt</span> <span class="ow">in</span> <span class="n">generator</span><span class="p">:</span>
+                        <span class="n">subID</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">elt</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="n">elt</span><span class="o">.</span><span class="n">Namespace</span> <span class="ow">in</span> <span class="n">Filtr</span><span class="p">:</span>
+                            <span class="n">LocUpList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">subID</span><span class="p">)</span>
+                            <span class="k">if</span> <span class="n">subID</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">VisitedSet</span> <span class="ow">and</span> <span class="n">subID</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seedList</span><span class="p">:</span>
+                                <span class="n">seedList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">subID</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">Typ</span> <span class="ow">in</span> <span class="n">GORegTypes</span><span class="p">:</span>
+                <span class="n">generator</span> <span class="o">=</span> <span class="n">GONode</span><span class="o">.</span><span class="n">outV</span><span class="p">(</span><span class="n">Typ</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">generator</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">elt</span> <span class="ow">in</span> <span class="n">generator</span><span class="p">:</span>
+                        <span class="n">subID</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">elt</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="n">elt</span><span class="o">.</span><span class="n">Namespace</span> <span class="ow">in</span> <span class="n">Filtr</span><span class="p">:</span>
+                            <span class="n">LocRegList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">subID</span><span class="p">)</span>
+                            <span class="k">if</span> <span class="n">subID</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">VisitedSet</span> <span class="ow">and</span> <span class="n">subID</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seedList</span><span class="p">:</span>
+                                <span class="n">seedList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">subID</span><span class="p">)</span>
+            <span class="n">LocUpList</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">LocUpList</span><span class="p">))</span>
+            <span class="n">LocRegList</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">LocRegList</span><span class="p">))</span>
+            <span class="n">GeneralDict</span><span class="p">[</span><span class="n">ID</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">LocUpList</span><span class="p">,</span> <span class="n">LocRegList</span><span class="p">)</span>
+        <span class="n">Fle</span> <span class="o">=</span> <span class="nb">file</span><span class="p">(</span><span class="s">&#39;GO_structure.dump&#39;</span><span class="p">,</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
+        <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">GeneralDict</span><span class="p">,</span><span class="n">Fle</span><span class="p">)</span>  <span class="c">#TODO&quot;: correct dumping here</span>
+        <span class="n">Fle2</span> <span class="o">=</span> <span class="nb">file</span><span class="p">(</span><span class="s">&#39;GO_names.dump&#39;</span><span class="p">,</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
+        <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">GO_Names</span><span class="p">,</span><span class="n">Fle2</span><span class="p">)</span>  <span class="c">#TODO&quot;: correct dumping here</span>
+        <span class="n">Fle3</span> <span class="o">=</span> <span class="nb">file</span><span class="p">(</span><span class="s">&#39;GO_IDs.dump&#39;</span><span class="p">,</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
+        <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">GO_IDs</span><span class="p">,</span><span class="n">Fle3</span><span class="p">)</span>  <span class="c">#TODO&quot;: correct dumping here</span>
+        <span class="n">Fle4</span> <span class="o">=</span> <span class="nb">file</span><span class="p">(</span><span class="s">&#39;rev_GO_IDs.dump&#39;</span><span class="p">,</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
+        <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">rev_GO_IDs</span><span class="p">,</span><span class="n">Fle4</span><span class="p">)</span>  <span class="c">#TODO&quot;: correct dumping here</span>
+        <span class="k">return</span> <span class="n">GeneralDict</span>
+
+</div>
+<div class="viewcode-block" id="GO_Interface.get_GO_Informativities"><a class="viewcode-back" href="../../../PolyPharma.neo4j_Importers.Matrix_Knowledge_DB_Interface.html#PolyPharma.neo4j_Importers.Matrix_Knowledge_DB_Interface.GO_Interface.get_GO_Informativities">[docs]</a>    <span class="k">def</span> <span class="nf">get_GO_Informativities</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        here calculated without any information on regulation</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">init</span><span class="o">=</span><span class="n">time</span><span class="p">()</span>
+        <span class="n">GO_access</span><span class="o">=</span><span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">file</span><span class="p">(</span><span class="s">&#39;GO.dump&#39;</span><span class="p">,</span><span class="s">&#39;r&#39;</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>  <span class="c">#TODO&quot;: correct dumping here</span>
+        <span class="n">GO_structure</span><span class="o">=</span><span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">file</span><span class="p">(</span><span class="s">&#39;GO_structure.dump&#39;</span><span class="p">,</span><span class="s">&#39;r&#39;</span><span class="p">))</span>  <span class="c">#TODO&quot;: correct dumping here</span>
+        <span class="n">TimesReached</span><span class="o">=</span><span class="p">{}</span>
+        <span class="n">i</span><span class="o">=</span><span class="mi">0</span>
+        <span class="n">l</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">GO_access</span><span class="p">)</span>
+        <span class="n">accelerationDict</span><span class="o">=</span><span class="p">{}</span>
+        <span class="n">Reverse_Dict</span><span class="o">=</span><span class="p">{}</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">GO_access</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">i</span><span class="o">+=</span><span class="mi">1</span>
+            <span class="k">print</span> <span class="s">&#39;entering&#39;</span><span class="p">,</span><span class="nb">float</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">l</span><span class="p">),</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">init</span>
+            <span class="n">init</span><span class="o">=</span><span class="n">time</span><span class="p">()</span>
+            <span class="n">toVisit</span><span class="o">=</span><span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">GO_access</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+            <span class="n">visited</span><span class="o">=</span><span class="p">[]</span>
+            <span class="k">while</span> <span class="n">toVisit</span><span class="p">:</span>
+                <span class="n">elt</span><span class="o">=</span><span class="n">toVisit</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+                <span class="n">InStack</span><span class="o">=</span><span class="p">[]</span>
+                <span class="n">vs</span><span class="o">=</span><span class="n">acceleratedInsert</span><span class="p">(</span><span class="n">GO_structure</span><span class="p">,</span> <span class="n">accelerationDict</span><span class="p">,</span> <span class="n">elt</span><span class="p">)</span>
+                <span class="n">visited</span><span class="o">=</span><span class="n">visited</span><span class="o">+</span><span class="n">vs</span>
+            <span class="n">visited</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">visited</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">elt</span> <span class="ow">in</span> <span class="n">visited</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">elt</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">TimesReached</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">Reverse_Dict</span><span class="p">[</span><span class="n">elt</span><span class="p">]</span><span class="o">=</span><span class="p">[]</span>
+                    <span class="n">TimesReached</span><span class="p">[</span><span class="n">elt</span><span class="p">]</span><span class="o">=</span><span class="mi">0</span>
+                <span class="n">Reverse_Dict</span><span class="p">[</span><span class="n">elt</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+                <span class="n">TimesReached</span><span class="p">[</span><span class="n">elt</span><span class="p">]</span><span class="o">+=</span><span class="mi">1</span>
+        <span class="n">Fle</span><span class="o">=</span><span class="nb">file</span><span class="p">(</span><span class="s">&#39;GO_Informativities.dump&#39;</span><span class="p">,</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
+        <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">TimesReached</span><span class="p">,</span><span class="n">Fle</span><span class="p">)</span>  <span class="c">#TODO&quot;: correct dumping here</span>
+        <span class="n">Fle2</span><span class="o">=</span><span class="nb">file</span><span class="p">(</span><span class="s">&#39;accDict.dump&#39;</span><span class="p">,</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
+        <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">accelerationDict</span><span class="p">,</span><span class="n">Fle2</span><span class="p">)</span>  <span class="c">#TODO&quot;: correct dumping here</span>
+        <span class="n">Fle3</span><span class="o">=</span><span class="nb">file</span><span class="p">(</span><span class="s">&#39;Reverse_dict.dump&#39;</span><span class="p">,</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
+        <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">Reverse_Dict</span><span class="p">,</span> <span class="n">Fle3</span><span class="p">)</span>  <span class="c">#TODO&quot;: correct dumping here</span>
+
+</div>
+<div class="viewcode-block" id="GO_Interface.compute_UniprotDict"><a class="viewcode-back" href="../../../PolyPharma.neo4j_Importers.Matrix_Knowledge_DB_Interface.html#PolyPharma.neo4j_Importers.Matrix_Knowledge_DB_Interface.GO_Interface.compute_UniprotDict">[docs]</a>    <span class="k">def</span> <span class="nf">compute_UniprotDict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="sd">        :return:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">UniprotDict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">elt</span> <span class="ow">in</span> <span class="n">MG</span><span class="o">.</span><span class="n">Uniprots</span><span class="p">:</span>
+            <span class="n">node</span> <span class="o">=</span> <span class="n">DatabaseGraph</span><span class="o">.</span><span class="n">UNIPORT</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">elt</span><span class="p">)</span>
+            <span class="n">altID</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">ID</span>
+            <span class="n">UniprotDict</span><span class="p">[</span><span class="n">altID</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">elt</span><span class="p">,</span> <span class="n">MG</span><span class="o">.</span><span class="n">ID2displayName</span><span class="p">[</span><span class="n">elt</span><span class="p">])</span>
+            <span class="n">UniprotDict</span><span class="p">[</span><span class="n">elt</span><span class="p">]</span> <span class="o">=</span> <span class="n">altID</span>
+        <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">UniprotDict</span><span class="p">,</span> <span class="nb">file</span><span class="p">(</span><span class="n">Dumps</span><span class="o">.</span><span class="n">Up_dict_dump</span><span class="p">,</span><span class="s">&#39;w&#39;</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">UniprotDict</span>
+
+
+</div>
+<div class="viewcode-block" id="GO_Interface.rebuild"><a class="viewcode-back" href="../../../PolyPharma.neo4j_Importers.Matrix_Knowledge_DB_Interface.html#PolyPharma.neo4j_Importers.Matrix_Knowledge_DB_Interface.GO_Interface.rebuild">[docs]</a>    <span class="k">def</span> <span class="nf">rebuild</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">filtr</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;biological_process&#39;</span><span class="p">]</span>
+        <span class="n">RelDict</span><span class="p">,</span> <span class="n">SeedSet</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_GO_access</span><span class="p">(</span><span class="n">filtr</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_GO_structure</span><span class="p">(</span><span class="n">filtr</span><span class="p">,</span> <span class="n">SeedSet</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_GO_Informativities</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compute_UniprotDict</span><span class="p">()</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">PolyPharma 0.2a3 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Andrei Kucharavy.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

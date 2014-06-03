@@ -1,0 +1,406 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface module &mdash; PolyPharma 0.2a3 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.2a3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="PolyPharma 0.2a3 documentation" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="index.html">PolyPharma 0.2a3 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface">
+<span id="polypharma-neo4j-analyzer-matrix-knowledge-db-interface-module"></span><h1>PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface module<a class="headerlink" href="#module-PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface">
+<em class="property">class </em><tt class="descclassname">PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.</tt><tt class="descname">GO_Interface</tt><big>(</big><em>Filter</em>, <em>Uniprot_Node_IDs</em>, <em>corrfactor</em>, <em>Ultraspec_clean=False</em>, <em>Ultraspec_lvl=3</em><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Knowledge_DB_Interface.html#GO_Interface"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<p>General calss to recover all the informations associated with GO from database and buffer them for further use.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>Filter</strong> &#8211; </li>
+<li><strong>Uniprot_Node_IDs</strong> &#8211; A list of hte Uniprots that will be used for the GO reach and informativity computation. Beyond
+database and formalism issues, this allows to adapt method when limited list of UP is of interest</li>
+<li><strong>corrfactor</strong> &#8211; </li>
+<li><strong>Ultraspec_clean</strong> &#8211; </li>
+<li><strong>Ultraspec_lvl</strong> &#8211; parameter how much uniprots have to point to a GO term for it not to be considered ultraspecific anymore</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.build_extended_conduction_system">
+<tt class="descname">build_extended_conduction_system</tt><big>(</big><em>memoized=True</em>, <em>sourced=False</em>, <em>incremental=False</em>, <em>cancellation=True</em><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Knowledge_DB_Interface.html#GO_Interface.build_extended_conduction_system"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.build_extended_conduction_system" title="Permalink to this definition">¶</a></dt>
+<dd><p>Builds a conduction matrix that integrates uniprots, in order to allow an easier knowledge flow analysis</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>memoized</strong> &#8211; if the tensions and individual relation matrices should be stored in the matrix and dumped at the end computation (required for submatrix recomputation)</li>
+<li><strong>sourced</strong> &#8211; if true, all the raltions will be looked up and not computed. Useful for the retrieval of subcirculation group, but requires the UP2voltage_and_circ to be pre-filled</li>
+<li><strong>incremental</strong> &#8211; if True, all the circulation computation will be added to the existing ones. Usefull for the computation of particularly big systems with intermediate dumps</li>
+<li><strong>cancellation</strong> &#8211; divides the final current by #Nodes**2/2, i.e. makes the currents comparable between circulation systems of differnet  sizes.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">adjusted conduction system</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.call_show">
+<tt class="descname">call_show</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Knowledge_DB_Interface.html#GO_Interface.call_show"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.call_show" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.compute_UniprotDict">
+<tt class="descname">compute_UniprotDict</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Knowledge_DB_Interface.html#GO_Interface.compute_UniprotDict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.compute_UniprotDict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the uniprot method requried by some other dictionary</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.dump_Indep_Linset">
+<tt class="descname">dump_Indep_Linset</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Knowledge_DB_Interface.html#GO_Interface.dump_Indep_Linset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.dump_Indep_Linset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.dump_core">
+<tt class="descname">dump_core</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Knowledge_DB_Interface.html#GO_Interface.dump_core"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.dump_core" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.dump_inflated_elements">
+<tt class="descname">dump_inflated_elements</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Knowledge_DB_Interface.html#GO_Interface.dump_inflated_elements"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.dump_inflated_elements" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.dump_informativities">
+<tt class="descname">dump_informativities</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Knowledge_DB_Interface.html#GO_Interface.dump_informativities"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.dump_informativities" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.dump_matrices">
+<tt class="descname">dump_matrices</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Knowledge_DB_Interface.html#GO_Interface.dump_matrices"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.dump_matrices" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.dump_memoized">
+<tt class="descname">dump_memoized</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Knowledge_DB_Interface.html#GO_Interface.dump_memoized"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.dump_memoized" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.dump_statics">
+<tt class="descname">dump_statics</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Knowledge_DB_Interface.html#GO_Interface.dump_statics"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.dump_statics" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.export_conduction_system">
+<tt class="descname">export_conduction_system</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Knowledge_DB_Interface.html#GO_Interface.export_conduction_system"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.export_conduction_system" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the conduction system of the GO terms and exports it to the GDF format and flushes it into a file that
+can be viewed with Gephi</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Raises Warning:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.export_subsystem">
+<tt class="descname">export_subsystem</tt><big>(</big><em>UP_system</em>, <em>UP_subsystem</em><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Knowledge_DB_Interface.html#GO_Interface.export_subsystem"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.export_subsystem" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.filter_out_ultraspecific">
+<tt class="descname">filter_out_ultraspecific</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Knowledge_DB_Interface.html#GO_Interface.filter_out_ultraspecific"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.filter_out_ultraspecific" title="Permalink to this definition">¶</a></dt>
+<dd><p>Filters out GO terms that are too specific and builds a directed, undirected adjacency maps and laplacian.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.format_Node_props">
+<tt class="descname">format_Node_props</tt><big>(</big><em>node_current</em>, <em>limit=0.01</em><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Knowledge_DB_Interface.html#GO_Interface.format_Node_props"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.format_Node_props" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.get_GO_Reach">
+<tt class="descname">get_GO_Reach</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Knowledge_DB_Interface.html#GO_Interface.get_GO_Reach"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.get_GO_Reach" title="Permalink to this definition">¶</a></dt>
+<dd><p>Recovers by how many different uniprots each GO term is reached, both in distance-agnostic and distance-specific
+terms.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.get_GO_access">
+<tt class="descname">get_GO_access</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Knowledge_DB_Interface.html#GO_Interface.get_GO_access"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.get_GO_access" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loads all of the relations between the UNIPROTs and GOs as one giant dictionary</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.get_GO_structure">
+<tt class="descname">get_GO_structure</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Knowledge_DB_Interface.html#GO_Interface.get_GO_structure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.get_GO_structure" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loads all of the relations between the GOs that are generalisation of the seedList GOs and that are withing the types specified in Filtr</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.get_Laplacians">
+<tt class="descname">get_Laplacians</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Knowledge_DB_Interface.html#GO_Interface.get_Laplacians"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.get_Laplacians" title="Permalink to this definition">¶</a></dt>
+<dd><p>Recovers the Laplacian (information conductance) matrixes for the GO annotation terms.
+For weighted laplacian, currently implements a Max-Ent with custom factor as transition price.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Warning:</th><td class="field-body">for this method to function, get_GO reach function must be run first.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Warning:</th><td class="field-body">accounting for regulatory relation relation between the GO terms is performed if has been done in the adjunction matrix computation</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.get_indep_linear_groups">
+<tt class="descname">get_indep_linear_groups</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Knowledge_DB_Interface.html#GO_Interface.get_indep_linear_groups"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.get_indep_linear_groups" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.get_matrixes">
+<tt class="descname">get_matrixes</tt><big>(</big><em>include_reg=True</em><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Knowledge_DB_Interface.html#GO_Interface.get_matrixes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.get_matrixes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Builds Undirected and directed adjacency matrices for the GO set and</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>include_reg</strong> &#8211; if True, the regulation set is included into the matrix</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Warning:</th><td class="field-body">if the parameter above is set to False, get_GO_reach module will be unable to function.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.inflate_matrix_and_indexes">
+<tt class="descname">inflate_matrix_and_indexes</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Knowledge_DB_Interface.html#GO_Interface.inflate_matrix_and_indexes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.inflate_matrix_and_indexes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs the laplacian matrix inflation to incorporate the uniprots on which we will be running the</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.load">
+<tt class="descname">load</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Knowledge_DB_Interface.html#GO_Interface.load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Preloads itself from the saved dumps, in case the Filtering system is the same</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.pretty_time">
+<tt class="descname">pretty_time</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Knowledge_DB_Interface.html#GO_Interface.pretty_time"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.pretty_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Times the execution</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">tuple containing the time since the creation of the Matrix_getter object and since the last cal of function formatted as string</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.randomly_sample">
+<tt class="descname">randomly_sample</tt><big>(</big><em>samples_size</em>, <em>samples_each_size</em><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Knowledge_DB_Interface.html#GO_Interface.randomly_sample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.randomly_sample" title="Permalink to this definition">¶</a></dt>
+<dd><p>Randomly samples the set</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>samples_size</strong> &#8211; </li>
+<li><strong>samples_each_size</strong> &#8211; </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Raises Exception:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first last"></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.rebuild">
+<tt class="descname">rebuild</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Knowledge_DB_Interface.html#GO_Interface.rebuild"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.rebuild" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.set_Uniprot_source">
+<tt class="descname">set_Uniprot_source</tt><big>(</big><em>Uniprots</em><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Knowledge_DB_Interface.html#GO_Interface.set_Uniprot_source"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.set_Uniprot_source" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the Uniprots on which the circulation computation routines will be performed by the otehr methods.
+Avoids passing as argument large lists of parameters.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>Uniprots</strong> &#8211; List of node IDs of the uniprots on which we would like to perform current computations</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises Warning:</th><td class="field-body">if the uniprots were not present in the set of GOs for which we built the system or had no GO attached to them</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.store">
+<tt class="descname">store</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Knowledge_DB_Interface.html#GO_Interface.store"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.store" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.undump_Indep_Linset">
+<tt class="descname">undump_Indep_Linset</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Knowledge_DB_Interface.html#GO_Interface.undump_Indep_Linset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.undump_Indep_Linset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.undump_core">
+<tt class="descname">undump_core</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Knowledge_DB_Interface.html#GO_Interface.undump_core"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.undump_core" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.undump_inflated_elements">
+<tt class="descname">undump_inflated_elements</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Knowledge_DB_Interface.html#GO_Interface.undump_inflated_elements"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.undump_inflated_elements" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.undump_informativities">
+<tt class="descname">undump_informativities</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Knowledge_DB_Interface.html#GO_Interface.undump_informativities"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.undump_informativities" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.undump_matrices">
+<tt class="descname">undump_matrices</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Knowledge_DB_Interface.html#GO_Interface.undump_matrices"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.undump_matrices" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.undump_memoized">
+<tt class="descname">undump_memoized</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Knowledge_DB_Interface.html#GO_Interface.undump_memoized"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.undump_memoized" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">undumped memoized analysis</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">dict</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.undump_statics">
+<tt class="descname">undump_statics</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/PolyPharma/neo4j_analyzer/Matrix_Knowledge_DB_Interface.html#GO_Interface.undump_statics"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.GO_Interface.undump_statics" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="index.html">PolyPharma 0.2a3 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Andrei Kucharavy.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

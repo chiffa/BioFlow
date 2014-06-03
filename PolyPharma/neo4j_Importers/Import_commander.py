@@ -17,6 +17,7 @@ from PolyPharma.neo4j_Declarations.General_operations import clean
 from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
 from PolyPharma.neo4j_analyzer.DB_IO_Routines import recompute_forbidden_IDs, Forbidden_verification_dict
 from Hint_importer import cross_ref_HiNT
+from BioGRID_Importer import import_BioGRID
 import sys
 
 #TODO: add the aboundance import
@@ -28,19 +29,21 @@ import sys
 # sys.stdout = f
 # ################################
 
-clear_all(full_dict)
-run_diagnostics(full_dict)
-insert_all()
-run_diagnostics(full_dict)
-
-# clean(DatabaseGraph.GOTerm)
-import_GOs()
-getGOs()
-# clean(DatabaseGraph.UNIPORT)
-import_UNIPROTS()
-
-cross_ref_HiNT(True)
-
-run_diagnostics(full_dict)
-
-recompute_forbidden_IDs(Forbidden_verification_dict)
+# clear_all(full_dict)
+# run_diagnostics(full_dict)
+# insert_all()
+# run_diagnostics(full_dict)
+#
+# # clean(DatabaseGraph.GOTerm)
+# import_GOs()
+# getGOs()
+# # clean(DatabaseGraph.UNIPORT)
+# import_UNIPROTS()
+#
+# cross_ref_HiNT(True)
+#
+# import_BioGRID()
+#
+# run_diagnostics(full_dict)
+#
+# recompute_forbidden_IDs(Forbidden_verification_dict)

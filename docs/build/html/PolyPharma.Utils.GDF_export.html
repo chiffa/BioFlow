@@ -1,0 +1,173 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>PolyPharma.Utils.GDF_export module &mdash; PolyPharma 0.2a3 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.2a3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="PolyPharma 0.2a3 documentation" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="index.html">PolyPharma 0.2a3 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-PolyPharma.Utils.GDF_export">
+<span id="polypharma-utils-gdf-export-module"></span><h1>PolyPharma.Utils.GDF_export module<a class="headerlink" href="#module-PolyPharma.Utils.GDF_export" title="Permalink to this headline">¶</a></h1>
+<p>Module containing an objet that allows an easy export of the matrix-encoded information to GDF without the need to export the whole relation matrix</p>
+<dl class="class">
+<dt id="PolyPharma.Utils.GDF_export.GDF_export_Interface">
+<em class="property">class </em><tt class="descclassname">PolyPharma.Utils.GDF_export.</tt><tt class="descname">GDF_export_Interface</tt><big>(</big><em>target_fname</em>, <em>field_names</em>, <em>field_types</em>, <em>node_properties_dict</em>, <em>mincurrent</em>, <em>Idx2Label</em>, <em>Label2Idx</em>, <em>current_Matrix</em>, <em>directed=False</em><big>)</big><a class="reference internal" href="_modules/PolyPharma/Utils/GDF_export.html#GDF_export_Interface"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.Utils.GDF_export.GDF_export_Interface" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
+<p>An interface allowing the export of the matrix relatioin object and node characteristics to a GDF format, compatible
+with visualization with appropriate tools.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>target_fname</strong> &#8211; name of the file to which the GDF file will be written to</li>
+<li><strong>field_names</strong> &#8211; Names of different fields for the node description</li>
+<li><strong>field_types</strong> &#8211; Types of different nodes for the node description</li>
+<li><strong>node_properties_dict</strong> &#8211; dictionary mapping the node labels to outputs</li>
+<li><strong>mincurrent</strong> &#8211; minimal current below which we are not rendering the links anymore</li>
+<li><strong>Idx2Label</strong> &#8211; Mapping from the indexes curent matrix lines/columns to the node labels</li>
+<li><strong>current_Matrix</strong> &#8211; matrix of currents from which we wish to rendred the GDF</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="PolyPharma.Utils.GDF_export.GDF_export_Interface.Authorised_names">
+<tt class="descname">Authorised_names</tt><em class="property"> = ['VARCHAR', 'DOUBLE', 'BOOLEAN', 'DOUBLE']</em><a class="headerlink" href="#PolyPharma.Utils.GDF_export.GDF_export_Interface.Authorised_names" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PolyPharma.Utils.GDF_export.GDF_export_Interface.verify">
+<tt class="descname">verify</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/PolyPharma/Utils/GDF_export.html#GDF_export_Interface.verify"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.Utils.GDF_export.GDF_export_Interface.verify" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
+<li><strong>Exception</strong> &#8211; &#8220;GDF Node declaration is wrong!&#8221; - of the length of field names and field type differ</li>
+<li><strong>Exception</strong> &#8211; &#8220;Wrong Types were declared, ....&#8221; - if the declared types are not in the Authorised names</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="PolyPharma.Utils.GDF_export.GDF_export_Interface.write">
+<tt class="descname">write</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/PolyPharma/Utils/GDF_export.html#GDF_export_Interface.write"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.Utils.GDF_export.GDF_export_Interface.write" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="PolyPharma.Utils.GDF_export.GDF_export_Interface.write_edgedefs">
+<tt class="descname">write_edgedefs</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/PolyPharma/Utils/GDF_export.html#GDF_export_Interface.write_edgedefs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.Utils.GDF_export.GDF_export_Interface.write_edgedefs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write defintions for the edges. Right now, the information passing through the edges is restricted to the current</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="PolyPharma.Utils.GDF_export.GDF_export_Interface.write_edges">
+<tt class="descname">write_edges</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/PolyPharma/Utils/GDF_export.html#GDF_export_Interface.write_edges"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.Utils.GDF_export.GDF_export_Interface.write_edges" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes informations about edges connections. These informations are pulled from the conductance matrix.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="PolyPharma.Utils.GDF_export.GDF_export_Interface.write_nodedefs">
+<tt class="descname">write_nodedefs</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/PolyPharma/Utils/GDF_export.html#GDF_export_Interface.write_nodedefs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.Utils.GDF_export.GDF_export_Interface.write_nodedefs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes in the dictionary that maps and returns the nodedefs line</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="PolyPharma.Utils.GDF_export.GDF_export_Interface.write_nodes">
+<tt class="descname">write_nodes</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/PolyPharma/Utils/GDF_export.html#GDF_export_Interface.write_nodes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#PolyPharma.Utils.GDF_export.GDF_export_Interface.write_nodes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write the nodes with associated informations</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/PolyPharma.Utils.GDF_export.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="index.html">PolyPharma 0.2a3 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Andrei Kucharavy.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.1.
+    </div>
+  </body>
+</html>

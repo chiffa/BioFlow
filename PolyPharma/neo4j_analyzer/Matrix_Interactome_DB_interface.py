@@ -314,14 +314,23 @@ class MatrixGetter(object):
         self.UP_Links, self.UPSet, c = get_expansion(self.SecSet, edge_type_filters["Same"])
         characterise('Uniprot Links', self.UP_Links, self.UPSet, c)
 
-        self.HiNT_Links, self.FullSet, c = get_expansion(self.UPSet, edge_type_filters["HiNT_Contact_interaction"])
-        characterise('HiNT Links', self.HiNT_Links, self.FullSet, c)
+        self.HiNT_Links, self.pre_FullSet, c = get_expansion(self.UPSet, edge_type_filters["HiNT_Contact_interaction"])
+        characterise('HiNT Links', self.HiNT_Links, self.pre_FullSet, c)
 
         for i in range(0, 5):
-            HiNT_Links2, FullSet2, c = get_expansion(self.FullSet, edge_type_filters["HiNT_Contact_interaction"])
-            self.FullSet = FullSet2
+            HiNT_Links2, FullSet2, c = get_expansion(self.pre_FullSet, edge_type_filters["HiNT_Contact_interaction"])
+            self.pre_FullSet = FullSet2
             self.HiNT_Links = HiNT_Links2
-            characterise('HiNT Links ' + str(i) + ' ', self.HiNT_Links, self.FullSet, c)
+            characterise('HiNT Links ' + str(i) + ' ', self.HiNT_Links, self.pre_FullSet, c)
+
+        self.BioGRID_Links, self.FullSet, c = get_expansion(self.pre_FullSet, edge_type_filters["BioGRID_Contact_interaction"])
+        characterise('BioGRID Links', self.BioGRID_Links, self.FullSet, c)
+
+        for i in range(0, 5):
+            BioGRID_Links2, FullSet2, c = get_expansion(self.FullSet, edge_type_filters["BioGRID_Contact_interaction"])
+            self.FullSet = FullSet2
+            self.BioGRID_Links = BioGRID_Links2
+            characterise('HiNT Links ' + str(i) + ' ', self.BioGRID_Links, self.FullSet, c)
 
         self.Super_Links, self.ExpSet, c = get_expansion(self.FullSet, edge_type_filters["possibly_same"])
         characterise('Looks_similar Links', self.Super_Links, self.ExpSet, c)
@@ -454,6 +463,11 @@ class MatrixGetter(object):
             for val in self.HiNT_Links[key]:
                 element = (self.NodeID2MatrixNumber[key], self.NodeID2MatrixNumber[val])
                 self.fast_row_insert(element, "Contact_interaction")
+
+        for key in self.BioGRID_Links.keys():
+            for val in self.BioGRID_Links[key]:
+                element = (self.NodeID2MatrixNumber[key], self.NodeID2MatrixNumber[val])
+                self.fast_row_insert(element, "weak_contact")
 
         if self.full_impact:
             for key in self.Super_Links.keys():
@@ -623,6 +637,13 @@ class MatrixGetter(object):
 
 
     def set_Uniprot_source(self, Uniprots):
+        """
+        Sets the Uniprots on which the circulation computation routines will be performed by the otehr methods.
+        Avoids passing as argument large lists of parameters.
+
+        :param Uniprots: List of node IDs of the uniprots on which we would like to perform current computations
+        :raise Warning: if the uniprots were not present in the set of GOs for which we built the system or had no GO attached to them
+        """
         if not set(Uniprots) <= set(self.NodeID2MatrixNumber.keys()):
             ex_pload = 'Following Uniprots were not retrieved upon the circulation matrix construction: \n %s' % (set(Uniprots) - set(self.NodeID2MatrixNumber.keys()))
             print Warning(ex_pload)
@@ -660,7 +681,7 @@ class MatrixGetter(object):
                                                                                    cancellation=cancellation,
                                                                                    memoized=memoized,
                                                                                    memory_source=self.UP2voltage_and_circ)
-            self.UP2voltage_and_circ.update(UP_pair2voltage_current)
+            # self.UP2voltage_and_circ.update(UP_pair2voltage_current)
             self.UP2UP_voltages.update(dict((key, val1) for key, (val1, val2) in UP_pair2voltage_current.iteritems()))
 
         if incremental:
@@ -677,9 +698,17 @@ class MatrixGetter(object):
 
 
     def format_Node_props(self, node_current, limit = 0.01):
+        """
+        Formats the nodes for the analysis by in the knowledge_access_analysis module
+
+        :param node_current: Current through the entity
+        :param limit: hard limit to filter out the GO terms with too little current (co   mpensates the minor currents in the gird)
+        :return: {Entity:[node current, node degree]}
+        """
         charDict = {}
+        limcurr = max(node_current.values())*limit
         for NodeID, i in self.NodeID2MatrixNumber.iteritems():
-            if node_current[NodeID] > limit:
+            if node_current[NodeID] > limcurr:
                 charDict[NodeID] = [ node_current[NodeID],
                                      self.Conductance_Matrix[i, i]]
         return charDict
@@ -721,6 +750,16 @@ class MatrixGetter(object):
 
 
     def export_subsystem(self, UP_system, UP_subsystem):
+        """
+        Exports the subsystem of Uniprots and circulation between them based on a larger precalculated system.This is
+        possible only of the memoization parameter was on during the execution of "build_extended_circulation_system()"
+        function execution.
+
+        :param UP_system: The set of uniprots for which the larger system was calculated
+        :param UP_subsystem: the set of Uniprots we are interested in
+        :raise Exception: if the set of uniprots for which the larger system was calculated doesn't correspond to what
+                            is stored in the dumps
+        """
         current_recombinator = self.undump_memoized()
         if not set(UP_system) == set(pickle.loads(current_recombinator['UPs'])):
             raise Exception('Wrong UP system re-analyzed')
@@ -730,17 +769,22 @@ class MatrixGetter(object):
         self.export_conduction_system()
 
 
-    def randomly_sample(self, samples_size, samples_each_size, sparse_rounds=False, chromosome_specific=False, No_add=False):
+    def randomly_sample(self, samples_size, samples_each_size, sparse_rounds=False, chromosome_specific=False, memoized=False, No_add=False):
         """
-        Randomly samples the set
+        Randomly samples the set of Uniprots used to create the model. This is the null model creation routine
 
-        :param samples_size:
-        :param samples_each_size:
-        :param sparse_rounds:
+
+        :param samples_size: list of numbers of uniprots we would like to create the model for
+        :param samples_each_size: how many times we would like to sample each unirot number
+        :param sparse_rounds:  if we want to use sparse sampling (usefull in case of large uniprot sets),
+        we would use this option
         :type sparse_rounds: int
-        :param chromosome_specific:
+        :param chromosome_specific: if we want the sampling to be chromosome-specific, set this parameter to the
+        number of chromosome to sample from
         :type chromosome_specific: int
-        :raise Exception:
+        :param memoized: if set to True, the sampling would be rememberd for export. Usefull in case of the chromosome comparison
+        :param No_add: if set to True, the result of sampling will not be added to the database of samples. Usefull if re-running tests with similar parameters several times.
+        :raise Exception: if the number of items in the samples size ann saples_each size are different
         """
         if not len(samples_size) == len(samples_each_size):
             raise Exception('Not the same list sizes!')
@@ -755,7 +799,7 @@ class MatrixGetter(object):
                 shuffle(self_connectable_UPs)
                 analytics_UP_list = self_connectable_UPs[:sample_size]
                 self.set_Uniprot_source(analytics_UP_list)
-                self.build_extended_conduction_system(memoized=False, sourced=False, sparse_samples=sparse_rounds)
+                self.build_extended_conduction_system(memoized=memoized, sourced=False, sparse_samples=sparse_rounds)
 
                 md5 = hashlib.md5(json.dumps( sorted(analytics_UP_list), sort_keys=True)).hexdigest()
 
@@ -800,15 +844,9 @@ class MatrixGetter(object):
 if __name__ == "__main__":
     Mat_gter = MatrixGetter(True, True)
     Mat_gter.full_rebuild ()
-    # Mat_gter.hacky_corr()
     # Mat_gter.fast_load()
     print Mat_gter.pretty_time()
 
-    # for Uniprot
-    # pprinter = PrettyPrinter(indent=4)
-    # pprinter.pprint(len(Mat_gter.Uniprot_attachments.keys()))
-
-    # print Mat_gter.ID2displayName.keys()[:50]
     # test_set = ['147875', '130437', '186024', '100154', '140777', '100951', '107645', '154772']
     #
     # test2 = ['55618', '55619', '55616', '55614', '55615', '55612', '55613', '55342', '177791', '126879']
