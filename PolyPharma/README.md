@@ -39,7 +39,7 @@ Project dependencies:
 
 **Packages installed via Pip:**
 
-* JPype (x86_64 build)
+* JPype1 (x86_64 build)
 * Cython
 * neo4j-embedded (x86_64 build)
 * NumPy (latest x86_64)

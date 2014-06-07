@@ -37,7 +37,7 @@ import sys
 # # clean(DatabaseGraph.GOTerm)
 # import_GOs()
 # getGOs()
-# # clean(DatabaseGraph.UNIPORT)
+# clean(DatabaseGraph.UNIPORT)
 # import_UNIPROTS()
 #
 # cross_ref_HiNT(True)

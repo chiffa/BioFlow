@@ -302,11 +302,12 @@ def clear_all(instruction_dict):
     """
     for name, bulbs_class in instruction_dict.iteritems():
         counter = 0
-        if bulbs_class.get_all():
+        print name, bulbs_class
+        if bulbs_class[0].get_all():
             IDlist = [str(bulbs_class_instance).split('/')[-1][:-1] for bulbs_class_instance in bulbs_class.get_all() ]
             for ID in IDlist:
                 counter += 1
-                bulbs_class.delete(ID) #Untraceable bug down here
+                bulbs_class[0].delete(ID) #Untraceable bug down here
                 if counter % 100 == 0:
                     print name, ':', counter
 
