@@ -37,6 +37,10 @@ Project dependencies:
 * LAPACK, ATLAS, BLAS (only if you are installing Scipy manually)
 
 
+WARNING: all the follwoing is better done within a venv, in order to avoid interfering with other versions of Python
+present on the machine
+
+
 **Packages installed via Pip:**
 
 * JPype1 (x86_64 build)

@@ -1,0 +1,11 @@
+JPype1
+Cython
+neo4j-embedded
+numpy
+scipy
+bulbs
+python-Levenshtein
+pymongo
+matplotlib
+requests
+scikits.sparse

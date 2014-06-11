@@ -39,7 +39,8 @@ def sourcefile_compilator(Sources_dict):
     for ext_DB_type, ext_DB_args in Sources_dict.iteritems():
         currentPath = ext_DB_args['location']
         if os.path.isdir(currentPath):
-            for fle in [f for f in os.listdir(currentPath) if os.path.exists(os.path.join(currentPath,f))]:
+            for fle in [f for f in os.listdir(currentPath) if os.path.exists(os.path.join(currentPath, f))]:
+                print(fle)
                 if ext_DB_args['load'] in fle:
                     currentPath = os.path.join(currentPath, fle)
         finalPathdict[ext_DB_type] = currentPath
@@ -47,5 +48,6 @@ def sourcefile_compilator(Sources_dict):
 
 
 if __name__ == "__main__":
-    pp=PrettyPrinter(indent=4)
-    pp.pprint(parse_configs())
+    # pp = PrettyPrinter(indent=4)
+    # pp.pprint(parse_configs())
+    pass
