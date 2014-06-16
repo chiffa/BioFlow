@@ -393,9 +393,42 @@ def auto_analyze():
             print node
 
 
+def build_blank(length, depth, sparse_rounds = False):
+    KG = KG_gen()
+    MD5_hash = KG._MD5hash()
+    if  UP_rand_samp.find({'size': length, 'sys_hash' : MD5_hash, 'sparse_rounds':sparse_rounds}).count() < depth:
+        spawn_sampler_pool(4,[length],[depth])
+
+
+def run_analysis(group):
+    KG = KG_gen()
+    KG.set_Uniprot_source(group)
+    KG.build_extended_conduction_system()
+    KG.export_conduction_system()
+    nr_nodes, nr_groups = compare_to_blanc(len(group), [1000, 1200], KG, p_val=0.9)
+    for group in nr_groups:
+        print group
+    for node in nr_nodes:
+        print node
 
 
 if __name__ == "__main__":
+
+    GBO_1 = ['583954', '565151', '625184', '532448', '553020', '547608', '576300', '533299', '540532', '591419']
+
+    GBO_2 = ['562293', '544722', '534354', '612635', '532463', '561658', '630018', '586185', '611762', '599295']
+
+    GBO_3 = ['532448', '618791', '591250', '546747', '533299', '584147', '540532', '561186', '566489', '557819']
+
+    GBO_4 = ['594353', '565151', '618791', '537788', '546413', '576300', '533299', '540532', '532448', '557819']
+
+    anset = [GBO_1, GBO_2, GBO_3, GBO_4]
+
+    for subset in anset:
+        build_blank(len(subset), 20)
+        run_analysis(subset)
+        raw_input("Press Enter to continue...")
+
     # spawn_sampler(([10, 100], [2, 1]))
     # spawn_sampler_pool(4, [201], [10], sparse_rounds=100)
 
@@ -426,6 +459,6 @@ if __name__ == "__main__":
 
     # linindep_GO_groups(50)
 
-    auto_analyze()
+    # auto_analyze()
 
     pass

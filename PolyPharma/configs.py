@@ -54,8 +54,8 @@ Targets_dict2 = subdict2
 #  Defines MongeDb properties and connections
 ################################################
 # pymongo_prefix = "human_"
-pymongo_prefix = "mice_"
-# pymongo_prefix = "yeast_"
+# pymongo_prefix = "mice_"
+pymongo_prefix = "yeast_"
 pymongo_suffix = "_v_1"
 
 client = MongoClient(MongoDB_url)
@@ -109,7 +109,8 @@ class Dumps(object):
     """
     prefix = str(path.abspath(path.dirname(__file__)+'/dumps'))
     # TODO: achtung:explosive here
-    prefix_2 = '/mice'
+    prefix_2 = '/yeast'
+    # prefix_2 = '/mice'
     postfix = '.dump'
 
     if not os.path.isdir(prefix+prefix_2):

@@ -350,18 +350,79 @@ translation = ['860713', '1054645', '1050811', '1010442', '746034', '960074', '8
                    '886637', '973293', '943484', '840896']
 
 
+
+GBO_1 = ['583954', '565151', '625184', '532448', '553020', '547608', '576300', '533299', '540532', '591419']
+#     [
+# 'YOR031W',
+# 'YOR001W',
+# 'YOL107W',
+# 'YOL124C',
+# 'YOL040C',
+# 'YOR184W',
+# 'YOR374W',
+# 'YOR125C',
+# 'YOL087C',
+# 'YOR334W',
+# ]
+
+GBO_2 = ['562293', '544722', '534354', '612635', '532463', '561658', '630018', '586185', '611762', '599295']
+#     [
+# 'YOL084W',
+# 'YOR243C',
+# 'YOR281C',
+# 'YOR127W',
+# 'YOR250C',
+# 'YOR278W',
+# 'YOR354C',
+# 'YOR319W',
+# 'YOL114C',
+# 'YOR271C',
+# ]
+
+GBO_3 = [
+'YOL040C',
+'YOL124C',
+'YOL155C',
+'YOR031W',
+'YOR080W',
+'YOR253W',
+'YOR316C-A',
+'YOR332W',
+'YOR338W',
+'YOR339C',
+]
+
+GBO_4 = ['594353', '565151', '618791', '537788', '546413', '576300', '533299', '540532', '532448', '557819']
+#     [
+# 'YOR339C',
+# 'YOR316C-A',
+# 'YOR184W',
+# 'YOR167C',
+# 'YOR138C',
+# 'YOR031W',
+# 'YOR001W',
+# 'YOL124C',
+# 'YOL040C',
+# 'YOL015W',
+# ]
+
+
 if __name__ == "__main__":
     # print count_items(DatabaseGraph.UNIPORT)
     # lookup_by_ID(DatabaseGraph.UNIPORT, "CK2N2_HUMAN")
     # Erase_custom_fields()
     # recompute_forbidden_IDs(Forbidden_verification_dict)
 
+    print look_up_Annot_Node('RS15_YEAST')
     # print Look_up_Annot_Node('ENSG00000131981', 'UNIPROT_Ensembl')
 
+    # anset = [GBO_1, GBO_2, GBO_3, GBO_4]
+    # pp.pprint(look_up_Annot_set(GBO_3))
+    # for subset in anset:
+    #     print look_up_Annot_set(subset)[-1]
 
-
-    print len(transcription)
-    print recover_annotation(transcription, 'UNIPROT_Ensembl')[1]
+    # print len(transcription)
+    # print recover_annotation(transcription, 'UNIPROT_Ensembl')[1]
     # print recover_UP_chars(UP_Nodes=transcription, UP_are_IDs=None)
     # _, resdict, reslist = look_up_Annot_set(['MYPN'])
     # pp.pprint(resdict)

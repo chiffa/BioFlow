@@ -263,7 +263,7 @@ def compare_to_blanc(blanc_model_size, zoom_range_selector, real_interactome_int
     return  None
 
 
-def auto_analyze(dumplist):
+def auto_analyze(dumplist, depth):
     """
     Automatically analyzes the itneractome synergetic action of the RNA_seq results
 
@@ -275,13 +275,13 @@ def auto_analyze(dumplist):
         MG1.set_Uniprot_source(list(lst))
         print len(MG1.analytic_Uniprots)
         if len(MG1.analytic_Uniprots)<200:
-            spawn_sampler_pool(4, [len(MG1.analytic_Uniprots)], [6])
+            spawn_sampler_pool(4, [len(MG1.analytic_Uniprots)], [depth])
             MG1.build_extended_conduction_system()
             nr_nodes, nr_groups = compare_to_blanc(len(MG1.analytic_Uniprots), [0.5, 0.6], MG1, p_val=0.9)
         else:
             sampling_depth = max(200**2/len(MG1.analytic_Uniprots), 5)
-            print 'lenght: %s \t sampling depth: %s \t, estimated_time: %s' % (len(MG1.analytic_Uniprots), sampling_depth, len(MG1.analytic_Uniprots)*sampling_depth/2/6/60)
-            spawn_sampler_pool(4, [len(MG1.analytic_Uniprots)], [6], sparse_rounds=sampling_depth)
+            print 'lenght: %s \t sampling depth: %s \t, estimated_time: %s' % (len(MG1.analytic_Uniprots), sampling_depth, len(MG1.analytic_Uniprots)*sampling_depth/2/depth/60)
+            spawn_sampler_pool(4, [len(MG1.analytic_Uniprots)], [depth], sparse_rounds=sampling_depth)
             MG1.build_extended_conduction_system(sparse_samples=sampling_depth)
             MG1.export_conduction_system()
             nr_nodes, nr_groups = compare_to_blanc(len(MG1.analytic_Uniprots), [0.5, 0.6], MG1, p_val=0.9, sparse_rounds=sampling_depth)
@@ -326,6 +326,7 @@ if __name__ == "__main__":
                      '898171', '844767', '775297', '936117', '1089489', '970498', '854601', '932389', '911677', '773272',
                      '964086', '837996', '968860', '954895', '847543']
 
+
     translation = ['860713', '1054645', '1050811', '1010442', '746034', '960074', '841626', '989237', '992333', '885431',
                    '1049088', '1005233', '742678', '1025641', '1081901', '940598', '1004992', '738650', '1018277',
                    '997379', '745984', '1051693', '758243', '1085622', '933193', '1070658', '932056', '774142',
@@ -337,6 +338,7 @@ if __name__ == "__main__":
                    '821120', '1094403', '958096', '877347', '870065', '779276', '998107', '966557', '876290', '782349',
                    '886637', '973293', '943484', '840896']
 
+
     # MG1.randomly_sample([150], [1], chromosome_specific=15, No_add=True)
     # nr_nodes, nr_groups = compare_to_blanc(150, [0.5, 0.6], MG1, p_val=0.9)
     # MG1.export_conduction_system()
@@ -345,5 +347,6 @@ if __name__ == "__main__":
     # for node in nr_nodes:
     #     print node
 
-    auto_analyze([translation])
+
+    auto_analyze(translation, 6)
     pass
