@@ -172,6 +172,14 @@ fudge = 1e-10
 
 RNA_source = "/home/ank/Documents/External_Predictions/Ben_RNA_seq/counts.tsv"
 
+Hits_source = "/home/ank/projects_files/2014/Poly_Pharma/Jin/186dsCIN.csv"
+# Hits_source = "/home/ank/projects_files/2014/Poly_Pharma/Akshay-Kai/hit_list.csv"
+Background_source = "/home/ank/projects_files/2014/Poly_Pharma/Jin/186background.csv"
+
+prename1 = Hits_source[:-4]+'_'+'pPh_name_maps.txt'
+prename2 = Hits_source[:-4]+'_'+'pPh_id_list.csv'
+
+bgList = Background_source[:-4]+'_'+'pPh_id_list.csv'
 
 if __name__ == "__main__":
     pp=PrettyPrinter(indent=4)

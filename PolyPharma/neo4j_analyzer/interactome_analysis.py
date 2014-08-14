@@ -10,8 +10,9 @@ from collections import namedtuple
 from multiprocessing import Pool
 from pprint import PrettyPrinter
 from matplotlib import pyplot as plt
+from csv import reader
 from Matrix_Interactome_DB_interface import  MatrixGetter
-from PolyPharma.configs import Interactome_rand_samp, Dumps
+from PolyPharma.configs import Interactome_rand_samp, Dumps, prename2
 from PolyPharma.Utils.dataviz import kde_compute
 from PolyPharma.neo4j_analyzer.Conduction_routines import perform_clustering
 from PolyPharma.neo4j_analyzer.IO_Routines import undump_object
@@ -291,6 +292,16 @@ def auto_analyze(dumplist, depth):
             print group
         for node in nr_nodes:
             print node
+
+
+def get_source():
+    retlist=[]
+    with open(prename2) as src:
+        csv_reader = reader(src)
+        for row in csv_reader:
+            retlist = retlist + row
+    retlist = [ret for ret in retlist]
+    return retlist
 
 
 if __name__ == "__main__":

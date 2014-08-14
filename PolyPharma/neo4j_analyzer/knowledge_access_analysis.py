@@ -6,6 +6,7 @@ __author__ = 'ank'
 import pickle
 import numpy as np
 
+from csv import reader
 from copy import copy
 from random import shuffle
 from collections import namedtuple
@@ -14,7 +15,7 @@ from pprint import PrettyPrinter
 from matplotlib import pyplot as plt
 from Matrix_Interactome_DB_interface import  MatrixGetter
 from Matrix_Knowledge_DB_Interface import GO_Interface
-from PolyPharma.configs import UP_rand_samp, Dumps
+from PolyPharma.configs import UP_rand_samp, Dumps, prename2, Background_source, bgList
 from PolyPharma.Utils.dataviz import kde_compute
 from PolyPharma.Utils.Linalg_routines import analyze_eigvects
 from PolyPharma.neo4j_analyzer.Conduction_routines import perform_clustering
@@ -30,14 +31,20 @@ MG.fast_load()
 
 def KG_gen():
     """
-    Generates a Matrix_Knowledge_DB interface for the use in the spawner
+    Generates a Matrix_Knowledge_DB interface for the use in the spawner. If
 
     :return: a GO_interface object
     """
-    KG = GO_Interface(filtr, MG.Uniprot_complete, corrfactors, True, 3)
-    KG.load()
-    print KG.pretty_time()
-    return KG
+    if Background_source:
+        KG = GO_Interface(filtr, get_background(), corrfactors, True, 3)
+        KG.load()
+        print "costum background", KG.pretty_time()
+        return KG
+    else:
+        KG = GO_Interface(filtr, MG.Uniprot_complete, corrfactors, True, 3)
+        KG.load()
+        print KG.pretty_time()
+        return KG
 
 
 def spawn_sampler(sample_size_list_plus_iteration_list_plus_args):
@@ -397,7 +404,7 @@ def build_blank(length, depth, sparse_rounds = False):
     KG = KG_gen()
     MD5_hash = KG._MD5hash()
     if  UP_rand_samp.find({'size': length, 'sys_hash' : MD5_hash, 'sparse_rounds':sparse_rounds}).count() < depth:
-        spawn_sampler_pool(4,[length],[depth])
+        spawn_sampler_pool(2,[length],[depth])
 
 
 def run_analysis(group):
@@ -412,6 +419,27 @@ def run_analysis(group):
         print node
 
 
+def get_source():
+    retlist=[]
+    with open(prename2) as src:
+        csv_reader = reader(src)
+        for row in csv_reader:
+            retlist = retlist + row
+    retlist = [ret for ret in retlist]
+    return retlist
+
+
+def get_background():
+    retlist=[]
+    with open(bgList) as src:
+        csv_reader = reader(src)
+        for row in csv_reader:
+            retlist = retlist + row
+    retlist = [ret for ret in retlist]
+    return retlist
+
+
+
 if __name__ == "__main__":
 
     GBO_1 = ['583954', '565151', '625184', '532448', '553020', '547608', '576300', '533299', '540532', '591419']
@@ -422,10 +450,13 @@ if __name__ == "__main__":
 
     GBO_4 = ['594353', '565151', '618791', '537788', '546413', '576300', '533299', '540532', '532448', '557819']
 
-    anset = [GBO_1, GBO_2, GBO_3, GBO_4]
+
+    # anset = [GBO_1, GBO_2, GBO_3, GBO_4]
+
+    anset = [get_source()]
 
     for subset in anset:
-        build_blank(len(subset), 20)
+        # build_blank(len(subset), 20)
         run_analysis(subset)
         raw_input("Press Enter to continue...")
 

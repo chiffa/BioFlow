@@ -1,11 +1,12 @@
 __author__ = 'ank'
 
 from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
-from PolyPharma.configs import IDFilter, Leg_ID_Filter, edge_type_filters, Dumps, Outputs
+from PolyPharma.configs import IDFilter, Leg_ID_Filter, edge_type_filters, Dumps, Outputs, Hits_source, prename1, prename2
+from PolyPharma.configs import Background_source, bgList
 import pickle
 from pprint import PrettyPrinter
 from collections import defaultdict
-from csv import writer
+from csv import reader, writer
 
 
 pp = PrettyPrinter(indent = 4)
@@ -301,6 +302,37 @@ def recover_annotation(Node_Id_set, annotation_type):
     return dict(ret_dict), ret_list
 
 
+def unwrap_source():
+    retlist=[]
+    with open(Hits_source) as src:
+        csv_reader = reader(src)
+        for row in csv_reader:
+            retlist = retlist + row
+    retlist = [ret for ret in retlist]
+    source = look_up_Annot_set(retlist)
+    PrettyPrinter(indent=4, stream=open(prename1, 'w')).pprint(source[1])
+    writer(open(prename2, 'w'), delimiter='\n').writerow(source[2])
+
+
+def unwrap_background():
+    retlist=[]
+
+    with open(Background_source) as src:
+        csv_reader = reader(src)
+        for row in csv_reader:
+            retlist = retlist + row
+
+    with open(Hits_source) as src:
+        csv_reader = reader(src)
+        for row in csv_reader:
+            retlist = retlist + row
+
+    retlist = list(set(ret for ret in retlist))
+    source = look_up_Annot_set(retlist)
+    writer(open(bgList, 'w'), delimiter='\n').writerow(source[2])
+
+
+
 Forbidden_verification_dict = {   'Small Molecule':DatabaseGraph.SmallMolecule,
                                   'Small Molecule Collection':DatabaseGraph.SmallMolecule_Collection,
                                   'Physical Entity':DatabaseGraph.PhysicalEntity,
@@ -412,12 +444,13 @@ if __name__ == "__main__":
     # lookup_by_ID(DatabaseGraph.UNIPORT, "CK2N2_HUMAN")
     # Erase_custom_fields()
     # recompute_forbidden_IDs(Forbidden_verification_dict)
-
-    print look_up_Annot_Node('RS15_YEAST')
+    # print unwrap_source()
+    # print look_up_Annot_Node('RS15_YEAST')
     # print Look_up_Annot_Node('ENSG00000131981', 'UNIPROT_Ensembl')
-
+    unwrap_source()
+    unwrap_background()
     # anset = [GBO_1, GBO_2, GBO_3, GBO_4]
-    # pp.pprint(look_up_Annot_set(GBO_3))
+
     # for subset in anset:
     #     print look_up_Annot_set(subset)[-1]
 
