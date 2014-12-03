@@ -165,6 +165,8 @@ IDFilter = []
 if os.path.isfile(Dumps.Forbidden_IDs):
     IDFilter = pickle.load(file(Dumps.Forbidden_IDs,'r'))
 
+print IDFilter
+
 ##########################################################################
 #  Fundge for matrix diagolizations of matrixes and other solver functions
 ##########################################################################
@@ -172,9 +174,11 @@ fudge = 1e-10
 
 RNA_source = "/home/ank/Documents/External_Predictions/Ben_RNA_seq/counts.tsv"
 
-Hits_source = "/home/ank/projects_files/2014/Poly_Pharma/Jin/186dsCIN.csv"
+# Hits_source = "/home/ank/projects_files/2014/Poly_Pharma/Jin/186dsCIN.csv"
 # Hits_source = "/home/ank/projects_files/2014/Poly_Pharma/Akshay-Kai/hit_list.csv"
-Background_source = "/home/ank/projects_files/2014/Poly_Pharma/Jin/186background.csv"
+Hits_source = "/home/ank/projects_files/2014/Poly_Pharma/HJ-screen/Candidates_R2.csv"
+# Background_source = "/home/ank/projects_files/2014/Poly_Pharma/Jin/186background.csv"
+Background_source = "/home/ank/projects_files/2014/Poly_Pharma/HJ-screen/Allgene_R2.csv"
 
 prename1 = Hits_source[:-4]+'_'+'pPh_name_maps.txt'
 prename2 = Hits_source[:-4]+'_'+'pPh_id_list.csv'

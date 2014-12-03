@@ -109,11 +109,6 @@ def look_up_Annot_Node(p_load, p_type = ''):
     Looks up nodes accessible via the annotation nodes with a given annotation and given annotation type.
     The lookup strict match, but case-insensitiYOR031Wve.
 
-    .. code-block: python
-    >>> print look_up_Annot_Node('ENSG00000131981', 'UNIPROT_Ensembl')
-    >>> # TODO: add the results here when implementing the doctests
-
-
     :param p_load: payload
     :param p_type: payload type
     :return: node type, node's displayName, node's db_ID, node's legacy ID
@@ -443,7 +438,7 @@ if __name__ == "__main__":
     # print count_items(DatabaseGraph.UNIPORT)
     # lookup_by_ID(DatabaseGraph.UNIPORT, "CK2N2_HUMAN")
     # Erase_custom_fields()
-    # recompute_forbidden_IDs(Forbidden_verification_dict)
+    recompute_forbidden_IDs(Forbidden_verification_dict)
     # print unwrap_source()
     # print look_up_Annot_Node('RS15_YEAST')
     # print Look_up_Annot_Node('ENSG00000131981', 'UNIPROT_Ensembl')

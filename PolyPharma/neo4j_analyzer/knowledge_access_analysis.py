@@ -35,16 +35,14 @@ def KG_gen():
 
     :return: a GO_interface object
     """
-    if Background_source:
-        KG = GO_Interface(filtr, get_background(), corrfactors, True, 3)
-        KG.load()
-        print "costum background", KG.pretty_time()
-        return KG
-    else:
-        KG = GO_Interface(filtr, MG.Uniprot_complete, corrfactors, True, 3)
-        KG.load()
-        print KG.pretty_time()
-        return KG
+    ################################
+    # Attention, manual swithc here:
+    ################################
+    KG = GO_Interface(filtr, get_background(), corrfactors, True, 3)
+    # KG = GO_Interface(filtr, MG.Uniprot_complete, corrfactors, True, 3)
+    KG.load()
+    print KG.pretty_time()
+    return KG
 
 
 def spawn_sampler(sample_size_list_plus_iteration_list_plus_args):
@@ -272,7 +270,8 @@ def compare_to_blanc(blanc_model_size, zoom_range_selector, real_knowledge_inter
         node_currs = real_knowledge_interface.node_current
         Dic_system = KG.format_Node_props(node_currs)
         curr_inf_conf_tot = np.array([[int(key)]+list(val) for key, val in Dic_system.iteritems()]).T
-        GO_node_ids, curr_inf_conf = (curr_inf_conf_tot[0, :], curr_inf_conf_tot[(1,2,3), :])
+        GO_node_ids, curr_inf_conf = (curr_inf_conf_tot[0, :], curr_inf_conf_tot[(1, 2, 3), :])
+        print curr_inf_conf.shape
         group2avg_offdiag, _, meancorr, eigval = perform_clustering(real_knowledge_interface.UP2UP_voltages, clusters)
 
 
@@ -286,7 +285,7 @@ def compare_to_blanc(blanc_model_size, zoom_range_selector, real_knowledge_inter
     Group_char = namedtuple('Group_Char', ['UPs','num_UPs','average_connection','p_value'])
     if r_nodes is not None:
         not_random_nodes = [str(int(GO_id)) for GO_id in GO_node_ids[r_nodes < p_val].tolist()]
-        not_random_groups = np.concatenate((group2avg_offdiag, np.reshape(r_groups, (3,1))), axis=1)[r_groups < p_val].tolist()
+        not_random_groups = np.concatenate((group2avg_offdiag, np.reshape(r_groups, (3, 1))), axis=1)[r_groups < p_val].tolist()
         not_random_groups = [ Group_char(*nr_group) for nr_group in not_random_groups]
         # basically the second element below are the nodes that contribute to the information flow through the node that is considered as
         # non-random
@@ -404,7 +403,7 @@ def build_blank(length, depth, sparse_rounds = False):
     KG = KG_gen()
     MD5_hash = KG._MD5hash()
     if  UP_rand_samp.find({'size': length, 'sys_hash' : MD5_hash, 'sparse_rounds':sparse_rounds}).count() < depth:
-        spawn_sampler_pool(2,[length],[depth])
+        spawn_sampler_pool(2, [length], [depth])
 
 
 def run_analysis(group):
@@ -443,13 +442,9 @@ def get_background():
 if __name__ == "__main__":
 
     GBO_1 = ['583954', '565151', '625184', '532448', '553020', '547608', '576300', '533299', '540532', '591419']
-
     GBO_2 = ['562293', '544722', '534354', '612635', '532463', '561658', '630018', '586185', '611762', '599295']
-
     GBO_3 = ['532448', '618791', '591250', '546747', '533299', '584147', '540532', '561186', '566489', '557819']
-
     GBO_4 = ['594353', '565151', '618791', '537788', '546413', '576300', '533299', '540532', '532448', '557819']
-
 
     # anset = [GBO_1, GBO_2, GBO_3, GBO_4]
 

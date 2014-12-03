@@ -790,10 +790,12 @@ def get_background():
 if __name__ == '__main__':
     filtr = ['biological_process']
 
-    if Background_source:
-        KG = GO_Interface(filtr, get_background(), (1, 1), True, 3)
-    else:
-        KG = GO_Interface(filtr, MG.Uniprot_complete, (1, 1), True, 3)
+    ################################
+    # Attention, manual switch here:
+    ################################
+
+    KG = GO_Interface(filtr, get_background(), (1, 1), True, 3)
+    # KG = GO_Interface(filtr, MG.Uniprot_complete, (1, 1), True, 3)
     KG.rebuild()
     print KG.pretty_time()
     KG.store()
