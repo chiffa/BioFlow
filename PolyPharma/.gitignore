@@ -44,3 +44,6 @@ nosetests.xml
 
 # All the config Files that contain private information
 *_private.ini
+
+#Pycharm Idea files:
+idea/*
