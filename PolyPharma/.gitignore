@@ -46,4 +46,4 @@ nosetests.xml
 *_private.ini
 
 #Pycharm Idea files:
-idea/*
+.idea/*
