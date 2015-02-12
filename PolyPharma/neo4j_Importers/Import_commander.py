@@ -11,6 +11,10 @@ Lucene/... search engine
 #
 ####################################################################################
 
+if __name__ == "__main__":
+    import os
+    os.chdir("..")
+
 from Reactome_org_inserter import clear_all, insert_all, run_diagnostics, full_dict
 from GO_UNIPROT_Inserter import getGOs, import_GOs, import_UNIPROTS
 from PolyPharma.neo4j_Declarations.General_operations import clean

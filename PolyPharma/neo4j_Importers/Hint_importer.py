@@ -4,6 +4,10 @@ Created on Jul 10, 2013
 @author: andrei
 '''
 
+if __name__ == "__main__":
+    import os
+    os.chdir("..")
+
 from PolyPharma.configs import Hint_csv
 from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
 

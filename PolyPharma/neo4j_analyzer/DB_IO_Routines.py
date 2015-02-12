@@ -1,5 +1,9 @@
 __author__ = 'ank'
 
+if __name__ == "__main__":
+    import os
+    os.chdir("..")
+
 from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
 from PolyPharma.configs import IDFilter, Leg_ID_Filter, edge_type_filters, Dumps, Outputs
 import pickle

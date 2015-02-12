@@ -4,6 +4,10 @@ Created on Jun 26, 2013
 @author: andrei
 '''
 
+if __name__ == "__main__":
+    import os
+    os.chdir("..")
+
 import PolyPharma.configs as conf
 import copy
 

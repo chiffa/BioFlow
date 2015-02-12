@@ -5,6 +5,10 @@ __author__ = 'ank'
 This module contains all the routines that are respojnsible for pulling 
 the matrixes out of the neo4j graph and processing them
 """
+
+import os
+os.chdir("..")
+
 import copy
 import operator
 import random

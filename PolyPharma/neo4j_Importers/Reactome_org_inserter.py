@@ -3,6 +3,11 @@ Created on Jun 15, 2013
 
 @author: andrei
 '''
+
+if __name__ == "__main__":
+    import os
+    os.chdir("..")
+
 import logging
 from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
 import pickle

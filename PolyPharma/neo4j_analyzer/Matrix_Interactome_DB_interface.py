@@ -3,9 +3,13 @@ __author__ = 'ank'
 This module contains all the routines that are respojnsible for pulling
 the matrixes out of the neo4j graph and processing them.
 """
+
+if __name__ == "__main__":
+    import os
+    os.chdir("..")
+
 import os
 from PolyPharma.configs import Chromosome_source, Chromosome_file_filter
-
 import hashlib
 import json
 import itertools

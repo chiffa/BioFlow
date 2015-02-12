@@ -3,6 +3,10 @@ Builds on the knowledge
 """
 __author__ = 'ank'
 
+if __name__ == "__main__":
+    import os
+    os.chdir("..")
+
 import pickle
 import numpy as np
 
@@ -19,7 +23,6 @@ from PolyPharma.Utils.dataviz import kde_compute
 from PolyPharma.Utils.Linalg_routines import analyze_eigvects
 from PolyPharma.neo4j_analyzer.Conduction_routines import perform_clustering
 from PolyPharma.neo4j_analyzer.IO_Routines import undump_object
-
 
 filtr = ['biological_process']
 corrfactors = (1, 1)

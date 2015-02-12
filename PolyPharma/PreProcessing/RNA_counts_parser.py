@@ -4,6 +4,10 @@ in genes.
 """
 __author__ = 'ank'
 
+if __name__ == "__main__":
+    import os
+    os.chdir("..")
+
 from PolyPharma.configs import RNA_source, Dumps, Outputs
 from PolyPharma.neo4j_analyzer.DB_IO_Routines import look_up_Annot_Node, recover_annotation, transcription
 from PolyPharma.neo4j_analyzer.IO_Routines import dump_object

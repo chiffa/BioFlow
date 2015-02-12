@@ -4,6 +4,9 @@ Created on Jul 2, 2013
 @author: andrei
 '''
 
+if __name__ == "__main__":
+    import os
+    os.chdir("..")
 
 from bulbs.neo4jserver import Graph as Neo4jGraph, Config
 import neo4j_typeDec as DDT

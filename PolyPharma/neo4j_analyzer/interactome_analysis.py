@@ -3,6 +3,9 @@ New analytical routines for the interactome
 """
 __author__ = 'ank'
 
+if __name__ == "__main__":
+    import os
+    os.chdir("..")
 
 import pickle
 import numpy as np

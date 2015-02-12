@@ -6,7 +6,10 @@ Holds all the configurations of the environmental variables for the whole projec
 """
 __author__='ank'
 
-from PolyPharma.Utils.ConfigParsers.Configs_parser import parse_configs, sourcefile_compilator
+import os
+os.chdir(".")
+
+from Utils.ConfigParsers.Configs_parser import parse_configs, sourcefile_compilator
 from pprint import PrettyPrinter
 from pymongo import MongoClient
 from os import path

@@ -1,5 +1,9 @@
 __author__ = 'ank'
 
+if __name__ == "__main__":
+    import os
+    os.chdir("..")
+
 import logging
 
 logging.basicConfig(level=logging.DEBUG,

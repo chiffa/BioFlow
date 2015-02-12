@@ -6,6 +6,10 @@ __author__='ank'
 :warning: **DEPRECATED**
 """
 
+if __name__ == "__main__":
+    import os
+    os.chdir("..")
+
 from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
 import copy
 import operator

@@ -1,5 +1,8 @@
 __author__ = 'ank'
 
+if __name__ == "__main__":
+    import os
+    os.chdir("..")
 
 from csv import reader
 from PolyPharma.configs import BioGRID

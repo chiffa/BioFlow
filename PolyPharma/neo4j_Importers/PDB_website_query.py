@@ -4,6 +4,10 @@ Created on Jun 27, 2013
 @author: andrei
 '''
 
+if __name__ == "__main__":
+    import os
+    os.chdir("..")
+
 import requests, json, logging 
 import xml.etree.ElementTree as ET
 

@@ -3,6 +3,10 @@ Module containing the the general routines for processing of conduction matrices
 """
 __author__ = 'ank'
 
+if __name__ == "__main__":
+    import os
+    os.chdir("..")
+
 import random
 import numpy as np
 from scipy.sparse import csc_matrix, diags, triu
