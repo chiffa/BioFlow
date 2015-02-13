@@ -4,9 +4,8 @@ in genes.
 """
 __author__ = 'ank'
 
-if __name__ == "__main__":
-    import os
-    os.chdir("..")
+if __name__ == "__main__" and __package__ is None:
+    __package__ = "PolyPharma.PreProcessing"
 
 from PolyPharma.configs import RNA_source, Dumps, Outputs
 from PolyPharma.neo4j_analyzer.DB_IO_Routines import look_up_Annot_Node, recover_annotation, transcription

@@ -3,9 +3,9 @@ Builds on the knowledge
 """
 __author__ = 'ank'
 
-if __name__ == "__main__":
-    import os
-    os.chdir("..")
+if __name__ == "__main__" and __package__ is None:
+    __package__ = "PolyPharma.neo4j_analyzer"
+
 
 import pickle
 import numpy as np
@@ -16,8 +16,9 @@ from collections import namedtuple
 from multiprocessing import Pool
 from pprint import PrettyPrinter
 from matplotlib import pyplot as plt
-from Matrix_Interactome_DB_interface import  MatrixGetter
-from Matrix_Knowledge_DB_Interface import GO_Interface
+
+from PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface import  MatrixGetter
+from PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface import GO_Interface
 from PolyPharma.configs import UP_rand_samp, Dumps
 from PolyPharma.Utils.dataviz import kde_compute
 from PolyPharma.Utils.Linalg_routines import analyze_eigvects

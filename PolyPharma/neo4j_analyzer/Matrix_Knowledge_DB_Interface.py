@@ -4,8 +4,8 @@ Contains all the tools necessary to map GO ontology and Pathway classification f
 Laplacian graph.
 """
 
-import os
-os.chdir("..")
+if __name__ == "__main__" and __package__ is None:
+    __package__ = "PolyPharma.neo4j_analyzer"
 
 import hashlib
 import json
@@ -23,6 +23,7 @@ from collections import defaultdict
 from warnings import warn
 from scipy.sparse import lil_matrix
 from scipy.sparse.csgraph import shortest_path
+
 from PolyPharma.configs import Dumps, Outputs, UP_rand_samp
 from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
 from PolyPharma.Utils.GDF_export import GDF_export_Interface

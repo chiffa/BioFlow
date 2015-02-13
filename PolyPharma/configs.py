@@ -6,16 +6,15 @@ Holds all the configurations of the environmental variables for the whole projec
 """
 __author__='ank'
 
-import os
-os.chdir(".")
+if __name__ == "__main__" and __package__ is None:
+    __package__ = "PolyPharma"
 
-from Utils.ConfigParsers.Configs_parser import parse_configs, sourcefile_compilator
+from PolyPharma.Utils.ConfigParsers.Configs_parser import parse_configs, sourcefile_compilator
 from pprint import PrettyPrinter
 from pymongo import MongoClient
 from os import path
 import pickle
 import os.path
-
 
 Servers, Options, Sources, Predictions = parse_configs()
 

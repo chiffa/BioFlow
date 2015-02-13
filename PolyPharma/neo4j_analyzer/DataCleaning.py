@@ -6,9 +6,8 @@ __author__='ank'
 :warning: **DEPRECATED**
 """
 
-if __name__ == "__main__":
-    import os
-    os.chdir("..")
+if __name__ == "__main__" and __package__ is None:
+    __package__ = "PolyPharma.neo4j_analyzer"
 
 from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
 import copy

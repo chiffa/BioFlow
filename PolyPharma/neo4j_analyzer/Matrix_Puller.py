@@ -6,8 +6,8 @@ This module contains all the routines that are respojnsible for pulling
 the matrixes out of the neo4j graph and processing them
 """
 
-import os
-os.chdir("..")
+if __name__ == "__main__" and __package__ is None:
+    __package__ = "PolyPharma.neo4j_analyzer"
 
 import copy
 import operator
@@ -21,8 +21,9 @@ from scipy.sparse import csc_matrix
 from scipy.sparse import diags
 # noinspection PyUnresolvedReferences
 from scikits.sparse.cholmod import cholesky
+
 from PolyPharma.configs import Dumps
-from Matrix_Interactome_DB_interface import MatrixGetter
+from PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface import MatrixGetter
 
 ID2Aboundances = {}
 

@@ -1,8 +1,7 @@
 __author__ = 'ank'
 
-if __name__ == "__main__":
-    import os
-    os.chdir("..")
+if __name__ == "__main__" and __package__ is None:
+    __package__ = "PolyPharma.neo4j_analyzer"
 
 from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
 from PolyPharma.configs import IDFilter, Leg_ID_Filter, edge_type_filters, Dumps, Outputs

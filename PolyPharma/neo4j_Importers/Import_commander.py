@@ -11,9 +11,8 @@ Lucene/... search engine
 #
 ####################################################################################
 
-if __name__ == "__main__":
-    import os
-    os.chdir("..")
+if __name__ == "__main__" and __package__ is None:
+    __package__ = "PolyPharma.neo4j_Importers"
 
 from Reactome_org_inserter import clear_all, insert_all, run_diagnostics, full_dict
 from GO_UNIPROT_Inserter import getGOs, import_GOs, import_UNIPROTS
