@@ -20,7 +20,7 @@ This application is provided as-is, without any warranties or support. Use it at
 However, if you are willing to test it and encounter problems or are willing to provide feedback, please fill in
 an issue ticket on GitHub and I will be glad to assist you in the measure of my possibilities.
 
-The license is BSD, but in case of academic usage, please cite the *url* (publication is to come).
+The license is BSD, but in case of academic usage, please cite the *url* (publication is in preparation).
 
 
 
@@ -43,9 +43,9 @@ present on the machine
 
 **Packages installed via Pip:**
 
-* JPype1 (x86_64 build)
+* JPype1 (x86_64 build - deprecated)
 * Cython
-* neo4j-embedded (x86_64 build)
+* neo4j-embedded (x86_64 build - deprecated)
 * NumPy (latest x86_64)
 * SciPy (latest x86_64)
 * bulbs (via pip)
@@ -65,6 +65,8 @@ On *Debian*:   ```  $ sudo apt-get install suitesparse suitesparse-dev ```
 On *Fedora* / *RHCP* / *CentOS*:    ```  $ sudo yum install suitesparse suitesparse_devel ```
 
 
+It is recommended to use Gephi for the analysis of the outputs, provided how easy it is for it to 
+
 
 Required files:
 ===============
@@ -74,13 +76,32 @@ provided that there are some renaming conventions
 
 **Databases:**
 * OBO 1.2 file of GO terms and relations, available at: http://www.geneontology.org/GO.downloads.ontology.shtml
-* UNIUPROT-SWISSPROT text database file available at: http://www.uniprot.org/downloads
+* UNIUPROT-SWISSPROT .txt text database file available at: http://www.uniprot.org/downloads
 * Reactome.org "Events in the BioPax level 3" file, available at: http://www.reactome.org/download/index.html
 * HiNT binary interaction files for the organisms of interest, availble at: http://hint.yulab.org/batch.html
-* BioGRID files in the tab2 format, available at http://thebiogrid.org/download.php
-* Gene-chromosome mapping files from the Uniprot documentation: ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/docs/
+* BioGRID ALL_ORGANISMS file in the tab2 format, available at http://thebiogrid.org/download.php
+* Gene-chromosome mapping files from the Uniprot documentation: ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/docs/ (needed only for working on aneuploidy)
 * Organism-specific protein aboundance files, available at: http://pax-db.org/#!downloads
 
-Please, pay attention to correctly rename the files or edit the files names so that the they correspond to the sources.ini
-file in the /configs directory of the application
+Please, pay attention to correctly rename the files or edit the files names so that the they correspond to the files specified in sources.ini
+file in the `PolyPharma/configs` directory of the application
 
+Basic usage:
+============
+Start up the neo4j database and the MonogoDB on their default ports. If those ports are not available for some reason, 
+please modify the `servers.ini` file in the `/PolyPharma/configs` directory.
+
+**Building the main database**
+If you are using the application for the first time on your computer, execute the
+```> Python -m PolyPharma.neo4j_Declarations.Import_commander ```
+This will build the databases for use with the applications.
+
+** Analysing the mRNA analysis tab file**
+Indicate the file to use in the `PolyPharma/configs.py` folder as the RNA_source variable
+Configure the expected counts groups and desired intergroup comparisons in the `PolyPharma/PreProcessing/RNA_counts_parser.py` folder 
+
+```> Python -m PolyPharma.PreProcessing.RNA_counts_parser ```
+
+Now, call the auto-analyze routines for the annotation analysis or interactome analysis:
+```> Python -m PolyPharma.neo4j_analyzer.knowledge_access_analysis ```
+```> Python -m PolyPharma.neo4j_analyzer.interactome_analysis ```
