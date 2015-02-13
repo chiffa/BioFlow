@@ -5,6 +5,8 @@ This module is no more functional a nd was kept for the legacy reasons
 """
 __author__ = 'ank'
 
+if __name__ == "__main__" and __package__ is None:
+    __package__ = "PolyPharma.PreProcessing"
 
 # from DBLoader import TableBuilder
 from sqlalchemy import create_engine

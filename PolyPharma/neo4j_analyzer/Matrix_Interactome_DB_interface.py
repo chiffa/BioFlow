@@ -3,9 +3,11 @@ __author__ = 'ank'
 This module contains all the routines that are respojnsible for pulling
 the matrixes out of the neo4j graph and processing them.
 """
-import os
-from PolyPharma.configs import Chromosome_source, Chromosome_file_filter
 
+if __name__ == "__main__" and __package__ is None:
+    __package__ = "PolyPharma.neo4j_analyzer"
+
+import os
 import hashlib
 import json
 import itertools
@@ -20,6 +22,8 @@ from pprint import PrettyPrinter
 from scipy.sparse import lil_matrix
 from scipy.sparse.linalg import eigsh
 from scipy.sparse.csgraph import connected_components
+
+from PolyPharma.configs import Chromosome_source, Chromosome_file_filter
 from PolyPharma.configs import edge_type_filters, Adjacency_Martix_Dict, Conductance_Matrix_Dict, Dumps, Outputs, Interactome_rand_samp
 from PolyPharma.Utils.GDF_export import GDF_export_Interface
 from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph

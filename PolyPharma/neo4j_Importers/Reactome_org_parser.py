@@ -5,6 +5,9 @@ Created on Jun 17, 2013
 #Put it into the a Reactome parser package later on
 '''
 
+if __name__ == "__main__" and __package__ is None:
+    __package__ = "PolyPharma.neo4j_Importers"
+
 import logging
 import xml.etree.ElementTree as ET
 from random import shuffle

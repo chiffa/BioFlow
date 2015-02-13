@@ -4,6 +4,9 @@ Created on Jun 27, 2013
 @author: andrei
 '''
 
+if __name__ == "__main__" and __package__ is None:
+    __package__ = "PolyPharma.neo4j_Importers"
+
 import requests, json, logging 
 import xml.etree.ElementTree as ET
 

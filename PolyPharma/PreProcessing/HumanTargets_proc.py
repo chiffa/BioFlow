@@ -54,4 +54,4 @@ mapFile={'mycophenolic':'mycophenolic acid',
          'norgestrel':'levonorgestrel',
          'salicyclic':'salicylic acid',
          'vinblastine':'vinorelbine',
-         'kanamycin':'amikacin',
+         'kanamycin':'amikacin',}

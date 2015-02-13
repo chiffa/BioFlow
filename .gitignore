@@ -3,7 +3,7 @@
 *.dump
 *.csv
 # for the moment the python config file
-configs.py
+#PolyPharma/configs.py
 
 *.py[cod]
 
@@ -44,3 +44,6 @@ nosetests.xml
 
 # All the config Files that contain private information
 *_private.ini
+
+#Pycharm Idea files:
+.idea/*
