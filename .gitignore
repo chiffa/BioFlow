@@ -45,5 +45,8 @@ nosetests.xml
 # All the config Files that contain private information
 *_private.ini
 
+All the specific analysis outputs, such as GDF files:
+*.gdf
+
 #Pycharm Idea files:
 .idea/*

@@ -1,14 +1,12 @@
 __author__ = 'ank'
 
-if __name__ == "__main__" and __package__ is None:
-    __package__ = "PolyPharma.neo4j_analyzer"
-
 from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
-from PolyPharma.configs import IDFilter, Leg_ID_Filter, edge_type_filters, Dumps, Outputs
+from PolyPharma.configs import IDFilter, Leg_ID_Filter, edge_type_filters, Dumps, Outputs, Hits_source, prename1, prename2
+from PolyPharma.configs import Background_source, bgList
 import pickle
 from pprint import PrettyPrinter
 from collections import defaultdict
-from csv import writer
+from csv import reader, writer
 
 
 pp = PrettyPrinter(indent = 4)
@@ -258,7 +256,9 @@ def recompute_forbidden_IDs(Node_Type_Dict):
             generator = bulbs_type.index.lookup(displayName = forbidden_Legacy_ID)
             UNW = unwrap_DB_ID(generator)
             retlist.update(UNW)
-    pickle.dump(retlist, file(Dumps.Forbidden_IDs,'w'))
+    print retlist
+    print Dumps.Forbidden_IDs
+    pickle.dump(retlist, file(Dumps.Forbidden_IDs, 'w'))
 
 
 def recover_UP_chars(UP_Nodes, UP_are_IDs):
@@ -302,6 +302,37 @@ def recover_annotation(Node_Id_set, annotation_type):
                             ret_list.append([str(annot.payload), str(node.ID)])
 
     return dict(ret_dict), ret_list
+
+
+def unwrap_source():
+    retlist=[]
+    with open(Hits_source) as src:
+        csv_reader = reader(src)
+        for row in csv_reader:
+            retlist = retlist + row
+    retlist = [ret for ret in retlist]
+    source = look_up_Annot_set(retlist)
+    PrettyPrinter(indent=4, stream=open(prename1, 'w')).pprint(source[1])
+    writer(open(prename2, 'w'), delimiter='\n').writerow(source[2])
+
+
+def unwrap_background():
+    retlist=[]
+
+    with open(Background_source) as src:
+        csv_reader = reader(src)
+        for row in csv_reader:
+            retlist = retlist + row
+
+    with open(Hits_source) as src:
+        csv_reader = reader(src)
+        for row in csv_reader:
+            retlist = retlist + row
+
+    retlist = list(set(ret for ret in retlist))
+    source = look_up_Annot_set(retlist)
+    writer(open(bgList, 'w'), delimiter='\n').writerow(source[2])
+
 
 
 Forbidden_verification_dict = {   'Small Molecule':DatabaseGraph.SmallMolecule,
@@ -355,17 +386,79 @@ if __name__ == "__main__":
                    '886637', '973293', '943484', '840896']
 
 
+
+    GBO_1 = ['583954', '565151', '625184', '532448', '553020', '547608', '576300', '533299', '540532', '591419']
+    #     [
+    # 'YOR031W',
+    # 'YOR001W',
+    # 'YOL107W',
+    # 'YOL124C',
+    # 'YOL040C',
+    # 'YOR184W',
+    # 'YOR374W',
+    # 'YOR125C',
+    # 'YOL087C',
+    # 'YOR334W',
+    # ]
+    
+    GBO_2 = ['562293', '544722', '534354', '612635', '532463', '561658', '630018', '586185', '611762', '599295']
+    #     [
+    # 'YOL084W',
+    # 'YOR243C',
+    # 'YOR281C',
+    # 'YOR127W',
+    # 'YOR250C',
+    # 'YOR278W',
+    # 'YOR354C',
+    # 'YOR319W',
+    # 'YOL114C',
+    # 'YOR271C',
+    # ]
+    
+    GBO_3 = [
+    'YOL040C',
+    'YOL124C',
+    'YOL155C',
+    'YOR031W',
+    'YOR080W',
+    'YOR253W',
+    'YOR316C-A',
+    'YOR332W',
+    'YOR338W',
+    'YOR339C',
+    ]
+    
+    GBO_4 = ['594353', '565151', '618791', '537788', '546413', '576300', '533299', '540532', '532448', '557819']
+    #     [
+    # 'YOR339C',
+    # 'YOR316C-A',
+    # 'YOR184W',
+    # 'YOR167C',
+    # 'YOR138C',
+    # 'YOR031W',
+    # 'YOR001W',
+    # 'YOL124C',
+    # 'YOL040C',
+    # 'YOL015W',
+    # ]
+
+
     # print count_items(DatabaseGraph.UNIPORT)
     # lookup_by_ID(DatabaseGraph.UNIPORT, "CK2N2_HUMAN")
     # Erase_custom_fields()
-    # recompute_forbidden_IDs(Forbidden_verification_dict)
-
+    recompute_forbidden_IDs(Forbidden_verification_dict)
+    # print unwrap_source()
+    # print look_up_Annot_Node('RS15_YEAST')
     # print Look_up_Annot_Node('ENSG00000131981', 'UNIPROT_Ensembl')
+    unwrap_source()
+    # unwrap_background()
+    # anset = [GBO_1, GBO_2, GBO_3, GBO_4]
 
+    # for subset in anset:
+    #     print look_up_Annot_set(subset)[-1]
 
-
-    print len(transcription)
-    print recover_annotation(transcription, 'UNIPROT_Ensembl')[1]
+    # print len(transcription)
+    # print recover_annotation(transcription, 'UNIPROT_Ensembl')[1]
     # print recover_UP_chars(UP_Nodes=transcription, UP_are_IDs=None)
     # _, resdict, reslist = look_up_Annot_set(['MYPN'])
     # pp.pprint(resdict)

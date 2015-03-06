@@ -17,8 +17,8 @@ def parse_configs():
         '''
         Parses a config file on given path, in case of failure raises an IOError, 
         '''
-        cfg=ConfigParser.SafeConfigParser()
-        rfs=cfg.read(path)
+        cfg = ConfigParser.SafeConfigParser()
+        rfs = cfg.read(path)
         if rfs==[]:
             raise IOError('cannot load '+path)
         MainDict={}
@@ -48,6 +48,5 @@ def sourcefile_compilator(Sources_dict):
 
 
 if __name__ == "__main__":
-    # pp = PrettyPrinter(indent=4)
-    # pp.pprint(parse_configs())
-    pass
+    pp=PrettyPrinter(indent=4)
+    pp.pprint(parse_configs())

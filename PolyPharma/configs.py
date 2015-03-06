@@ -6,15 +6,13 @@ Holds all the configurations of the environmental variables for the whole projec
 """
 __author__='ank'
 
-if __name__ == "__main__" and __package__ is None:
-    __package__ = "PolyPharma"
-
 from PolyPharma.Utils.ConfigParsers.Configs_parser import parse_configs, sourcefile_compilator
 from pprint import PrettyPrinter
 from pymongo import MongoClient
 from os import path
 import pickle
 import os.path
+
 
 Servers, Options, Sources, Predictions = parse_configs()
 
@@ -47,17 +45,17 @@ Targets_File2 = ReadSourcePredictions['OVERINGTON']
 
 # ExactDict is the dictionnary used to perform a precise matching between the fuzzy target names and the SwissProt IDs required
 # for a lookup in the database
-from PreProcessing.neflanavir_parser import subdict
+from PolyPharma.PreProcessing.neflanavir_parser import subdict
 Targets_dict = subdict
-from PreProcessing.Overington_parser import subdict2
+from PolyPharma.PreProcessing.Overington_parser import subdict2
 Targets_dict2 = subdict2
 
 ################################################
 #  Defines MongeDb properties and connections
 ################################################
 # pymongo_prefix = "human_"
-pymongo_prefix = "mice_"
-# pymongo_prefix = "yeast_"
+# pymongo_prefix = "mice_"
+pymongo_prefix = "yeast_"
 pymongo_suffix = "_v_1"
 
 client = MongoClient(MongoDB_url)
@@ -111,7 +109,8 @@ class Dumps(object):
     """
     prefix = str(path.abspath(path.dirname(__file__)+'/dumps'))
     # TODO: achtung:explosive here
-    prefix_2 = '/mice'
+    prefix_2 = '/yeast'
+    # prefix_2 = '/mice'
     postfix = '.dump'
 
     if not os.path.isdir(prefix+prefix_2):
@@ -166,6 +165,8 @@ IDFilter = []
 if os.path.isfile(Dumps.Forbidden_IDs):
     IDFilter = pickle.load(file(Dumps.Forbidden_IDs,'r'))
 
+# print IDFilter
+
 ##########################################################################
 #  Fundge for matrix diagolizations of matrixes and other solver functions
 ##########################################################################
@@ -173,7 +174,17 @@ fudge = 1e-10
 
 RNA_source = "/home/ank/Documents/External_Predictions/Ben_RNA_seq/counts.tsv"
 
+# Hits_source = "/home/ank/projects_files/2014/Poly_Pharma/Jin/186dsCIN.csv"
+# Hits_source = "/home/ank/projects_files/2014/Poly_Pharma/Akshay-Kai/hit_list.csv"
+Hits_source = "/home/ank/projects_files/2015/Hung_Ji_essential_genes/shortlist.csv"
+# Background_source = "/home/ank/projects_files/2014/Poly_Pharma/Jin/186background.csv"
+Background_source = "/home/ank/projects_files/2014/Poly_Pharma/HJ-screen/Allgene_R2.csv"
+
+prename1 = Hits_source[:-4]+'_'+'pPh_name_maps.txt'
+prename2 = Hits_source[:-4]+'_'+'pPh_id_list.csv'
+
+bgList = Background_source[:-4]+'_'+'pPh_id_list.csv'
 
 if __name__ == "__main__":
-    pp=PrettyPrinter(indent=4)
-    pp.pprint((Servers,Options,Sources))
+    pp = PrettyPrinter(indent=4)
+    pp.pprint((Servers, Options, Sources))

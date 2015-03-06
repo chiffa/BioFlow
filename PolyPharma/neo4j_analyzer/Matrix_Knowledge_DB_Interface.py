@@ -4,9 +4,6 @@ Contains all the tools necessary to map GO ontology and Pathway classification f
 Laplacian graph.
 """
 
-if __name__ == "__main__" and __package__ is None:
-    __package__ = "PolyPharma.neo4j_analyzer"
-
 import hashlib
 import json
 import random
@@ -14,6 +11,7 @@ import string
 from copy import copy
 import pickle
 import numpy as np
+from csv import reader
 from time import time
 from random import shuffle
 from itertools import combinations, chain
@@ -23,8 +21,7 @@ from collections import defaultdict
 from warnings import warn
 from scipy.sparse import lil_matrix
 from scipy.sparse.csgraph import shortest_path
-
-from PolyPharma.configs import Dumps, Outputs, UP_rand_samp
+from PolyPharma.configs import Dumps, Outputs, UP_rand_samp, Background_source, bgList
 from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
 from PolyPharma.Utils.GDF_export import GDF_export_Interface
 from PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface import MatrixGetter
@@ -781,9 +778,24 @@ class GO_Interface(object):
                 self.Indep_Lapl [idx1, idx1] += 1
 
 
+def get_background():
+    retlist=[]
+    with open(bgList) as src:
+        csv_reader = reader(src)
+        for row in csv_reader:
+            retlist = retlist + row
+    retlist = [ret for ret in retlist]
+    return retlist
+
+
 if __name__ == '__main__':
     filtr = ['biological_process']
 
+    ################################
+    # Attention, manual switch here:
+    ################################
+
+    # KG = GO_Interface(filtr, get_background(), (1, 1), True, 3)
     KG = GO_Interface(filtr, MG.Uniprot_complete, (1, 1), True, 3)
     KG.rebuild()
     print KG.pretty_time()
