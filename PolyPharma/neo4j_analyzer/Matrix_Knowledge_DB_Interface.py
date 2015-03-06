@@ -3,6 +3,7 @@ __author__ = 'ank'
 Contains all the tools necessary to map GO ontology and Pathway classification from the database to an Adjacency and
 Laplacian graph.
 """
+
 import hashlib
 import json
 import random

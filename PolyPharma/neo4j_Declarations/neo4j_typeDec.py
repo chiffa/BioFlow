@@ -7,6 +7,9 @@ Created on Jun 13, 2013
 # @attention: DO NOT WRITE "element_type" or "label" differently from the name of the calss, they are used
 # in the indexes and it could be very hard to remember what is what after some time
 
+if __name__ == "__main__" and __package__ is None:
+    __package__ = "PolyPharma.neo4j_Declarations"
+
 from bulbs.model import Node, Relationship
 from bulbs.property import String, Integer, Float, Bool
 

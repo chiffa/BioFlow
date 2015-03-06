@@ -3,6 +3,9 @@ Module containing an objet that allows an easy export of the matrix-encoded info
 """
 __author__ = 'ank'
 
+if __name__ == "__main__" and __package__ is None:
+    __package__ = "PolyPharma.Utils"
+
 import numpy as np
 from scipy.sparse import lil_matrix
 from PolyPharma.configs import Dumps

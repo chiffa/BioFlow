@@ -4,6 +4,9 @@ Created on Jun 26, 2013
 @author: andrei
 '''
 
+if __name__ == "__main__" and __package__ is None:
+    __package__ = "PolyPharma.Utils"
+
 import PolyPharma.configs as conf
 import copy
 

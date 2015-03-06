@@ -4,6 +4,9 @@ Created on 13 mai 2013
 @author: Andrei Kucharavy
 '''
 
+if __name__ == "__main__" and __package__ is None:
+    __package__ = "PolyPharma.Utils"
+
 import xml.etree.ElementTree as ET
 import logging
 from PolyPharma.configs import ReactomeBioPax

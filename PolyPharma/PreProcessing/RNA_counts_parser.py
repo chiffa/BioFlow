@@ -4,6 +4,9 @@ in genes.
 """
 __author__ = 'ank'
 
+if __name__ == "__main__" and __package__ is None:
+    __package__ = "PolyPharma.PreProcessing"
+
 from PolyPharma.configs import RNA_source, Dumps, Outputs
 from PolyPharma.neo4j_analyzer.DB_IO_Routines import look_up_Annot_Node, recover_annotation, transcription
 from PolyPharma.neo4j_analyzer.IO_Routines import dump_object
@@ -161,33 +164,31 @@ def run_test_suite(experiments, experimental_groups, intergroups, count_filter_l
 
 if __name__ == "__main__":
 
-
     exp_groups = [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
     intergroups = [[0, 1], [0, 2]]
 
-    # run_test_suite(9, exp_groups, intergroups, 10, 0.05)
+    run_test_suite(9, exp_groups, intergroups, 10, 0.05)
 
-
-
-    names, lengths, counts = import_counts_table(9)
-    flter = counts_filter(counts, exp_groups,  filter_level=10)
-
-    names = names[flter, :]
-    lengths = lengths[flter, :]
-    counts = counts[flter, :]
-
-    rpkms = translate_to_rpkm(lengths, counts)
-
-    annot = np.array(recover_annotation(transcription,'UNIPROT_Ensembl')[1])
-
-    fltr2 = np.in1d(names[:,0], annot[:,0])
-    fltr3 = np.in1d(annot[:,0], names[:,0])
-
-    reslist = np.concatenate((names[fltr2, :], rpkms[fltr2, :]), axis=1)
-    reannot = annot[fltr3,:]
-
-
-    write_out_annotation(np.concatenate((reannot[reannot[:,0].argsort()],reslist[reslist[:,0].argsort()]), axis=1).tolist())
-
-
+    #
+    # names, lengths, counts = import_counts_table(9)
+    # flter = counts_filter(counts, exp_groups,  filter_level=10)
+    #
+    # names = names[flter, :]
+    # lengths = lengths[flter, :]
+    # counts = counts[flter, :]
+    #
+    # rpkms = translate_to_rpkm(lengths, counts)
+    #
+    # annot = np.array(recover_annotation(transcription,'UNIPROT_Ensembl')[1])
+    #
+    # fltr2 = np.in1d(names[:,0], annot[:,0])
+    # fltr3 = np.in1d(annot[:,0], names[:,0])
+    #
+    # reslist = np.concatenate((names[fltr2, :], rpkms[fltr2, :]), axis=1)
+    # reannot = annot[fltr3,:]
+    #
+    #
+    # write_out_annotation(np.concatenate((reannot[reannot[:,0].argsort()],reslist[reslist[:,0].argsort()]), axis=1).tolist())
+    #
+    #
 

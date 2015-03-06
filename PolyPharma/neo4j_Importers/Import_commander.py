@@ -11,6 +11,9 @@ Lucene/... search engine
 #
 ####################################################################################
 
+if __name__ == "__main__" and __package__ is None:
+    __package__ = "PolyPharma.neo4j_Importers"
+
 from Reactome_org_inserter import clear_all, insert_all, run_diagnostics, full_dict
 from GO_UNIPROT_Inserter import getGOs, import_GOs, import_UNIPROTS
 from PolyPharma.neo4j_Declarations.General_operations import clean
@@ -31,19 +34,20 @@ import sys
 
 # clear_all(full_dict)
 # run_diagnostics(full_dict)
-# insert_all()
-# run_diagnostics(full_dict)
-#
-# # clean(DatabaseGraph.GOTerm)
-# import_GOs()
+insert_all()
+run_diagnostics(full_dict)
+
+# clean(DatabaseGraph.GOTerm)
+import_GOs()
+
 # getGOs()
-# # clean(DatabaseGraph.UNIPORT)
-# import_UNIPROTS()
-#
-# cross_ref_HiNT(True)
-#
-# import_BioGRID()
-#
-# run_diagnostics(full_dict)
-#
-# recompute_forbidden_IDs(Forbidden_verification_dict)
+# clean(DatabaseGraph.UNIPORT)
+import_UNIPROTS()
+
+cross_ref_HiNT(True)
+
+import_BioGRID()
+
+run_diagnostics(full_dict)
+
+recompute_forbidden_IDs(Forbidden_verification_dict)

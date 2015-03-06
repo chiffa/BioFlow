@@ -4,6 +4,9 @@ Created on Jul 5, 2013
 @author: andrei
 '''
 
+if __name__ == "__main__" and __package__ is None:
+    __package__ = "PolyPharma.neo4j_Importers"
+
 from PolyPharma.Utils.GO_Structure_Parser import fill_GO_Terms
 from PolyPharma.Utils.UNIPROT_Parser import Parse_Uniprot
 from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
