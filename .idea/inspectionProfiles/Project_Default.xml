@@ -6,26 +6,6 @@
     <inspection_tool class="PyPep8Inspection" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
     <inspection_tool class="PyPep8NamingInspection" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
     <inspection_tool class="PySingleQuotedDocstringInspection" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
-    <inspection_tool class="PyUnresolvedReferencesInspection" enabled="true" level="WARNING" enabled_by_default="true">
-      <option name="ignoredIdentifiers">
-        <value>
-          <list size="12">
-            <item index="0" class="java.lang.String" itemvalue="tuple.values" />
-            <item index="1" class="java.lang.String" itemvalue="scikits.sparse.cholmod" />
-            <item index="2" class="java.lang.String" itemvalue="null.ClassPropertiesAndMethods.M.T" />
-            <item index="3" class="java.lang.String" itemvalue="numpy.absolute" />
-            <item index="4" class="java.lang.String" itemvalue="numpy.isinf" />
-            <item index="5" class="java.lang.String" itemvalue="numpy.logical_and" />
-            <item index="6" class="java.lang.String" itemvalue="numpy.random.*" />
-            <item index="7" class="java.lang.String" itemvalue="bool.nonzero" />
-            <item index="8" class="java.lang.String" itemvalue="numpy.tanh" />
-            <item index="9" class="java.lang.String" itemvalue="null.BuiltinTest.M.T" />
-            <item index="10" class="java.lang.String" itemvalue="numpy.fabs" />
-            <item index="11" class="java.lang.String" itemvalue="scipy.special.erf" />
-          </list>
-        </value>
-      </option>
-    </inspection_tool>
     <inspection_tool class="SpellCheckingInspection" enabled="false" level="TYPO" enabled_by_default="false">
       <option name="processCode" value="true" />
       <option name="processLiterals" value="true" />

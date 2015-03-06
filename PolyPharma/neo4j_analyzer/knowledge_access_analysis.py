@@ -403,7 +403,7 @@ def build_blank(length, depth, sparse_rounds = False):
     KG = KG_gen()
     MD5_hash = KG._MD5hash()
     if  UP_rand_samp.find({'size': length, 'sys_hash' : MD5_hash, 'sparse_rounds':sparse_rounds}).count() < depth:
-        spawn_sampler_pool(2, [length], [depth])
+        spawn_sampler_pool(4, [length], [depth])
 
 
 def run_analysis(group):
@@ -451,7 +451,7 @@ if __name__ == "__main__":
     anset = [get_source()]
 
     for subset in anset:
-        # build_blank(len(subset), 20)
+        build_blank(len(subset), 20)
         run_analysis(subset)
         raw_input("Press Enter to continue...")
 

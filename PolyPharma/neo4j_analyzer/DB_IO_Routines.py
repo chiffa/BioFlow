@@ -251,7 +251,9 @@ def recompute_forbidden_IDs(Node_Type_Dict):
             generator = bulbs_type.index.lookup(displayName = forbidden_Legacy_ID)
             UNW = unwrap_DB_ID(generator)
             retlist.update(UNW)
-    pickle.dump(retlist, file(Dumps.Forbidden_IDs,'w'))
+    print retlist
+    print Dumps.Forbidden_IDs
+    pickle.dump(retlist, file(Dumps.Forbidden_IDs, 'w'))
 
 
 def recover_UP_chars(UP_Nodes, UP_are_IDs):
@@ -443,7 +445,7 @@ if __name__ == "__main__":
     # print look_up_Annot_Node('RS15_YEAST')
     # print Look_up_Annot_Node('ENSG00000131981', 'UNIPROT_Ensembl')
     unwrap_source()
-    unwrap_background()
+    # unwrap_background()
     # anset = [GBO_1, GBO_2, GBO_3, GBO_4]
 
     # for subset in anset:

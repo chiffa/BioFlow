@@ -17,8 +17,8 @@ def parse_configs():
         '''
         Parses a config file on given path, in case of failure raises an IOError, 
         '''
-        cfg=ConfigParser.SafeConfigParser()
-        rfs=cfg.read(path)
+        cfg = ConfigParser.SafeConfigParser()
+        rfs = cfg.read(path)
         if rfs==[]:
             raise IOError('cannot load '+path)
         MainDict={}

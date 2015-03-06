@@ -45,9 +45,9 @@ Targets_File2 = ReadSourcePredictions['OVERINGTON']
 
 # ExactDict is the dictionnary used to perform a precise matching between the fuzzy target names and the SwissProt IDs required
 # for a lookup in the database
-from PreProcessing.neflanavir_parser import subdict
+from PolyPharma.PreProcessing.neflanavir_parser import subdict
 Targets_dict = subdict
-from PreProcessing.Overington_parser import subdict2
+from PolyPharma.PreProcessing.Overington_parser import subdict2
 Targets_dict2 = subdict2
 
 ################################################
@@ -165,7 +165,7 @@ IDFilter = []
 if os.path.isfile(Dumps.Forbidden_IDs):
     IDFilter = pickle.load(file(Dumps.Forbidden_IDs,'r'))
 
-print IDFilter
+# print IDFilter
 
 ##########################################################################
 #  Fundge for matrix diagolizations of matrixes and other solver functions
@@ -176,7 +176,7 @@ RNA_source = "/home/ank/Documents/External_Predictions/Ben_RNA_seq/counts.tsv"
 
 # Hits_source = "/home/ank/projects_files/2014/Poly_Pharma/Jin/186dsCIN.csv"
 # Hits_source = "/home/ank/projects_files/2014/Poly_Pharma/Akshay-Kai/hit_list.csv"
-Hits_source = "/home/ank/projects_files/2014/Poly_Pharma/HJ-screen/Candidates_R2.csv"
+Hits_source = "/home/ank/projects_files/2015/Hung_Ji_essential_genes/shortlist.csv"
 # Background_source = "/home/ank/projects_files/2014/Poly_Pharma/Jin/186background.csv"
 Background_source = "/home/ank/projects_files/2014/Poly_Pharma/HJ-screen/Allgene_R2.csv"
 
@@ -186,5 +186,5 @@ prename2 = Hits_source[:-4]+'_'+'pPh_id_list.csv'
 bgList = Background_source[:-4]+'_'+'pPh_id_list.csv'
 
 if __name__ == "__main__":
-    pp=PrettyPrinter(indent=4)
-    pp.pprint((Servers,Options,Sources))
+    pp = PrettyPrinter(indent=4)
+    pp.pprint((Servers, Options, Sources))

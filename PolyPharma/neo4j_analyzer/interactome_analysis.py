@@ -276,13 +276,13 @@ def auto_analyze(dumplist, depth):
         MG1.set_Uniprot_source(list(lst))
         print len(MG1.analytic_Uniprots)
         if len(MG1.analytic_Uniprots)<200:
-            spawn_sampler_pool(2, [len(MG1.analytic_Uniprots)], [depth])
+            spawn_sampler_pool(4, [len(MG1.analytic_Uniprots)], [depth])
             MG1.build_extended_conduction_system()
             nr_nodes, nr_groups = compare_to_blanc(len(MG1.analytic_Uniprots), [0.5, 0.6], MG1, p_val=0.9)
         else:
             sampling_depth = max(200**2/len(MG1.analytic_Uniprots), 5)
             print 'lenght: %s \t sampling depth: %s \t, estimated_time: %s' % (len(MG1.analytic_Uniprots), sampling_depth, len(MG1.analytic_Uniprots)*sampling_depth/2/depth/60)
-            spawn_sampler_pool(2, [len(MG1.analytic_Uniprots)], [depth], sparse_rounds=sampling_depth)
+            spawn_sampler_pool(4, [len(MG1.analytic_Uniprots)], [depth], sparse_rounds=sampling_depth)
             MG1.build_extended_conduction_system(sparse_samples=sampling_depth)
             MG1.export_conduction_system()
             nr_nodes, nr_groups = compare_to_blanc(len(MG1.analytic_Uniprots), [0.5, 0.6], MG1, p_val=0.9, sparse_rounds=sampling_depth)
