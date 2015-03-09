@@ -1,7 +1,7 @@
 __author__ = 'ank'
 
 import ConfigParser
-from PolyPharma.Utils.ConfigParsers.Configs_common import rootdir, configsfiles, \
+from PolyPharma.Utils.AdaptedConfigParser.Configs_common import rootdir, configsfiles, \
                                             db_root, source_ext_db_roots, source_ext_prediction_roots
 import os
 
