@@ -50,3 +50,4 @@ All the specific analysis outputs, such as GDF files:
 
 #Pycharm Idea files:
 .idea/*
+.idea
