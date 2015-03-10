@@ -50,3 +50,7 @@ All the specific analysis outputs, such as GDF files:
 
 #Pycharm Idea files:
 .idea/*
+.idea
+
+# the builds of the documentation (they should be processed by ReadTheDocs)
+docs/build/*

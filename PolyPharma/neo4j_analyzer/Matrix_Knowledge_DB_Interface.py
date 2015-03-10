@@ -1,8 +1,13 @@
-__author__ = 'ank'
 """
+:created:
+:@author: Andrei Kucharavy
+
 Contains all the tools necessary to map GO ontology and Pathway classification from the database to an Adjacency and
 Laplacian graph.
 """
+
+
+__author__ = 'ank'
 
 import hashlib
 import json
