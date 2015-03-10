@@ -151,6 +151,13 @@ def look_up_Annot_Node(p_load, p_type = ''):
 
 
 def look_up_Annot_set(p_load_list, p_type=''):
+    """
+    Looks up an set of annotations in the database and finds the Ids of nodes containing SWISSPROT proteins
+
+    :param p_load_list:
+    :param p_type:
+    :return:
+    """
     retdict = dict( (p_load, look_up_Annot_Node(p_load, p_type)) for p_load in p_load_list)
     retlist = [value[0][2] for value in retdict.itervalues() if value!=[]]
     warnlist =[key for key, value in retdict.iteritems() if value == []]

@@ -1,7 +1,7 @@
 """
 :created: Dec 15, 2013
-:@author: Andrei Kucharavy
-performs IO from the setup .ini files and casts into relevant Python Dictionaries
+:author: Andrei Kucharavy
+Performs IO from the setup .ini files and casts into relevant Python Dictionaries
 """
 from pprint import PrettyPrinter
 from os.path import join
@@ -44,7 +44,7 @@ class structure_generator(object):
                    'Reactome_name': 'Mus Musculus.owl',
                    'Biogrid_name': 'Mus_musculus.tsv'}
 
-
+    @classmethod
     def generate_template(self, payload_dict, expanded=False):
         """
         Generates a template dictionary that would be converted to a sources.ini config file
@@ -77,7 +77,7 @@ class structure_generator(object):
 
         return template_dict
 
-
+    @classmethod
     def add_location_to_template(self, template_dict):
         """
         Adds a location to the template dictionary used to generate a configuration file
@@ -89,7 +89,7 @@ class structure_generator(object):
 
         return master_location
 
-
+    @classmethod
     def build_source_config(self, pl_type):
         """
         Writes a source file based on the string organism argument

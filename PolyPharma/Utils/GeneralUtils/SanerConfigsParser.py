@@ -1,5 +1,9 @@
-__author__ = 'ank'
+"""
+Tools for a mkore sane conversion between dicts and configfiles, based on the Python 2.y default
+ConfigParser
 
+:@author: Andrei Kucharavy
+"""
 import ConfigParser
 
 def ini_configs2dict(path):
