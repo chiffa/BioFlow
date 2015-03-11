@@ -6,6 +6,7 @@ Created on Jul 2, 2013
 from bulbs.neo4jserver import Graph as Neo4jGraph, Config
 import neo4j_typeDec as DDT
 from PolyPharma.configs import neo4j_server
+import os
 
 if neo4j_server != 'http://localhost:7474':
     neo4j_server_local = Config(neo4j_server+ '/db/data/')
