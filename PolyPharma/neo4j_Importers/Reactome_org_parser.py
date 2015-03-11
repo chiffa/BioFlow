@@ -10,6 +10,8 @@ import xml.etree.ElementTree as ET
 from random import shuffle
 import PolyPharma.configs as conf
 
+# TODO: refactor as a class
+
 ####################################################################################
 #
 # Logger behavior definition (most of the time it fails to function due to the)
@@ -18,7 +20,6 @@ import PolyPharma.configs as conf
 ####################################################################################
 
 # TODO: export logs location to the configs file
-# TODO: rebuild to avoid import attempts on simple module load
 
 logging.basicConfig(level=logging.DEBUG,
                     format='%(levelname)-8s %(message)s',
