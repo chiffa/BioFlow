@@ -1,13 +1,12 @@
-'''
+"""
 Created on Jun 15, 2013
-
-@author: andrei
-'''
-
+:author: andrei
+"""
 import logging
 from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
 import pickle
 from PolyPharma.configs import Dumps, Leg_ID_Filter
+import os
 
 ####################################################################################
 #
@@ -377,30 +376,35 @@ def insert_all(Skip='N'):
     Pathways_Insert(DG.PathwaySteps, DG.Pathways)
 
 
+on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
-full_dict = {'DNA':(DatabaseGraph.DNA, "DNA"),
-              'DNA Collection':(DatabaseGraph.DNA_Collection, "DNA_Collection"),
-              'RNA':(DatabaseGraph.RNA, "RNA"),
-              'RNA Collection':(DatabaseGraph.RNA_Collection, "RNA_Collection"),
-              'Small Molecule':(DatabaseGraph.SmallMolecule, "SmallMolecule"),
-              'Small Molecule Collection':(DatabaseGraph.SmallMolecule_Collection, "SmallMolecule_Collection"),
-              'Protein':(DatabaseGraph.Protein,  "Protein"),
-              'Protein Collection':(DatabaseGraph.Protein_Collection, "Protein_Collection"),
-              'Complex':(DatabaseGraph.Complex, "Complex"),
-              'Complex Collection':(DatabaseGraph.Complex_Collection, "Complex_Collection"),
-              'Physical Entity':(DatabaseGraph.PhysicalEntity, "PhysicalEntity"),
-              'Physical Entity Collection':(DatabaseGraph.PhysicalEntity_Collection, "PhysicalEntity_Collection"),
-              'TemplateReaction':(DatabaseGraph.TemplateReaction, "Template_Reaction"),
-              'Degradation':(DatabaseGraph.Degradation, "Degradation"),
-              'BiochemicalReaction':(DatabaseGraph.BiochemicalReaction, "BiochemicalReaction"),
-              'Pathway Step':(DatabaseGraph.PathwayStep, "Pathway_Step"),
-              'Pathway':(DatabaseGraph.Pathway, "Pathway"),
-              'Cell Locations':(DatabaseGraph.Location, "Location"),
-              'Annotations':(DatabaseGraph.AnnotNode, "AnnotNode"),
-              'Modification Feature':(DatabaseGraph.ModificationFeature, "ModificationFeature"),
-              'UNIPROT':(DatabaseGraph.UNIPORT, "UNIPROT"),
-              'GO Term':(DatabaseGraph.GOTerm, "GOTerm"),
+if not on_rtd:
+    full_dict = {'DNA': (DatabaseGraph.DNA, "DNA"),
+              'DNA Collection': (DatabaseGraph.DNA_Collection, "DNA_Collection"),
+              'RNA': (DatabaseGraph.RNA, "RNA"),
+              'RNA Collection': (DatabaseGraph.RNA_Collection, "RNA_Collection"),
+              'Small Molecule': (DatabaseGraph.SmallMolecule, "SmallMolecule"),
+              'Small Molecule Collection': (DatabaseGraph.SmallMolecule_Collection, "SmallMolecule_Collection"),
+              'Protein': (DatabaseGraph.Protein,  "Protein"),
+              'Protein Collection': (DatabaseGraph.Protein_Collection, "Protein_Collection"),
+              'Complex': (DatabaseGraph.Complex, "Complex"),
+              'Complex Collection': (DatabaseGraph.Complex_Collection, "Complex_Collection"),
+              'Physical Entity': (DatabaseGraph.PhysicalEntity, "PhysicalEntity"),
+              'Physical Entity Collection': (DatabaseGraph.PhysicalEntity_Collection, "PhysicalEntity_Collection"),
+              'TemplateReaction': (DatabaseGraph.TemplateReaction, "Template_Reaction"),
+              'Degradation': (DatabaseGraph.Degradation, "Degradation"),
+              'BiochemicalReaction': (DatabaseGraph.BiochemicalReaction, "BiochemicalReaction"),
+              'Pathway Step': (DatabaseGraph.PathwayStep, "Pathway_Step"),
+              'Pathway': (DatabaseGraph.Pathway, "Pathway"),
+              'Cell Locations': (DatabaseGraph.Location, "Location"),
+              'Annotations': (DatabaseGraph.AnnotNode, "AnnotNode"),
+              'Modification Feature': (DatabaseGraph.ModificationFeature, "ModificationFeature"),
+              'UNIPROT': (DatabaseGraph.UNIPORT, "UNIPROT"),
+              'GO Term': (DatabaseGraph.GOTerm, "GOTerm"),
             }
+
+else:
+    full_dict = {}
 
 if __name__ == "__main__":
     # insert_all()

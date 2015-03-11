@@ -12,6 +12,7 @@ import pickle
 from pprint import PrettyPrinter
 from collections import defaultdict
 from csv import reader, writer
+import os
 
 
 pp = PrettyPrinter(indent = 4)
@@ -346,13 +347,16 @@ def unwrap_background():
     writer(open(bgList, 'w'), delimiter='\n').writerow(source[2])
 
 
-# TODO: should be refactored into the configs
-Forbidden_verification_dict = {   'Small Molecule':DatabaseGraph.SmallMolecule,
-                                  'Small Molecule Collection':DatabaseGraph.SmallMolecule_Collection,
-                                  'Physical Entity':DatabaseGraph.PhysicalEntity,
-                                  'Physical Entity Collection':DatabaseGraph.PhysicalEntity_Collection,
+# TODO: should be refactored into the configs\
+on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+if not on_rtd:
+    Forbidden_verification_dict = {   'Small Molecule': DatabaseGraph.SmallMolecule,
+                                  'Small Molecule Collection': DatabaseGraph.SmallMolecule_Collection,
+                                  'Physical Entity': DatabaseGraph.PhysicalEntity,
+                                  'Physical Entity Collection': DatabaseGraph.PhysicalEntity_Collection,
                                 }
-
+else:
+    Forbidden_verification_dict = { }
 
 if __name__ == "__main__":
 
