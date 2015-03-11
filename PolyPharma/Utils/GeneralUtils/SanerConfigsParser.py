@@ -34,9 +34,9 @@ def dict2init_configs(path, confdict):
     base_writer = ConfigParser.SafeConfigParser()
     for section, section_contents in confdict.iteritems():
         base_writer.add_section(section)
-        for parameter, parameter_value in section_contents.iteritems:
+        for parameter, parameter_value in section_contents.iteritems():
             base_writer.set(section, parameter, parameter_value)
 
-    with open(path, 'wb') as configfile:
+    with open(path, 'w') as configfile:
         base_writer.write(configfile)
 

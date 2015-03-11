@@ -4,9 +4,6 @@ This module contains all the routines that are respojnsible for pulling
 the matrixes out of the neo4j graph and processing them.
 """
 
-if __name__ == "__main__" and __package__ is None:
-    __package__ = "PolyPharma.neo4j_analyzer"
-
 import os
 import hashlib
 import json
@@ -31,7 +28,7 @@ from PolyPharma.neo4j_analyzer.DB_IO_Routines import reaction_participant_getter
 from PolyPharma.neo4j_analyzer.IO_Routines import write_to_csv, dump_object, undump_object
 from PolyPharma.neo4j_analyzer import Conduction_routines as CR
 
-# TODO: change the behavior of HiNT propagation to a several stages propagation
+# Debug Log:
 #       Main connex set is 24k nodes, with 4331 UP links and 1051 Hint links
 #       With the full UP import, the main connex set is 25k Nodes, with 4336 UP Links and 1191 HiNT links
 #       With forbidding overloaded items: 24k771 Nodes, 4293 UP Links, 1186 HiNT links
@@ -48,9 +45,9 @@ class MatrixGetter(object):
     :type full_impact: bool
     """
 
-    # # List of all the reaction types present in the DatabaseGraph that will be
-    # # used as roots to build the interaction network (not all nodes are necessary
-    # # within the connex part of the graph)
+    # List of all the reaction types present in the DatabaseGraph that will be
+    # used as roots to build the interaction network (not all nodes are necessary
+    # within the connex part of the graph)
     ReactionsList = [DatabaseGraph.TemplateReaction, DatabaseGraph.Degradation, DatabaseGraph.BiochemicalReaction]
 
 
@@ -829,6 +826,8 @@ class MatrixGetter(object):
 
         """
         resdict = {}
+        # TODO: add the possibility that Chromosome_source wasn't properly declared or is a mapping to a void declaration
+        #          if this is the case,
         for fle in os.listdir(Chromosome_source):
             if Chromosome_file_filter in fle:
                 source_fle = Chromosome_source+'/'+fle

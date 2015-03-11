@@ -11,38 +11,64 @@
 #
 # All configuration values have a default; values that are commented out
 # serve to show the default.
-
+from __future__ import print_function
 import sys
 import os
 from mock import Mock as MagicMock
 
 
+def warn(message):
+    print("Warning", message, file=sys.stderr)
+
+
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+
+# on_rtd = True
+
 if not on_rtd:
-    print 'debug', os.path.abspath('./../..')
-    sys.path.insert(0, os.path.abspath('./../..'))
+    warn('debug -syspath: %s'%os.path.abspath('../..'))
+    sys.path.insert(0, os.path.abspath('../..'))
 
 
 if on_rtd:
+    warn('debug -syspath -edit: %s'%os.path.abspath('../..'))
+    sys.path.insert(0, os.path.abspath('../..'))
+
     class Mock(MagicMock):
+
         @classmethod
         def __getattr__(cls, name):
-                return Mock()
+            return Mock()
+
+        @classmethod
+        def __getitem__(cls, name):
+            return Mock()
 
 
     MOCK_MODULES = ['numpy',
-                    'scipy',
-                    'matplotlib',
                     'scikit-learn',
-                    'python-Levenshtein',
-                    'cython',
-                    'bulbs',
                     'pymongo',
-                    'requests',
-                    'click',
-                    'scikits.sparse'],
+                    'cython',
+                    'Cython',
+                    'matplotlib',
+                    'matplotlib.pyplot',
+                    'scipy',
+                    'scipy.stats',
+                    'scipy.sparse',
+                    'scipy.sparse.linalg',
+                    'scipy.sparse.csgraph',
+                    'scikits',
+                    'scikits.sparse',
+                    'scikits.sparse.cholmod',
+                    'sklearn',
+                    'sklearn.cluster',
+                    'python-Levenshtein'
+                    'levenstein',
+                    'python.levenstein'
+                    ]
 
-    sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+    for mod_name in MOCK_MODULES:
+        sys.modules.update({mod_name: Mock()})
 
 
 # If extensions (or modules to document with autodoc) are in another directory,

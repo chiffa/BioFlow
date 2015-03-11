@@ -20,7 +20,8 @@ class StructureGenerator(object):
     online_file_tree = { }
 
     # paths to be appended to the user-provided installation directory
-    local_file_tree = {'REACTOME' : 'Reactome',
+    local_file_tree = { 'META': '-1',
+                        'REACTOME' : 'Reactome',
                         'UNIPROT' : 'Uniprot/uniprot_sprot.dat',
                         'HINT' : 'HiNT',
                         'GO' : 'GO',
@@ -30,17 +31,20 @@ class StructureGenerator(object):
                         'CHROMOSOMES': 'Chr_mappings'}
 
     # default configuration elements for yeast protein analysis
-    S_Cerevisae = {'tax_id': '559292',
+    S_Cerevisae = {'shortname': 'sCerevisae',
+                   'tax_id': '559292',
                    'Reactome_name': 'Saccharomyces cerevisiae.owl',
                    'Biogrid_name': 'Saccharomyces_cerevisae.tsv'}
 
     # default configuration elements for human proteins analysis
-    Human = {'tax_id': '9606',
+    Human = {      'shortname': 'human',
+                   'tax_id': '9606',
                    'Reactome_name': 'Homo Sapiens.owl',
                    'Biogrid_name': 'Homo_Sapiens.tsv'}
 
     # default configuration elements for mice proteins analysis
-    Mice = {'tax_id': '10090',
+    Mice = {       'shortname': 'mouse',
+                   'tax_id': '10090',
                    'Reactome_name': 'Mus Musculus.owl',
                    'Biogrid_name': 'Mus_musculus.tsv'}
 
@@ -53,8 +57,9 @@ class StructureGenerator(object):
         :param expanded: if true, will try to add additional options into the configs file
         :return:
         """
-        template_dict = {'META':{'mongoprefix': payload_dict['tax_id'],
-                                 'mongosuffix': '_v_1'},
+        template_dict = {'META':{'mongoprefix': '_'+payload_dict['shortname'],
+                                 'mongosuffix': '_v_1',
+                                 'dumpprefix': '/'+payload_dict['shortname']},
                                 'REACTOME' :
                                     {'load': payload_dict['Reactome_name']},
                                 'UNIPROT':
@@ -66,16 +71,22 @@ class StructureGenerator(object):
                                }
 
         if expanded:
-            additional_options =  { 'SIDER':
-                                    {},
+            additional_options =  {
                                 'CHROMOSOMES':
                                     {'load': payload_dict['name_pattern'],
                                      'namepattern': payload_dict['name_pattern']},
                                 'ABOUNDANCES':
                                     {'load': payload_dict['tax_id']},
                                 }
-
-            template_dict.update(additional_options)
+        else:
+            additional_options = {
+                                'CHROMOSOMES':
+                                    {'load': '-1',
+                                     'namepattern': '-1'},
+                                'ABOUNDANCES':
+                                    {'load': '-1'},
+                                }
+        template_dict.update(additional_options)
 
         return template_dict
 
@@ -111,6 +122,7 @@ class StructureGenerator(object):
             if pl_type == 'yeast':
                 cfdict = cls.generate_template(cls.S_Cerevisae)
             cfdict = cls.add_location_to_template(cfdict)
+            print cfdict
             dict2init_configs(write_path, cfdict)
 
 

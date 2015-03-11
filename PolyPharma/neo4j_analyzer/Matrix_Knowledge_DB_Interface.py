@@ -34,20 +34,6 @@ from PolyPharma.neo4j_analyzer.IO_Routines import dump_object, undump_object
 from PolyPharma.neo4j_analyzer import Conduction_routines as CR
 
 
-# Creates an instance of MatrixGetter and loads pre-computed values
-MG = MatrixGetter(True, False)
-MG.fast_load()
-
-# TODO: switch to the usage of Uniprot set that is independent from the Matrix_Getter, but instead is supplide by the user
-    # MG.Uniprot is just an option, even though a very importatn one
-
-# specify the relations that lead to a more general or to an equally regulated node.
-GOUpTypes = ["is_a_go", "is_part_of_go"]
-GORegTypes = ["is_Regulant"]
-
-
-ppritner = PrettyPrinter(indent = 4)
-
 
 def _characterise(objekt):
     print 'Object of size %s and type %s' %(len(objekt),type(objekt))
@@ -794,6 +780,21 @@ def get_background():
 
 
 if __name__ == '__main__':
+    # Creates an instance of MatrixGetter and loads pre-computed values
+    MG = MatrixGetter(True, False)
+    MG.fast_load()
+
+    # TODO: switch to the usage of Uniprot set that is independent from the Matrix_Getter, but instead is supplide by the user
+        # MG.Uniprot is just an option, even though a very importatn one
+
+    # specify the relations that lead to a more general or to an equally regulated node.
+    GOUpTypes = ["is_a_go", "is_part_of_go"]
+    GORegTypes = ["is_Regulant"]
+
+
+    ppritner = PrettyPrinter(indent = 4)
+
+
     filtr = ['biological_process']
 
     ################################

@@ -3,13 +3,10 @@ Created on Jul 2, 2013
 
 @author: andrei
 '''
-
-if __name__ == "__main__" and __package__ is None:
-    __package__ = "PolyPharma.neo4j_Declarations"
-
 from bulbs.neo4jserver import Graph as Neo4jGraph, Config
 import neo4j_typeDec as DDT
 from PolyPharma.configs import neo4j_server
+import os
 
 if neo4j_server != 'http://localhost:7474':
     neo4j_server_local = Config(neo4j_server+ '/db/data/')
@@ -91,6 +88,23 @@ class Graph(Neo4jGraph):
         # Interacts physically:
         self.is_interacting = self.build_proxy(DDT.is_interacting)
         self.is_weakly_interacting = self.build_proxy(DDT.is_weakly_interacting)
-        
 
-DatabaseGraph = Graph()
+
+on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+
+if not on_rtd:
+    DatabaseGraph = Graph()
+
+else:
+    from mock import Mock as MagicMock
+    class Mock(MagicMock):
+
+        @classmethod
+        def __getattr__(cls, name):
+            return Mock()
+
+        @classmethod
+        def __getitem__(cls, name):
+            return Mock()
+
+    DatabaseGraph = Mock()

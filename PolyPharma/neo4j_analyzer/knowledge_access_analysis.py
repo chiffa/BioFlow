@@ -22,13 +22,6 @@ from PolyPharma.neo4j_analyzer.Conduction_routines import perform_clustering
 from PolyPharma.neo4j_analyzer.IO_Routines import undump_object
 
 
-filtr = ['biological_process']
-corrfactors = (1, 1)
-pprinter = PrettyPrinter(indent=4)
-MG = MatrixGetter(True, False)
-MG.fast_load()
-
-
 def KG_gen():
     """
     Generates a Matrix_Knowledge_DB interface for the use in the spawner. If
@@ -440,6 +433,12 @@ def get_background():
 
 
 if __name__ == "__main__":
+
+    filtr = ['biological_process']
+    corrfactors = (1, 1)
+    pprinter = PrettyPrinter(indent=4)
+    MG = MatrixGetter(True, False)
+    MG.fast_load()
 
     GBO_1 = ['583954', '565151', '625184', '532448', '553020', '547608', '576300', '533299', '540532', '591419']
     GBO_2 = ['562293', '544722', '534354', '612635', '532463', '561658', '630018', '586185', '611762', '599295']

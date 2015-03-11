@@ -1,11 +1,7 @@
 __author__ = 'ank'
 
-if __name__ == "__main__" and __package__ is None:
-    __package__ = "PolyPharma.neo4j_analyzer"
-
 import pickle
-# from PolyPharma.configs import tmp_coll
-
+from pickle import load, dump
 
 def write_to_csv(filename, array):
     """
@@ -32,7 +28,7 @@ def dump_object(dump_filename, object_to_dump):
     :type object_to_dump: pickable object
     """
     DF = file(dump_filename, 'w')
-    pickle.dump(object_to_dump, DF)
+    dump(object_to_dump, DF)
     DF.close()
 
 
@@ -46,8 +42,10 @@ def undump_object(dump_filename):
     :rtype: object
     """
     DF = file(dump_filename, 'r')
-    return pickle.load(DF)
+    return load(DF)
 
+if __name__ == "__main":
+    pass
 
 # def dump_object_to_mongoDB(object, object_properties_dict):
 #     """

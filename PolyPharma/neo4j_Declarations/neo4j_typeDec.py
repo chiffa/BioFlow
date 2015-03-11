@@ -7,9 +7,6 @@ Created on Jun 13, 2013
 # @attention: DO NOT WRITE "element_type" or "label" differently from the name of the calss, they are used
 # in the indexes and it could be very hard to remember what is what after some time
 
-if __name__ == "__main__" and __package__ is None:
-    __package__ = "PolyPharma.neo4j_Declarations"
-
 from bulbs.model import Node, Relationship
 from bulbs.property import String, Integer, Float, Bool
 
@@ -38,7 +35,7 @@ class CostumLink(Relationship):
     load = Float()
 
 #< ======================================================================= >
-    
+
 class Meta(CostumNode):
     element_type = "Meta"
     localization = String()
@@ -130,7 +127,7 @@ class Originating_Organism(Instantiation_Type):
 class is_originating_in_organism(Relationship):
     label = "is_originating_in_organism"
     
-class Protein(Meta):    
+class Protein(Meta):
     element_type = "Protein"
 
 class Protein_Collection(Meta):

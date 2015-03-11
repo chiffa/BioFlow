@@ -1,9 +1,5 @@
 __author__ = 'ank'
 
-if __name__ == "__main__" and __package__ is None:
-    __package__ = "PolyPharma.neo4j_Declarations"
-
-
 import logging
 
 logging.basicConfig(level=logging.DEBUG,

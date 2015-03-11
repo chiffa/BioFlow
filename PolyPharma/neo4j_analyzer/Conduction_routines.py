@@ -3,9 +3,6 @@ Module containing the the general routines for processing of conduction matrices
 """
 __author__ = 'ank'
 
-if __name__ == "__main__" and __package__ is None:
-    __package__ = "PolyPharma.neo4j_analyzer"
-
 import random
 import numpy as np
 from scipy.sparse import csc_matrix, diags, triu

@@ -4,51 +4,32 @@
 
 Holds all the configurations of the environmental variables for the whole project
 """
-__author__='ank'
+__author__ = 'ank'
 
-from PolyPharma.Utils.ConfigParsers.Configs_parser import parse_configs, sourcefile_compilator
 from pprint import PrettyPrinter
-from pymongo import MongoClient
-from os import path
+from os import path, makedirs
 import pickle
-import os.path
-
+from pymongo import MongoClient
+from PolyPharma.Utils.LocalConfigParser import parse_configs, conf_file_path_flattener
 
 Servers, Options, Sources, Predictions = parse_configs()
 
+# generate intermediate Configuration Object?
 
-SQLite_location = Servers['PRODUCTION']['local_sqlite']
 MongoDB_url = Servers['PRODUCTION']['mongodb_server']
 neo4j_server = Servers['PRODUCTION']['server_neo4j']
-ReadSourceDBs = sourcefile_compilator(Sources)
+ReadSourceDBs = conf_file_path_flattener(Sources)
 
-
+# REQUIRED PARAMETERS
 GeneOntology = ReadSourceDBs['GO']
 ReactomeBioPax = ReadSourceDBs['REACTOME']
 UNIPROT_source = ReadSourceDBs['UNIPROT']
 Hint_csv = ReadSourceDBs['HINT']  #attention, for me it is tab-separated
-Protein_aboundances = ReadSourceDBs['ABOUNDANCES']
-sedEffFileName = ReadSourceDBs['SIDER']  #TODO: improve mappings from Drugs to secondary effects.
-Chromosome_source = ReadSourceDBs['CHROMOSOMES']
 BioGRID = ReadSourceDBs['BIOGIRD']
+
+#OPTIONAL PARAMETERS => Should be injected with Error values in the ReadSourceDB?
+Chromosome_source = ReadSourceDBs['CHROMOSOMES']
 Chromosome_file_filter = Sources['CHROMOSOMES']['namepattern']
-
-ReadSourcePredictions = sourcefile_compilator(Predictions)
-
-
-# Targets file is assumed to be tab-separated, with the first column containing fuzzy versions of "names" of "gene names"
-# from uniport and the next three - information relative to binding to this target.
-Targets_File = ReadSourcePredictions['NEFLANAVIR']
-# File from which to load the names of the 300 most frequent targets
-Targets_File2 = ReadSourcePredictions['OVERINGTON']
-
-
-# ExactDict is the dictionnary used to perform a precise matching between the fuzzy target names and the SwissProt IDs required
-# for a lookup in the database
-from PolyPharma.PreProcessing.neflanavir_parser import subdict
-Targets_dict = subdict
-from PolyPharma.PreProcessing.Overington_parser import subdict2
-Targets_dict2 = subdict2
 
 ################################################
 #  Defines MongeDb properties and connections
@@ -64,11 +45,7 @@ UP_rand_samp = db[pymongo_prefix+"UP_r_samples"+pymongo_suffix]
 Interactome_rand_samp = db[pymongo_prefix+"Interactome_samples"+pymongo_suffix]
 
 
-#######################################################################
-#  Defines how much confidence we have into the different interactions
-#######################################################################
-# Refers to the groups of links between the nodes that should be treated in the same manner
-# TODO: refactor to use more sane maps
+# TODO: output to the 'internals_configuration.py' in the configs folder
 edge_type_filters = {
     "Group" : ["is_part_of_collection"],                                  # Group relation group
     "Same" : ["is_same"],                                                 # Same relation group
@@ -79,7 +56,18 @@ edge_type_filters = {
     "possibly_same" : ["is_possibly_same"],
     }
 
+##############################################################################################
+#  Defines what nodes are to be masked to avoid conduction overload of non-informative nodes #
+##############################################################################################
+Leg_ID_Filter = ['H+', 'ATP', 'GTP', 'Pi', 'H2O', 'ADP', 'PPi', 'GDP', 'O2', 'CO2', 'NTP',]
 
+##########################################################################
+#  Fundge for matrix diagolizations of matrixes and other solver functions
+##########################################################################
+fudge = 1e-10
+
+
+# TODO: export into an .ini file
 # Coefficients values for the value_Matrix
 Adjacency_Martix_Dict = {"Group":0.5,
              "Same":1,
@@ -113,8 +101,8 @@ class Dumps(object):
     # prefix_2 = '/mice'
     postfix = '.dump'
 
-    if not os.path.isdir(prefix+prefix_2):
-        os.makedirs(prefix+prefix_2)
+    if not path.isdir(prefix+prefix_2):
+        makedirs(prefix+prefix_2)
 
     ###################################
     matrix_LS = prefix + prefix_2 + '/dump5'+postfix
@@ -156,21 +144,11 @@ class Outputs(object):
     RNA_pre_filter_output = prefix + '/RNA_pre_filter_output.tsv'
     cross_refs = prefix + '/cross_refs.tsv'
 
-###########################################################################################
-#  Defines what nodes are to be masked to avoid conduction ovrload of non-informative nodes
-###########################################################################################
-Leg_ID_Filter = ['H+', 'ATP', 'GTP', 'Pi', 'H2O', 'ADP', 'PPi', 'GDP', 'O2', 'CO2', 'NTP',]
+
 
 IDFilter = []
-if os.path.isfile(Dumps.Forbidden_IDs):
+if path.isfile(Dumps.Forbidden_IDs):
     IDFilter = pickle.load(file(Dumps.Forbidden_IDs,'r'))
-
-# print IDFilter
-
-##########################################################################
-#  Fundge for matrix diagolizations of matrixes and other solver functions
-##########################################################################
-fudge = 1e-10
 
 RNA_source = "/home/ank/Documents/External_Predictions/Ben_RNA_seq/counts.tsv"
 
@@ -188,3 +166,8 @@ bgList = Background_source[:-4]+'_'+'pPh_id_list.csv'
 if __name__ == "__main__":
     pp = PrettyPrinter(indent=4)
     pp.pprint((Servers, Options, Sources))
+    # print '================    Sources      ================='
+    # pp.pprint(Sources)
+    # print '================ srcf_compilator ================='
+    # pp.pprint(ReadSourceDBs)
+    pass

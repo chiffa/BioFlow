@@ -5,13 +5,13 @@ Created on Jun 17, 2013
 #Put it into the a Reactome parser package later on
 '''
 
-if __name__ == "__main__" and __package__ is None:
-    __package__ = "PolyPharma.neo4j_Importers"
-
 import logging
 import xml.etree.ElementTree as ET
 from random import shuffle
 import PolyPharma.configs as conf
+import os
+
+# TODO: refactor as a class
 
 ####################################################################################
 #
@@ -21,7 +21,6 @@ import PolyPharma.configs as conf
 ####################################################################################
 
 # TODO: export logs location to the configs file
-# TODO: rebuild to avoid import attempts on simple module load
 
 logging.basicConfig(level=logging.DEBUG,
                     format='%(levelname)-8s %(message)s',
@@ -527,7 +526,10 @@ def parse_all():
     parse_Pathways(root)
     parse_Pathway_Steps(root)
 
-parse_all()
+
+on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+if not on_rtd:
+    parse_all()
 
 if __name__ == "__main__":
     acnums = []

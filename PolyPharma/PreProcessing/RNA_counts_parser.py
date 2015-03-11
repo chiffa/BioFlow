@@ -3,33 +3,14 @@ Module responsible for importing raw RNA-seq data and running tests on it to get
 in genes.
 """
 __author__ = 'ank'
-
-if __name__ == "__main__" and __package__ is None:
-    __package__ = "PolyPharma.PreProcessing"
-
 from PolyPharma.configs import RNA_source, Dumps, Outputs
-from PolyPharma.neo4j_analyzer.DB_IO_Routines import look_up_Annot_Node, recover_annotation, transcription
+from PolyPharma.neo4j_analyzer.DB_IO_Routines import look_up_Annot_Node, recover_annotation
 from PolyPharma.neo4j_analyzer.IO_Routines import dump_object
 from collections import defaultdict
 import numpy as np
 from scipy import special
 from csv import reader, writer
 from pprint import PrettyPrinter
-
-pp = PrettyPrinter(indent=4)
-
-pre_dict = {    1:0.80,
-                2:0.89,
-                3:0.92,
-                4:0.94,
-                5:0.95,
-                6:0.96,
-                7:0.965,
-                8:0.97
-            }
-
-estimator_dilatation_table  = defaultdict(lambda:1)
-estimator_dilatation_table.update(pre_dict)
 
 
 def import_counts_table(counts_size):
@@ -163,6 +144,22 @@ def run_test_suite(experiments, experimental_groups, intergroups, count_filter_l
 
 
 if __name__ == "__main__":
+
+    pp = PrettyPrinter(indent=4)
+
+    pre_dict = {    1:0.80,
+                    2:0.89,
+                    3:0.92,
+                    4:0.94,
+                    5:0.95,
+                    6:0.96,
+                    7:0.965,
+                    8:0.97
+                }
+
+    estimator_dilatation_table  = defaultdict(lambda:1)
+    estimator_dilatation_table.update(pre_dict)
+
 
     exp_groups = [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
     intergroups = [[0, 1], [0, 2]]
