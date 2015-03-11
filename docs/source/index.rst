@@ -81,13 +81,19 @@ provided that there are some renaming conventions
 
 
 **Databases:**
-* OBO 1.2 file of GO terms and relations, available at: http://www.geneontology.org/GO.downloads.ontology.shtml
-* UNIUPROT-SWISSPROT .txt text database file available at: http://www.uniprot.org/downloads
-* Reactome.org "Events in the BioPax level 3" file, available at: http://www.reactome.org/download/index.html
-* HiNT binary interaction files for the organisms of interest, availble at: http://hint.yulab.org/batch.html
-* BioGRID ALL_ORGANISMS file in the tab2 format, available at http://thebiogrid.org/download.php
-* Gene-chromosome mapping files from the Uniprot documentation: ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/docs/ (needed only for working on aneuploidy)
-* Organism-specific protein aboundance files, available at: http://pax-db.org/#!downloads
+    * OBO 1.2 file of GO terms and relations, available at: http://www.geneontology.org/GO.downloads.ontology.shtml
+
+    * UNIUPROT-SWISSPROT .txt text database file available at: http://www.uniprot.org/downloads
+
+    * Reactome.org "Events in the BioPax level 3" file, available at: http://www.reactome.org/download/index.html
+
+    * HiNT binary interaction files for the organisms of interest, availble at: http://hint.yulab.org/batch.html
+
+    * BioGRID ALL_ORGANISMS file in the tab2 format, available at http://thebiogrid.org/download.php
+
+    * Gene-chromosome mapping files from the Uniprot documentation: ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/docs/ (needed only for working on aneuploidy)
+
+    * Organism-specific protein aboundance files, available at: http://pax-db.org/#!downloads
 
 Please, pay attention to correctly rename the files or edit the files names so that the they correspond to the files specified in sources.ini
 file in the `PolyPharma/configs` directory of the application
@@ -109,7 +115,9 @@ Configure the expected counts groups and desired intergroup comparisons in the `
 ```> Python -m PolyPharma.PreProcessing.RNA_counts_parser ```
 
 Now, call the auto-analyze routines for the annotation analysis or interactome analysis:
+
 ```> Python -m PolyPharma.neo4j_analyzer.knowledge_access_analysis ```
+
 ```> Python -m PolyPharma.neo4j_analyzer.interactome_analysis ```
 
 

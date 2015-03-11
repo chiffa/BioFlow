@@ -1,18 +1,20 @@
-'''
+"""
 Created on Jul 26, 2013
+:author: Andrei Kucharavy
 
-@author: andrei
-'''
+
+Currently in refactoring and thus unusable
+"""
 
 import pickle
 
 # TODO: input the aboundances into the database, relative to the uniprot terms
 
 def compute_Prot_Aboundances():
-    '''
+    """
     performs a computationally expensive part of protein aboundance computation
     and stores the result in a pickle file
-    '''
+    """
     from PolyPharma.Utils.UNIPROT_Parser import get_access_dicts
     from PolyPharma.configs import Prot_abound
 
@@ -50,13 +52,16 @@ def load_Prot_Aboundances():
 def load_Prot_Aboundances_NodeIDs():
     SP2Aboundances=pickle.load(file('../Utils/SP2Aboundaces.dump','r'))
     ID2Aboundances={}
-    from PolyPharma.neo4j_analyzer.knowledge_access import convert_SP_to_IDs
-    SP2IDs=convert_SP_to_IDs(SP2Aboundances.keys())
-    for key,val in SP2Aboundances.iteritems():
+
+    from PolyPharma.neo4j_analyzer.DB_IO_Routines import look_up_Annot_set
+
+    SP2IDs = look_up_Annot_set(SP2Aboundances.keys())  # ATTENTION:recently refactored, might need debugging
+    for key, val in SP2Aboundances.iteritems():
         if key in SP2IDs.keys():
-            ID2Aboundances[SP2IDs[key]]=val
+            ID2Aboundances[SP2IDs[key]] = val
     return ID2Aboundances
 
-# compute_Prot_Aboundances()
-# TODO: move the information onto the Uniprot Nodess
-ID2Aboundances=load_Prot_Aboundances_NodeIDs()
+if __name__ == "__main__":
+    # compute_Prot_Aboundances()
+    # TODO: move the information onto the Uniprot Nodess
+    ID2Aboundances = load_Prot_Aboundances_NodeIDs()
