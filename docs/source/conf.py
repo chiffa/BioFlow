@@ -20,9 +20,8 @@ from mock import Mock as MagicMock
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
 if not on_rtd:
-    pass
-print 'debug -syspath', os.path.abspath('./../..')
-sys.path.insert(0, os.path.abspath('./../..'))
+    print 'debug -syspath', os.path.abspath('./../..')
+    sys.path.insert(0, os.path.abspath('./../..'))
 
 
 if on_rtd:
