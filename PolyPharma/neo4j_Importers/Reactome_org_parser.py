@@ -9,6 +9,7 @@ import logging
 import xml.etree.ElementTree as ET
 from random import shuffle
 import PolyPharma.configs as conf
+import os
 
 # TODO: refactor as a class
 
@@ -525,7 +526,10 @@ def parse_all():
     parse_Pathways(root)
     parse_Pathway_Steps(root)
 
-parse_all()
+
+on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+if not on_rtd:
+    parse_all()
 
 if __name__ == "__main__":
     acnums = []

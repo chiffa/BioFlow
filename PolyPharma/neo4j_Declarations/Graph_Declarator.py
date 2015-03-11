@@ -87,6 +87,8 @@ class Graph(Neo4jGraph):
         # Interacts physically:
         self.is_interacting = self.build_proxy(DDT.is_interacting)
         self.is_weakly_interacting = self.build_proxy(DDT.is_weakly_interacting)
-        
 
-DatabaseGraph = Graph()
+
+on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+if not on_rtd:
+    DatabaseGraph = Graph()
