@@ -18,6 +18,7 @@ from mock import Mock as MagicMock
 
 
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+
 if not on_rtd:
     print 'debug', os.path.abspath('./../..')
     sys.path.insert(0, os.path.abspath('./../..'))
@@ -40,10 +41,11 @@ if on_rtd:
                     'pymongo',
                     'requests',
                     'click',
-                    'scikits.sparse'],
+                    'scikits.sparse']
 
     for mod_name in MOCK_MODULES:
-        sys.modules.update((mod_name, Mock()))
+        print mod_name
+        sys.modules.update({mod_name: Mock()})
 
 
 # If extensions (or modules to document with autodoc) are in another directory,
