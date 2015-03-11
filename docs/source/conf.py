@@ -11,38 +11,55 @@
 #
 # All configuration values have a default; values that are commented out
 # serve to show the default.
-
+from __future__ import print_function
 import sys
 import os
 from mock import Mock as MagicMock
 
 
+def warn(message):
+    print("Warning", message, file=sys.stderr)
+
+
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
 if not on_rtd:
-    print 'debug -syspath', os.path.abspath('./../..')
-    sys.path.insert(0, os.path.abspath('./../..'))
+    warn('debug -syspath: %s'%os.path.abspath('../..'))
+    sys.path.insert(0, os.path.abspath('../..'))
 
 
 if on_rtd:
+    warn('debug -syspath -edit: %s'%os.path.abspath('../..'))
+    warn('debug -syspath -true: %s'%sys.path)
+    sys.path.insert(0, os.path.abspath('../..'))
+
     class Mock(MagicMock):
+
         @classmethod
         def __getattr__(cls, name):
-                return Mock()
+            return Mock()
+
+        @classmethod
+        def __getitem__(cls, name):
+            return Mock()
 
 
     MOCK_MODULES = ['numpy',
                     'scipy',
                     'matplotlib',
                     'scikit-learn',
-                    'python-Levenshtein',
                     'cython',
-                    'bulbs',
                     'pymongo',
-                    'requests',
-                    'click',
                     'scikits.sparse',
                     'Cython',
+                    'scipy.sparse',
+                    'matplotlib.pyplot',
+                    'scipy.sparse.linalg',
+                    'scipy.stats',
+                    'scipy.sparse.csgraph',
+                    'scikits.sparse.cholmod',
+                    'sklearn',
+                    'sklearn.cluster',
                     ]
 
     for mod_name in MOCK_MODULES:

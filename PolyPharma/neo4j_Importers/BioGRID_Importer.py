@@ -1,8 +1,5 @@
 __author__ = 'ank'
 
-if __name__ == "__main__" and __package__ is None:
-    __package__ = "PolyPharma.neo4j_Importers"
-
 from csv import reader
 from PolyPharma.configs import BioGRID
 from PolyPharma.neo4j_analyzer.DB_IO_Routines import look_up_Annot_set

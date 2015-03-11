@@ -129,6 +129,7 @@ Contents:
    :maxdepth: 2
 
    configfiles
+   modules
 
 
 

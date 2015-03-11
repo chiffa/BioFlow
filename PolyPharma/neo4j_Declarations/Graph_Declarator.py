@@ -3,10 +3,6 @@ Created on Jul 2, 2013
 
 @author: andrei
 '''
-
-if __name__ == "__main__" and __package__ is None:
-    __package__ = "PolyPharma.neo4j_Declarations"
-
 from bulbs.neo4jserver import Graph as Neo4jGraph, Config
 import neo4j_typeDec as DDT
 from PolyPharma.configs import neo4j_server

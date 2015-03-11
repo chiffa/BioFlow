@@ -1,3 +1,8 @@
+"""
+
+:author: Andrei Kucharavy
+"""
+
 __author__ = 'ank'
 
 from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
@@ -341,7 +346,7 @@ def unwrap_background():
     writer(open(bgList, 'w'), delimiter='\n').writerow(source[2])
 
 
-
+# TODO: should be refactored into the configs
 Forbidden_verification_dict = {   'Small Molecule':DatabaseGraph.SmallMolecule,
                                   'Small Molecule Collection':DatabaseGraph.SmallMolecule_Collection,
                                   'Physical Entity':DatabaseGraph.PhysicalEntity,

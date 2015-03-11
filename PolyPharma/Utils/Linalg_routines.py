@@ -11,7 +11,6 @@ import matplotlib.pyplot as plt
 from sklearn.cluster import spectral_clustering
 
 
-
 def Lapl_normalize(non_normalized_Laplacian):
     """
     performs a normalization of a laplacian of a graph

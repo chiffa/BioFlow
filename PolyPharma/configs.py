@@ -10,7 +10,7 @@ from pprint import PrettyPrinter
 from os import path, makedirs
 import pickle
 from pymongo import MongoClient
-from PolyPharma.Utils.SpecializedConfigParser import parse_configs, conf_file_path_flattener
+from PolyPharma.Utils.LocalConfigParser import parse_configs, conf_file_path_flattener
 
 Servers, Options, Sources, Predictions = parse_configs()
 

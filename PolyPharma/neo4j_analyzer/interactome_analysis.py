@@ -2,10 +2,6 @@
 New analytical routines for the interactome
 """
 __author__ = 'ank'
-
-if __name__ == "__main__" and __package__ is None:
-    __package__ = "PolyPharma.neo4j_analyzer"
-
 import pickle
 import numpy as np
 from collections import namedtuple
@@ -18,11 +14,6 @@ from PolyPharma.configs import Interactome_rand_samp, Dumps, prename2
 from PolyPharma.Utils.dataviz import kde_compute
 from PolyPharma.neo4j_analyzer.Conduction_routines import perform_clustering
 from PolyPharma.neo4j_analyzer.IO_Routines import undump_object
-
-
-pprinter = PrettyPrinter(indent=4)
-MG = MatrixGetter(True, False)
-MG.fast_load()
 
 
 def MG_gen():
@@ -307,6 +298,10 @@ def get_source():
 
 
 if __name__ == "__main__":
+
+    pprinter = PrettyPrinter(indent=4)
+    MG = MatrixGetter(True, False)
+    MG.fast_load()
 
     # dumplist = undump_object(Dumps.RNA_seq_counts_compare)
 
