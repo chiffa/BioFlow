@@ -15,19 +15,19 @@ shortnames = ['servers', 'options', 'sources', 'predictions']
 configsfiles = dict([(name, join(configs_rootdir, name+'.ini')) for name in shortnames ])
 
 
-class structure_generator(object):
+class StructureGenerator(object):
 
     online_file_tree = { }
 
     # paths to be appended to the user-provided installation directory
-    local_file_tree = {'REACTOME' : '/Reactome',
-                        'UNIPROT' : '/Uniprot/uniprot_sprot.dat',
-                        'HINT' : '/HiNT',
-                        'GO' : '/GO',
-                        'BIOGRID' : '/BioGRID',
-                        'SIDER': '/SIDER2/meddra_adverse_effects.tsv',
-                        'ABOUNDANCES': '/Protein_aboundances',
-                        'CHROMOSOMES': '/Chr_mappings'}
+    local_file_tree = {'REACTOME' : 'Reactome',
+                        'UNIPROT' : 'Uniprot/uniprot_sprot.dat',
+                        'HINT' : 'HiNT',
+                        'GO' : 'GO',
+                        'BIOGIRD' : 'BioGRID',
+                        'SIDER': 'SIDER2/meddra_adverse_effects.tsv',
+                        'ABOUNDANCES': 'Protein_aboundances',
+                        'CHROMOSOMES': 'Chr_mappings'}
 
     # default configuration elements for yeast protein analysis
     S_Cerevisae = {'tax_id': '559292',
@@ -45,7 +45,7 @@ class structure_generator(object):
                    'Biogrid_name': 'Mus_musculus.tsv'}
 
     @classmethod
-    def generate_template(self, payload_dict, expanded=False):
+    def generate_template(cls, payload_dict, expanded=False):
         """
         Generates a template dictionary that would be converted to a sources.ini config file
             to a file that would be
@@ -53,7 +53,9 @@ class structure_generator(object):
         :param expanded: if true, will try to add additional options into the configs file
         :return:
         """
-        template_dict = {'REACTOME' :
+        template_dict = {'META':{'mongoprefix': payload_dict['tax_id'],
+                                 'mongosuffix': '_v_1'},
+                                'REACTOME' :
                                     {'load': payload_dict['Reactome_name']},
                                 'UNIPROT':
                                     {'tax_ids': payload_dict['tax_id']},
@@ -78,19 +80,19 @@ class structure_generator(object):
         return template_dict
 
     @classmethod
-    def add_location_to_template(self, template_dict):
+    def add_location_to_template(cls, template_dict):
         """
         Adds a location to the template dictionary used to generate a configuration file
+        :param template_dict:
         :return:
         """
-        master_location = ini_configs2dict(configsfiles['options'])['MASTER'][ini_configs2dict(configsfiles['options'])]
+        master_location = ini_configs2dict(configsfiles['options'])['MASTER']['base_folder']
         for key, value in template_dict.iteritems():
-            value['location'] = join(master_location. self.local_file_tree[key])
-
-        return master_location
+            value['location'] = join(master_location, cls.local_file_tree[key])
+        return template_dict
 
     @classmethod
-    def build_source_config(self, pl_type):
+    def build_source_config(cls, pl_type):
         """
         Writes a source file based on the string organism argument
 
@@ -103,12 +105,12 @@ class structure_generator(object):
             write_path = join(configs_rootdir, 'test_sources.ini')
             cfdict = {}
             if pl_type == 'mouse':
-                cfdict = self.generate_template(self.Mice)
+                cfdict = cls.generate_template(cls.Mice)
             if pl_type == 'human':
-                cfdict = self.generate_template(self.Human)
+                cfdict = cls.generate_template(cls.Human)
             if pl_type == 'yeast':
-                cfdict = self.generate_template(self.S_Cerevisae)
-            cfdict = self.add_location_to_template(cfdict)
+                cfdict = cls.generate_template(cls.S_Cerevisae)
+            cfdict = cls.add_location_to_template(cfdict)
             dict2init_configs(write_path, cfdict)
 
 
@@ -151,7 +153,7 @@ def conf_file_path_flattener(raw_configs_dict):
 
 
 if __name__ == "__main__":
-    structure_generator.build_source_config('yeast')
+    StructureGenerator.build_source_config('yeast')
     # pp = PrettyPrinter(indent=4)
     # pp.pprint(parse_configs())
     pass
