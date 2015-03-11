@@ -43,17 +43,17 @@ present on the machine
 
 **Packages installed via Pip:**
 
-* JPype1 (x86_64 build - deprecated)
 * Cython
-* neo4j-embedded (x86_64 build - deprecated)
 * NumPy (latest x86_64)
 * SciPy (latest x86_64)
 * bulbs (via pip)
+* matplotlib
 * python-Levenshtein (via pip)
 * pymongo
 * requests
 * Sphinx (documentation build)
 * scikits.sparse (for the cholesky decomposition of a symetric matrix)
+* click
 
 
 Please note that scikits.sparse requires Cython installation via pip and suitesparse-dev(el) installation.
