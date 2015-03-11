@@ -60,6 +60,10 @@ if on_rtd:
                     'scikits.sparse.cholmod',
                     'sklearn',
                     'sklearn.cluster',
+                    'scikit-learn',
+                    'python-Levenshtein'
+                    'levenstein',
+                    'python.levenstein'
                     ]
 
     for mod_name in MOCK_MODULES:
