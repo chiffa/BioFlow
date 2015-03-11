@@ -32,7 +32,6 @@ if not on_rtd:
 
 if on_rtd:
     warn('debug -syspath -edit: %s'%os.path.abspath('../..'))
-    warn('debug -syspath -true: %s'%sys.path)
     sys.path.insert(0, os.path.abspath('../..'))
 
     class Mock(MagicMock):
@@ -47,22 +46,22 @@ if on_rtd:
 
 
     MOCK_MODULES = ['numpy',
-                    'scipy',
-                    'matplotlib',
                     'scikit-learn',
-                    'cython',
                     'pymongo',
-                    'scikits.sparse',
+                    'cython',
                     'Cython',
-                    'scipy.sparse',
+                    'matplotlib',
                     'matplotlib.pyplot',
-                    'scipy.sparse.linalg',
+                    'scipy',
                     'scipy.stats',
+                    'scipy.sparse',
+                    'scipy.sparse.linalg',
                     'scipy.sparse.csgraph',
+                    'scikits',
+                    'scikits.sparse',
                     'scikits.sparse.cholmod',
                     'sklearn',
                     'sklearn.cluster',
-                    'scikit-learn',
                     'python-Levenshtein'
                     'levenstein',
                     'python.levenstein'
