@@ -96,4 +96,15 @@ if not on_rtd:
     DatabaseGraph = Graph()
 
 else:
-    DatabaseGraph = ""
+    from mock import Mock as MagicMock
+    class Mock(MagicMock):
+
+        @classmethod
+        def __getattr__(cls, name):
+            return Mock()
+
+        @classmethod
+        def __getitem__(cls, name):
+            return Mock()
+
+    DatabaseGraph = Mock()
