@@ -42,10 +42,11 @@ if on_rtd:
                     'pymongo',
                     'requests',
                     'click',
-                    'scikits.sparse']
+                    'scikits.sparse',
+                    'Cython',
+                    ]
 
     for mod_name in MOCK_MODULES:
-        print mod_name
         sys.modules.update({mod_name: Mock()})
 
 

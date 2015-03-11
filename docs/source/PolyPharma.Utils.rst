@@ -17,8 +17,8 @@ Submodules
    PolyPharma.Utils.GDF_export
    PolyPharma.Utils.GO_Structure_Parser
    PolyPharma.Utils.Linalg_routines
+   PolyPharma.Utils.LocalConfigParser
    PolyPharma.Utils.Prot_Aboundances
-   PolyPharma.Utils.SpecializedConfigParser
    PolyPharma.Utils.UNIPROT_Parser
    PolyPharma.Utils.Xml_Doctor_Reactome
    PolyPharma.Utils.dataviz
