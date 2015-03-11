@@ -23,6 +23,8 @@ def warn(message):
 
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
+# on_rtd = True
+
 if not on_rtd:
     warn('debug -syspath: %s'%os.path.abspath('../..'))
     sys.path.insert(0, os.path.abspath('../..'))

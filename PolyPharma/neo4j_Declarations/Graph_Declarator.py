@@ -91,5 +91,9 @@ class Graph(Neo4jGraph):
 
 
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+
 if not on_rtd:
     DatabaseGraph = Graph()
+
+else:
+    DatabaseGraph = ""
