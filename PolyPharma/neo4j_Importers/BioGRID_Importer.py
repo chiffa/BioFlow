@@ -1,7 +1,7 @@
 __author__ = 'ank'
 
 from csv import reader
-from PolyPharma.configs import BioGRID
+from PolyPharma.configs2 import BioGRID
 from PolyPharma.neo4j_analyzer.DB_IO_Routines import look_up_Annot_set
 from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
 

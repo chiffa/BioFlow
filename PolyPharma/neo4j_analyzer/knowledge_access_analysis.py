@@ -15,7 +15,7 @@ from pprint import PrettyPrinter
 from matplotlib import pyplot as plt
 from PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface import  MatrixGetter
 from PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface import GO_Interface
-from PolyPharma.configs import UP_rand_samp, Dumps, prename2, Background_source, bgList
+from PolyPharma.configs2 import UP_rand_samp, Dumps, prename2, Background_source, bgList
 from PolyPharma.Utils.dataviz import kde_compute
 from PolyPharma.Utils.Linalg_routines import analyze_eigvects
 from PolyPharma.neo4j_analyzer.Conduction_routines import perform_clustering

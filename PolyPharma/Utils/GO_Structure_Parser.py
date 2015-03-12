@@ -3,7 +3,7 @@ Created on Jul 2, 2013
 
 @author: andrei
 '''
-import PolyPharma.configs as conf
+import PolyPharma.configs2 as conf
 
 
 def fill_GO_Terms():

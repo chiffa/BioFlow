@@ -20,8 +20,8 @@ from scipy.sparse import lil_matrix
 from scipy.sparse.linalg import eigsh
 from scipy.sparse.csgraph import connected_components
 
-from PolyPharma.configs import Chromosome_source, Chromosome_file_filter
-from PolyPharma.configs import edge_type_filters, Adjacency_Martix_Dict, Conductance_Matrix_Dict, Dumps, Outputs, Interactome_rand_samp
+from PolyPharma.configs2 import Chromosome_source, Chromosome_file_filter
+from PolyPharma.configs2 import edge_type_filters, Adjacency_Martix_Dict, Conductance_Matrix_Dict, Dumps, Outputs, Interactome_rand_samp
 from PolyPharma.Utils.GDF_export import GDF_export_Interface
 from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
 from PolyPharma.neo4j_analyzer.DB_IO_Routines import reaction_participant_getter, expand_from_seed, Erase_custom_fields

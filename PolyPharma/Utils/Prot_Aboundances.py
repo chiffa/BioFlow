@@ -16,7 +16,7 @@ def compute_Prot_Aboundances():
     and stores the result in a pickle file
     """
     from PolyPharma.Utils.UNIPROT_Parser import get_access_dicts
-    from PolyPharma.configs import Prot_abound
+    from PolyPharma.configs2 import Prot_abound
 
     access_dict = get_access_dicts()
     SP2Aboundances={}

@@ -20,12 +20,12 @@ class StructureGenerator(object):
     online_file_tree = { }
 
     # paths to be appended to the user-provided installation directory
-    local_file_tree = { 'META': '-1',
+    local_file_tree = { 'INTERNAL': '.',
                         'REACTOME' : 'Reactome',
                         'UNIPROT' : 'Uniprot/uniprot_sprot.dat',
                         'HINT' : 'HiNT',
-                        'GO' : 'GO',
-                        'BIOGIRD' : 'BioGRID',
+                        'GO' : 'GO/go.obo',
+                        'BIOGRID' : 'BioGRID',
                         'SIDER': 'SIDER2/meddra_adverse_effects.tsv',
                         'ABOUNDANCES': 'Protein_aboundances',
                         'CHROMOSOMES': 'Chr_mappings'}
@@ -34,19 +34,22 @@ class StructureGenerator(object):
     S_Cerevisae = {'shortname': 'sCerevisae',
                    'tax_id': '559292',
                    'Reactome_name': 'Saccharomyces cerevisiae.owl',
-                   'Biogrid_name': 'Saccharomyces_cerevisae.tsv'}
+                   'Biogrid_name': 'Saccharomyces_cerevisae.tsv',
+                   'HINT_name': 'CervBinaryHQ.txt'}
 
     # default configuration elements for human proteins analysis
     Human = {      'shortname': 'human',
                    'tax_id': '9606',
                    'Reactome_name': 'Homo Sapiens.owl',
-                   'Biogrid_name': 'Homo_Sapiens.tsv'}
+                   'Biogrid_name': 'Homo_Sapiens.tsv',
+                   'HINT_name': 'MouseBinaryHQ.txt'}
 
     # default configuration elements for mice proteins analysis
     Mice = {       'shortname': 'mouse',
                    'tax_id': '10090',
                    'Reactome_name': 'Mus Musculus.owl',
-                   'Biogrid_name': 'Mus_musculus.tsv'}
+                   'Biogrid_name': 'Mus_musculus.tsv',
+                   'HINT_name': 'HumanBinaryHQ.txt'}
 
     @classmethod
     def generate_template(cls, payload_dict, expanded=False):
@@ -57,17 +60,20 @@ class StructureGenerator(object):
         :param expanded: if true, will try to add additional options into the configs file
         :return:
         """
-        template_dict = {'META':{'mongoprefix': '_'+payload_dict['shortname'],
+        template_dict = {'INTERNAL':{'mongoprefix': '_'+payload_dict['shortname'],
                                  'mongosuffix': '_v_1',
-                                 'dumpprefix': '/'+payload_dict['shortname']},
+                                 'dumpprefix': '/'+payload_dict['shortname'],
+                                 'load': 'NotAFile.txt'},
                                 'REACTOME' :
                                     {'load': payload_dict['Reactome_name']},
                                 'UNIPROT':
                                     {'tax_ids': payload_dict['tax_id']},
                                 'HINT':
-                                    {'load': payload_dict['tax_id']},
-                                'BIOGIRD':
+                                    {'load': payload_dict['HINT_name']},
+                                'BIOGRID':
                                     {'load': payload_dict['Biogrid_name']},
+                                'GO':
+                                    {}
                                }
 
         if expanded:
@@ -97,7 +103,7 @@ class StructureGenerator(object):
         :param template_dict:
         :return:
         """
-        master_location = ini_configs2dict(configsfiles['options'])['MASTER']['base_folder']
+        master_location = ini_configs2dict(configsfiles['servers'])['PRODUCTION']['base_folder']
         for key, value in template_dict.iteritems():
             value['location'] = join(master_location, cls.local_file_tree[key])
         return template_dict
@@ -113,7 +119,7 @@ class StructureGenerator(object):
         if pl_type not in ['mouse', 'human', 'yeast']:
             raise Exception('Unsupported organism, not in %s. Please modify the sources.ini manually' % pl_type)
         else:
-            write_path = join(configs_rootdir, 'test_sources.ini')
+            write_path = join(configs_rootdir, 'sources.ini')
             cfdict = {}
             if pl_type == 'mouse':
                 cfdict = cls.generate_template(cls.Mice)
@@ -162,6 +168,19 @@ def conf_file_path_flattener(raw_configs_dict):
     final_paths_dict = defaultdict(graceful_fail)
     final_paths_dict.update(paths_dict)
     return final_paths_dict
+
+def edit_confile(conf_shortname, section, parameter, newvalue):
+    """
+
+    :param conf_shortname:
+    :param section:
+    :param parameter:
+    :param newvalue:
+    :return:
+    """
+    tmp_confdict = ini_configs2dict(configsfiles[conf_shortname])
+    tmp_confdict[section][parameter] = newvalue
+    dict2init_configs(configsfiles[conf_shortname], tmp_confdict)
 
 
 if __name__ == "__main__":

@@ -8,7 +8,7 @@ Created on Jun 17, 2013
 import logging
 import xml.etree.ElementTree as ET
 from random import shuffle
-import PolyPharma.configs as conf
+import PolyPharma.configs2 as conf
 import os
 
 # TODO: refactor as a class

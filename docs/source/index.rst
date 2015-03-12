@@ -28,6 +28,9 @@ an issue ticket on GitHub and I will be glad to assist you in the measure of my 
 
 The license is BSD, but in case of academic usage, please cite the *url* (publication is in preparation).
 
+Please note that the API documentation is more to help you in case something goes wrong and is not yet fixed. If you want
+to use functions of it for your own projects, you can, at your own risk, and as long as the affiliation to the initial project
+is provided, either via dependencies or notice.
 
 
 Project dependencies:
@@ -121,16 +124,24 @@ Now, call the auto-analyze routines for the annotation analysis or interactome a
 ```> Python -m PolyPharma.neo4j_analyzer.interactome_analysis ```
 
 
+Usage Guides:
+=============
+
+.. toctree::
+   :maxdepth: 2
+
+   dataPulling
+   neo4jDBmanipulation
+
+
 
 Contents:
 =========
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 3
 
-   configfiles
    PolyPharma
-
 
 
 Indices and tables

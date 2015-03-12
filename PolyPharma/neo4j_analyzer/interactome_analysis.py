@@ -10,7 +10,7 @@ from pprint import PrettyPrinter
 from matplotlib import pyplot as plt
 from csv import reader
 from Matrix_Interactome_DB_interface import  MatrixGetter
-from PolyPharma.configs import Interactome_rand_samp, Dumps, prename2
+from PolyPharma.configs2 import Interactome_rand_samp, Dumps, prename2
 from PolyPharma.Utils.dataviz import kde_compute
 from PolyPharma.neo4j_analyzer.Conduction_routines import perform_clustering
 from PolyPharma.neo4j_analyzer.IO_Routines import undump_object

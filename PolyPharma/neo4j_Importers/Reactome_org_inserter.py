@@ -5,7 +5,7 @@ Created on Jun 15, 2013
 import logging
 from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
 import pickle
-from PolyPharma.configs import Dumps, Leg_ID_Filter
+from PolyPharma.configs2 import Dumps, Leg_ID_Filter
 import os
 
 ####################################################################################

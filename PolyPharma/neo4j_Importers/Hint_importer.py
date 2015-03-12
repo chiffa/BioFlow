@@ -4,7 +4,7 @@ Created on Jul 10, 2013
 @author: andrei
 '''
 
-from PolyPharma.configs import Hint_csv
+from PolyPharma.configs2 import Hint_csv
 from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
 
 def get_Prot2ProtRels():

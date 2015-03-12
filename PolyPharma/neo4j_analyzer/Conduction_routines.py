@@ -6,7 +6,7 @@ __author__ = 'ank'
 import random
 import numpy as np
 from scipy.sparse import csc_matrix, diags, triu
-from PolyPharma.configs import fudge
+from PolyPharma.configs2 import fudge
 # noinspection PyUnresolvedReferences
 from scikits.sparse.cholmod import cholesky
 from itertools import combinations, repeat
