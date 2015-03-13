@@ -3,6 +3,7 @@ __author__ = 'ank'
 import click
 from PolyPharma.Utils.ConfigsIO import StructureGenerator, edit_confile
 from PolyPharma.configs2 import neo4j_server
+from PolyPharma.neo4j_Importers.Import_commander import build_db, destroy_db
 from os.path import abspath, expanduser
 
 
@@ -67,7 +68,8 @@ def purgeneo4j():
 
     :return:
     """
-    pass
+    print 'neo4j will start purging the master databse. It will take some time to finish. Please do not close the shell. You can supervise the progress through %s/webadmin interface' % neo4j_server
+    destroy_db()
 
 @click.command()
 @click.confirmation_option(help='Are you sure you want to start loading the neo4j database? The process might take several hours or days')
@@ -77,15 +79,14 @@ def loadneo4j():
 
     :return:
     """
-    print 'neo4j will start loading. Please do not close the shell. You can supervise the progress through %s/webadmin interface' % neo4j_server
+    print 'neo4j will start loading data into the master database. It will take a couple of hours to finish. Please do not close the shell. You can supervise the progress through %s/webadmin interface' % neo4j_server
+    build_db()
 
-
-#TODO: purge mongodb
-
-
+#TODO: add purge mongodb operation
 
 truegird.add_command(initialize)
-truegird.add_command(setorgconfigs)
+truegird.add_command(setorgconfs)
+truegird.add_command(downloaddbs)
 truegird.add_command(purgeneo4j)
 truegird.add_command(loadneo4j)
 
