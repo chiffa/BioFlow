@@ -40,7 +40,9 @@ provided you follow the instructions properly::
 
     > python CLUI.py initialize --path myfolder --neo4jserver http://localhost:7474 --mongoserver mongodb://localhost:27017/
 
-    > python CLUI.py setorgconfigs --organism [mouse, human, yeast]
+    > python CLUI.py downloaddbs
+
+    > python CLUI.py setorgconfs --organism [mouse, human, yeast]
 
 Typical sources.ini configfile:
 ===============================
@@ -106,9 +108,10 @@ folders such as "sources_organism.ini" will be ignored and can be renamed to "so
 
 It is possible for the users to generate source.ini file for three organisms with the following command::
 
-    python CLUI.py setorgconfigs --organism [mouse, human, yeast]
+    python CLUI.py setorgconfs --organism [mouse, human, yeast]
 
 This allows to switch rapidly between different investigated organism.
 
-Please don't forget to switch or purge neo4j databases between organisms, because each organism needs it's own neo4j instance. It m
+Please don't forget to switch or purge neo4j databases between organisms, because each organism needs it's own neo4j instance.
+More about in the neo4j database manipulation section.
 

@@ -2,3 +2,5 @@ bulbs
 requests
 click
 mock
+requests
+requests-ftp

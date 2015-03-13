@@ -2,7 +2,9 @@ __author__ = 'ank'
 
 import click
 from PolyPharma.Utils.ConfigsIO import StructureGenerator, edit_confile
-from os.path import abspath
+from PolyPharma.configs2 import neo4j_server
+from os.path import abspath, expanduser
+
 
 @click.group()
 def truegird():
@@ -22,14 +24,32 @@ def initialize(path, neo4jserver, mongoserver):
     :param mongoserver: mongodb server adress and port
     :return:
     """
+    if path[0] == r'~':
+        path = expanduser(path)
+    print 'setting external DBs filestore in %s' % abspath(path)
     edit_confile('servers', 'PRODUCTION', 'base_folder', abspath(path))
     edit_confile('servers', 'PRODUCTION', 'server_neo4j', neo4jserver)
     edit_confile('servers', 'PRODUCTION', 'mongodb_server', mongoserver)
+    print 're-writing the organism-specific configs for the following organism: %s' % 'yeast'
+    StructureGenerator.build_source_config('yeast')
+
+
+@click.command()
+@click.confirmation_option(help='Pulling online databases. Please make sure you initialized the project and you are ready\n'+
+                                'to wait for a while for hte download to complete. Some files are large (up to 3 Gb).\n'+
+                                'You can perform this step manually (cf documetnation). Are you sure you want to continue?')
+def downloaddbs():
+    """
+    Downloads the databases automatically
+
+    :return:
+    """
+    StructureGenerator.pull_online_DBs()
 
 
 @click.command()
 @click.option('--organism', type=click.Choice(['mouse', 'human', 'yeast']))
-def setorgconfigs(organism):
+def setorgconfs(organism):
     """
     Sets organism-specific configurations
 
@@ -57,7 +77,7 @@ def loadneo4j():
 
     :return:
     """
-    print 'neo4j will start loading. Please do not close the shell. You can supervise progress through %s/webadmin interface' % neo4j_server
+    print 'neo4j will start loading. Please do not close the shell. You can supervise the progress through %s/webadmin interface' % neo4j_server
 
 
 #TODO: purge mongodb

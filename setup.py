@@ -83,7 +83,8 @@ setup(
                         'requests',
                         'click',
                         'scikits.sparse',
-                        'mock'],
+                        'mock',
+                        'requests-ftp'],
 
     # List additional groups of dependencies here (e.g. development dependencies).
     # You can install these using the following syntax, for example:
