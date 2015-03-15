@@ -82,6 +82,36 @@ def loadneo4j():
     print 'neo4j will start loading data into the master database. It will take a couple of hours to finish. Please do not close the shell. You can supervise the progress through %s/webadmin interface' % neo4j_server
     build_db()
 
+
+@click.command()
+@click.option('--interactome', 'matrixtype', flag_value='interactome',
+              default=True)
+@click.option('--annotmap', 'matrixtype', flag_value='annotome')
+def extractmatrix(matrixtype):
+    if matrixtype == 'interactome':
+        pass
+    if matrixtype == 'annotome':
+        pass
+
+
+@click.command()
+@click.argument('idlist')
+def mapids(idlist):
+    pass
+
+
+@click.command()
+@click.option('--interactome', 'matrixtype', flag_value='interactome',
+              default=True)
+@click.option('--annotmap', 'matrixtype', flag_value='annotome')
+@click.option('--background') ##defaults
+@click.option('--depth') ##defaults
+@click.option('--processors') ##defaults
+@click.argument('idlist') ##defaults
+def analyze(matrixtype, background, idlist, depth, processors,):
+    pass
+
+
 #TODO: add purge mongodb operation
 
 truegird.add_command(initialize)
@@ -89,6 +119,9 @@ truegird.add_command(setorgconfs)
 truegird.add_command(downloaddbs)
 truegird.add_command(purgeneo4j)
 truegird.add_command(loadneo4j)
+truegird.add_command(extractmatrix)
+truegird.add_command(mapids)
+truegird.add_command(analyze)
 
 if __name__ == '__main__':
     truegird()
