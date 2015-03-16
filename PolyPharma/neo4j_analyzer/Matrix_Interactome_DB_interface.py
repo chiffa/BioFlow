@@ -297,6 +297,9 @@ class MatrixGetter(object):
 
         ################################################################################################################
 
+        # TODO: this step is inherently recursive and must be formalized as such, intaking only the database and
+        #       data types defined in the configs files
+
         self.ReactLinks, self.InitSet, c = get_Reaction_blocks()
         characterise('Reactions', self.ReactLinks, self.InitSet, c)
 

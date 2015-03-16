@@ -124,6 +124,44 @@ Now, call the auto-analyze routines for the annotation analysis or interactome a
 ```> Python -m PolyPharma.neo4j_analyzer.interactome_analysis ```
 
 
+Basic command line usage:
+-------------------------
+
+*Database creation*
+
+Download the external datasets and build the local master database::
+
+    > python CLUI.py initialize --path myfolder --neo4jserver http://localhost:7474 --mongoserver mongodb://localhost:27017/
+
+    > python CLUI.py downloaddbs
+
+    > python CLUI.py setorgconfs --organism [mouse, human, yeast]
+
+    > python CLUI.py loadneo4j
+
+
+*Access to low-level structure*
+
+Export the organism-specific interactome or concept-entity relationships as a Python-Scipy sparse matrix object::
+
+    > python CLUI.py extractmatrix --interactome/--annotmap > path to a picke dump of the sparse matrix and name map
+
+Map a list of heterogeneous identifiers to the database-specific ids::
+
+    > python CLUI.py mapids /path/to/my.input.file.tsv > path/to/my.output.file
+
+
+*Statistical analysis*
+
+
+Analyze a list of genes with an optional background::
+
+    > python CLUI.py analyze --interactome/--annotmap --background /path/to/background.input.file --depth 20 --processors 2 path/to/hits.input.file
+
+The resulting significance data can be seen as the output and the related analyzis .gdf files can be vound in the /outputs folder and
+
+
+
 Usage Guides:
 =============
 

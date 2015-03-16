@@ -125,7 +125,7 @@ Download the external datasets and build the local master database:
     > python CLUI.py loadneo4j
 
 
-*Access to low-level structure
+*Access to low-level structure*
 
 Export the organism-specific interactome or concept-entity relationships as a Python-Scipy sparse matrix object:
 
