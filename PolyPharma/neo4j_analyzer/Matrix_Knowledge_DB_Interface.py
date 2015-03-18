@@ -769,9 +769,9 @@ class GO_Interface(object):
                 self.Indep_Lapl [idx1, idx1] += 1
 
 
-def get_background():
+def get_background(sourcefile=bgList):
     retlist=[]
-    with open(bgList) as src:
+    with open(sourcefile) as src:
         csv_reader = reader(src)
         for row in csv_reader:
             retlist = retlist + row

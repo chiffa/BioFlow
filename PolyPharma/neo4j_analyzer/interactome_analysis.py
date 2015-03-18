@@ -27,13 +27,19 @@ def MG_gen():
     print MG.pretty_time()
     return MG
 
+
 def spawn_sampler(sample_size_list_plus_iteration_list_plus_args):
     """
     Spawns a sampler initalized from the default GO_Interface
 
     :param sample_size_list_plus_iteration_list: combined list of sample swizes and iterations (requried for Pool.map usage)
     """
-    MG = MG_gen()
+    MG_object = sample_size_list_plus_iteration_list_plus_args[4]
+    if MG_object is None:
+        MG = MG_gen()
+    else:
+        MG = MG_object
+
     sample_size_list = sample_size_list_plus_iteration_list_plus_args[0]
     iteration_list = sample_size_list_plus_iteration_list_plus_args[1]
     sparse_rounds = sample_size_list_plus_iteration_list_plus_args[2]
@@ -41,7 +47,7 @@ def spawn_sampler(sample_size_list_plus_iteration_list_plus_args):
     MG.randomly_sample(sample_size_list, iteration_list, sparse_rounds, chromosome_specific)
 
 
-def spawn_sampler_pool(pool_size, sample_size_list, interation_list_per_pool, sparse_rounds=False, chromosome_specific=False):
+def spawn_sampler_pool(pool_size, sample_size_list, interation_list_per_pool, sparse_rounds=False, chromosome_specific=False, MG_object=None):
     """
     Spawns a pool of samplers of the information flow within the GO system
 
@@ -54,7 +60,7 @@ def spawn_sampler_pool(pool_size, sample_size_list, interation_list_per_pool, sp
     :type chromosome_specific: int
     """
     p = Pool(pool_size)
-    payload = [(sample_size_list, interation_list_per_pool, sparse_rounds, chromosome_specific)]
+    payload = [(sample_size_list, interation_list_per_pool, sparse_rounds, chromosome_specific, MG_object)]
     p.map(spawn_sampler, payload * pool_size)
 
 
@@ -180,7 +186,7 @@ def show_corrs(bi_corr_array, meancorrs, eigvals, selector, test_bi_corr_array, 
     return current_info_rel, cluster_props
 
 
-def compare_to_blanc(blanc_model_size, zoom_range_selector, real_interactome_interface = None, p_val=0.05, sparse_rounds=False, clusters=3):
+def compare_to_blanc(blanc_model_size, zoom_range_selector, real_interactome_interface = None, p_val=0.05, sparse_rounds=False, clusters=3, MG_Object=None):
     """
     Recovers the statistics on the circulation nodes and shows the visual of a circulation system
 
@@ -193,6 +199,12 @@ def compare_to_blanc(blanc_model_size, zoom_range_selector, real_interactome_int
     :param clusters: specifies the number of clusters we want to have
     :return: None if no significant nodes, the node and group characterisitc dictionaries otherwise
     """
+    if MG_Object is None:
+        MG = MatrixGetter(True, False)
+        MG.fast_load()
+    else:
+        MG = MG_Object
+
     MD5_hash = MG._MD5hash()
 
     curr_inf_conf_general = []
@@ -256,29 +268,30 @@ def compare_to_blanc(blanc_model_size, zoom_range_selector, real_interactome_int
 
     return  None
 
-
-def auto_analyze(dumplist, depth):
+# TODO: stabilize the background behavior with regard to the buffering
+def auto_analyze(sourcelist, depth, processors=4, backgroundlist=None):
     """
     Automatically analyzes the itneractome synergetic action of the RNA_seq results
 
     """
     # noinspection PyTypeChecker
-    for lst in dumplist:
+    for lst in sourcelist:
         print lst, len(lst)
         MG1 = MG_gen()
         MG1.set_Uniprot_source(list(lst))
+        MG1.background = backgroundlist
         print len(MG1.analytic_Uniprots)
-        if len(MG1.analytic_Uniprots)<200:
-            spawn_sampler_pool(4, [len(MG1.analytic_Uniprots)], [depth])
+        if len(MG1.analytic_Uniprots) < 200:
+            spawn_sampler_pool(processors, [len(MG1.analytic_Uniprots)], [depth], MG_object=MG1)
             MG1.build_extended_conduction_system()
-            nr_nodes, nr_groups = compare_to_blanc(len(MG1.analytic_Uniprots), [0.5, 0.6], MG1, p_val=0.9)
+            nr_nodes, nr_groups = compare_to_blanc(len(MG1.analytic_Uniprots), [0.5, 0.6], MG1, p_val=0.9, MG_Object=MG1)
         else:
             sampling_depth = max(200**2/len(MG1.analytic_Uniprots), 5)
             print 'lenght: %s \t sampling depth: %s \t, estimated_time: %s' % (len(MG1.analytic_Uniprots), sampling_depth, len(MG1.analytic_Uniprots)*sampling_depth/2/depth/60)
-            spawn_sampler_pool(4, [len(MG1.analytic_Uniprots)], [depth], sparse_rounds=sampling_depth)
+            spawn_sampler_pool(processors, [len(MG1.analytic_Uniprots)], [depth], sparse_rounds=sampling_depth, MG_object=MG1)
             MG1.build_extended_conduction_system(sparse_samples=sampling_depth)
             MG1.export_conduction_system()
-            nr_nodes, nr_groups = compare_to_blanc(len(MG1.analytic_Uniprots), [0.5, 0.6], MG1, p_val=0.9, sparse_rounds=sampling_depth)
+            nr_nodes, nr_groups = compare_to_blanc(len(MG1.analytic_Uniprots), [0.5, 0.6], MG1, p_val=0.9, sparse_rounds=sampling_depth, MG_Object=MG1)
 
         MG1.export_conduction_system()
         for group in nr_groups:

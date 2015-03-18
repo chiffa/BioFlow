@@ -144,7 +144,7 @@ Download the external datasets and build the local master database::
 
 Export the organism-specific interactome or concept-entity relationships as a Python-Scipy sparse matrix object::
 
-    > python CLUI.py extractmatrix --interactome/--annotmap > path to a picke dump of the sparse matrix and name map
+    > python CLUI.py extractmatrix --interactome/--annotmap > path to a dump of the sparse matrix and index to NodeID name map
 
 Map a list of heterogeneous identifiers to the database-specific ids::
 

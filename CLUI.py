@@ -4,6 +4,11 @@ import click
 from PolyPharma.Utils.ConfigsIO import StructureGenerator, edit_confile
 from PolyPharma.configs2 import neo4j_server
 from PolyPharma.neo4j_Importers.Import_commander import build_db, destroy_db
+from PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface import MatrixGetter as InteractomeInterface
+from PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface import GO_Interface as AnnotomeInterface, get_background
+from PolyPharma.neo4j_analyzer.DB_IO_Routines import look_up_Annot_set
+from PolyPharma.neo4j_analyzer.interactome_analysis import auto_analyze as interactome_analysis
+from PolyPharma.neo4j_analyzer.knowledge_access_analysis import auto_analyze as knowledge_analysis
 from os.path import abspath, expanduser
 
 
@@ -89,27 +94,54 @@ def loadneo4j():
 @click.option('--annotmap', 'matrixtype', flag_value='annotome')
 def extractmatrix(matrixtype):
     if matrixtype == 'interactome':
-        pass
+        local_matrix = InteractomeInterface(Connexity_Aware=True, full_impact=True)
+        local_matrix.full_rebuild()
+        print local_matrix.Conductance_Matrix, local_matrix.MatrixNumber2NodeID
     if matrixtype == 'annotome':
-        pass
+        local_matrix = InteractomeInterface(Connexity_Aware=True, full_impact=True)
+        local_matrix.full_rebuild()
+        filtr = ['biological_process']
+        annot_matrix = AnnotomeInterface(filtr, local_matrix.Uniprot_complete, (1, 1), True, 3)
+        annot_matrix.rebuild()
+        print annot_matrix.Laplacian_matrix, annot_matrix.Num2GO
 
 
 @click.command()
 @click.argument('idlist')
 def mapids(idlist):
-    pass
+    print look_up_Annot_set(idlist)
 
 
 @click.command()
 @click.option('--interactome', 'matrixtype', flag_value='interactome',
               default=True)
-@click.option('--annotmap', 'matrixtype', flag_value='annotome')
-@click.option('--background') ##defaults
-@click.option('--depth') ##defaults
-@click.option('--processors') ##defaults
-@click.argument('idlist') ##defaults
-def analyze(matrixtype, background, idlist, depth, processors,):
-    pass
+@click.option('--annotmap', 'matrixtype', flag_value='annotmap')
+@click.option('--background', default=None) ##defaults
+@click.option('--depth', default=100) ##defaults
+@click.option('--processors', default=2) ##defaults
+@click.argument('source') ##defaults
+def analyze(matrixtype, background, source, depth, processors,):
+    if matrixtype == 'interactome':
+        local_matrix = InteractomeInterface(Connexity_Aware=True, full_impact=True)
+        local_matrix.full_rebuild()
+        if background is not None:
+            background = get_background(background)
+        source_set = get_background(source)  # TODO: rename this function and use only one of it everywhere
+        interactome_analysis(source_set, depth, processors, background)
+    elif matrixtype == 'annotmap':
+        local_matrix = InteractomeInterface(Connexity_Aware=True, full_impact=True)
+        local_matrix.full_rebuild()
+        filtr = ['biological_process']
+        if background is None:
+            annot_matrix = AnnotomeInterface(filtr, local_matrix.Uniprot_complete, (1, 1), True, 3)
+        if background is not None:
+            background_set = get_background(background)
+            annot_matrix = AnnotomeInterface(filtr, background_set, (1, 1), True, 3)
+        annot_matrix.rebuild()
+        annot_matrix.store()
+        source_set = get_background(source)  # TODO: rename this function and use only one of it everywhere
+        knowledge_analysis(source=source_set, KG_object=annot_matrix, desired_depth=depth, processors=processors)
+    print "analsysis is finished, current results are stored in the $PROJECT_HOME/PolyPharma/outputs directory"
 
 
 #TODO: add purge mongodb operation
