@@ -6,6 +6,7 @@ ConfigParser
 """
 import ConfigParser
 
+
 def ini_configs2dict(path):
     """
     Parses a config file on given path and converts it to a dict, in case of failure raises an IOError,

@@ -15,13 +15,13 @@ from pprint import PrettyPrinter
 from matplotlib import pyplot as plt
 from PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface import  MatrixGetter
 from PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface import GO_Interface
-from PolyPharma.configs import UP_rand_samp, Dumps, prename2, Background_source, bgList
+from PolyPharma.configs2 import UP_rand_samp, Dumps, prename2, Background_source, bgList
 from PolyPharma.Utils.dataviz import kde_compute
 from PolyPharma.Utils.Linalg_routines import analyze_eigvects
 from PolyPharma.neo4j_analyzer.Conduction_routines import perform_clustering
 from PolyPharma.neo4j_analyzer.IO_Routines import undump_object
 
-
+# TODO: refactor, this is currently a wrapper method used in the
 def KG_gen():
     """
     Generates a Matrix_Knowledge_DB interface for the use in the spawner. If
@@ -29,8 +29,9 @@ def KG_gen():
     :return: a GO_interface object
     """
     ################################
-    # Attention, manual swithc here:
+    # Attention, manual switch here:
     ################################
+
     KG = GO_Interface(filtr, get_background(), corrfactors, True, 3)
     # KG = GO_Interface(filtr, MG.Uniprot_complete, corrfactors, True, 3)
     KG.load()
@@ -44,7 +45,12 @@ def spawn_sampler(sample_size_list_plus_iteration_list_plus_args):
 
     :param sample_size_list_plus_iteration_list_plus_args: combined list of sample swizes and iterations (requried for Pool.map usage)
     """
-    KG = KG_gen()
+    KG_object = sample_size_list_plus_iteration_list_plus_args[4]
+    if KG_object is None:
+        KG = KG_gen()
+    else:
+        KG = KG_object
+
     sample_size_list = sample_size_list_plus_iteration_list_plus_args[0]
     iteration_list = sample_size_list_plus_iteration_list_plus_args[1]
     sparse_rounds = sample_size_list_plus_iteration_list_plus_args[2]
@@ -52,7 +58,7 @@ def spawn_sampler(sample_size_list_plus_iteration_list_plus_args):
     KG.randomly_sample(sample_size_list, iteration_list, sparse_rounds, chromosome_specific)
 
 
-def spawn_sampler_pool(pool_size, sample_size_list, interation_list_per_pool, sparse_rounds=False, chromosome_specific=False):
+def spawn_sampler_pool(pool_size, sample_size_list, interation_list_per_pool, sparse_rounds=False, chromosome_specific=False, KG_object=None):
     """
     Spawns a pool of samplers of the information flow within the GO system
 
@@ -65,7 +71,7 @@ def spawn_sampler_pool(pool_size, sample_size_list, interation_list_per_pool, sp
     :type chromosome_specific: int
     """
     p = Pool(pool_size)
-    payload = [(sample_size_list, interation_list_per_pool, sparse_rounds, chromosome_specific)]
+    payload = [(sample_size_list, interation_list_per_pool, sparse_rounds, chromosome_specific, KG_object)]
     p.map(spawn_sampler, payload * pool_size)
 
 
@@ -86,7 +92,7 @@ def select(tri_array, array_column, selection_span):
     return decvec
 
 
-def show_corrs(tri_corr_array, meancorrs, eigvals, selector, test_tri_corr_array, test_meancorr, eigval, resamples):
+def show_corrs(tri_corr_array, meancorrs, eigvals, selector, test_tri_corr_array, test_meancorr, eigval, resamples, KG_object=None):
 
     # TODO: there is a lot of repetition depending on which values are the biggest, test-setted or real setted.
     # In all, we should be able to reduce it to two functions: scatterplot and histogram with two sets that
@@ -107,7 +113,11 @@ def show_corrs(tri_corr_array, meancorrs, eigvals, selector, test_tri_corr_array
     :param resamples: how many random samples we analyzed for the default model
     :return:
     """
-    KG = KG_gen()
+    if KG_object is None:
+        KG = KG_gen()
+    else:
+        KG = KG_object
+
     inf_sel = (KG._infcalc(selector[0]), KG._infcalc(selector[1]))
 
     plt.figure()
@@ -208,7 +218,7 @@ def show_corrs(tri_corr_array, meancorrs, eigvals, selector, test_tri_corr_array
     return current_info_rel, cluster_props
 
 
-def compare_to_blanc(blanc_model_size, zoom_range_selector, real_knowledge_interface = None, p_val=0.05, sparse_rounds=False, clusters=3):
+def compare_to_blanc(blanc_model_size, zoom_range_selector, real_knowledge_interface = None, p_val=0.05, sparse_rounds=False, clusters=3, KG_object=None):
     """
     Recovers the statistics on the circulation nodes and shows the visual of a circulation system
 
@@ -221,7 +231,10 @@ def compare_to_blanc(blanc_model_size, zoom_range_selector, real_knowledge_inter
     :param clusters: specifies the number of clusters we want to have
     :return: None if no significant nodes, the node and group characterisitc dictionaries otherwise
     """
-    KG = KG_gen()
+    if KG_object is None:
+        KG = KG_gen()
+    else:
+        KG = KG_object
     MD5_hash = KG._MD5hash()
 
     curr_inf_conf_general = []
@@ -361,29 +374,41 @@ def linindep_GO_groups(size):
     analyze_eigvects(KG.Indep_Lapl, size, char_indexes)
 
 
-def auto_analyze():
+def auto_analyze(source=None, KG_object=None, processors=4, desired_depth=24):
     """
     Automatically analyzes the GO annotation of the RNA_seq results.
 
     """
-    dumplist = undump_object(Dumps.RNA_seq_counts_compare)
+    if source is None:
+        dumplist = undump_object(Dumps.RNA_seq_counts_compare)
+    else:
+        dumplist = [source]
+
+    if desired_depth % processors!=0:
+        desired_depth = desired_depth/processors+1
+    else:
+        desired_depth = desired_depth/processors
 
     # noinspection PyTypeChecker
     for list in dumplist:
-        MG1 = KG_gen()
+        if KG_object is None:
+            MG1 = KG_gen()
+        else:
+            MG1 = KG_object
+
         MG1.set_Uniprot_source(list)
         print len(MG1.analytic_Uniprots)
-        if len(MG1.analytic_Uniprots)<200:
-            spawn_sampler_pool(4, [len(MG1.analytic_Uniprots)], [6])
+        if len(MG1.analytic_Uniprots) < 200:
+            spawn_sampler_pool(processors, [len(MG1.analytic_Uniprots)], [desired_depth], KG_object=KG_object)
             MG1.build_extended_conduction_system()
-            nr_nodes, nr_groups = compare_to_blanc(len(MG1.analytic_Uniprots), [1100, 1300], MG1, p_val=0.9)
+            nr_nodes, nr_groups = compare_to_blanc(len(MG1.analytic_Uniprots), [1100, 1300], MG1, p_val=0.9, KG_object=KG_object)
         else:
-            sampling_depth = max(200**2/len(MG1.analytic_Uniprots), 5)
+            sampling_depth = max(200 ** 2 / len(MG1.analytic_Uniprots), 5)
             print 'lenght: %s \t sampling depth: %s \t, estimated_time: %s' % (len(MG1.analytic_Uniprots), sampling_depth, len(MG1.analytic_Uniprots)*sampling_depth/2/6/60)
-            spawn_sampler_pool(4, [len(MG1.analytic_Uniprots)], [6], sparse_rounds=sampling_depth)
+            spawn_sampler_pool(processors, [len(MG1.analytic_Uniprots)], [desired_depth], sparse_rounds=sampling_depth, KG_object=KG_object)
             MG1.build_extended_conduction_system(sparse_samples=sampling_depth)
             MG1.export_conduction_system()
-            nr_nodes, nr_groups = compare_to_blanc(len(MG1.analytic_Uniprots), [1100, 1300], MG1, p_val=0.9, sparse_rounds=sampling_depth)
+            nr_nodes, nr_groups = compare_to_blanc(len(MG1.analytic_Uniprots), [1100, 1300], MG1, p_val=0.9, sparse_rounds=sampling_depth, KG_object=KG_object)
 
         MG1.export_conduction_system()
         for group in nr_groups:
@@ -439,20 +464,20 @@ if __name__ == "__main__":
     pprinter = PrettyPrinter(indent=4)
     MG = MatrixGetter(True, False)
     MG.fast_load()
-
-    GBO_1 = ['583954', '565151', '625184', '532448', '553020', '547608', '576300', '533299', '540532', '591419']
-    GBO_2 = ['562293', '544722', '534354', '612635', '532463', '561658', '630018', '586185', '611762', '599295']
-    GBO_3 = ['532448', '618791', '591250', '546747', '533299', '584147', '540532', '561186', '566489', '557819']
-    GBO_4 = ['594353', '565151', '618791', '537788', '546413', '576300', '533299', '540532', '532448', '557819']
-
-    # anset = [GBO_1, GBO_2, GBO_3, GBO_4]
-
-    anset = [get_source()]
-
-    for subset in anset:
-        build_blank(len(subset), 20)
-        run_analysis(subset)
-        raw_input("Press Enter to continue...")
+    #
+    # GBO_1 = ['583954', '565151', '625184', '532448', '553020', '547608', '576300', '533299', '540532', '591419']
+    # GBO_2 = ['562293', '544722', '534354', '612635', '532463', '561658', '630018', '586185', '611762', '599295']
+    # GBO_3 = ['532448', '618791', '591250', '546747', '533299', '584147', '540532', '561186', '566489', '557819']
+    # GBO_4 = ['594353', '565151', '618791', '537788', '546413', '576300', '533299', '540532', '532448', '557819']
+    #
+    # # anset = [GBO_1, GBO_2, GBO_3, GBO_4]
+    #
+    # anset = [get_source()]
+    #
+    # for subset in anset:
+    #     build_blank(len(subset), 20)
+    #     run_analysis(subset)
+    #     raw_input("Press Enter to continue...")
 
     # spawn_sampler(([10, 100], [2, 1]))
     # spawn_sampler_pool(4, [201], [10], sparse_rounds=100)
@@ -463,7 +488,7 @@ if __name__ == "__main__":
     # KG = KG_gen()
     #
     #
-    # KG.randomly_sample([201],[1], chromosome_specific=15, sparse_rounds=100, memoized=True, No_add=True)
+    # KG/.randomly_sample([201],[1], chromosome_specific=15, sparse_rounds=100, memoized=True, No_add=True)
     # print KG.current_accumulator.shape
     # KG.export_conduction_system()
     # nr_nodes, nr_groups = compare_to_blanc(201, [1000, 1200], KG, p_val=0.9, sparse_rounds=100)
@@ -484,6 +509,6 @@ if __name__ == "__main__":
 
     # linindep_GO_groups(50)
 
-    # auto_analyze()
+    auto_analyze()
 
     pass

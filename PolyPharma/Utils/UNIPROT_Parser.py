@@ -4,7 +4,7 @@ Created on Jun 26, 2013
 @author: andrei
 '''
 
-import PolyPharma.configs as conf
+import PolyPharma.configs2 as conf
 import copy
 
 Interesting_TaxIDs = [TaxID.strip() for TaxID in conf.Sources['UNIPROT']['tax_ids'].split(',') if TaxID not in ('',' ')]

@@ -3,7 +3,7 @@ Module responsible for importing raw RNA-seq data and running tests on it to get
 in genes.
 """
 __author__ = 'ank'
-from PolyPharma.configs import RNA_source, Dumps, Outputs
+from PolyPharma.configs2 import RNA_source, Dumps, Outputs
 from PolyPharma.neo4j_analyzer.DB_IO_Routines import look_up_Annot_Node, recover_annotation
 from PolyPharma.neo4j_analyzer.IO_Routines import dump_object
 from collections import defaultdict

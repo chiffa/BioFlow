@@ -26,7 +26,7 @@ from collections import defaultdict
 from warnings import warn
 from scipy.sparse import lil_matrix
 from scipy.sparse.csgraph import shortest_path
-from PolyPharma.configs import Dumps, Outputs, UP_rand_samp, Background_source, bgList
+from PolyPharma.configs2 import Dumps, Outputs, UP_rand_samp, Background_source, bgList
 from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
 from PolyPharma.Utils.GDF_export import GDF_export_Interface
 from PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface import MatrixGetter
@@ -769,9 +769,9 @@ class GO_Interface(object):
                 self.Indep_Lapl [idx1, idx1] += 1
 
 
-def get_background():
+def get_background(sourcefile=bgList):
     retlist=[]
-    with open(bgList) as src:
+    with open(sourcefile) as src:
         csv_reader = reader(src)
         for row in csv_reader:
             retlist = retlist + row

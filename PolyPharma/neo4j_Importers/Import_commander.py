@@ -29,6 +29,20 @@ import sys
 # sys.stdout = f
 # ################################
 
+def build_db():
+    insert_all()
+    import_GOs()
+    import_UNIPROTS()
+    cross_ref_HiNT(flush=True)
+    import_BioGRID()
+    run_diagnostics(full_dict)
+    recompute_forbidden_IDs(Forbidden_verification_dict)
+
+
+def destroy_db():
+    clear_all(full_dict)
+
+
 if __name__ == "__main__":
     # clear_all(full_dict)
     # run_diagnostics(full_dict)

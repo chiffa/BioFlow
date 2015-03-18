@@ -6,8 +6,8 @@
 __author__ = 'ank'
 
 from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
-from PolyPharma.configs import IDFilter, Leg_ID_Filter, edge_type_filters, Dumps, Outputs, Hits_source, prename1, prename2
-from PolyPharma.configs import Background_source, bgList
+from PolyPharma.configs2 import IDFilter, Leg_ID_Filter, edge_type_filters, Dumps, Outputs, Hits_source, prename1, prename2
+from PolyPharma.configs2 import Background_source, bgList
 import pickle
 from pprint import PrettyPrinter
 from collections import defaultdict

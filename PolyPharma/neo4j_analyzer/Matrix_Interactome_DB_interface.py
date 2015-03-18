@@ -20,8 +20,8 @@ from scipy.sparse import lil_matrix
 from scipy.sparse.linalg import eigsh
 from scipy.sparse.csgraph import connected_components
 
-from PolyPharma.configs import Chromosome_source, Chromosome_file_filter
-from PolyPharma.configs import edge_type_filters, Adjacency_Martix_Dict, Conductance_Matrix_Dict, Dumps, Outputs, Interactome_rand_samp
+from PolyPharma.configs2 import Chromosome_source, Chromosome_file_filter
+from PolyPharma.configs2 import edge_type_filters, Adjacency_Martix_Dict, Conductance_Matrix_Dict, Dumps, Outputs, Interactome_rand_samp
 from PolyPharma.Utils.GDF_export import GDF_export_Interface
 from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
 from PolyPharma.neo4j_analyzer.DB_IO_Routines import reaction_participant_getter, expand_from_seed, Erase_custom_fields
@@ -105,7 +105,7 @@ class MatrixGetter(object):
         self.Chrom2UP = defaultdict(list)
 
         self.incomplete_compute = False  # used in case of sparse sampling
-
+        self.background = None
 
     def pretty_time(self):
         """
@@ -296,6 +296,9 @@ class MatrixGetter(object):
             print self.pretty_time()
 
         ################################################################################################################
+
+        # TODO: this step is inherently recursive and must be formalized as such, intaking only the database and
+        #       data types defined in the configs files
 
         self.ReactLinks, self.InitSet, c = get_Reaction_blocks()
         characterise('Reactions', self.ReactLinks, self.InitSet, c)
@@ -632,8 +635,8 @@ class MatrixGetter(object):
         Return the MD hash of self to ensure that all the defining properties have been correctly defined before dump/retrieval
         """
         sorted_initset = sorted(self.NodeID2MatrixNumber.keys(), key=str.lower)
-        data = [self.Connexity_Aware, sorted_initset, self.full_impact]
-        md5 = hashlib.md5(json.dumps(data,sort_keys=True)).hexdigest()
+        data = [self.Connexity_Aware, sorted_initset, self.full_impact, self.background]
+        md5 = hashlib.md5(json.dumps(data, sort_keys=True)).hexdigest()
         return str(md5)
 
 
@@ -791,6 +794,9 @@ class MatrixGetter(object):
             raise Exception('Not the same list sizes!')
 
         self_connectable_UPs = [NodeID for NodeID, idx in self.NodeID2MatrixNumber.iteritems() if idx<(self.Conductance_Matrix.shape[0]-1)]
+
+        if self.background is not None:
+            self_connectable_UPs = list(set(self_connectable_UPs).intersection(set(self.background)))
 
         if chromosome_specific:
             self_connectable_UPs = list(set(self_connectable_UPs).intersection(set(self.Chrom2UP[str(chromosome_specific)])))

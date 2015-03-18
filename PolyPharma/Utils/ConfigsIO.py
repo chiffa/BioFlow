@@ -4,10 +4,14 @@
 Performs IO from the setup .ini files and casts into relevant Python Dictionaries
 """
 from pprint import PrettyPrinter
-from os.path import join
+from os.path import join, abspath
 import os
+from string import lower
 from PolyPharma.Utils.GeneralUtils.SanerConfigsParser import ini_configs2dict, dict2init_configs
+from PolyPharma.Utils.GeneralUtils.PathManipulation import mkdir_recursive
+from PolyPharma.Utils.GeneralUtils.InternetIO import url_to_local
 from collections import defaultdict
+
 
 configs_rootdir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../configs/'))
 
@@ -17,39 +21,51 @@ configsfiles = dict([(name, join(configs_rootdir, name+'.ini')) for name in shor
 
 class StructureGenerator(object):
 
-    online_file_tree = { }
+    _online_DBs = {'REACTOME': [r'http://www.reactome.org/download/current/biopax.zip'],
+                            'UNIPROT': [r'ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.dat.gz'],
+                            'HINT': [r'http://hint.yulab.org/CervBinaryHQ.txt',
+                                     r'http://hint.yulab.org/HumanBinaryHQ.txt',
+                                     r'http://hint.yulab.org/MouseBinaryHQ.txt',],
+                            'GO': [r'http://purl.obolibrary.org/obo/go/go-basic.obo'],
+                            'BIOGRID': [r'http://thebiogrid.org/downloads/archives/Release%20Archive/BIOGRID-3.3.122/BIOGRID-ORGANISM-3.3.122.tab2.zip']}
 
     # paths to be appended to the user-provided installation directory
-    local_file_tree = { 'META': '-1',
+    _local_file_tree = { 'INTERNAL': '.',
                         'REACTOME' : 'Reactome',
                         'UNIPROT' : 'Uniprot/uniprot_sprot.dat',
                         'HINT' : 'HiNT',
-                        'GO' : 'GO',
-                        'BIOGIRD' : 'BioGRID',
+                        'GO' : 'GO/go.obo',
+                        'BIOGRID' : 'BioGRID',
                         'SIDER': 'SIDER2/meddra_adverse_effects.tsv',
                         'ABOUNDANCES': 'Protein_aboundances',
                         'CHROMOSOMES': 'Chr_mappings'}
 
     # default configuration elements for yeast protein analysis
-    S_Cerevisae = {'shortname': 'sCerevisae',
+    _S_Cerevisae = {'shortname': 'sCerevisae',
                    'tax_id': '559292',
                    'Reactome_name': 'Saccharomyces cerevisiae.owl',
-                   'Biogrid_name': 'Saccharomyces_cerevisae.tsv'}
+                   'Biogrid_name': 'Saccharomyces_cerevisae.tsv',
+                   'HINT_name': 'CervBinaryHQ.txt'}
 
     # default configuration elements for human proteins analysis
-    Human = {      'shortname': 'human',
+    _Human = {      'shortname': 'human',
                    'tax_id': '9606',
                    'Reactome_name': 'Homo Sapiens.owl',
-                   'Biogrid_name': 'Homo_Sapiens.tsv'}
+                   'Biogrid_name': 'Homo_Sapiens.tsv',
+                   'HINT_name': 'MouseBinaryHQ.txt'}
 
     # default configuration elements for mice proteins analysis
-    Mice = {       'shortname': 'mouse',
+    _Mice = {       'shortname': 'mouse',
                    'tax_id': '10090',
                    'Reactome_name': 'Mus Musculus.owl',
-                   'Biogrid_name': 'Mus_musculus.tsv'}
+                   'Biogrid_name': 'Mus_musculus.tsv',
+                   'HINT_name': 'HumanBinaryHQ.txt'}
+
+    reforgs = ['mouse', 'human', 'yeast']
+
 
     @classmethod
-    def generate_template(cls, payload_dict, expanded=False):
+    def _generate_template(cls, payload_dict, expanded=False):
         """
         Generates a template dictionary that would be converted to a sources.ini config file
             to a file that would be
@@ -57,17 +73,20 @@ class StructureGenerator(object):
         :param expanded: if true, will try to add additional options into the configs file
         :return:
         """
-        template_dict = {'META':{'mongoprefix': '_'+payload_dict['shortname'],
+        template_dict = {'INTERNAL':{'mongoprefix': '_'+payload_dict['shortname'],
                                  'mongosuffix': '_v_1',
-                                 'dumpprefix': '/'+payload_dict['shortname']},
+                                 'dumpprefix': '/'+payload_dict['shortname'],
+                                 'load': 'NotAFile.txt'},
                                 'REACTOME' :
                                     {'load': payload_dict['Reactome_name']},
                                 'UNIPROT':
                                     {'tax_ids': payload_dict['tax_id']},
                                 'HINT':
-                                    {'load': payload_dict['tax_id']},
-                                'BIOGIRD':
+                                    {'load': payload_dict['HINT_name']},
+                                'BIOGRID':
                                     {'load': payload_dict['Biogrid_name']},
+                                'GO':
+                                    {}
                                }
 
         if expanded:
@@ -91,15 +110,15 @@ class StructureGenerator(object):
         return template_dict
 
     @classmethod
-    def add_location_to_template(cls, template_dict):
+    def _add_location_to_template(cls, template_dict):
         """
         Adds a location to the template dictionary used to generate a configuration file
         :param template_dict:
         :return:
         """
-        master_location = ini_configs2dict(configsfiles['options'])['MASTER']['base_folder']
+        master_location = ini_configs2dict(configsfiles['servers'])['PRODUCTION']['base_folder']
         for key, value in template_dict.iteritems():
-            value['location'] = join(master_location, cls.local_file_tree[key])
+            value['location'] = join(master_location, cls._local_file_tree[key])
         return template_dict
 
     @classmethod
@@ -110,20 +129,38 @@ class StructureGenerator(object):
         :param pl_type: string falling into one of the three categories. if not valid, an costum exception is raised
         :return:
         """
-        if pl_type not in ['mouse', 'human', 'yeast']:
-            raise Exception('Unsupported organism, not in %s. Please modify the sources.ini manually' % pl_type)
+        if pl_type not in cls.reforgs:
+            raise Exception('Unsupported organism, %s not in %s. Please modify the sources.ini manually' % (pl_type, cls.reforgs))
         else:
-            write_path = join(configs_rootdir, 'test_sources.ini')
+            write_path = join(configs_rootdir, 'sources.ini')
             cfdict = {}
             if pl_type == 'mouse':
-                cfdict = cls.generate_template(cls.Mice)
+                cfdict = cls._generate_template(cls._Mice)
             if pl_type == 'human':
-                cfdict = cls.generate_template(cls.Human)
+                cfdict = cls._generate_template(cls._Human)
             if pl_type == 'yeast':
-                cfdict = cls.generate_template(cls.S_Cerevisae)
-            cfdict = cls.add_location_to_template(cfdict)
+                cfdict = cls._generate_template(cls._S_Cerevisae)
+            cfdict = cls._add_location_to_template(cfdict)
             print cfdict
             dict2init_configs(write_path, cfdict)
+
+    @classmethod
+    def pull_online_DBs(cls):
+        """
+        Pulls the databases mentionned online to the direction in the
+
+        :param pl_type:
+        :return:
+        """
+        # read the sources.ini file
+        write_dirs = ini_configs2dict(configsfiles['sources'])
+        write_dirs = dict([(key, directory['location']) for key,directory in  write_dirs.iteritems() if key not in ['INTERNAL', 'CHROMOSOMES']])
+        for DB_type, location in write_dirs.iteritems():
+            # recursively create directories if the directories don't exist
+            for sublocation in cls._online_DBs[DB_type]:
+                print 'loading %s database from %s to %s' %(lower(DB_type), sublocation, location)
+                mkdir_recursive(location)
+                url_to_local(sublocation, location)
 
 
 
@@ -163,9 +200,22 @@ def conf_file_path_flattener(raw_configs_dict):
     final_paths_dict.update(paths_dict)
     return final_paths_dict
 
+def edit_confile(conf_shortname, section, parameter, newvalue):
+    """
+
+    :param conf_shortname:
+    :param section:
+    :param parameter:
+    :param newvalue:
+    :return:
+    """
+    tmp_confdict = ini_configs2dict(configsfiles[conf_shortname])
+    tmp_confdict[section][parameter] = newvalue
+    dict2init_configs(configsfiles[conf_shortname], tmp_confdict)
+
 
 if __name__ == "__main__":
     StructureGenerator.build_source_config('yeast')
     # pp = PrettyPrinter(indent=4)
     # pp.pprint(parse_configs())
-    pass
+    StructureGenerator.pull_online_DBs()

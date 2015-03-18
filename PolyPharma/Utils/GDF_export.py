@@ -5,7 +5,7 @@ __author__ = 'ank'
 
 import numpy as np
 from scipy.sparse import lil_matrix
-from PolyPharma.configs import Dumps
+from PolyPharma.configs2 import Dumps
 
 
 class GDF_export_Interface(object):

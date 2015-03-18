@@ -5,7 +5,7 @@ Created on 13 mai 2013
 '''
 import xml.etree.ElementTree as ET
 import logging
-from PolyPharma.configs import ReactomeBioPax
+from PolyPharma.configs2 import ReactomeBioPax
 import random
 
 
