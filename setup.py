@@ -16,14 +16,14 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name='chiffatools',
+    name='PolyPharma',
 
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # http://packaging.python.org/en/latest/tutorial.html#version
     version='0.0.2',
 
-    description='A sample Python project',
+    description='Information Flow Analyzer for biological networks',
     long_description=long_description,
 
     # The project's main homepage.
