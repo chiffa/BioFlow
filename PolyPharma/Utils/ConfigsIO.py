@@ -4,7 +4,7 @@
 Performs IO from the setup .ini files and casts into relevant Python Dictionaries
 """
 from pprint import PrettyPrinter
-from os.path import join, abspath
+from os.path import join, abspath, expanduser
 import os
 from string import lower
 from PolyPharma.Utils.GeneralUtils.SanerConfigsParser import ini_configs2dict, dict2init_configs
@@ -214,7 +214,19 @@ def edit_confile(conf_shortname, section, parameter, newvalue):
     dict2init_configs(configsfiles[conf_shortname], tmp_confdict)
 
 
+
+def set_folders(file_directory, neo4jserver='http://localhost:7474', mongoserver='mongodb://localhost:27017/'):
+    if file_directory[0] == r'~':
+        file_directory = expanduser(file_directory)
+    edit_confile('servers', 'PRODUCTION', 'base_folder', abspath(file_directory))
+    edit_confile('servers', 'PRODUCTION', 'server_neo4j', neo4jserver)
+    edit_confile('servers', 'PRODUCTION', 'mongodb_server', mongoserver)
+    StructureGenerator.build_source_config('yeast')
+
+
+
 if __name__ == "__main__":
+    set_folders('~/support/')
     StructureGenerator.build_source_config('yeast')
     # pp = PrettyPrinter(indent=4)
     # pp.pprint(parse_configs())

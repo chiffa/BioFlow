@@ -1,7 +1,7 @@
 __author__ = 'ank'
 
 import click
-from PolyPharma.Utils.ConfigsIO import StructureGenerator, edit_confile
+from PolyPharma.Utils.ConfigsIO import StructureGenerator, set_folders
 from PolyPharma.configs2 import neo4j_server
 from PolyPharma.neo4j_Importers.Import_commander import build_db, destroy_db
 from PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface import MatrixGetter as InteractomeInterface
@@ -19,8 +19,8 @@ def truegird():
 
 @click.command()
 @click.option('--path', prompt='Please provide the path where the data will be stored')
-@click.option('--neo4jserver', default='http://localhost:7474', prompt='Please provide the adresss and port on which neo4j is currently serving')
-@click.option('--mongoserver', default='mongodb://localhost:27017/', prompt='Please provide the adresss and port on which mongodb is currently serving')
+@click.option('--neo4jserver', default='http://localhost:7474', prompt='Please provide the address and port on which neo4j is currently serving')
+@click.option('--mongoserver', default='mongodb://localhost:27017/', prompt='Please provide the address and port on which mongodb is currently serving')
 def initialize(path, neo4jserver, mongoserver):
     """
     Initialized the working environement
@@ -30,20 +30,13 @@ def initialize(path, neo4jserver, mongoserver):
     :param mongoserver: mongodb server adress and port
     :return:
     """
-    if path[0] == r'~':
-        path = expanduser(path)
-    print 'setting external DBs filestore in %s' % abspath(path)
-    edit_confile('servers', 'PRODUCTION', 'base_folder', abspath(path))
-    edit_confile('servers', 'PRODUCTION', 'server_neo4j', neo4jserver)
-    edit_confile('servers', 'PRODUCTION', 'mongodb_server', mongoserver)
-    print 're-writing the organism-specific configs for the following organism: %s' % 'yeast'
-    StructureGenerator.build_source_config('yeast')
+    set_folders(path, neo4jserver, mongoserver)
 
 
 @click.command()
 @click.confirmation_option(help='Pulling online databases. Please make sure you initialized the project and you are ready\n'+
                                 'to wait for a while for hte download to complete. Some files are large (up to 3 Gb).\n'+
-                                'You can perform this step manually (cf documetnation). Are you sure you want to continue?')
+                                'You can perform this step manually (cf documentation). Are you sure you want to continue?')
 def downloaddbs():
     """
     Downloads the databases automatically
@@ -66,14 +59,14 @@ def setorgconfs(organism):
 
 
 @click.command()
-@click.confirmation_option(help='Are you sure you want to purge this neo4j database insance? You will have to re-import all the data for this to work properly')
+@click.confirmation_option(help='Are you sure you want to purge this neo4j database instance? You will have to re-import all the data for this to work properly')
 def purgeneo4j():
     """
     Wipes the neo4j organism-specific database
 
     :return:
     """
-    print 'neo4j will start purging the master databse. It will take some time to finish. Please do not close the shell. You can supervise the progress through %s/webadmin interface' % neo4j_server
+    print 'neo4j will start purging the master database. It will take some time to finish. Please do not close the shell. You can supervise the progress through %s/webadmin interface' % neo4j_server
     destroy_db()
 
 @click.command()
