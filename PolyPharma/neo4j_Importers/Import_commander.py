@@ -44,24 +44,24 @@ def destroy_db():
 
 
 if __name__ == "__main__":
-    # clear_all(full_dict)
-    # run_diagnostics(full_dict)
-    # insert_all()
-    # run_diagnostics(full_dict)
+    clear_all(full_dict)
+    run_diagnostics(full_dict)
+    insert_all()
+    run_diagnostics(full_dict)
 
     # clean(DatabaseGraph.GOTerm)
-    # import_GOs()
+    import_GOs()
 
     # getGOs()
     # clean(DatabaseGraph.UNIPORT)
-    # import_UNIPROTS()
+    import_UNIPROTS()
 
-    # cross_ref_HiNT(True)
+    cross_ref_HiNT(True)
 
-    # import_BioGRID()
+    import_BioGRID()
 
-    # run_diagnostics(full_dict)
+    run_diagnostics(full_dict)
 
-    # recompute_forbidden_IDs(Forbidden_verification_dict)
+    recompute_forbidden_IDs(Forbidden_verification_dict)
 
     pass

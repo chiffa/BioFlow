@@ -27,7 +27,10 @@ class StructureGenerator(object):
                                      r'http://hint.yulab.org/HumanBinaryHQ.txt',
                                      r'http://hint.yulab.org/MouseBinaryHQ.txt',],
                             'GO': [r'http://purl.obolibrary.org/obo/go/go-basic.obo'],
-                            'BIOGRID': [r'http://thebiogrid.org/downloads/archives/Release%20Archive/BIOGRID-3.3.122/BIOGRID-ORGANISM-3.3.122.tab2.zip']}
+                            'BIOGRID': [r'http://thebiogrid.org/downloads/archives/Release%20Archive/BIOGRID-3.3.122/BIOGRID-ORGANISM-3.3.122.tab2.zip'],
+                            'ABOUNDANCES': ['',
+                                            'http://pax-db.org/export/dataset/H.sapiens%20-%20Whole%20organism%20(Integrated)-sort_by--abundance-[0-20].txt?id=29&species=9606&start=0&end=20&sort=-abundance',
+                                            '']}
 
     # paths to be appended to the user-provided installation directory
     _local_file_tree = { 'INTERNAL': '.',
@@ -43,22 +46,22 @@ class StructureGenerator(object):
     # default configuration elements for yeast protein analysis
     _S_Cerevisae = {'shortname': 'sCerevisae',
                    'tax_id': '559292',
-                   'Reactome_name': 'Saccharomyces cerevisiae.owl',
-                   'Biogrid_name': 'Saccharomyces_cerevisae.tsv',
+                   'Reactome_name': 'Saccharomyces_cerevisiae.owl',
+                   'Biogrid_name': 'Saccharomyces_cerevisiae',
                    'HINT_name': 'CervBinaryHQ.txt'}
 
     # default configuration elements for human proteins analysis
     _Human = {      'shortname': 'human',
                    'tax_id': '9606',
-                   'Reactome_name': 'Homo Sapiens.owl',
-                   'Biogrid_name': 'Homo_Sapiens.tsv',
+                   'Reactome_name': 'Homo_Sapiens',
+                   'Biogrid_name': 'Homo_Sapiens',
                    'HINT_name': 'MouseBinaryHQ.txt'}
 
     # default configuration elements for mice proteins analysis
     _Mice = {       'shortname': 'mouse',
                    'tax_id': '10090',
-                   'Reactome_name': 'Mus Musculus.owl',
-                   'Biogrid_name': 'Mus_musculus.tsv',
+                   'Reactome_name': 'Mus_Musculus',
+                   'Biogrid_name': 'Mus_musculus',
                    'HINT_name': 'HumanBinaryHQ.txt'}
 
     reforgs = ['mouse', 'human', 'yeast']

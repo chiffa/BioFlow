@@ -3,10 +3,12 @@ Created on Jun 15, 2013
 :author: andrei
 """
 import logging
-from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
 import pickle
-from PolyPharma.configs2 import Dumps, Leg_ID_Filter
 import os
+from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
+from PolyPharma.configs2 import Dumps, Leg_ID_Filter
+from PolyPharma.Utils.GeneralUtils.PathManipulation import mkdir_recursive
+
 
 ####################################################################################
 #
@@ -17,6 +19,9 @@ import os
 
 # TODO: export logs location to the configs file
 # TODO: create a dict that is pickled into ther reserve to remember the forbidden IDs
+
+
+mkdir_recursive('../logs/dynamics_full.log')
 
 logging.basicConfig(level=logging.DEBUG,
                     format='%(levelname)-8s %(message)s',
@@ -302,14 +307,14 @@ def clear_all(instruction_dict):
     """
     for name, bulbs_class in instruction_dict.iteritems():
         counter = 0
-        print name, bulbs_class
+        print 'processing class:', name, bulbs_class
         if bulbs_class[0].get_all():
-            IDlist = [str(bulbs_class_instance).split('/')[-1][:-1] for bulbs_class_instance in bulbs_class.get_all() ]
+            IDlist = [str(bulbs_class_instance).split('/')[-1][:-1] for bulbs_class_instance in bulbs_class[0].get_all() ]
             for ID in IDlist:
                 counter += 1
                 bulbs_class[0].delete(ID) #Untraceable bug down here
                 if counter % 100 == 0:
-                    print name, ':', counter
+                    print 'deleting class:', name, ':', counter
 
 def run_diagnostics(instruction_dict):
     """

@@ -127,6 +127,8 @@ Download the databases:
     > python CLUI.py downloaddbs
     
     > python -m PolyPharma.Utils.ConfigsIO.StructureGenerator.pull_online_DBs()
+
+For now, the syustem will download all the required files, then fail when trying to download 'ABOUNDANCE' file class. 
     
 Create the proper configuration file for the desired organism
 
@@ -134,7 +136,7 @@ Create the proper configuration file for the desired organism
     
     > python - m PolyPharma.Utils.ConfigsIO.build_source_config('yeast')
     
-Alternatively,
+Alternatively all of the above can be executed (for yeast),
 
     > python- m PolyPharma.Utils.ConfigsIO 
 
@@ -145,7 +147,7 @@ Building the database:
 If you are using the application for the first time on your computer, you will need to load all the data that is
 contained in the datastore files you've donwloaded previously and cross-reference them
 
-    > Python -m PolyPharma.neo4j_Declarations.Import_commander
+    > Python -m PolyPharma.neo4j_Importers.Import_commander
 
     > python CLUI.py loadneo4j
 
