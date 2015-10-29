@@ -18,7 +18,7 @@ from PolyPharma.Utils.GeneralUtils.PathManipulation import mkdir_recursive
 ####################################################################################
 
 # TODO: export logs location to the configs file
-# TODO: create a dict that is pickled into ther reserve to remember the forbidden IDs
+# TODO: create a dict that is pickled into the reserve to remember the forbidden IDs
 
 
 mkdir_recursive('../logs/dynamics_full.log')

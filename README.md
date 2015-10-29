@@ -39,8 +39,9 @@ computation packages
 
 * Python 2.7.x (x86_64 )
 * Java JDK 1.6/1.7
-* Neo4j 1.xx You can download it from [the official Neo4j website](http://neo4j.com/download/other-releases/) 
-(Note: if you want to install a 2.xx series you will also need a [gremlin parser engine](https://github.com/neo4j-contrib/gremlin-plugin))
+* Neo4j 1.xx You can download it from [the official Neo4j website](http://neo4j.com/download/other-releases/).
+Note: if you want to install a 2.xx series you will also need a [gremlin parser engine](https://github.com/neo4j-contrib/gremlin-plugin).
+In case your neo4j version fails to with a 'java heap exception', please considers installing a [frozen 1.9.6 community neo4j version](https://github.com/chiffa/neo4j-community-1.9.6)
 * MongoDB ([installation instructions here](https://docs.mongodb.org/manual/administration/install-on-linux/))
 * LAPACK, ATLAS, BLAS (only if you are installing Scipy manually)
 * suitesparese & suitesparse-dev (needed for scikits.sparse compilation. if you are installing a wheel of scikits.sparse, you don't need them)
@@ -191,3 +192,9 @@ The resulting significance data can be seen as the output and the related analyz
 
 
 Full API documentation of underlying libraries is available at [readthedocs.org](http://polypharma.readthedocs.org/ RTFD)
+
+
+Future developments:
+====================
+ - Automatic change of neo4j instances for different organisms (currently needs to be done manually)
+ 

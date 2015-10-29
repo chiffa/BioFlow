@@ -37,7 +37,7 @@ def import_GOs():
     i = 0
     for GO_Term in GO_Terms.keys():
         i += 1
-        logging.debug('GO %s', str("{0:.2f}".format(float(i) / float(leng) * 100)))
+        logging.debug('GO %s %%', str("{0:.2f}".format(float(i) / float(leng) * 100)))
         primary = DatabaseGraph.GOTerm.create(ID = GO_Terms[GO_Term]['id'],
                                               Name = GO_Terms[GO_Term]['name'],
                                               displayName = GO_Terms[GO_Term]['name'],
@@ -49,7 +49,7 @@ def import_GOs():
     i = 0
     for relation in GO_Terms_Structure:
         i += 1
-        logging.debug('rel %s', str("{0:.2f}".format(float(i) / float(leng) * 100)))
+        logging.debug('inter GO relations %s %%', str("{0:.2f}".format(float(i) / float(leng) * 100)))
         primary = GODict[relation[0]]
         secondary = GODict[relation[2]]
         Type = relation[1]
