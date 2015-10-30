@@ -46,7 +46,7 @@ def cross_ref_HiNT(flush):
             for subkey in RelationDict[key]:
                 if subkey in UniProtRefDict.keys() and subkey not in Treated:
                     i+=1
-                    print key, subkey
+                    print 'HINT links:', key, subkey
                     if flush:
                         DatabaseGraph.is_interacting.create(UniProtRefDict[key], UniProtRefDict[subkey])
     print i, len(Treated)

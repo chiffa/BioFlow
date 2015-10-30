@@ -44,16 +44,16 @@ def destroy_db():
 
 
 if __name__ == "__main__":
-    clear_all(full_dict)
-    run_diagnostics(full_dict)
-    insert_all()
-    run_diagnostics(full_dict)
+    # clear_all(full_dict)
+    # run_diagnostics(full_dict)
+    # insert_all()
+    # run_diagnostics(full_dict)
 
     # clean(DatabaseGraph.GOTerm)
-    import_GOs()
+    # import_GOs()
 
-    # getGOs()
-    # clean(DatabaseGraph.UNIPORT)
+    getGOs()
+    clear_all({'UNIPROT': (DatabaseGraph.UNIPORT, "UNIPROT")})
     import_UNIPROTS()
 
     cross_ref_HiNT(True)

@@ -127,7 +127,7 @@ def analyze(matrixtype, background, source, depth, processors,):
         filtr = ['biological_process']
         if background is None:
             annot_matrix = AnnotomeInterface(filtr, local_matrix.Uniprot_complete, (1, 1), True, 3)
-        if background is not None:
+        else:
             background_set = get_background(background)
             annot_matrix = AnnotomeInterface(filtr, background_set, (1, 1), True, 3)
         annot_matrix.rebuild()

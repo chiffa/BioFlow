@@ -73,7 +73,7 @@ def import_GOs():
 
 def getExistingAcnums():
     """
-    Attemtps to retrieve acnums from the neo4j database
+    Attempts to retrieve acnums from the neo4j database
 
     :return: dict that maps acnums to nodes in the database to which they point (Reactome proteins)
 
@@ -82,7 +82,7 @@ def getExistingAcnums():
     """
     annot_node_with_acc_nums_generator = DatabaseGraph.AnnotNode.index.lookup(ptype = 'UniProt')
     if annot_node_with_acc_nums_generator is None:
-        raise Exception("Reactome was not loaded or contains no acc_num x-refs to Uniprot")
+        raise Exception("Reactome was not loaded or contains no acc_num cross-references to Uniprot")
     AcnumList = {} #acnum to AnnotNode
     for annot_node in annot_node_with_acc_nums_generator:
         if annot_node is not None:
@@ -90,7 +90,7 @@ def getExistingAcnums():
             AnnotObj = DatabaseGraph.vertices.get(annot_node_ID)
             AcnumList[str(AnnotObj.payload)] = AnnotObj
     if len(AcnumList) < 10:
-        raise Exception("Reactome was not loaded or contains no acc_num x-refs to Uniprot")
+        raise Exception("Reactome was not loaded or contains no acc_num cross-references to Uniprot")
     ReactProtList = {}
     for acc_num in AcnumList.keys():
         ReactProtGen = AcnumList[acc_num].bothV()
@@ -133,29 +133,31 @@ def link_annotation(CH_PROT_ID, p_type, p_load):
 def import_UNIPROTS():
     """
     Imports the whole parsed uniprot dictionary from the utils.uniprot parser into the database
-
     """
-
     Uniprot = Parse_Uniprot()
     Acnums2RProts = getExistingAcnums()
     i = 0
     j = 0
     leng = len(Acnums2RProts.keys())
-    for CH_PROT_ID in Uniprot.keys():
+    UP_key_no = len(Uniprot.keys())
+    for k, CH_PROT_ID in enumerate(Uniprot.keys()):
         set1 = set(Uniprot[CH_PROT_ID]['Acnum'])
         set2 = set(Acnums2RProts.keys())
         #Create uniprot terms
         primary = DatabaseGraph.UNIPORT.create(ID = CH_PROT_ID,
                                        displayName = Uniprot[CH_PROT_ID]['Names']['Full'],
                                        main_connex = False)
+        print CH_PROT_ID, primary
         # check inclusion in Reactome
         # TODO: if all explodes on the next import, check the line below and revert the import behavior of Uniprot
         if not set1.isdisjoint(set2):
-            logging.debug('Uniprot %s intersects Reactome on the following acnums: %s', (str(CH_PROT_ID), str(set1)))
+            logging.debug('Uniprot %s intersects Reactome on the following acnums: %s'%(str(CH_PROT_ID), str(set1)))
             i += 1
             primary.involved = True
         # TODO: if all explodes on the next import, check the line above and revert the import behavior of Uniprot
-        logging.debug('UNIPROT %s', str("{0:.2f}".format(float(i)/float(leng)*100)))
+        advance_1 = float(i) / float(leng) * 100
+        advance_2 = float(k) / float(UP_key_no) * 100
+        logging.debug('UNIPROT %.2f - %.2f' % (advance_1, advance_2 ) )
         # Add the newly created uniprot to the buffer
         UniprotDict[CH_PROT_ID] = primary
         # Insert references to GOs

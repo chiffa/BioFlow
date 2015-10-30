@@ -8,6 +8,7 @@ import os
 from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
 from PolyPharma.configs2 import Dumps, Leg_ID_Filter
 from PolyPharma.Utils.GeneralUtils.PathManipulation import mkdir_recursive
+from PolyPharma.neo4j_analyzer.DB_IO_Routines import get_attached_annotations
 
 
 ####################################################################################
@@ -306,15 +307,19 @@ def clear_all(instruction_dict):
     :param instruction_dict:
     """
     for name, bulbs_class in instruction_dict.iteritems():
-        counter = 0
-        print 'processing class:', name, bulbs_class
+        print 'processing class: %s, alias %s' % (name, bulbs_class)
         if bulbs_class[0].get_all():
             IDlist = [str(bulbs_class_instance).split('/')[-1][:-1] for bulbs_class_instance in bulbs_class[0].get_all() ]
-            for ID in IDlist:
-                counter += 1
-                bulbs_class[0].delete(ID) #Untraceable bug down here
+            IDL_len = len(IDlist) / 100.
+            for counter, ID in enumerate(IDlist):
+                del_set = get_attached_annotations(ID)
+                for annot_node_id in del_set:
+                    DatabaseGraph.AnnotNode.delete(annot_node_id)
+                bulbs_class[0].delete(ID)
                 if counter % 100 == 0:
-                    print 'deleting class:', name, ':', counter
+                    print 'deleting class %s %.2f %%:' % (name, counter/IDL_len)
+            print 'deleting class %s %.2f %%:' % (name, 100)
+
 
 def run_diagnostics(instruction_dict):
     """

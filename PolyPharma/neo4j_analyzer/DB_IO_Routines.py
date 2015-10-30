@@ -64,6 +64,18 @@ def Look_up_by_ID_for_a_set(Domain, ID_set):
         print "=================="
 
 
+def get_attached_annotations(node_id):
+    retset = []
+    node = DatabaseGraph.vertices.get(node_id)
+    gen_2 = node.outV("is_annotated")
+    if not gen_2:
+        print "node %s has not annotations attached to it" % node_id
+    for rel_node in gen_2:
+        node_db_ID = str(rel_node).split('/')[-1][:-1]
+        retset.append(node_db_ID)
+    return retset
+
+
 def run_through(node_generator):
     """
     Supporting function. Gets the nodes that are referenced by the annot_nodes in the generator
@@ -166,9 +178,9 @@ def look_up_Annot_set(p_load_list, p_type=''):
     """
     retdict = dict( (p_load, look_up_Annot_Node(p_load, p_type)) for p_load in p_load_list)
     retlist = [value[0][2] for value in retdict.itervalues() if value!=[]]
-    warnlist =[key for key, value in retdict.iteritems() if value == []]
+    warnlist = [key for key, value in retdict.iteritems() if value == []]
     for warnId in warnlist:
-        print Warning('following ID has no correspondance in the database: '+warnId)
+        print Warning('following ID has no correspondance in the database: ' + warnId)
     return warnlist, retdict, retlist
 
 
@@ -459,14 +471,14 @@ if __name__ == "__main__":
     # ]
 
 
-    # print count_items(DatabaseGraph.UNIPORT)
-    # lookup_by_ID(DatabaseGraph.UNIPORT, "CK2N2_HUMAN")
+    print count_items(DatabaseGraph.UNIPORT)
+    lookup_by_ID(DatabaseGraph.UNIPORT, "CLH1_YEAST")
     # Erase_custom_fields()
-    recompute_forbidden_IDs(Forbidden_verification_dict)
+    # recompute_forbidden_IDs(Forbidden_verification_dict)
     # print unwrap_source()
-    # print look_up_Annot_Node('RS15_YEAST')
+    print look_up_Annot_Node('CLH1')
     # print Look_up_Annot_Node('ENSG00000131981', 'UNIPROT_Ensembl')
-    unwrap_source()
+    # unwrap_source()
     # unwrap_background()
     # anset = [GBO_1, GBO_2, GBO_3, GBO_4]
 
