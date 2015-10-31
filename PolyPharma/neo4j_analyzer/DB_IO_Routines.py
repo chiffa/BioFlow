@@ -472,11 +472,11 @@ if __name__ == "__main__":
 
 
     print count_items(DatabaseGraph.UNIPORT)
-    lookup_by_ID(DatabaseGraph.UNIPORT, "CLH1_YEAST")
+    lookup_by_ID(DatabaseGraph.UNIPORT, "SIR2_YEAST")
     # Erase_custom_fields()
     # recompute_forbidden_IDs(Forbidden_verification_dict)
     # print unwrap_source()
-    print look_up_Annot_Node('CLH1')
+    print look_up_Annot_Node('CTR86')
     # print Look_up_Annot_Node('ENSG00000131981', 'UNIPROT_Ensembl')
     # unwrap_source()
     # unwrap_background()

@@ -165,13 +165,14 @@ def end_Block(Dico, Uniprot):
 def Parse_Uniprot():
     """
 
-
     """
     Uniprot = {}
     LocalDictionary = copy.deepcopy(defDict)
     source_file = open(conf.UNIPROT_source, "r")
+    line_counter = 0
     while True:
         line = source_file.readline()
+        line_counter += 1
         if not line:
             break
         keyword = line[0:2]
@@ -180,6 +181,7 @@ def Parse_Uniprot():
         if  keyword in Interesting_lines:
             process_line(LocalDictionary, line, keyword)
 
+    print line_counter
     return Uniprot
 
 
@@ -239,6 +241,7 @@ def get_access_dicts():
 if __name__ == '__main__':
     Uniprot = Parse_Uniprot()
     print len(Uniprot)
+    print Uniprot.keys()
     # names_Dict = get_Names_dict()
     # print len(names_Dict)
     # access_dict = get_access_dicts()

@@ -140,6 +140,9 @@ Create the proper configuration file for the desired organism
 Alternatively all of the above can be executed (for yeast),
 
     > python- m PolyPharma.Utils.ConfigsIO 
+    
+Provided that Uniprot.dat is a rather big file (~3 Gb as of late 2015), it might get broken on the download and you
+might want to check that it is a correct size
 
 
 Building the database:

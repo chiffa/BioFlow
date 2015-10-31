@@ -138,8 +138,8 @@ def import_UNIPROTS():
     Acnums2RProts = getExistingAcnums()
     i = 0
     j = 0
-    leng = len(Acnums2RProts.keys())
-    UP_key_no = len(Uniprot.keys())
+    Acnum_key_no = len(Acnums2RProts.keys())/100.
+    UP_key_no = len(Uniprot.keys())/100.
     for k, CH_PROT_ID in enumerate(Uniprot.keys()):
         set1 = set(Uniprot[CH_PROT_ID]['Acnum'])
         set2 = set(Acnums2RProts.keys())
@@ -152,12 +152,12 @@ def import_UNIPROTS():
         # TODO: if all explodes on the next import, check the line below and revert the import behavior of Uniprot
         if not set1.isdisjoint(set2):
             logging.debug('Uniprot %s intersects Reactome on the following acnums: %s'%(str(CH_PROT_ID), str(set1)))
-            i += 1
+            i += len(set1)
             primary.involved = True
         # TODO: if all explodes on the next import, check the line above and revert the import behavior of Uniprot
-        advance_1 = float(i) / float(leng) * 100
-        advance_2 = float(k) / float(UP_key_no) * 100
-        logging.debug('UNIPROT %.2f - %.2f' % (advance_1, advance_2 ) )
+        advance_1 = i / Acnum_key_no
+        advance_2 = k / UP_key_no
+        logging.debug('loading UNIPROT: Acnums cross-linked - %.2f %% ; Total loaded: - %.2f %%' % (advance_1, advance_2 ))
         # Add the newly created uniprot to the buffer
         UniprotDict[CH_PROT_ID] = primary
         # Insert references to GOs
@@ -201,8 +201,9 @@ def import_UNIPROTS():
 def getGOs():
     """
     re-loads GO
-
     """
+    print 'recovering GO terms'
+    logging.debug('starting GO load')
     ObjectType = DatabaseGraph.GOTerm
     for elt in ObjectType.get_all():
         ID = str(elt).split('/')[-1][:-1]
@@ -216,6 +217,8 @@ def getUniprots():
     Pre-loads uniprots
 
     """
+    print 'recovering UNIPROTs'
+    logging.debug('starting UNIPROT load')
     ObjectType = DatabaseGraph.UNIPORT
     for elt in ObjectType.get_all():
         CH_PROT_ID = elt.ID
