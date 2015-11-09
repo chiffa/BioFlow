@@ -374,7 +374,7 @@ def linindep_GO_groups(size):
     analyze_eigvects(KG.Indep_Lapl, size, char_indexes)
 
 
-def auto_analyze(source=None, KG_object=None, processors=4, desired_depth=24):
+def auto_analyze(source=None, KG_object=None, processors=3, desired_depth=24):
     """
     Automatically analyzes the GO annotation of the RNA_seq results.
 
@@ -509,6 +509,9 @@ if __name__ == "__main__":
 
     # linindep_GO_groups(50)
 
-    auto_analyze()
+    KG = GO_Interface(filtr, MG.Uniprot_complete, (1, 1), True, 3)
+    KG.load()
+    print KG.pretty_time()
+    auto_analyze(get_source(), KG)
 
     pass

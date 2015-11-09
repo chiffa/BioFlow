@@ -564,7 +564,7 @@ class MatrixGetter(object):
         self.create_val_matrix()
         self.get_eigenspectrum(100)
 
-        self.map_UPs_to_chromosomes()
+        # self.map_UPs_to_chromosomes()  #TODO: revert once the chromosome downloading from BioMart and assembly has been succesfully completed
 
         self.dump_Maps()
         self.dump_Matrices()
@@ -852,7 +852,7 @@ class MatrixGetter(object):
 
 if __name__ == "__main__":
     Mat_gter = MatrixGetter(True, True)
-    Mat_gter.full_rebuild ()
+    # Mat_gter.full_rebuild ()
     # Mat_gter.fast_load()
     print Mat_gter.pretty_time()
 

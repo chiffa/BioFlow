@@ -6,6 +6,7 @@ __author__ = 'ank'
 import numpy as np
 from scipy.sparse import lil_matrix
 from PolyPharma.configs2 import Dumps
+from PolyPharma.Utils.GeneralUtils.PathManipulation import mkdir_recursive
 
 
 class GDF_export_Interface(object):
@@ -26,6 +27,7 @@ class GDF_export_Interface(object):
 
 
     def __init__(self, target_fname, field_names, field_types, node_properties_dict, mincurrent, Idx2Label, Label2Idx, current_Matrix, directed=False):
+        mkdir_recursive(target_fname)
         self.target_file = open(target_fname, 'w')
         self.field_types = field_types
         self.field_names = field_names
