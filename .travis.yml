@@ -1,0 +1,18 @@
+language: python
+python:
+  - "2.7_with_system_site_packages"
+
+
+# command to install dependencies TODO: put in the installation of all the pre-requirements
+install: "sudo apt-get -qq install suitesparse suitesparse-dev python-cython python-numpy python-scipy python-matplotlib python-sphinx"
+install: "pip install -r requirements.txt"
+# command to run tests
+
+
+script: python unittests/test_all.py
+branches:
+  only:
+    - v0.03
+
+after_success:
+  - coveralls

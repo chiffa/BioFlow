@@ -6,12 +6,18 @@ from PolyPharma.neo4j_analyzer.DB_IO_Routines import look_up_Annot_set
 from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
 
 
-def parse_BioGRID():
+def parse_BioGRID(_BioGRID):
+    """
+    Parses the given file as a BioGrid file and returns as
+
+    :param _BioGRID:
+    :return:
+    """
     ret_dict = {}
     base = []
 
-    with open(BioGRID,'rb') as sourcefile:
-        rdr  = reader(sourcefile, 'excel-tab')
+    with open(_BioGRID,'rb') as sourcefile:
+        rdr = reader(sourcefile, 'excel-tab')
         rdr.next()
         for row in rdr:
             ret_dict[tuple(row[7:9])] = [row[17]]
@@ -44,7 +50,7 @@ def cast_into_DB(re_caster, ret_dict):
 
 
 def import_BioGRID():
-    ret_dict, base = parse_BioGRID()
+    ret_dict, base = parse_BioGRID(BioGRID)
     re_caster = convert_to_DB_Ids(base)
     cast_into_DB(re_caster, ret_dict)
 

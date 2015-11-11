@@ -5,10 +5,12 @@ Created on Jun 15, 2013
 import logging
 import pickle
 import os
+
 from PolyPharma.neo4j_Declarations.Graph_Declarator import DatabaseGraph
 from PolyPharma.configs2 import Dumps, Leg_ID_Filter
 from PolyPharma.Utils.GeneralUtils.PathManipulation import mkdir_recursive
 from PolyPharma.neo4j_analyzer.DB_IO_Routines import get_attached_annotations
+
 
 
 ####################################################################################
@@ -342,7 +344,7 @@ def insert_all(Skip='N'):
     :param Skip:     * N => will skip nothing and implement the import once and for all.
                      * M => skips meta import, recovers the metas and resumes from the Reactions import.
     """
-    import Reactome_org_parser as DG
+    from PolyPharma.data_parsers import Reactome_org_parser as DG
 
     if Skip=='N':
         InsertCellLocations(DG.CellularLocations)
