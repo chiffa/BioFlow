@@ -1,10 +1,9 @@
 [![License Type](https://img.shields.io/badge/license-BSD3-blue.svg)](https://github.com/chiffa/Karyotype_retriever/blob/master/License-BSD3)
+[![Build Status](https://travis-ci.org/chiffa/BioFlow.svg?branch=v0.03)](https://travis-ci.org/chiffa/BioFlow)
+[![Coverage Status](https://coveralls.io/repos/chiffa/PolyPharma/badge.svg?branch=master&service=github)](https://coveralls.io/github/chiffa/PolyPharma?branch=master)
+# PolyPharma Project
 
-PolyPharma Project
-******************
-
-Description:
-============
+## Description:
 
 This code is currently under development and thus it isn't always stable, thoroughly tested or well documented.
 
@@ -26,8 +25,7 @@ The license is BSD, but in case of academic usage, please cite the *url* (public
 
 The full documentation is available at [readthedocs.org](http://polypharma.readthedocs.org/ RTFD)
 
-Installation:
-=============
+##Installation:
 
 Before you start using the project, you will need to install several dependencies on which the project relies in order 
 to function properly.
@@ -79,8 +77,7 @@ Finally, I would recommend using [Gephi](http://gephi.github.io/users/download/)
  It is very easy to use, well-supported and possess a large library of plug-ins.
 
 
-Datasets used as backbone:
-==========================
+## Datasets used as backbone:
 
 * OBO 1.2 file of GO terms and relations, available at: http://www.geneontology.org/GO.downloads.ontology.shtml
 * UNIUPROT-SWISSPROT .txt text database file available at: http://www.uniprot.org/downloads
@@ -92,8 +89,8 @@ Datasets used as backbone:
 
 You have a choice of either donwloading and these databases and installing them manually with respect to 
 
-Basic usage:
-============
+## Basic usage:
+
 Start up the neo4j database and the MonogoDB on their default ports. If those ports are not available for some reason, 
 please modify the `servers.ini` file in the `/PolyPharma/configs` directory. If you are loading a particularly large
 dataset into neo4j, you might need to adjust the configurations with which neo4j is launched
@@ -113,8 +110,8 @@ when you are executing the command lines by using Python bindings, don't forget 
     > Python -m PolyPharma.module.command
 
 
-Downloading the datasets:
--------------------------
+### Downloading the datasets:
+
 *Database creation*
 
 Create the configuration files containing the data:
@@ -145,8 +142,7 @@ Provided that Uniprot.dat is a rather big file (~3 Gb as of late 2015), it might
 might want to check that it is a correct size
 
 
-Building the database:
-----------------------
+### Building the database:
 
 If you are using the application for the first time on your computer, you will need to load all the data that is
 contained in the datastore files you've donwloaded previously and cross-reference them
@@ -156,8 +152,7 @@ contained in the datastore files you've donwloaded previously and cross-referenc
     > python CLUI.py loadneo4j
 
 
-Accessing low-level structure of the interactome:
--------------------------------------------------
+### Accessing low-level structure of the interactome:
 
 Export the organism-specific interactome or concept-entity relationships as a Python-Scipy sparse matrix object:
 
@@ -172,8 +167,7 @@ Map a list of heterogeneous identifiers to the database-specific ids:
     > python -m
     
 
-High-level analysis:
---------------------
+### High-level analysis:
 
 Indicate the file to use in the `PolyPharma/configs.py` folder as the RNA_source variable
 Configure the expected counts groups and desired intergroup comparisons in the `PolyPharma/PreProcessing/RNA_counts_parser.py` folder 
@@ -197,7 +191,7 @@ The resulting significance data can be seen as the output and the related analyz
 Full API documentation of underlying libraries is available at [readthedocs.org](http://polypharma.readthedocs.org/ RTFD)
 
 
-Future developments:
-====================
+## Future developments:
+
  - Automatic change of neo4j instances for different organisms (currently needs to be done manually)
  
