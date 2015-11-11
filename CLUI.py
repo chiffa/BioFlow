@@ -1,14 +1,14 @@
 __author__ = 'ank'
 
 import click
-from PolyPharma.Utils.ConfigsIO import StructureGenerator, set_folders
-from PolyPharma.configs2 import neo4j_server
-from PolyPharma.neo4j_Importers.Import_commander import build_db, destroy_db
-from PolyPharma.neo4j_analyzer.Matrix_Interactome_DB_interface import MatrixGetter as InteractomeInterface
-from PolyPharma.neo4j_analyzer.Matrix_Knowledge_DB_Interface import GO_Interface as AnnotomeInterface, get_background
-from PolyPharma.neo4j_analyzer.DB_IO_Routines import look_up_Annot_set
-from PolyPharma.neo4j_analyzer.interactome_analysis import auto_analyze as interactome_analysis
-from PolyPharma.neo4j_analyzer.knowledge_access_analysis import auto_analyze as knowledge_analysis
+from BioFlow.Utils.ConfigsIO import StructureGenerator, set_folders
+from BioFlow.configs2 import neo4j_server
+from BioFlow.neo4j_Importers.Import_commander import build_db, destroy_db
+from BioFlow.neo4j_analyzer.Matrix_Interactome_DB_interface import MatrixGetter as InteractomeInterface
+from BioFlow.neo4j_analyzer.Matrix_Knowledge_DB_Interface import GO_Interface as AnnotomeInterface, get_background
+from BioFlow.neo4j_analyzer.DB_IO_Routines import look_up_Annot_set
+from BioFlow.neo4j_analyzer.interactome_analysis import auto_analyze as interactome_analysis
+from BioFlow.neo4j_analyzer.knowledge_access_analysis import auto_analyze as knowledge_analysis
 from os.path import abspath, expanduser
 
 
@@ -134,7 +134,7 @@ def analyze(matrixtype, background, source, depth, processors,):
         annot_matrix.store()
         source_set = get_background(source)  # TODO: rename this function and use only one of it everywhere
         knowledge_analysis(source=source_set, KG_object=annot_matrix, desired_depth=depth, processors=processors)
-    print "analsysis is finished, current results are stored in the $PROJECT_HOME/PolyPharma/outputs directory"
+    print "analsysis is finished, current results are stored in the $PROJECT_HOME/BioFlow/outputs directory"
 
 
 #TODO: add purge mongodb operation

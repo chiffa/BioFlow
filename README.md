@@ -1,7 +1,8 @@
 [![License Type](https://img.shields.io/badge/license-BSD3-blue.svg)](https://github.com/chiffa/Karyotype_retriever/blob/master/License-BSD3)
 [![Build Status](https://travis-ci.org/chiffa/BioFlow.svg?branch=v0.03)](https://travis-ci.org/chiffa/BioFlow)
 [![Coverage Status](https://coveralls.io/repos/chiffa/PolyPharma/badge.svg?branch=master&service=github)](https://coveralls.io/github/chiffa/PolyPharma?branch=master)
-# PolyPharma Project
+# BioFlow Project
+PInformation Flow Analysis toolkit for biological networks
 
 ## Description:
 
@@ -23,9 +24,9 @@ an issue ticket on GitHub and I will be glad to assist you in the measure of my 
 
 The license is BSD, but in case of academic usage, please cite the *url* (publication is in preparation).
 
-The full documentation is available at [readthedocs.org](http://polypharma.readthedocs.org/ RTFD)
+The full documentation is available at [readthedocs.org](http://bioflow.readthedocs.org/ RTFD)
 
-##Installation:
+## Installation:
 
 Before you start using the project, you will need to install several dependencies on which the project relies in order 
 to function properly.

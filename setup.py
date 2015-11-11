@@ -16,18 +16,18 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name='PolyPharma',
+    name='BioFlow',
 
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # http://packaging.python.org/en/latest/tutorial.html#version
-    version='0.0.2',
+    version='0.0.3',
 
     description='Information Flow Analyzer for biological networks',
     long_description=long_description,
 
     # The project's main homepage.
-    url='https://github.com/ciffa/PolyPharma',
+    url='https://github.com/ciffa/BioFlow',
 
     # Author details
     author='Andrei Kucharavy',
@@ -66,8 +66,8 @@ setup(
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
-    packages=['PolyPharma']+find_packages(exclude=['contrib', 'docs', 'tests*']),
-    package_dir = {'PolyPharma':'PolyPharma'},
+    packages=['BioFlow']+find_packages(exclude=['contrib', 'docs', 'tests*']),
+    package_dir = {'BioFlow':'BioFlow'},
     # List run-time dependencies here.  These will be installed by pip when your
     # project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
