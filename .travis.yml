@@ -9,10 +9,8 @@ install:
     "sudo apt-get -qq install build-essential python-dev pgen"
     "sudo apt-get -qq install blas lapack libblas-dev liblapack-dev"
     "sudo apt-get -qq install python-cython python-numpy python-scipy python-matplotlib python-sphinx"
-    "sudo apt-get -qq install suitesparse suitesparse-dev"
+    "sudo apt-get install suitesparse suitesparse-dev"
     "pip install -r requirements.txt"
-
-
 
 script: python unittests/test_all.py
 branches:
