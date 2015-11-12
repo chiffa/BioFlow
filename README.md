@@ -1,9 +1,12 @@
-[![License Type](https://img.shields.io/badge/license-BSD3-blue.svg)](https://github.com/chiffa/Karyotype_retriever/blob/master/License-BSD3)
+[![License Type](https://img.shields.io/badge/license-BSD3-blue.svg)](https://github.com/chiffa/BioFlow/blob/v0.03/License-new_BSD.txt)
 [![Build Status](https://travis-ci.org/chiffa/BioFlow.svg?branch=v0.03)](https://travis-ci.org/chiffa/BioFlow)
 [![Coverage Status](https://coveralls.io/repos/chiffa/BioFlow/badge.svg?branch=v0.03&service=github)](https://coveralls.io/github/chiffa/BioFlow?branch=v0.03)
+[![Branch status](https://img.shields.io/badge/branch-unstable-red.svg)](https://github.com/chiffa/BioFlow/blob/v0.03/README.md)
 
 # BioFlow Project
 PInformation Flow Analysis toolkit for biological networks
+
+Branch v.0.03 - Unstable
 
 ## Description:
 

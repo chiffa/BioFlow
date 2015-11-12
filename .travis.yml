@@ -2,11 +2,8 @@ language: python
 python:
     - "2.7_with_system_site_packages"
 
-before_install:
-    - python --version
-
 install:
-    - "sudo apt-get -qq install build-essential python-dev pgen"
+    - "sudo apt-get -qq install build-essential python-dev tcllib"
     - "sudo apt-get -qq install blas lapack libblas-dev liblapack-dev"
     - "sudo apt-get -qq install python-cython python-numpy python-scipy python-matplotlib python-sphinx"
     - "sudo apt-get install suitesparse suitesparse-dev"
