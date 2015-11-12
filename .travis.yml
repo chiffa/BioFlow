@@ -6,7 +6,7 @@ before_install:
     - "lsb_release -a"
 
 install:
-    - "sudo apt-get -qq install build-essential python-dev tcllib"
+    - "sudo apt-get install build-essential python-dev libpython-dev tcllib"
     - "sudo apt-get -qq install libblas-dev liblapack-dev"
     - "pip install -r requirements.txt"
 
