@@ -14,7 +14,7 @@ install:
 
 script:
     - python unittests/test_all.py
-    - coverage run --source=BioFlow unittests/test_all.py
+    - coverage run unittests/test_all.py
 branches:
   only:
     - v0.03
