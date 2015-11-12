@@ -2,11 +2,16 @@ language: python
 python:
   - "2.7_with_system_site_packages"
 
+before_install:
+  - python --version
 
-# command to install dependencies TODO: put in the installation of all the pre-requirements
-install: "sudo apt-get -qq install suitesparse suitesparse-dev python-cython python-numpy python-scipy python-matplotlib python-sphinx"
-install: "pip install -r requirements.txt"
-# command to run tests
+install:
+    "sudo apt-get -qq install build-essential python-dev pgen"
+    "sudo apt-get -qq install blas lapack libblas-dev liblapack-dev"
+    "sudo apt-get -qq install python-cython python-numpy python-scipy python-matplotlib python-sphinx"
+    "sudo apt-get -qq install suitesparse suitesparse-dev"
+    "pip install -r requirements.txt"
+
 
 
 script: python unittests/test_all.py
