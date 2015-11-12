@@ -6,9 +6,10 @@ before_install:
     - "lsb_release -a"
 
 install:
-    - "sudo apt-get install build-essential python-dev libpython-dev tcllib"
+    - "sudo apt-get install build-essential python-dev python-setuptools python-numpy tcllib"
     - "sudo apt-get -qq install libblas-dev liblapack-dev"
-    - "pip install -r requirements.txt"
+    - "sudo pip install cython"
+    - "sudo pip install -r requirements.txt"
 
 script: python unittests/test_all.py
 branches:
@@ -17,3 +18,6 @@ branches:
 
 after_success:
     - coveralls
+
+notifications:
+    email: false
