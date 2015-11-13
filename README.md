@@ -2,6 +2,8 @@
 [![Build Status](https://travis-ci.org/chiffa/BioFlow.svg?branch=v0.03)](https://travis-ci.org/chiffa/BioFlow)
 [![Coverage Status](https://coveralls.io/repos/chiffa/BioFlow/badge.svg?branch=v0.03&service=github)](https://coveralls.io/github/chiffa/BioFlow?branch=v0.03)
 [![Branch status](https://img.shields.io/badge/branch-unstable-red.svg)](https://github.com/chiffa/BioFlow/blob/v0.03/README.md)
+[![Code Issues](https://www.quantifiedcode.com/api/v1/project/1c3f8cd001a44319abddab249101b646/badge.svg)](https://www.quantifiedcode.com/app/project/1c3f8cd001a44319abddab249101b646)
+[![Code Health](https://landscape.io/github/chiffa/BioFlow/v0.03/landscape.svg?style=flat)](https://landscape.io/github/chiffa/BioFlow/v0.03)
 
 # BioFlow Project
 PInformation Flow Analysis toolkit for biological networks
