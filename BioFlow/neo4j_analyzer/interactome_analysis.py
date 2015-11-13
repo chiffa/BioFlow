@@ -266,7 +266,7 @@ def compare_to_blanc(blanc_model_size, zoom_range_selector, real_interactome_int
 
         return  sorted(dct.iteritems(), key=lambda x:x[1][3]), not_random_groups
 
-    return  None
+    return  None, None, None
 
 # TODO: stabilize the background behavior with regard to the buffering
 def auto_analyze(sourcelist, depth, processors=4, backgroundlist=None):

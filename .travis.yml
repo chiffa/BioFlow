@@ -9,18 +9,17 @@ install:
     - "sudo apt-get install build-essential python-dev python-setuptools python-numpy python-scipy tcllib"
     - "sudo apt-get -qq install libblas-dev liblapack-dev libsuitesparse-dev"
     - "sudo pip install coveralls"
+    - "sudo pip install pylint"
     - "sudo pip install -q cython"
     - "sudo pip install -r requirements.txt"
 
 script:
     - python -m unittests.test_all
     - coverage run --source BioFlow -m unittests.test_all
-branches:
-  only:
-    - v0.03
 
 after_success:
     - coveralls
+    - "pylint -d C -d import-error -d no-name-in-module -d no-member -d fixme -d too-few-public-methods -d no-init BioFlow > pylint_results.txt"
 
 notifications:
     email: false

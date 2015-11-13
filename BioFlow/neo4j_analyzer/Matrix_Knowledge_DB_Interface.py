@@ -188,7 +188,7 @@ class GO_Interface(object):
     def dump_memoized(self):
         md5 = hashlib.md5(json.dumps( sorted(self.analytic_Uniprots), sort_keys=True)).hexdigest()
         payload = {'UP_hash' : md5,
-                        'sys_hash' : self._MD5hash(),
+                        'sys_hash' : self.MD5hash(),
                         'size' : len(self.analytic_Uniprots),
                         'UPs' : pickle.dumps(self.analytic_Uniprots),
                         'currents' : pickle.dumps((self.current_accumulator, self.node_current)),
@@ -380,7 +380,7 @@ class GO_Interface(object):
         build_dir_adj()
 
 
-    def _infcalc(self, number):
+    def infcalc(self, number):
         """
         returns an entropy given by a number of equiprobable events, where event is the number.
 
@@ -464,8 +464,8 @@ class GO_Interface(object):
                 self.UP2GO_Reachable_nodes[k].append(key)
 
         # and finally we compute the pure and weighted informativities for each term
-        self.GO2_Pure_Inf = dict( (key, self._infcalc(len(val))) for key, val in self.GO2UP_Reachable_nodes.iteritems())
-        self.GO2_Weighted_Ent = dict( (key, self._infcalc(special_sum(val_dict))) for key, val_dict in self.GO2UP_step_Reachable_nodes.iteritems())
+        self.GO2_Pure_Inf = dict((key, self.infcalc(len(val))) for key, val in self.GO2UP_Reachable_nodes.iteritems())
+        self.GO2_Weighted_Ent = dict((key, self.infcalc(special_sum(val_dict))) for key, val_dict in self.GO2UP_step_Reachable_nodes.iteritems())
 
 
     def get_Laplacians(self):
@@ -511,14 +511,14 @@ class GO_Interface(object):
         Filters out GO terms that are too specific and builds a directed, undirected adjacency maps and laplacian.
 
         """
-        rep_val = self._infcalc(self.ultraspec_lvl)
+        rep_val = self.infcalc(self.ultraspec_lvl)
         self.ultraspec_cleaned = True
         ultraspec_GOs = list( GO for GO, reach in self.GO2UP_Reachable_nodes.iteritems() if len(reach) < self.ultraspec_lvl)
         for GO in ultraspec_GOs:
             self.GO2_Pure_Inf[GO] = rep_val
 
 
-    def _MD5hash(self):
+    def MD5hash(self):
         """
         Return the MD hash of self to ensure that all the defining properties have been correctly defined before dump/retrieval
         """
@@ -534,7 +534,7 @@ class GO_Interface(object):
         """
 
         # branching distribution: at least 10x the biggest conductivity of the system, unless ultrasec, in which case ~ ultraspec level
-        self.binding_intesity = 10*self._infcalc(self.ultraspec_lvl)
+        self.binding_intesity = 10*self.infcalc(self.ultraspec_lvl)
         fixed_Index = self.Laplacian_matrix.shape[0]
         self_connectable_UPs = list(set(self.InitSet) - set(self.UPs_without_GO))
         UP2IDxs = dict((UP, fixed_Index+Idx) for Idx, UP in enumerate(self_connectable_UPs))
@@ -741,7 +741,7 @@ class GO_Interface(object):
 
                 if not No_add:
                     UP_rand_samp.insert({'UP_hash' : md5,
-                                     'sys_hash' : self._MD5hash(),
+                                     'sys_hash' : self.MD5hash(),
                                      'size' : sample_size,
                                      'chrom': str(chromosome_specific),
                                      'sparse_rounds': sparse_rounds,

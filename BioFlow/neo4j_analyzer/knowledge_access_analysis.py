@@ -5,7 +5,6 @@ __author__ = 'ank'
 
 import pickle
 import numpy as np
-
 from csv import reader
 from copy import copy
 from random import shuffle
@@ -20,6 +19,7 @@ from BioFlow.Utils.dataviz import kde_compute
 from BioFlow.Utils.Linalg_routines import analyze_eigvects
 from BioFlow.neo4j_analyzer.Conduction_routines import perform_clustering
 from BioFlow.neo4j_analyzer.IO_Routines import undump_object
+
 
 # TODO: refactor, this is currently a wrapper method used in the
 def KG_gen():
@@ -118,7 +118,7 @@ def show_corrs(tri_corr_array, meancorrs, eigvals, selector, test_tri_corr_array
     else:
         KG = KG_object
 
-    inf_sel = (KG._infcalc(selector[0]), KG._infcalc(selector[1]))
+    inf_sel = (KG.infcalc(selector[0]), KG.infcalc(selector[1]))
 
     plt.figure()
 
@@ -235,7 +235,7 @@ def compare_to_blanc(blanc_model_size, zoom_range_selector, real_knowledge_inter
         KG = KG_gen()
     else:
         KG = KG_object
-    MD5_hash = KG._MD5hash()
+    MD5_hash = KG.MD5hash()
 
     curr_inf_conf_general = []
     count = 0
@@ -302,7 +302,7 @@ def compare_to_blanc(blanc_model_size, zoom_range_selector, real_knowledge_inter
 
         return  sorted(dct.iteritems(), key=lambda x:x[1][0][3]), not_random_groups
 
-    return  None
+    return  None, None, None
 
 
 def decide_regeneration():
@@ -419,7 +419,7 @@ def auto_analyze(source=None, KG_object=None, processors=4, desired_depth=24):
 
 def build_blank(length, depth, sparse_rounds = False):
     KG = KG_gen()
-    MD5_hash = KG._MD5hash()
+    MD5_hash = KG.MD5hash()
     if  UP_rand_samp.find({'size': length, 'sys_hash' : MD5_hash, 'sparse_rounds':sparse_rounds}).count() < depth:
         spawn_sampler_pool(4, [length], [depth])
 
