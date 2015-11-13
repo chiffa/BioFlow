@@ -13,7 +13,7 @@ install:
     - "sudo pip install -r requirements.txt"
 
 script:
-    - python unittests/test_all.py
+    - python -m unittests.test_all
     - coverage run --source BioFlow -m unittests.test_all
 branches:
   only:
