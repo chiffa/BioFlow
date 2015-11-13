@@ -3,7 +3,7 @@
 *.dump
 *.csv
 # for the moment the python config file
-#PolyPharma/configs.py
+#BioFlow/configs.py
 
 *.py[cod]
 

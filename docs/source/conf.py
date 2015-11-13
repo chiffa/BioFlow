@@ -256,7 +256,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  ('index', 'PolyPharma_BioNetworkAnalyzer.tex', u'PolyPharma\\_BioNetworkAnalyzer Documentation',
+  ('index', 'PolyPharma_BioNetworkAnalyzer.tex', u'BioFlow\\_BioNetworkAnalyzer Documentation',
    u'Andrei Kucharavy', 'manual'),
 ]
 
