@@ -321,7 +321,7 @@ def recover_annotation(Node_Id_set, annotation_type):
             annotation_generator = node.bothV('is_annotated')
             if annotation_generator:
                 for annot in annotation_generator:
-                    if annot.ptype==annotation_type:
+                    if annot.ptype == annotation_type:
                         if 'G0' in annot.payload:
                             ret_dict[node_id].append(annot.payload)
                             ret_list.append([str(annot.payload), str(node.ID)])
@@ -359,7 +359,7 @@ def unwrap_background():
     writer(open(bgList, 'w'), delimiter='\n').writerow(source[2])
 
 
-# TODO: should be refactored into the configs\
+# TODO: should be refactored into the configs
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 if not on_rtd:
     Forbidden_verification_dict = {   'Small Molecule': DatabaseGraph.SmallMolecule,
@@ -471,12 +471,12 @@ if __name__ == "__main__":
     # ]
 
 
-    print count_items(DatabaseGraph.UNIPORT)
-    lookup_by_ID(DatabaseGraph.UNIPORT, "SIR2_YEAST")
+    # print count_items(DatabaseGraph.UNIPORT)
+    # lookup_by_ID(DatabaseGraph.UNIPORT, "SIR2_YEAST")
     # Erase_custom_fields()
     # recompute_forbidden_IDs(Forbidden_verification_dict)
     # print unwrap_source()
-    print look_up_Annot_Node('CTR86')
+    # print look_up_Annot_Node('CTR86')
     # print Look_up_Annot_Node('ENSG00000131981', 'UNIPROT_Ensembl')
     # unwrap_source()
     # unwrap_background()
@@ -491,4 +491,5 @@ if __name__ == "__main__":
     # _, resdict, reslist = look_up_Annot_set(['MYPN'])
     # pp.pprint(resdict)
     # print reslist
+    unwrap_source()
     pass

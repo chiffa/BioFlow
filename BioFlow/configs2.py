@@ -111,7 +111,7 @@ if path.isfile(Dumps.Forbidden_IDs):
 #####################################################################################
 # TODO: these should be input dynamically
 RNA_source = "/home/ank/Documents/External_Predictions/Ben_RNA_seq/counts.tsv"
-Hits_source = "/home/ank/projects_files/2015/Hung_Ji_essential_genes/shortlist.csv"
+Hits_source = "/home/andrei/support/tmp/Chr_10.txt"
 Background_source = "/home/ank/projects_files/2014/Poly_Pharma/HJ-screen/Allgene_R2.csv"
 
 # these are remappings to the inner master database IDs
