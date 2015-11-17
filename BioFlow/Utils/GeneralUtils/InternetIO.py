@@ -20,19 +20,19 @@ import requests_ftp
 #   - decompression algorithm selection
 
 
-def url_to_local_path(URL, path):
+def url_to_local_path(URL, local_path):
     """
     Copies a file from an http URL to a local destination provided in path.
-    Performs file-to-folder converstion
+    Performs file-to-folder conversion
     :param URL:
-    :param path:
+    :param local_path:
     :return:
     """
-    if isdir(path) and '.zip' not in URL and '.tar' not in URL:
-        path = join(path, URL.split('/')[-1])
+    if isdir(local_path) and '.zip' not in URL and '.tar' not in URL:
+        local_path = join(local_path, URL.split('/')[-1])
     r = requests.get(URL, stream=True)
     if r.status_code == 200:
-        with open(path, 'wb') as f:
+        with open(local_path, 'wb') as f:
             r.raw.decode_content = True
             shutil.copyfileobj(r.raw, f)
     else:
@@ -41,7 +41,7 @@ def url_to_local_path(URL, path):
 
 def url_to_local_pZip(URL, path):
     """
-    Copies a file from an http URL to a local folder provided  in path
+    Copies a file from an http URL to a local folder provided in path and unzips the zipfile
     :param URL:
     :param path:
     :return:
@@ -52,14 +52,14 @@ def url_to_local_pZip(URL, path):
     if r.status_code == 200:
         r.raw.decode_content = True
         z = zipfile.ZipFile(StringIO.StringIO(r.content))
-        z.extractall(path)  #This is unsafe as hell
+        z.extractall(path)  # TODO: This is unsafe as hell
     else:
         raise Exception("Something is wrong with the url provided: %s.\n Please attempt downloading files manually" % URL)
 
 
 def url_to_local_pGz(URL, path):
     """
-    Copies a file from an http or ftp URL to a local destination provided in path
+    Copies a file from an http or ftp URL to a local destination provided in path and unwraps the .tar.gz compaction block
     :param URL:
     :param path:
     :return:

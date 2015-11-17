@@ -18,6 +18,8 @@ configs_rootdir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../co
 shortnames = ['servers', 'options', 'sources', 'predictions']
 configsfiles = dict([(name, join(configs_rootdir, name+'.ini')) for name in shortnames ])
 
+# TODO: A better idea would be to use a searate configuration file for stable storages of all the organisms with what should be downloaded from the internet
+# upon set-up of each and every organism
 
 class StructureGenerator(object):
 
@@ -30,7 +32,7 @@ class StructureGenerator(object):
                             'BIOGRID': [r'http://thebiogrid.org/downloads/archives/Release%20Archive/BIOGRID-3.3.122/BIOGRID-ORGANISM-3.3.122.tab2.zip'],
                             'ABOUNDANCES': ['',
                                             'http://pax-db.org/export/dataset/H.sapiens%20-%20Whole%20organism%20(Integrated)-sort_by--abundance-[0-20].txt?id=29&species=9606&start=0&end=20&sort=-abundance',
-                                            '']}
+                                            '']}  # TODO: NO!
 
     # paths to be appended to the user-provided installation directory
     _local_file_tree = { 'INTERNAL': '.',
@@ -51,14 +53,14 @@ class StructureGenerator(object):
                    'HINT_name': 'CervBinaryHQ.txt'}
 
     # default configuration elements for human proteins analysis
-    _Human = {      'shortname': 'human',
+    _Human = {     'shortname': 'human',
                    'tax_id': '9606',
                    'Reactome_name': 'Homo_Sapiens',
                    'Biogrid_name': 'Homo_Sapiens',
                    'HINT_name': 'MouseBinaryHQ.txt'}
 
     # default configuration elements for mice proteins analysis
-    _Mice = {       'shortname': 'mouse',
+    _Mice = {      'shortname': 'mouse',
                    'tax_id': '10090',
                    'Reactome_name': 'Mus_Musculus',
                    'Biogrid_name': 'Mus_musculus',
@@ -168,13 +170,19 @@ class StructureGenerator(object):
 
 
 def graceful_fail():
+    """
+    A helper function used to build a default dictionary that would fail gracefully when an inexistant configuration is
+    called
+
+    :return:
+    """
     raise Exception('Argument not contained in the initial config file')
 
 
 def parse_configs():
     """ parses all the relevant configs and inserts graceful failure to all of them """
     pre_srces = ini_configs2dict(configsfiles['sources'])
-    srces = defaultdict(graceful_fail )
+    srces = defaultdict(graceful_fail)
     srces.update(pre_srces)
 
     return ini_configs2dict(configsfiles['servers']),\
@@ -203,22 +211,32 @@ def conf_file_path_flattener(raw_configs_dict):
     final_paths_dict.update(paths_dict)
     return final_paths_dict
 
-def edit_confile(conf_shortname, section, parameter, newvalue):
-    """
 
-    :param conf_shortname:
+def edit_confile(conf_short_name, section, parameter, new_value):
+    """
+    Allows to edit a configfile using the configfile's shortname, section name, parameter name and new value
+
+    :param conf_short_name:
     :param section:
     :param parameter:
-    :param newvalue:
+    :param new_value:
     :return:
     """
-    tmp_confdict = ini_configs2dict(configsfiles[conf_shortname])
-    tmp_confdict[section][parameter] = newvalue
-    dict2init_configs(configsfiles[conf_shortname], tmp_confdict)
+    tmp_confdict = ini_configs2dict(configsfiles[conf_short_name])
+    tmp_confdict[section][parameter] = new_value
+    dict2init_configs(configsfiles[conf_short_name], tmp_confdict)
 
 
 
 def set_folders(file_directory, neo4jserver='http://localhost:7474', mongoserver='mongodb://localhost:27017/'):
+    """
+    Sets IO folders system for the production based on user's input.
+
+    :param file_directory:
+    :param neo4jserver:
+    :param mongoserver:
+    :return:
+    """
     if file_directory[0] == r'~':
         file_directory = expanduser(file_directory)
     edit_confile('servers', 'PRODUCTION', 'base_folder', abspath(file_directory))
@@ -227,8 +245,8 @@ def set_folders(file_directory, neo4jserver='http://localhost:7474', mongoserver
     StructureGenerator.build_source_config('yeast')
 
 
-
 if __name__ == "__main__":
+    # TODO: there is a decision that needs to be made about
     set_folders('~/support/')
     StructureGenerator.build_source_config('yeast')
     # pp = PrettyPrinter(indent=4)

@@ -1,6 +1,7 @@
 __author__ = 'Andrei'
 
 import unittest
+from GeneralUtils_tests import InternetIOTest
 
 class HooksConfigTest(unittest.TestCase):
 

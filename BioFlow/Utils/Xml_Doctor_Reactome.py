@@ -6,7 +6,6 @@ Created on 13 mai 2013
 import xml.etree.ElementTree as ET
 import logging
 from BioFlow.configs2 import ReactomeBioPax
-import random
 
 
 # Replace too lengthy IEEE compliand term definitions by something more readable by humans
