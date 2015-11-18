@@ -1,53 +1,59 @@
 This file regroups the TODOs for the project in the future.
 ***********************************************************
 
+# Required:
 
-Add additional Sources/Dimensioins
-==================================
+Following the interaction with Wahid when I was explaining him what my methods were doing:
 
-# DONE: perform a recovery of important domains from PDB
-
-# TODO: perform a recovery of post-translational modification sites in the normal proteins
-
-# TODO: Perform a recovery of a larger database of the RNAs, both as protein transcription elements and as regulatory
-#       elements
-
-# TODO: Import the DNA / epigenetic annotation ontology into the database to account for the DNA (un)-availability
-#       and for the DNA transport towards specific (activation or repression regions)
-
-# TODO: Cast in the database Protein Aboundances so that it becomes one-and-for-all import
-#       Problem: what are we to do in case we are willing to use a specific organ and not a general database?
-
-# DONE: Add ENSEMBL idnetifiers and gene names indexing
-
-# DONE: In the Uniprot insertions, switch from the hard filtering (inserting only uniprots with acnums accessible)
-#       from the reactome to ALL the uniprots, but using the "inclusion parameter.
-
-# TODO: add organ specificity levels of protein expression
-
-# Rejected: remove hard filtration on too participative nodes; instead treat it with variational coefficients
-#        => Excessively increases complexity
+- Explanation of what is current and how uit relations to biology
+- Where are the pathways?
+- Print out the twist ration into the GDF: observed to expected ratio/ P_value
 
 
-Improve crosslinking between different databases
-================================================
+# Add additional Sources/Dimensions
 
-# TODO: perform a search in the UNIPROT Database in order to imoprove the annotation based on the DisplayNames
-#           => this is done separately by a matching/lookup module
+ - DONE: perform a recovery of important domains from PDB
 
-# TODO: we might want to parse the traceability of the all the compounds and link by adding the xref parsed
-#       information to them. This might be critical to adress the issues imposed by the difference in the database
-#       versions
+ - TODO: perform a recovery of post-translational modification sites in the normal proteins
 
-# TODO: import modification feature insertion from the reactome database to account for post-translational
-#       modifications
+ - TODO: Perform a recovery of a larger database of the RNAs, both as protein transcription elements and as regulatory
+      elements
 
-# TODO: verify if GO_Terms analysis conserves the "regulation relations or not.
+ - TODO: Import the DNA / epigenetic annotation ontology into the database to account for the DNA (un)-availability
+       and for the DNA transport towards specific (activation or repression regions)
 
-# TODO: add fulltext indexes to the nodes
+ - TODO: Cast in the database Protein Aboundances so that it becomes one-and-for-all import
+       Problem: what are we to do in case we are willing to use a specific organ and not a general database?
 
-# TODO: There might be an error in the module responsible for linkage between the uniprots and the accession numbers: for instance the 20253 has an annotation with an Acnum, but
-    # has no Uniprot attached to it within the database => this is possibly due to the fact that some of the uniprots are refered as being from different organsims (such as HIV invasion pathway)
+ - DONE: Add ENSEMBL idnetifiers and gene names indexing
+
+ - DONE: In the Uniprot insertions, switch from the hard filtering (inserting only uniprots with acnums accessible)
+      from the reactome to ALL the uniprots, but using the "inclusion parameter.
+
+ - TODO: add organ specificity levels of protein expression
+
+ - Rejected: remove hard filtration on too participative nodes; instead treat it with variational coefficients
+       => Excessively increases complexity
+
+
+# Improve crosslinking between different databases
+
+ - TODO: perform a search in the UNIPROT Database in order to imoprove the annotation based on the DisplayNames
+           => this is done separately by a matching/lookup module
+
+ - TODO: we might want to parse the traceability of the all the compounds and link by adding the xref parsed
+       information to them. This might be critical to adress the issues imposed by the difference in the database
+       versions
+
+ - TODO: import modification feature insertion from the reactome database to account for post-translational
+       modifications
+
+ - TODO: verify if GO_Terms analysis conserves the "regulation relations or not.
+
+ - TODO: add fulltext indexes to the nodes
+
+ - TODO: There might be an error in the module responsible for linkage between the uniprots and the accession numbers: for instance the 20253 has an annotation with an Acnum, but
+     has no Uniprot attached to it within the database => this is possibly due to the fact that some of the uniprots are refered as being from different organsims (such as HIV invasion pathway)
 
 
 
@@ -55,68 +61,65 @@ Improve crosslinking between different databases
 From the mathematical point of view
 ===================================
 
-# TODO: Get rid of Cholesky decomposition: it is not appliable in our case because of presence of null eigenvalues
-# In fact there are as many null eigenvalues as there are connex segments in the graph
+ - TODO: Get rid of Cholesky decomposition: it is not appliable in our case because of presence of null eigenvalues
+    In fact there are as many null eigenvalues as there are connex segments in the graph
 
-# Removed: replace pickling by JSON wherever appliable  => numpy objects are not JSON-seriasable
+ - Removed: replace pickling by JSON wherever appliable  => numpy objects are not JSON-seriasable
 
-# DONE: add the clustering of proteins according to the GO annotation similarity
+ - DONE: add the clustering of proteins according to the GO annotation similarity
 
-# TODO: add the evaluations of Zipf-ittude for the proteins
+ - TODO: add the evaluations of Zipf-ittude for the proteins
 
-# DONE: add random matrix filtering-out for the "too noizy" conductions
+ - DONE: add random matrix filtering-out for the "too noizy" conductions
 
-# DONE: for the computation of the relevant computational values, normalize the connections
-#       Graph. Use a laplacian instead of the default graph for the decorrelation
+ - DONE: for the computation of the relevant computational values, normalize the connections
+     Graph. Use a laplacian instead of the default graph for the decorrelation
 
-# TODO: add derivatives to analyse scaling factors on for element participation in a complex:
-#       Is this complex a limiting factor for this complex or not?. In case of level variation
-#       derivative will be the measure for the amount of the trafficked information, whereas
-#       in case of substantial modification (mutation silencing catalytical factor, this will)
-#       be the only available one.
+ - TODO: add derivatives to analyse scaling factors on for element participation in a complex:
+       Is this complex a limiting factor for this complex or not?. In case of level variation
+       derivative will be the measure for the amount of the trafficked information, whereas
+       in case of substantial modification (mutation silencing catalytical factor, this will)
+       be the only available one.
 
-# TODO: add negative/positive potentials for the linkages to the GO terms for true
-#       Up/Down regulation
+ - TODO: add negative/positive potentials for the linkages to the GO terms for true Up/Down regulation
 
-# TODO: orient Zipf-central concepts for different environements
-#       (yeah, but this is direct biasis, isn't it?) => Better deduce your own Zipf-distribution
+ - TODO: orient Zipf-central concepts for different environements
+        (yeah, but this is direct biasis, isn't it?) => Better deduce your own Zipf-distribution
 
-# TODO: analyse the sign-connexity of the GO terms analysis tools
+ - TODO: analyse the sign-connexity of the GO terms analysis tools
 
-# TODO: add an adaptor for markov model-like analysis
+ - TODO: add an adaptor for markov model-like analysis
         - Problem 1: if we operate big graphs, we are liklely to run out of memory
         - Problem 2: we cannot necessary normalise all the vectors, since some proteins are
                     affecting several proteins at the same time
 
-Utils module
-============
+# Utils module
 
-# TODO: In the xml_doctor, add correlation between presencesof different subtypes in the references?
-
+ - TODO: In the xml_doctor, add correlation between presencesof different subtypes in the references?
 
 
-Current Limitations
-===================
 
-Limitations: no physical-path toxicity (such as rising pH, changing the O2 content or depleting ATP/ADP)
+# Current Limitations
+
+- Limitations: no physical-path toxicity (such as rising pH, changing the O2 content or depleting ATP/ADP)
 
 
-Potential enhancements:
+# Potential enhancements:
 =======================
 
-# TODO: create GO and Pathway Structure access
-    # Calibrate the values so that after ~ 3 transitions the correlation vanishes on average (Follow Pamela Silver Approach) => this is actually the cumulated perturbation of
-    # two targets that should vanish totally
+- TODO: create GO and Pathway Structure access
+    - Calibrate the values so that after ~ 3 transitions the correlation vanishes on average (Follow Pamela Silver Approach) => this is actually the cumulated perturbation of
+    - two targets that should vanish totally
 
-# TODO: along with Overingtonicity integrate the list of essential genes in human diseases from the PLoS 2011 publication
-    # Importance of complementation of the information with the Reactome.org data with the EHiT data: otherwise the information circulation completely sucks
-    # Reactome.org: the interactions due to kinases aren't explicitly shown. Instead a broadcasting through the secondary features that perform the modification
-    # Is needed. Which is completely stupid, because it doesn't show the specific action on the proteins due to the conformation modification. Thus Reactome.org
-    # is more of a ressource for human experts then for truly machine-learning tasks.
+- TODO: along with Overingtonicity integrate the list of essential genes in human diseases from the PLoS 2011 publication
+    - Importance of complementation of the information with the Reactome.org data with the EHiT data: otherwise the information circulation completely sucks
+    - Reactome.org: the interactions due to kinases aren't explicitly shown. Instead a broadcasting through the secondary features that perform the modification
+    - Is needed. Which is completely stupid, because it doesn't show the specific action on the proteins due to the conformation modification. Thus Reactome.org
+    - is more of a ressource for human experts then for truly machine-learning tasks.
 
 
-To be treated:
-==============
+# To be treated:
+
 
     # If a specific set of GO_Terms is put down, we can say that the function they describe is down.
     # Recall v.s. precision for a GO array for a perturbed protein set?
@@ -222,37 +225,30 @@ To be treated:
     #       => Yes, export as GDF, including attached proteins, with names and GOs with informativities and random pick orobas
 
 
-General programming:
-===================
+# General programming:
 
-Unit-testing
-#############
-    - Create a whack xml, then run all the database loads/unloads one after another to check if everything is present and
+## Unit-testing
+
+- Create a whack xml, then run all the database loads/unloads one after another to check if everything is present and
     is working as expected.
-    - Create smaller unit-tests to check if matrix manipulations work correctly
+- Create smaller unit-tests to check if matrix manipulations work correctly
 
 
-Traceback of programming decisions:
-===================================
+# Traceback of programming decisions:
 
-GO Analysis and visualization
-#############################
 
-GO Terms analysis techniques
-----------------------------
+## GO Analysis and visualization
+
+
+### GO Terms analysis techniques
 * Perform the statistics on the flow amount and the relation betweeen the flow, informativity and confusion potential
 * Perform the statistics on the flow amount and tension for the partitions of initial set of proteins to analyse
 * Recover the analysis of the idependent linear groups of the GO terms.
-
 * Mutual information about the flow and different characteristics, such as informativity and confusion potential (which are
 in fact bijective)
 
 
-
-
-Size and memoization pattern of the GO current system:
-------------------------------------------------------
-
+## Size and memoization pattern of the GO current system:
 The current decision is that for the samples of the size of ~ 100 Uniprots, we are better off unpickling from 4 and more
 by factor 2 and by factor 10 from 9. Previous experimets have shown that memoization with pickling incurred no noticeable
 delay on samples of up to 50 UPs, but that the storage limit on mongo DB was rapidly exceeded, leading us to create an

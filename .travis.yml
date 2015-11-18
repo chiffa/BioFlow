@@ -19,7 +19,7 @@ script:
 
 after_success:
     - coveralls
-    - "pylint -d C -d import-error -d no-name-in-module -d no-member -d fixme -d too-few-public-methods -d no-init BioFlow > pylint_results.txt"
+    - "pylint -d C -d import-error -d no-name-in-module -d no-member -d fixme -d too-few-public-methods -d no-init BioFlow"
 
 notifications:
     email: false
