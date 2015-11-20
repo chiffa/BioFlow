@@ -54,3 +54,7 @@ All the specific analysis outputs, such as GDF files:
 
 # the builds of the documentation (they should be processed by ReadTheDocs)
 docs/build/*
+# logs
+logs/*
+# outputs
+outputs/*

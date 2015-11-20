@@ -1,0 +1,6 @@
+ignore-paths:
+    - docs
+    - unittests
+
+test-warnings: false
+
