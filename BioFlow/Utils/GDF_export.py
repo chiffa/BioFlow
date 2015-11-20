@@ -6,7 +6,7 @@ __author__ = 'ank'
 import numpy as np
 from scipy.sparse import lil_matrix
 from BioFlow.configs2 import Dumps
-from BioFlow.Utils.GeneralUtils.PathManipulation import mkdir_recursive
+from BioFlow.Utils.GeneralUtils.SanerFilesystem import mkdir_recursive
 
 
 class GDF_export_Interface(object):

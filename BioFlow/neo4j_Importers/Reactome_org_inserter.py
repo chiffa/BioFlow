@@ -8,7 +8,7 @@ import os
 
 from BioFlow.neo4j_Declarations.Graph_Declarator import DatabaseGraph
 from BioFlow.configs2 import Dumps, Leg_ID_Filter
-from BioFlow.Utils.GeneralUtils.PathManipulation import mkdir_recursive
+from BioFlow.Utils.GeneralUtils.SanerFilesystem import mkdir_recursive
 from BioFlow.neo4j_analyzer.DB_IO_Routines import get_attached_annotations
 
 

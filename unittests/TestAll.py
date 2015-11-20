@@ -1,6 +1,6 @@
-__author__ = 'Andrei'
-
 import unittest
+from LoggerTester import TestLogs
+
 
 class HooksConfigTest(unittest.TestCase):
 
@@ -10,6 +10,7 @@ class HooksConfigTest(unittest.TestCase):
     def test_actual_code(self):
         from BioFlow.configs.internals_config import edge_type_filters
         self.assertEqual(edge_type_filters["Group"][0], "is_part_of_collection")
+
 
 if __name__ == "__main__":
     unittest.main()

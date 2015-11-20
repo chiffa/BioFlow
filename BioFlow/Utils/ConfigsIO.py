@@ -8,7 +8,7 @@ from os.path import join, abspath, expanduser
 import os
 from string import lower
 from BioFlow.Utils.GeneralUtils.SanerConfigsParser import ini_configs2dict, dict2init_configs
-from BioFlow.Utils.GeneralUtils.PathManipulation import mkdir_recursive
+from BioFlow.Utils.GeneralUtils.SanerFilesystem import mkdir_recursive
 from BioFlow.Utils.GeneralUtils.InternetIO import url_to_local
 from collections import defaultdict
 

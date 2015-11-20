@@ -1,16 +1,46 @@
-This file regroups the TODOs for the project in the future.
-***********************************************************
+# This file regroups the TODOs for the project in the future.
 
-# Required:
+
+## Confirmed minor refactoring requiring a sane rollback:
+
+ - replace `str(vertex).split('/')[-1][:-1]` with `vertex._id`
+ 
+ - replace all the print Warning() with logging behavior at the level of a warning or a critical 
+ error
+
+
+## Minor refactoring suggestions:
+ - add active state memoization for the import commander, so that when an exception happens, it 
+ prints it, terminates gracefully and upon restart offers an option to resume from the point of 
+ failure while managing all the support
+
+
+## Major refactoring suggestions:
+
+ - transfer the annotation search to an ElasticSearch engine. Reasons:
+
+    - remove the overhead of loading all the annotation nodes to the neo4j instance
+
+    - allow efficient filtering on the node types. Currently type detection and filtering is done
+     upon enumeration. In practice, this is not critical, because DB Ids from different databases
+      have low intersection
+
+    - approximate matching capacities for gene names mistypes
+
+
+
+## Required:
 
 Following the interaction with Wahid when I was explaining him what my methods were doing:
 
 - Explanation of what is current and how uit relations to biology
+
 - Where are the pathways?
+
 - Print out the twist ration into the GDF: observed to expected ratio/ P_value
 
 
-# Add additional Sources/Dimensions
+## Add additional Sources/Dimensions
 
  - DONE: perform a recovery of important domains from PDB
 
@@ -36,7 +66,7 @@ Following the interaction with Wahid when I was explaining him what my methods w
        => Excessively increases complexity
 
 
-# Improve crosslinking between different databases
+## Improve crosslinking between different databases
 
  - TODO: perform a search in the UNIPROT Database in order to imoprove the annotation based on the DisplayNames
            => this is done separately by a matching/lookup module
@@ -93,19 +123,19 @@ From the mathematical point of view
         - Problem 2: we cannot necessary normalise all the vectors, since some proteins are
                     affecting several proteins at the same time
 
-# Utils module
+## Utils module
 
  - TODO: In the xml_doctor, add correlation between presencesof different subtypes in the references?
 
 
 
-# Current Limitations
+## Current Limitations
 
 - Limitations: no physical-path toxicity (such as rising pH, changing the O2 content or depleting ATP/ADP)
 
 
-# Potential enhancements:
-=======================
+## Potential enhancements:
+
 
 - TODO: create GO and Pathway Structure access
     - Calibrate the values so that after ~ 3 transitions the correlation vanishes on average (Follow Pamela Silver Approach) => this is actually the cumulated perturbation of
@@ -118,7 +148,7 @@ From the mathematical point of view
     - is more of a ressource for human experts then for truly machine-learning tasks.
 
 
-# To be treated:
+## To be treated:
 
 
     # If a specific set of GO_Terms is put down, we can say that the function they describe is down.
@@ -225,22 +255,22 @@ From the mathematical point of view
     #       => Yes, export as GDF, including attached proteins, with names and GOs with informativities and random pick orobas
 
 
-# General programming:
+## General programming:
 
-## Unit-testing
+### Unit-testing
 
 - Create a whack xml, then run all the database loads/unloads one after another to check if everything is present and
     is working as expected.
 - Create smaller unit-tests to check if matrix manipulations work correctly
 
 
-# Traceback of programming decisions:
+## Traceback of programming decisions:
 
 
-## GO Analysis and visualization
+### GO Analysis and visualization
 
 
-### GO Terms analysis techniques
+#### GO Terms analysis techniques
 * Perform the statistics on the flow amount and the relation betweeen the flow, informativity and confusion potential
 * Perform the statistics on the flow amount and tension for the partitions of initial set of proteins to analyse
 * Recover the analysis of the idependent linear groups of the GO terms.
@@ -248,7 +278,7 @@ From the mathematical point of view
 in fact bijective)
 
 
-## Size and memoization pattern of the GO current system:
+### Size and memoization pattern of the GO current system:
 The current decision is that for the samples of the size of ~ 100 Uniprots, we are better off unpickling from 4 and more
 by factor 2 and by factor 10 from 9. Previous experimets have shown that memoization with pickling incurred no noticeable
 delay on samples of up to 50 UPs, but that the storage limit on mongo DB was rapidly exceeded, leading us to create an
