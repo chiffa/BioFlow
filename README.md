@@ -1,7 +1,7 @@
 [![License Type](https://img.shields.io/badge/license-BSD3-blue.svg)](https://github.com/chiffa/BioFlow/blob/master/License-new_BSD.txt)
 [![Build Status](https://travis-ci.org/chiffa/BioFlow.svg?branch=master)](https://travis-ci.org/chiffa/BioFlow)
 [![Coverage Status](https://coveralls.io/repos/chiffa/BioFlow/badge.svg?branch=master&service=github)](https://coveralls.io/github/chiffa/BioFlow?branch=master)
-[![Branch status](https://img.shields.io/badge/branch-unstable-red.svg)](https://github.com/chiffa/BioFlow/blob/master/README.md)
+[![Branch status](https://img.shields.io/badge/branch_status-refactoring-red.svg)](https://github.com/chiffa/BioFlow/blob/master/README.md)
 [![Code Issues](https://www.quantifiedcode.com/api/v1/project/1c3f8cd001a44319abddab249101b646/badge.svg)](https://www.quantifiedcode.com/app/project/1c3f8cd001a44319abddab249101b646)
 [![Code Health](https://landscape.io/github/chiffa/BioFlow/master/landscape.svg?style=flat)](https://landscape.io/github/chiffa/BioFlow/master)
 

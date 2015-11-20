@@ -24,7 +24,7 @@ from BioFlow.configs2 import Chromosome_source, Chromosome_file_filter
 from BioFlow.configs2 import edge_type_filters, Adjacency_Martix_Dict, Conductance_Matrix_Dict, Dumps, Outputs, Interactome_rand_samp
 from BioFlow.Utils.GDF_export import GDF_export_Interface
 from BioFlow.neo4j_Declarations.Graph_Declarator import DatabaseGraph
-from BioFlow.neo4j_analyzer.DB_IO_Routines import reaction_participant_getter, expand_from_seed, Erase_custom_fields
+from BioFlow.neo4j_analyzer.DB_IO_Routines import reaction_participant_getter, expand_from_seed, erase_custom_fields
 from BioFlow.neo4j_analyzer.IO_Routines import write_to_csv, dump_object, undump_object
 from BioFlow.neo4j_analyzer import Conduction_routines as CR
 
@@ -556,7 +556,7 @@ class MatrixGetter(object):
 
         self.create_val_matrix()
 
-        Erase_custom_fields()
+        erase_custom_fields()
         self.Write_Connexity_Infos()
 
         self.compute_Uniprot_Attachments()

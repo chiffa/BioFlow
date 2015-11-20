@@ -53,9 +53,9 @@ def load_Prot_Aboundances_NodeIDs():
     SP2Aboundances=pickle.load(file('../Utils/SP2Aboundaces.dump','r'))
     ID2Aboundances={}
 
-    from BioFlow.neo4j_analyzer.DB_IO_Routines import look_up_Annot_set
+    from BioFlow.neo4j_analyzer.DB_IO_Routines import look_up_annotation_set
 
-    SP2IDs = look_up_Annot_set(SP2Aboundances.keys())  # ATTENTION:recently refactored, might need debugging
+    SP2IDs = look_up_annotation_set(SP2Aboundances.keys())  # ATTENTION:recently refactored, might need debugging
     for key, val in SP2Aboundances.iteritems():
         if key in SP2IDs.keys():
             ID2Aboundances[SP2IDs[key]] = val

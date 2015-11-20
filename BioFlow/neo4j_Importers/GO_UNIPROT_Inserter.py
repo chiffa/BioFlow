@@ -3,10 +3,11 @@ Created on Jul 5, 2013
 
 @author: andrei
 '''
-from BioFlow.Utils.GO_Structure_Parser import fill_GO_Terms
-from BioFlow.Utils.UNIPROT_Parser import Parse_Uniprot
-from BioFlow.neo4j_Declarations.Graph_Declarator import DatabaseGraph
 import logging
+
+from BioFlow.Utils.UNIPROT_Parser import Parse_Uniprot
+from BioFlow.data_parsers.GO_Structure_Parser import fill_GO_Terms
+from BioFlow.neo4j_Declarations.Graph_Declarator import DatabaseGraph
 
 logging.basicConfig(level=logging.DEBUG,
                     format='%(levelname)-8s %(message)s',

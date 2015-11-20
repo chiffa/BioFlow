@@ -10,9 +10,12 @@
 
 
 ## Minor refactoring suggestions:
+
  - add active state memoization for the import commander, so that when an exception happens, it 
  prints it, terminates gracefully and upon restart offers an option to resume from the point of 
  failure while managing all the support
+ 
+ - separate configs by the level of modification frequency and move to the top-level directory
 
 
 ## Major refactoring suggestions:
@@ -26,6 +29,9 @@
       have low intersection
 
     - approximate matching capacities for gene names mistypes
+ 
+ - in all the DB calls, add a mock-able wrapper that would read the state of a project-wide 
+ variable and if it is set to True (in unittests) will switch it to 
 
 
 

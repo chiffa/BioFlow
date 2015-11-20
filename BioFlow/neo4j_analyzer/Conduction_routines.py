@@ -11,7 +11,7 @@ from BioFlow.configs2 import fudge
 from scikits.sparse.cholmod import cholesky
 from itertools import combinations, repeat
 from copy import copy
-from BioFlow.Utils.Linalg_routines import cluster_nodes, submatrix, remaineder_matrix, Lapl_normalize
+from BioFlow.Utils.Linalg_routines import cluster_nodes, submatrix, remaineder_matrix, normalize_laplacian
 from scipy.sparse import lil_matrix
 from scipy.sparse.linalg import eigsh
 from matplotlib import pyplot as plt
@@ -287,7 +287,7 @@ def perform_clustering(internode_tension, clusters, show=True):
 
     groups = cluster_nodes(relmat, clusters)
 
-    relmat = Lapl_normalize(relmat)
+    relmat = normalize_laplacian(relmat)
     eigenvals, _ = eigsh(relmat)
     relmat = -relmat
     relmat.setdiag(1)

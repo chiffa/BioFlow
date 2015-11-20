@@ -1,12 +1,12 @@
 """
-
-:author: Andrei Kucharavy
+Module responsible for the declaration of all the database access routines that are used by other
+modules. In case a different back-end than neo4j is used, all methods in this cluster have to be
+re-implemented
 """
-
-__author__ = 'ank'
-
 from BioFlow.neo4j_Declarations.Graph_Declarator import DatabaseGraph
-from BioFlow.configs2 import IDFilter, Leg_ID_Filter, edge_type_filters, Dumps, Outputs, Hits_source, prename1, prename2
+from BioFlow.configs.internals_config import annotation_nodes_ptypes
+from BioFlow.configs2 import IDFilter, Leg_ID_Filter, edge_type_filters, Dumps, Outputs,  \
+    Hits_source, prename1, prename2
 from BioFlow.configs2 import Background_source, bgList
 import pickle
 from pprint import PrettyPrinter
@@ -14,19 +14,20 @@ from collections import defaultdict
 from csv import reader, writer
 import os
 
+pp = PrettyPrinter(indent=4)
 
-pp = PrettyPrinter(indent = 4)
 
-
-def lookup_by_ID(Domain, req):
+def lookup_by_id(domain, req):
     """
-    Looks up a node by legacy ID and prints it's access url. The lookup is a case-sensitive strict match.
+    Looks up a node by legacy ID and prints it's access url. The lookup is a case-sensitive strict
+    match.
 
-    :param Domain: Node type of the form of DatabaseGraph.Object
+    :param domain: Node type of the form of DatabaseGraph.Object
     :param req: requested legacy ID
+    :return: list of the items found
     """
     accumulator = []
-    retset = Domain.index.lookup( ID = req )
+    retset = domain.index.lookup(ID = req)
     if not retset:
         print "nothing found"
     if retset:
@@ -34,34 +35,34 @@ def lookup_by_ID(Domain, req):
             print item
             accumulator.append(item)
 
+    return accumulator
 
-def count_items(Domain):
+
+def count_items(domain):
     """
     Stupid counter that gets the number of items in a given domain
 
-    :warning: this method is highly underoptimal
-
-    :param Domain: Domain of the DatabaseGraph.Object whose objects we are going to count
+    :param domain: Domain of the DatabaseGraph.Object whose objects we are going to count
     :return: number of objects in the domain
     """
-    i = 0
-    for elt in Domain.get_all():
-        i += 1
-    return i
+    return sum(1 for _ in domain.get_all())
 
 
-def Look_up_by_ID_for_a_set(Domain, ID_set):
+def set_look_up_by_id(domain, id_set):
     """
-    Looks up nodes by legacy IDs from an ID_set list and prints their access url. The lookup is a case-sensitive strict match.
+    Looks up nodes by legacy IDs from an ID_set list and prints their access url. The lookup is a
+    case-sensitive strict match.
 
+    :param domain: Node type of the form of DatabaseGraph.Object
     :param Domain: Node type of the form of DatabaseGraph.Object
-    :param Domain: Node type of the form of DatabaseGraph.Object
-    :param ID_set: list of requested legacy ID
+    :param id_set: list of requested legacy ID
     """
-    for ID in ID_set:
+    for ID in id_set:
         print "scanning for:", ID
-        lookup_by_ID(Domain, ID)
+        lookup_by_id(domain, ID)
         print "=================="
+
+# Looks like the two above nodes are
 
 
 def get_attached_annotations(node_id):
@@ -82,24 +83,25 @@ def run_through(node_generator):
 
     :param node_generator: iterator over annot_nodes
     :return: the list of object nodes accessible from this set of annot_nodes
-    :raise Warning: if an annotation node is not bound to a real node. This might happen if some object nodes were manually
-                    deleted, but not their annotation nodes. Tu curb this a full database reload is required
     """
-    if not node_generator:
+
+    if not node_generator:  # Node generator is empty: return empty list
         return []
 
-    retset = []
+    set_of_interest = []
     for node in node_generator:
         gen_2 = node.inV("is_annotated")
+        # backlink to the node which this node annotates
         if not gen_2:
-            raise Warning(str(node) + "is floating alone in the wild. He feels lonely.")
+            # if not backlink was found, raise a warning about lonely node
+            print Warning("%s is floating alone in the wild. He feels lonely." % str(node))
         for rel_node in gen_2:
-            node_db_ID = str(rel_node).split('/')[-1][:-1]
-            node_ID = rel_node.ID
+            node_db_id = str(rel_node).split('/')[-1][:-1]
+            node_id = rel_node.ID
             node_type = rel_node.element_type
             node_display = rel_node.displayName
-            retset.append((node_type, node_display, node_db_ID, node_ID))
-    return retset
+            set_of_interest.append((node_type, node_display, node_db_id, node_id))
+    return set_of_interest
 
 
 def unwrap_DB_ID(node_generator):
@@ -121,70 +123,79 @@ def unwrap_DB_ID(node_generator):
     return retset
 
 
-
-def look_up_Annot_Node(p_load, p_type = ''):
+def look_up_annotation_node(p_load, p_type=''):
     """
-    Looks up nodes accessible via the annotation nodes with a given annotation and given annotation type.
-    The lookup strict match, but case-insensitiYOR031Wve.
-
-    .. code-block: python
-    >>> print look_up_Annot_Node('ENSG00000131981', 'UNIPROT_Ensembl')
-    >>> # TODO: add the results here when implementing the doctests
-
+    Looks up nodes accessible via the annotation nodes with a given annotation and given
+    annotation  type.
+    The lookup strict match, but case-insensitive.
 
     :param p_load: payload
-    :param p_type: payload type
-    :return: node type, node's displayName, node's db_ID, node's legacy ID
-    :rtype: 4- tuple
-    :raise Exception: "p_type unsupported", in case a p_type is not on the supported list specified in the neo4j_Declarations.neo4j_typeDec
+    :param p_type: payload type. servers to restrict search to a specific ID subset
+    :return: (node type, node's displayName, node's db_ID, node's legacy ID)
+    :raise Exception: "p_type unsupported", in case a p_type is not on the supported list
+    specified  in the neo4j_Declarations.neo4j_typeDec
     """
 
-    def double_index_search(pload, ptype):
+    def double_index_search(pay_load, payload_type):
         """
-        Supporting fucntion. Performs a search in the annotation nodes over both a payload and a ptype
+        Supporting function. Performs a search in the annotation nodes over both a payload and a
+        payload type
 
-        :param pload: payload
-        :param ptype: payload type
-        :return: list of found annotation nodes satisfying both payload content and payload type conditions
+        :param pay_load: payload
+        :param payload_type: payload type
+        :return: list of found annotation nodes satisfying both payload content and payload type
+         conditions
         """
-        node_generator = DatabaseGraph.AnnotNode.index.lookup(payload = pload)
-        retset = []
-        if node_generator:
-            for node in node_generator:
-                if ptype in node.ptype:
-                    retset.append(node)
-        return retset
+        inner_node_generator = DatabaseGraph.AnnotNode.index.lookup(payload=pay_load)
+        results = []
+        if inner_node_generator:  # if there is anything in the inner node generator
+            for node in inner_node_generator:
+                if payload_type in node.ptype:  # late filtering by the node ptype
+                    results.append(node)
+        return results
 
-    from BioFlow.neo4j_Declarations.neo4j_typeDec import Anot_Node_ptypes
-    pload = p_load.upper()
-    if p_type == '':
-        node_generator = DatabaseGraph.AnnotNode.index.lookup(payload = pload)
+    payload = p_load.upper()  # make payload case-agnostic
+
+    if p_type in annotation_nodes_ptypes:
+        node_generator = double_index_search(payload, p_type)
         return run_through(node_generator)
 
-    if p_type in Anot_Node_ptypes:
-        node_generator =  double_index_search(pload, p_type)
-        return run_through(node_generator)
+    if p_type != '':
+        print Exception("%s is an unsupported payload type. Please refer to " +
+                        "annotation_nodes_ptypes in cofigs/internal_configs.py. ignoring p_type " +
+                        "from now on")
 
-    raise Exception(p_type + "is unsupported. Please refer to Anot_Node_ptypes in neo4j_typeDec for supported types")
+    node_generator = DatabaseGraph.AnnotNode.index.lookup(payload=payload)
+    return run_through(node_generator)
 
 
-def look_up_Annot_set(p_load_list, p_type=''):
+def look_up_annotation_set(p_load_list, p_type=''):
     """
-    Looks up an set of annotations in the database and finds the Ids of nodes containing SWISSPROT proteins
+    Looks up an set of annotations in the database and finds the Ids of nodes containing SWISSPROT
+    proteins linked to by annotations
 
-    :param p_load_list:
-    :param p_type:
+    :param p_load_list: list of payloads
+    :param p_type: expected type of payloads
     :return:
     """
-    retdict = dict( (p_load, look_up_Annot_Node(p_load, p_type)) for p_load in p_load_list)
-    retlist = [value[0][2] for value in retdict.itervalues() if value!=[]]
-    warnlist = [key for key, value in retdict.iteritems() if value == []]
-    for warnId in warnlist:
-        print Warning('following ID has no correspondance in the database: ' + warnId)
-    return warnlist, retdict, retlist
+    def db_id_mapping_helper(mapped_db_id_list):
+        if mapped_db_id_list:
+            return mapped_db_id_list[0][2]
+        else:
+            return ''
+
+    tuple_list = [(p_load, look_up_annotation_node(p_load, p_type)) for p_load in p_load_list]
+    db_id_list = [db_id_mapping_helper(value) for key, value in tuple_list if value != []]
+    warnings_list = [key for key, value in tuple_list if value == []]
+    for warnId in warnings_list:
+        print Warning('look_up_annotation_set@DB_IO: following ID has no corresponding entry in ' +
+                      'the database: %s' % warnId)
+
+    # TODO:
+    return warnings_list, tuple_list, db_id_list
 
 
-def Erase_custom_fields():
+def erase_custom_fields():
     """
         Resets the .costum field of all the Nodes on which we have iterated here. Usefull to perform
         after node set or node connectivity were modfied.
@@ -336,7 +347,7 @@ def unwrap_source():
         for row in csv_reader:
             retlist = retlist + row
     retlist = [ret for ret in retlist]
-    source = look_up_Annot_set(retlist)
+    source = look_up_annotation_set(retlist)
     PrettyPrinter(indent=4, stream=open(prename1, 'w')).pprint(source[1])
     writer(open(prename2, 'w'), delimiter='\n').writerow(source[2])
 
@@ -355,7 +366,7 @@ def unwrap_background():
             retlist = retlist + row
 
     retlist = list(set(ret for ret in retlist))
-    source = look_up_Annot_set(retlist)
+    source = look_up_annotation_set(retlist)
     writer(open(bgList, 'w'), delimiter='\n').writerow(source[2])
 
 

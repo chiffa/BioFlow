@@ -1,5 +1,6 @@
 import unittest
 from LoggerTester import TestLogs
+from PreProcssingTester import TestRnaCountsProcessor
 
 
 class HooksConfigTest(unittest.TestCase):

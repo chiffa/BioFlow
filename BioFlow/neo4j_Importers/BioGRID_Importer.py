@@ -2,7 +2,7 @@ __author__ = 'ank'
 
 from csv import reader
 from BioFlow.configs2 import BioGRID
-from BioFlow.neo4j_analyzer.DB_IO_Routines import look_up_Annot_set
+from BioFlow.neo4j_analyzer.DB_IO_Routines import look_up_annotation_set
 from BioFlow.neo4j_Declarations.Graph_Declarator import DatabaseGraph
 
 
@@ -30,7 +30,7 @@ def parse_BioGRID(_BioGRID):
 
 
 def convert_to_DB_Ids(base):
-    warnlist, resdict, reslist = look_up_Annot_set(set(base))
+    warnlist, resdict, reslist = look_up_annotation_set(set(base))
     retdict = dict((key, value[0][2]) for key, value in resdict.iteritems() if key not in warnlist)
     print 'BioGrid ID cast converter length: %s' % len(retdict)
     return retdict
