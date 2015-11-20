@@ -1,14 +1,11 @@
 """
-:created: 12 mai 2013
-:@author: Andrei Kucharavy
-
 Holds all the configurations of the environmental variables for the whole project
 """
-__author__ = 'ank'
 
 import pickle
 from pprint import PrettyPrinter
 from os import path, makedirs
+import os
 from pymongo import MongoClient
 from BioFlow.Utils.ConfigsIO import parse_configs, conf_file_path_flattener
 from BioFlow.configs.internals_config import edge_type_filters, Leg_ID_Filter, fudge, Adjacency_Martix_Dict, Conductance_Matrix_Dict
@@ -48,8 +45,8 @@ Interactome_rand_samp = db[pymongo_prefix+"Interactome_samples"+pymongo_suffix]
 #########################################################################
 class Dumps(object):
     """
-    A class that contains and controls all the dumps related to accelerated loading of mappings between the graph DB
-    and the mapping matrix holders
+    A class that contains and controls all the dumps related to accelerated loading of mappings
+    between the graph DB and the mapping matrix holders
     """
     prefix = str(path.abspath(path.dirname(__file__)+'/dumps'))
     prefix_2 = Sources['INTERNAL']['dumpprefix']
@@ -92,7 +89,7 @@ class Dumps(object):
 #  Defines the locations to output actual results  #
 ####################################################
 class Outputs(object):
-    prefix = str(path.abspath(path.dirname(__file__)+'/outputs'))
+    prefix = str(path.abspath(path.dirname(__file__)+'/outputs'))  # TODO: use path.join instead
     GO_GDF_output = prefix + '/GO_Analysis_output.gdf'
     Interactome_GDF_output = prefix + '/Interactome_Analysis_output.gdf'
     RNA_pre_filter_output = prefix + '/RNA_pre_filter_output.tsv'
@@ -109,7 +106,8 @@ if path.isfile(Dumps.Forbidden_IDs):
 #####################################################################################
 # Where the RNA counts source, hits and background deduced from it are to be found  #
 #####################################################################################
-# TODO: these should be input dynamically
+# TODO: these should be input dynamically; or at least from a different source file because of a
+# different modification flrequency
 RNA_source = "/home/ank/Documents/External_Predictions/Ben_RNA_seq/counts.tsv"
 Hits_source = "/home/andrei/support/tmp/Chr_10.txt"
 Background_source = "/home/ank/projects_files/2014/Poly_Pharma/HJ-screen/Allgene_R2.csv"
@@ -119,7 +117,13 @@ prename1 = Hits_source[:-4]+'_'+'pPh_name_maps.txt'
 prename2 = Hits_source[:-4]+'_'+'pPh_id_list.csv'
 bgList = Background_source[:-4]+'_'+'pPh_id_list.csv'
 
+log_location = path.join(path.abspath(
+    path.join(path.dirname(__file__), os.pardir)), 'logs')
+
+output_location = path.join(path.abspath(
+    path.join(path.dirname(__file__), os.pardir)), 'outputs')
+# TODO: move the output location to the actual output interface
+
 if __name__ == "__main__":
     pp = PrettyPrinter(indent=4)
     pp.pprint((Servers, Options, Sources))
-    pass
