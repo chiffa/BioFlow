@@ -14,8 +14,8 @@ install:
     - "sudo pip install -r requirements.txt"
 
 script:
-    - python -m unittests.test_all
-    - coverage run --source BioFlow -m unittests.test_all
+    - python -m unittests.TestAll
+    - coverage run --source BioFlow -m unittests.TestAll
 
 after_success:
     - coveralls
