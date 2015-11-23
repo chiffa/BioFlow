@@ -1,4 +1,8 @@
+import os
 import unittest
+
+os.environ['UNITTESTING'] = 'True'
+
 from LoggerTester import TestLogs
 from PreProcssingTester import TestRnaCountsProcessor
 

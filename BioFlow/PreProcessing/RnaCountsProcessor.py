@@ -150,10 +150,10 @@ def run_analysis_suite(rna_source, no_of_experiments, experimental_groups, group
     rpkms = convert_to_rpkm(lengths, counts)
     testres = significantly_different_genes(rpkms, experimental_groups,
                                             groups_to_compare, false_discovery_rate)
-    filter_mask_1, filter_mask_2 = testres[0][1], testres[1][1]
-    dump_object(Dumps.RNA_seq_counts_compare, [names[filter_mask_1, 1], names[filter_mask_2, 1]])
+    filter_masks = [test_[1] for test_ in testres]
+    dump_object(Dumps.RNA_seq_counts_compare, filter_masks)
 
-    return [names[filter_mask_1, :], names[filter_mask_2, :]]
+    return filter_masks
 
 
 if __name__ == "__main__":

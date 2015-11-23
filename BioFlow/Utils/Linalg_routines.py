@@ -1,5 +1,6 @@
-__author__ = 'ank'
-
+"""
+Module responsible for the Linear Algebra routines utilized throughout the project
+"""
 from scipy.sparse import lil_matrix, triu
 from scipy.sparse.linalg import eigsh
 import numpy as np
@@ -11,40 +12,48 @@ import matplotlib.pyplot as plt
 from sklearn.cluster import spectral_clustering
 
 
-def Lapl_normalize(non_normalized_Laplacian):
+def normalize_laplacian(non_normalized_laplacian):
     """
     performs a normalization of a laplacian of a graph
 
-    :param non_normalized_Laplacian: non-normalized laplacian
-    :type non_normalized_Laplacian: scipy.sparse matrix
+    :param non_normalized_laplacian: non-normalized laplacian
+    :type non_normalized_laplacian: scipy.sparse matrix
     :return:
     """
-    normalized_Laplacian = lil_matrix(copy(non_normalized_Laplacian))
-    diagterms = np.array(normalized_Laplacian.diagonal().tolist())
-    diagterms[diagterms == 0] = 1
-    diagterms = np.reshape(diagterms,(normalized_Laplacian.shape[0],1))
-    normmat = np.sqrt(np.dot(diagterms, diagterms.T))
-    retmat = lil_matrix(normalized_Laplacian/normmat)
-    # retmat[retmat > 1.0] = 1.0
-    # retmat[retmat <- 1.0] = -1.0
-    return retmat
+    non_normalized_laplacian = lil_matrix(non_normalized_laplacian)
+    diagonal_terms = np.array(non_normalized_laplacian.diagonal().tolist())
+    diagonal_terms[diagonal_terms == 0] = 1
+    diagonal_terms = np.reshape(diagonal_terms, (non_normalized_laplacian.shape[0], 1))
+    normalisation_matrix = np.sqrt(np.dot(diagonal_terms, diagonal_terms.T))
+    matrix_to_return = lil_matrix(non_normalized_laplacian / normalisation_matrix)
+    return matrix_to_return
 
 
-def submatrix(matrix, indexes, show = False):
-    re_matrix = lil_matrix((len(indexes), len(indexes)))
-    main2local_idx = dict( (j, i) for i, j in enumerate(sorted(indexes)))
+def sub_matrix(matrix, indexes, show=False):
+    """
+    Extracts a sub-matrix from a bigger matrix by using the indexes.
+
+    :param matrix:
+    :param indexes:
+    :param show:
+    :return:
+    """
+    extracted_matrix = lil_matrix((len(indexes), len(indexes)))
+    main2local_idx = dict((j, i) for i, j in enumerate(sorted(indexes)))
+    print main2local_idx
+    # inverts the sorting of the indexes?
 
     for index1, index2 in combinations_with_replacement(indexes, 2):
-        re_matrix[main2local_idx[index1], main2local_idx[index2]] = matrix[index1, index2]
-        re_matrix[main2local_idx[index2], main2local_idx[index1]] = matrix[index2, index1]
+        extracted_matrix[main2local_idx[index1], main2local_idx[index2]] = matrix[index1, index2]
+        extracted_matrix[main2local_idx[index2], main2local_idx[index1]] = matrix[index2, index1]
 
     if show:
-        plt.imshow(re_matrix.toarray(), cmap='jet', interpolation="nearest")
+        plt.imshow(extracted_matrix.toarray(), cmap='jet', interpolation="nearest")
         plt.colorbar()
         plt.show()
 
-    if re_matrix.shape[0]>1:
-        return np.sum(np.triu(re_matrix.toarray(), 1)) / (re_matrix.shape[0]*(re_matrix.shape[0]-1)/2)
+    if extracted_matrix.shape[0]>1:
+        return np.sum(np.triu(extracted_matrix.toarray(), 1)) / (extracted_matrix.shape[0]*(extracted_matrix.shape[0]-1)/2)
     else:
         return 0
 
@@ -105,7 +114,7 @@ def analyze_eigvects(non_normalized_Laplacian, num_first_eigvals_to_analyse, ind
     print 'analyzing the laplacian with %s items and %s non-zero elts' % (non_normalized_Laplacian.shape[0]**2, len(non_normalized_Laplacian.nonzero()[0]))
     t = time()
     init = time()
-    normalized_Laplacian = Lapl_normalize(non_normalized_Laplacian)
+    normalized_Laplacian = normalize_laplacian(non_normalized_Laplacian)
     print time()-t
     t = time()
     # compute the eigenvalues and storre them
@@ -138,7 +147,7 @@ def analyze_eigvects(non_normalized_Laplacian, num_first_eigvals_to_analyse, ind
     print time()-t
     t = time()
     # recompute the normalized matrix
-    normalized_rand = Lapl_normalize(fullmat)
+    normalized_rand = normalize_laplacian(fullmat)
     # recompute the eigenvalues
     rand_eigenvals, rand_eigenvects = eigsh(normalized_rand, num_first_eigvals_to_analyse)
     print time()-t
@@ -149,7 +158,7 @@ def analyze_eigvects(non_normalized_Laplacian, num_first_eigvals_to_analyse, ind
 
 
 def view_laplacian_off_terms(non_normalized_Laplacian):
-    normalized_Laplacian = Lapl_normalize(non_normalized_Laplacian)
+    normalized_Laplacian = normalize_laplacian(non_normalized_Laplacian)
     triag_u = lil_matrix(triu(normalized_Laplacian))
     triag_u.setdiag(0)
     pre_arr = -triag_u[triag_u.nonzero()].toarray().flatten()
@@ -159,7 +168,7 @@ def view_laplacian_off_terms(non_normalized_Laplacian):
 
 
 def cluster_nodes(dist_laplacian, clusters=3, show=False):
-    norm_laplacian = Lapl_normalize(dist_laplacian)
+    norm_laplacian = normalize_laplacian(dist_laplacian)
     norm_laplacian.setdiag(0)
     norm_laplacian = -norm_laplacian
     if show:
@@ -179,7 +188,7 @@ if __name__ == "__main__":
     test_lapl[0, 2] = -1
     test_lapl[2, 0] = -1
     print test_lapl.toarray()
-    print Lapl_normalize(test_lapl).toarray()
+    print normalize_laplacian(test_lapl).toarray()
 
     analyze_eigvects(test_lapl, 2, {0:'zero', 1:'one', 2:'two', 3: 'three'})
 

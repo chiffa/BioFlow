@@ -48,6 +48,11 @@ class TestRnaCountsProcessor(unittest.TestCase):
         ref_val = np.array([1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0]).astype(np.bool_)
         self.assertItemsEqual(comp_val, ref_val)
 
+    def test_suite(self):
+        exp_groups = [[0, 1, 2], [3, 4, 5]]
+        test_groups_to_compare = [[0, 1]]
+        print RCP.run_analysis_suite('UT_examples/counts.tsv', 6, exp_groups,
+                                     test_groups_to_compare, 5, 0.3)
 
 if __name__ == "__main__":
     unittest.main()
