@@ -1,6 +1,7 @@
 """
 Tests all the functions declared in the utilities module
 """
+import os
 import unittest
 import numpy as np
 from itertools import izip
@@ -41,6 +42,10 @@ class LinalgRoutinesTester(unittest.TestCase):
 
 
 class GdfExportTester(unittest.TestCase):
+    test_location = os.path.join(os.path.dirname(__file__),
+                                 'Dumps/GDF_export_test.gdf')
+    reference_location = os.path.join(os.path.dirname(__file__),
+                                      'UT_examples/GDF_export_reference.gdf')
 
     @classmethod
     def setUpClass(cls):
@@ -51,10 +56,10 @@ class GdfExportTester(unittest.TestCase):
         premat[1, 2] = 0.5
         premat[0, 3] = 0.01
 
-        mkdir_recursive('Dumps/GDF_export_test.gdf')
+        mkdir_recursive(cls.test_location)
 
         gdfw = GDF_export.GDF_export_Interface(
-            target_fname='Dumps/GDF_export_test.gdf',
+            target_fname=cls.test_location,
             field_names=['test'],
             field_types=['VARCHAR'],
             node_properties_dict={'test1': ['test one'],
@@ -73,8 +78,8 @@ class GdfExportTester(unittest.TestCase):
         wipe_dir('Dumps')
 
     def test_GDF_export(self):
-        with open('Dumps/GDF_export_test.gdf', 'r') as tested, \
-                open('UT_examples/GDF_export_reference.gdf', 'r') as reference:
+        with open(self.test_location, 'r') as tested, \
+                open(self.reference_location, 'r') as reference:
             for line1, line2 in izip(tested, reference):
                 self.assertItemsEqual(line1, line2)
 

@@ -12,6 +12,7 @@ def mkdir_recursive(path):
     :param path:
     :return:
     """
+    print 'trying to read: ', path
     path = os.path.abspath(path)
     directory_name = os.path.dirname(path)
     print 'subpath: %s' % directory_name
