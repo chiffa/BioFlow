@@ -371,8 +371,8 @@ def unwrap_background():
 
 # Yes, I know what goes below here is ugly and shouldn't be in the production part of the code
 
-on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
-on_unittest = os.environ.get('UNITTESTING', None) == 'True'
+on_rtd = os.environ.get('READTHEDOCS') == 'True'
+on_unittest = os.environ.get('UNITTESTING') == 'True'
 
 if not on_rtd:
     Forbidden_verification_dict = {

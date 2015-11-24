@@ -24,6 +24,10 @@ UNIPROT_source = ReadSourceDBs['UNIPROT']
 Hint_csv = ReadSourceDBs['HINT']  # attention, for me it is tab-separated
 BioGRID = ReadSourceDBs['BIOGRID']
 
+# TAXONOMY IDs for Uniprot parsing:
+up_tax_ids = [tax_id.strip() for tax_id in Sources['UNIPROT']['tax_ids'].split(',') if
+              tax_id not in ('', ' ')]
+
 # OPTIONAL PARAMETERS
 Chromosome_source = ReadSourceDBs['CHROMOSOMES']
 Chromosome_file_filter = Sources['CHROMOSOMES']['namepattern']
@@ -122,6 +126,8 @@ log_location = path.join(path.abspath(
 
 output_location = path.join(path.abspath(
     path.join(path.dirname(__file__), os.pardir)), 'outputs')
+
+
 # TODO: move the output location to the actual output interface
 
 if __name__ == "__main__":

@@ -15,7 +15,7 @@ def compute_Prot_Aboundances():
     performs a computationally expensive part of protein aboundance computation
     and stores the result in a pickle file
     """
-    from BioFlow.Utils.UNIPROT_Parser import get_access_dicts
+    from BioFlow.data_parsers.UNIPROT_Parser import get_access_dicts
     from BioFlow.configs2 import Prot_abound
 
     access_dict = get_access_dicts()

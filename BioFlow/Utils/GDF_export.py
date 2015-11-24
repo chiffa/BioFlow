@@ -1,5 +1,6 @@
 """
-Module containing an objet that allows an easy export of the matrix-encoded information to GDF without the need to export the whole relation matrix
+Module containing an object that allows an easy export of the matrix-encoded information to GDF
+without the need to export the whole relation matrix
 """
 import numpy as np
 from scipy.sparse import lil_matrix
@@ -12,8 +13,8 @@ from BioFlow.Utils.GeneralUtils.SanerFilesystem import mkdir_recursive
 
 class GDF_export_Interface(object):
     """
-    An interface allowing the export of the matrix relatioin object and node characteristics to a GDF format, compatible
-    with visualization with appropriate tools.
+    An interface allowing the export of the matrix relatioin object and node characteristics to a
+    GDF format, compatible with visualization with appropriate tools.
 
     :param target_fname: name of the file to which the GDF file will be written to
     :param field_names: Names of different fields for the node description
@@ -45,21 +46,25 @@ class GDF_export_Interface(object):
 
         # rebuilding a new current Matrix and creating a dict to map the relations from the
         # previous matrix into a new one.
-        self.mincurrent = mincurrent*self.current_Matrix[self.current_Matrix.nonzero()].toarray().max()
+        self.mincurrent = mincurrent * self.current_Matrix[self.current_Matrix.nonzero()].toarray(
+
+        ).max()
         # minimal current for which we will be performing filtering out of the conductances and
-        # nodes through whichthe trafic is below that limit
+        # nodes through which the traffic is below that limit
         self.directed = directed
         self.verify()
 
     def verify(self):
         """
-        :raises Exception: "GDF Node declaration is wrong!" - of the length of field names and field type differ
-        :raises Exception: "Wrong Types were declared, ...." - if the declared types are not in the Authorised names
+        :raises Exception: "GDF Node declaration is wrong!" - if the length of field names and
+        field type differ
+        :raises Exception: "Wrong Types were declared, ...." -  if the declared types are not in
+        the Authorised names
         """
         if len(self.field_types) != len(self.field_types):
             raise Exception('GDF Node declaration is wrong')
         if not set(self.Authorised_names) >= set(self.field_types):
-            raise Exception('Wrong types were declared. please refer to the module for authorized types list')
+            raise Exception('Wrong types were declared. please refer to the Doc')
 
     def write_nodedefs(self):
         """
@@ -79,15 +84,15 @@ class GDF_export_Interface(object):
 
         """
         for nodename, nodeprops in self.node_properties.iteritems():
-            if self.mincurrent:
-                if float(nodeprops[0]) > self.mincurrent:
-                    self.target_file.write(nodename + ', ' + ', '.join(nodeprops)+'\n')
+            if self.mincurrent and float(nodeprops[0]) > self.mincurrent:
+                self.target_file.write(nodename + ', ' + ', '.join(nodeprops)+'\n')
             else:
                 self.target_file.write(nodename + ', ' + ', '.join(nodeprops)+'\n')
 
     def write_edgedefs(self):
         """
-        Write defintions for the edges. Right now, the information passing through the edges is restricted to the current
+        Write defintion for the edges. Right now, the information passing through the edges is
+        restricted to the current
 
         """
         retstring = 'edgedef> node1 VARCHAR, node1 VARCHAR, weight DOUBLE, directed BOOLEAN\n'
@@ -95,16 +100,20 @@ class GDF_export_Interface(object):
 
     def write_edges(self):
         """
-        Writes informations about edges connections. These informations are pulled from the conductance matrix.
+        Writes information about edges connections. This information are pulled from the
+        conductance matrix.
 
         """
         nz = self.current_Matrix.nonzero()
         for i, j in zip(nz[0], nz[1]):
-            if abs(self.current_Matrix[i,j]) > self.mincurrent:
+            if abs(self.current_Matrix[i, j]) > self.mincurrent:
                 if self.directed:
-                    self.target_file.write(self.Idx2Label[i]+', '+self.Idx2Label[j]+', '+str(self.current_Matrix[i,j])+', '+'true'+'\n')
+                    write_line = ', '.join([self.Idx2Label[i], self.Idx2Label[j],
+                                            str(self.current_Matrix[i, j]), 'true']) + '\n'
                 else:
-                    self.target_file.write(self.Idx2Label[i]+', '+self.Idx2Label[j]+', '+str(self.current_Matrix[i,j])+', '+'false'+'\n')
+                    write_line = ', '.join([self.Idx2Label[i], self.Idx2Label[j],
+                                            str(self.current_Matrix[i, j]), 'false']) + '\n'
+                self.target_file.write(write_line)
 
     def write(self):
         """
@@ -119,25 +128,4 @@ class GDF_export_Interface(object):
 
 
 if __name__ == "__main__":
-    premat = np.zeros((4, 4))
-
-    premat[0, 1] = 1.0
-    premat[0, 2] = 4.0
-    premat[1, 2] = 0.5
-    premat[0, 3] = 0.01
-
-    GDFW = GDF_export_Interface(
-        target_fname=Dumps.GDF_debug,
-        field_names=['test'],
-        field_types=['VARCHAR'],
-        node_properties_dict={'test1': ['test one'], 'test2': ['test two'],
-                              'test3': ['test three'], 'test4': ['test four']},
-        mincurrent=0,
-        Idx2Label={0: 'test1', 1: 'test2', 2: 'test3', 3: 'test4'},
-        Label2Idx={'test1': 0, 'test2': 1, 'test3': 2, 'test4': 3},
-        current_Matrix=premat)
-
-    GDFW.write_nodedefs()
-    GDFW.write_nodes()
-    GDFW.write_edgedefs()
-    GDFW.write_edges()
+    pass

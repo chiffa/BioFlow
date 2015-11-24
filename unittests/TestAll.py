@@ -5,6 +5,7 @@ os.environ['UNITTESTING'] = 'True'
 
 from LoggerTester import TestLogs
 from PreProcssingTester import TestRnaCountsProcessor
+from UtilitiesTester import GdfExportTester
 
 
 class HooksConfigTest(unittest.TestCase):

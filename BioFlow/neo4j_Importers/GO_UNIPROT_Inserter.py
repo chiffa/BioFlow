@@ -5,8 +5,8 @@ Created on Jul 5, 2013
 '''
 import logging
 
-from BioFlow.Utils.UNIPROT_Parser import Parse_Uniprot
 from BioFlow.data_parsers.GO_Structure_Parser import fill_GO_Terms
+from BioFlow.data_parsers.UNIPROT_Parser import parse_uniprot
 from BioFlow.neo4j_Declarations.Graph_Declarator import DatabaseGraph
 
 logging.basicConfig(level=logging.DEBUG,
@@ -135,7 +135,7 @@ def import_UNIPROTS():
     """
     Imports the whole parsed uniprot dictionary from the utils.uniprot parser into the database
     """
-    Uniprot = Parse_Uniprot()
+    Uniprot = parse_uniprot()
     Acnums2RProts = getExistingAcnums()
     i = 0
     j = 0

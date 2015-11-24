@@ -12,6 +12,7 @@ def mkdir_recursive(path):
     :param path:
     :return:
     """
+    path = os.path.abspath(path)
     directory_name = os.path.dirname(path)
     print 'subpath: %s' % directory_name
     if not os.path.exists(directory_name):
@@ -32,7 +33,9 @@ def wipe_dir(path):
     :param path:
     :return: True on success
     """
+    path = os.path.abspath(path)
     directory_name = os.path.dirname(path)
+    print directory_name
     if not os.path.isdir(path):
         print Exception('failed to delete %s: not a directory')
         return False
