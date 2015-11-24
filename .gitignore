@@ -46,7 +46,8 @@ nosetests.xml
 *_private.ini
 
 All the specific analysis outputs, such as GDF files:
-*.gdf
+outputs/
+dumps/
 
 #Pycharm Idea files:
 .idea/*

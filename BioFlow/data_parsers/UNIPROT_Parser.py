@@ -21,13 +21,13 @@ import BioFlow.configs2 as conf
 from BioFlow.Utils.LogManager import logger
 import copy
 
-Interesting_lines = ['ID', 'AC', 'DE', 'GN', 'OX', 'DR']
-Interesting_xrefs = ['EMBL', 'GO', 'Pfam', 'Ensembl', 'KEGG', 'PDB', 'GeneID']
-NameIgnore = ['Contains', 'Allergen', 'EC=', 'Flags: ', 'CD_antigen', 'INN=']
-defDict = {'Acnum': [], 'Names': {'Full': '', 'AltNames': []},
-           'GeneRefs': {'Names': [], 'OrderedLocusNames': [], 'ORFNames': []},
-           'Ensembl': [], 'KEGG': [], 'EMBL': [], 'GO': [], 'Pfam': [], 'SUPFAM': [], 'PDB': [],
-           'GeneID': []}
+interesting_lines = ['ID', 'AC', 'DE', 'GN', 'OX', 'DR']
+interesting_xrefs = ['EMBL', 'GO', 'Pfam', 'Ensembl', 'KEGG', 'PDB', 'GeneID']
+names_to_ignore = ['Contains', 'Allergen', 'EC=', 'Flags: ', 'CD_antigen', 'INN=']
+starting_dict = {'Acnum': [], 'Names': {'Full': '', 'AltNames': []},
+                 'GeneRefs': {'Names': [], 'OrderedLocusNames': [], 'ORFNames': []},
+                 'Ensembl': [], 'KEGG': [], 'EMBL': [], 'GO': [], 'Pfam': [], 'SUPFAM': [],
+                 'PDB': [], 'GeneID': []}
 
 
 _ignore = [False, 2]  # a steady constant that regulates a behavior specific to the line skipping
@@ -120,7 +120,7 @@ def parse_name(dico, line):
     if ' Includes:' in line:
         _ignore[0] = True
         return ''
-    if any(x in line for x in NameIgnore):
+    if any(x in line for x in names_to_ignore):
         return ''         
 
 
@@ -145,7 +145,7 @@ def process_line(dico, line, keyword):
         parse_name(dico, line)
     if keyword == 'GN':
         parse_gene_references(dico, line)
-    if keyword == 'DR' and any(x in line for x in Interesting_xrefs):
+    if keyword == 'DR' and any(x in line for x in interesting_xrefs):
         parse_xref(dico, line)
 
 
@@ -161,7 +161,7 @@ def end_block(dico, uniprot, tax_id_list):
     if dico['TaxID'] in tax_id_list:
         _ignore[0] = False
         uniprot[dico['ID']] = dico
-    return copy.deepcopy(defDict)
+    return copy.deepcopy(starting_dict)
 
 
 def parse_uniprot(source_path=conf.UNIPROT_source, tax_id_to_parse=conf.up_tax_ids):
@@ -173,7 +173,7 @@ def parse_uniprot(source_path=conf.UNIPROT_source, tax_id_to_parse=conf.up_tax_i
     :return: uniprot parse dictionary
     """
     uniprot = {}
-    local_dictionary = copy.deepcopy(defDict)
+    local_dictionary = copy.deepcopy(starting_dict)
     source_file = open(source_path, "r")
     line_counter = 0
     while True:
@@ -184,7 +184,7 @@ def parse_uniprot(source_path=conf.UNIPROT_source, tax_id_to_parse=conf.up_tax_i
         keyword = line[0:2]
         if keyword == '//':
             local_dictionary = end_block(local_dictionary, uniprot, tax_id_to_parse)
-        if keyword in Interesting_lines:
+        if keyword in interesting_lines:
             process_line(local_dictionary, line, keyword)
 
     logger.info("%s lines scanned during UNIPROT import" % line_counter)
@@ -222,6 +222,6 @@ def get_access_dicts(source_path=conf.UNIPROT_source, tax_id_to_parse=conf.up_ta
 
 
 if __name__ == '__main__':
-    Uniprot = parse_uniprot()
-    print len(Uniprot)
-    print Uniprot.keys()
+    uniprot = parse_uniprot()
+    print len(uniprot)
+    print uniprot.keys()

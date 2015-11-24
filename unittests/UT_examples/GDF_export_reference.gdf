@@ -1,0 +1,10 @@
+nodedef> name VARCHAR, test VARCHAR
+test1, test one
+test3, test three
+test2, test two
+test4, test four
+edgedef> node1 VARCHAR, node1 VARCHAR, weight DOUBLE, directed BOOLEAN
+test1, test2, 1.0, false
+test1, test3, 4.0, false
+test1, test4, 0.01, false
+test2, test3, 0.5, false
