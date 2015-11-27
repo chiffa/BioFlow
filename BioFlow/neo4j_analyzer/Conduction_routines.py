@@ -11,7 +11,7 @@ from BioFlow.configs2 import fudge
 from scikits.sparse.cholmod import cholesky
 from itertools import combinations, repeat
 from copy import copy
-from BioFlow.Utils.Linalg_routines import cluster_nodes, sub_matrix, remaineder_matrix, normalize_laplacian
+from BioFlow.Utils.Linalg_routines import cluster_nodes, average_off_diag_in_sub_matrix, average_interset_linkage, normalize_laplacian
 from scipy.sparse import lil_matrix
 from scipy.sparse.linalg import eigsh
 from matplotlib import pyplot as plt
@@ -297,10 +297,10 @@ def perform_clustering(internode_tension, clusters, show=True):
     for i in range(0, clusters):
         group_selector = groups==i
         group_idxs = group_selector.nonzero()[0].tolist()
-        group2average_offdiag.append((tuple(rev_idx[idx] for idx in group_idxs), len(group_idxs), sub_matrix(relmat, group_idxs)))
+        group2average_offdiag.append((tuple(rev_idx[idx] for idx in group_idxs), len(group_idxs), average_off_diag_in_sub_matrix(relmat, group_idxs)))
         groupsets.append(group_idxs)
 
-    remainder = remaineder_matrix(relmat, groupsets)
+    remainder = average_interset_linkage(relmat, groupsets)
 
     clustidx = np.array([item for itemset in groupsets for item in itemset])
     relmat = relmat[:, clustidx]

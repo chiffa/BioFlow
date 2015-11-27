@@ -43,7 +43,7 @@ def downloaddbs():
 
     :return:
     """
-    StructureGenerator.pull_online_DBs()
+    StructureGenerator.pull_online_dbs()
 
 
 @click.command()

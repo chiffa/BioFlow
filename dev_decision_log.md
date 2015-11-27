@@ -16,6 +16,10 @@
  failure while managing all the support
  
  - separate configs by the level of modification frequency and move to the top-level directory
+ 
+ - modify the config generator code so that there is only one place where the default 
+ configurations are stored and can be modified from hte command line interface, instead of a 
+ complex CofigsIO class management
 
 
 ## Major refactoring suggestions:

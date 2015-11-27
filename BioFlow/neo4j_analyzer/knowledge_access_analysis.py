@@ -16,7 +16,7 @@ from BioFlow.neo4j_analyzer.Matrix_Interactome_DB_interface import  MatrixGetter
 from BioFlow.neo4j_analyzer.Matrix_Knowledge_DB_Interface import GO_Interface
 from BioFlow.configs2 import UP_rand_samp, Dumps, prename2, Background_source, bgList
 from BioFlow.Utils.dataviz import kde_compute
-from BioFlow.Utils.Linalg_routines import analyze_eigvects
+from BioFlow.Utils.Linalg_routines import analyze_eigenvects
 from BioFlow.neo4j_analyzer.Conduction_routines import perform_clustering
 from BioFlow.neo4j_analyzer.IO_Routines import undump_object
 
@@ -371,7 +371,7 @@ def linindep_GO_groups(size):
     KG.undump_Indep_Linset()
     char_indexes = dict( (key, (len(KG.GO2UP_Reachable_nodes[value]), KG.GO_Legacy_IDs[value], KG.GO_Names[value])) for key, value in KG.Num2GO.iteritems())
     print KG.pretty_time()
-    analyze_eigvects(KG.Indep_Lapl, size, char_indexes)
+    analyze_eigenvects(KG.Indep_Lapl, size, char_indexes)
 
 
 def auto_analyze(source=None, KG_object=None, processors=3, desired_depth=24):

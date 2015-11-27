@@ -31,14 +31,42 @@ class LinalgRoutinesTester(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        pass
+        cls.test_lapl = Linalg_routines.lil_matrix(np.zeros((4, 4)))
+        cls.test_lapl.setdiag([1, 2, 3, 0])
+        cls.test_lapl[1, 2] = -2
+        cls.test_lapl[2, 1] = -2
+        cls.test_lapl[0, 2] = -1
+        cls.test_lapl[2, 0] = -1
 
     @classmethod
     def tearDownClass(cls):
         pass
 
-    def test_sub_matrix_extractor(self):
-        self.assertTrue(True)
+    def test_normalization(self):
+        norm_lapl = Linalg_routines.normalize_laplacian(self.test_lapl).toarray()
+        self.assertEqual(norm_lapl[0, 0], 1.)
+        self.assertAlmostEqual(norm_lapl[2, 1], -0.816496580)
+
+    def test_eigenvector_analysis(self):
+        Linalg_routines.analyze_eigenvects(self. test_lapl, 2, {0: 'zero',
+                                                                1: 'one',
+                                                                2: 'two',
+                                                                3: 'three'})
+
+    def test_clustring(self):
+        self.test_lapl[2, 3] = -0.5
+        self.test_lapl[3, 2] = -0.5
+        idsx = Linalg_routines.cluster_nodes(self.test_lapl).T.tolist()[0]
+        self.assertEqual(idsx[1], idsx[2])
+        self.assertNotEqual(idsx[0], idsx[3])
+        self.assertNotEqual(idsx[1], idsx[0])
+        self.assertNotEqual(idsx[1], idsx[3])
+        self.assertEqual(Linalg_routines.average_off_diag_in_sub_matrix(self.test_lapl, [1, 2]),
+                         -2.)
+
+    def test_average_interset_linkage(self):
+        self.assertEqual(Linalg_routines.average_interset_linkage(self.test_lapl,
+                                                                  [[0, 1], [2, 3]]), -0.75)
 
 
 class GdfExportTester(unittest.TestCase):
