@@ -7,7 +7,7 @@ before_install:
 
 install:
     - "sudo apt-get install build-essential python-dev python-setuptools python-numpy tcllib"
-    - "sudo apt-get -qq install libblas-dev liblapack-dev libsuitesparse-dev"
+    - "sudo apt-get -qq install libblas-dev liblapack-dev libsuitesparse-dev gfortran g77"
     - "sudo pip install scipy"
     - "sudo pip install coveralls"
     - "sudo pip install pylint"
