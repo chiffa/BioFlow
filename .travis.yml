@@ -6,8 +6,9 @@ before_install:
     - "lsb_release -a"
 
 install:
-    - "sudo apt-get install build-essential python-dev python-setuptools python-numpy python-scipy tcllib"
+    - "sudo apt-get install build-essential python-dev python-setuptools python-numpy tcllib"
     - "sudo apt-get -qq install libblas-dev liblapack-dev libsuitesparse-dev"
+    - "sudo pip install scipy"
     - "sudo pip install coveralls"
     - "sudo pip install pylint"
     - "sudo pip install -q cython"
