@@ -2,15 +2,22 @@ language: python
 python:
     - "2.7_with_system_site_packages"
 
+# Setup anaconda
 before_install:
-    - "lsb_release -a"
+  - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
+  - chmod +x miniconda.sh
+  - ./miniconda.sh -b
+  - export PATH=/home/travis/miniconda/bin:$PATH
+  - conda update --yes conda
+  - which pip
+  # The next couple lines fix a crash with multiprocessing on Travis and are not specific to using Miniconda
+  - sudo rm -rf /dev/shm
+  - sudo ln -s /run/shm /dev/shm
 
 install:
-    - "sudo apt-get install build-essential python-dev python-setuptools python-numpy tcllib"
-    - "sudo apt-get -qq install libblas-dev liblapack-dev libsuitesparse-dev gfortran fort77"
-    - "sudo pip install scipy"
-    - "sudo pip install coveralls"
-    - "sudo pip install pylint"
+    - "sudo apt-get -qq install build-essential libsuitesparse-dev"
+    - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy matplotlib
+    - conda install --yes -c python-coveralls nose-cov pylint
     - "sudo pip install -q cython"
     - "sudo pip install -r requirements.txt"
 

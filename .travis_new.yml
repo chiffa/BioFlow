@@ -1,4 +1,6 @@
 language: python
+sudo: false
+
 python:
     - "2.7_with_system_site_packages"
 
@@ -16,15 +18,12 @@ addons:
     - gfortran
     - g77
 
-
 install:
-    - "sudo apt-get install build-essential python-dev python-setuptools python-numpy tcllib"
-    - "sudo apt-get -qq install libblas-dev liblapack-dev libsuitesparse-dev gfortran fort77"
-    - "sudo pip install scipy"
-    - "sudo pip install coveralls"
-    - "sudo pip install pylint"
-    - "sudo pip install -q cython"
-    - "sudo pip install -r requirements.txt"
+    - "pip install scipy"
+    - "pip install coveralls"
+    - "pip install pylint"
+    - "pip install -q cython"
+    - "pip install -r requirements.txt"
 
 script:
     - python -m unittests.TestAll
