@@ -2,8 +2,20 @@ language: python
 python:
     - "2.7_with_system_site_packages"
 
-before_install:
-    - "lsb_release -a"
+addons:
+  apt:
+    packages:
+    - build-essential
+    - python-dev
+    - python-setuptools
+    - pythopn-numpy
+    - tcllib
+    - libblas-dev
+    - liblapack-dev
+    - libsuitesparse-dev
+    - gfortran
+    - g77
+
 
 install:
     - "sudo apt-get install build-essential python-dev python-setuptools python-numpy tcllib"
