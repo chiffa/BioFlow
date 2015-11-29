@@ -8,6 +8,8 @@
  - replace all the print Warning() with logging behavior at the level of a warning or a critical 
  error
 
+- destroy the print output from the logging system in case the $UNITTEST$ is set to True in the environment variables.
+
 
 ## Minor refactoring suggestions:
 
