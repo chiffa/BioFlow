@@ -1,10 +1,19 @@
 language: python
+
+sudo: false
+
 python:
     - "2.7"
 
+addons:
+  apt:
+    packages:
+    - build-essential
+    - libsuitesparse-dev
+
 # Setup anaconda
 before_install:
-  - sudo apt-get update
+  # - sudo apt-get update
   - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
       wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
     else
@@ -20,11 +29,10 @@ before_install:
   - which pip
 
 install:
-    - sudo apt-get -qq install build-essential libsuitesparse-dev
+    # - sudo apt-get -qq install build-essential libsuitesparse-dev
     - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib
     - source activate test-environment
-    - conda install python=$TRAVIS_PYTHON_VERSION atlas numpy scipy matplotlib cython
-    - conda install python=$TRAVIS_PYTHON_VERSION coverage pylint
+    - conda install python=$TRAVIS_PYTHON_VERSION cython scikit-learn coverage pylint
     - pip install -r requirements.txt
 
 script:
