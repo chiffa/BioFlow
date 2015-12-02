@@ -1,6 +1,6 @@
 [run]
 concurrency = multiprocessing
-source = BioFlow/*
+source = BioFlow
 
 [report]
 exclude_lines =
