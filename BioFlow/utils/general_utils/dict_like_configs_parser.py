@@ -40,4 +40,3 @@ def dict2init_configs(path, confdict):
 
     with open(path, 'w') as configfile:
         base_writer.write(configfile)
-

@@ -12,10 +12,14 @@ from BioFlow.utils.general_utils.internet_io import url_to_local
 from collections import defaultdict
 
 
-configs_rootdir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../configs/'))
+configs_rootdir = os.path.abspath(
+    os.path.join(
+        os.path.dirname(__file__),
+        '../../configs/'))
 
 shortnames = ['servers', 'options', 'sources', 'predictions']
-configsfiles = dict([(name, join(configs_rootdir, name+'.ini')) for name in shortnames])
+configsfiles = dict([(name, join(configs_rootdir, name + '.ini'))
+                     for name in shortnames])
 
 
 class StructureGenerator(object):
@@ -23,14 +27,16 @@ class StructureGenerator(object):
     _online_DBs = {
         'REACTOME': [r'http://www.reactome.org/download/current/biopax.zip'],
         'UNIPROT': [r'ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.dat.gz'],
-        'HINT': [r'http://hint.yulab.org/CervBinaryHQ.txt',
-                 r'http://hint.yulab.org/HumanBinaryHQ.txt',
-                 r'http://hint.yulab.org/MouseBinaryHQ.txt'],
+        'HINT': [
+            r'http://hint.yulab.org/CervBinaryHQ.txt',
+            r'http://hint.yulab.org/HumanBinaryHQ.txt',
+            r'http://hint.yulab.org/MouseBinaryHQ.txt'],
         'GO': [r'http://purl.obolibrary.org/obo/go/go-basic.obo'],
         'BIOGRID': [r'http://thebiogrid.org/downloads/archives/Release%20Archive/BIOGRID-3.3.122/BIOGRID-ORGANISM-3.3.122.tab2.zip'],
-        'ABOUNDANCES': ['',
-                        'http://pax-db.org/export/dataset/H.sapiens%20-%20Whole%20organism%20(Integrated)-sort_by--abundance-[0-20].txt?id=29&species=9606&start=0&end=20&sort=-abundance',
-                        '']}
+        'ABOUNDANCES': [
+            '',
+            'http://pax-db.org/export/dataset/H.sapiens%20-%20Whole%20organism%20(Integrated)-sort_by--abundance-[0-20].txt?id=29&species=9606&start=0&end=20&sort=-abundance',
+            '']}
 
     # paths to be appended to the user-provided installation directory
     _local_file_tree = {
@@ -81,9 +87,9 @@ class StructureGenerator(object):
         :return:
         """
         template_dict = {
-            'INTERNAL': {'mongoprefix': '_'+payload_dict['shortname'],
+            'INTERNAL': {'mongoprefix': '_' + payload_dict['shortname'],
                          'mongosuffix': '_v_1',
-                         'dumpprefix': '/'+payload_dict['shortname'],
+                         'dumpprefix': '/' + payload_dict['shortname'],
                          'load': 'NotAFile.txt'},
             'REACTOME':
                 {'load': payload_dict['Reactome_name']},
@@ -95,19 +101,19 @@ class StructureGenerator(object):
                 {'load': payload_dict['Biogrid_name']},
             'GO':
                 {}
-           }
+        }
 
         if expanded:
             additional_options = {
-                                'CHROMOSOMES': {'load': payload_dict['name_pattern'],
-                                                'namepattern': payload_dict['name_pattern']},
-                                'ABOUNDANCES': {'load': payload_dict['tax_id']},
-                                }
+                'CHROMOSOMES': {'load': payload_dict['name_pattern'],
+                                'namepattern': payload_dict['name_pattern']},
+                'ABOUNDANCES': {'load': payload_dict['tax_id']},
+            }
         else:
             additional_options = {
-                                'CHROMOSOMES': {'load': '-1', 'namepattern': '-1'},
-                                'ABOUNDANCES': {'load': '-1'},
-                                }
+                'CHROMOSOMES': {'load': '-1', 'namepattern': '-1'},
+                'ABOUNDANCES': {'load': '-1'},
+            }
         template_dict.update(additional_options)
 
         return template_dict
@@ -119,9 +125,11 @@ class StructureGenerator(object):
         :param template_dict:
         :return:
         """
-        master_location = ini_configs2dict(configsfiles['servers'])['PRODUCTION']['base_folder']
+        master_location = ini_configs2dict(configsfiles['servers'])[
+            'PRODUCTION']['base_folder']
         for key, value in template_dict.iteritems():
-            value['location'] = join(master_location, cls._local_file_tree[key])
+            value['location'] = join(
+                master_location, cls._local_file_tree[key])
         return template_dict
 
     @classmethod
@@ -134,8 +142,9 @@ class StructureGenerator(object):
         :return:
         """
         if pl_type not in cls.reforgs:
-            raise Exception('Unsupported organism, %s not in %s.' % (pl_type, cls.reforgs) +
-                            ' Please modify the sources.ini manually')
+            raise Exception(
+                'Unsupported organism, %s not in %s.' %
+                (pl_type, cls.reforgs) + ' Please modify the sources.ini manually')
         else:
             write_path = join(configs_rootdir, 'sources.ini')
             cfdict = {}
@@ -226,7 +235,11 @@ def set_folders(file_directory, neo4jserver='http://localhost:7474',
                 mongoserver='mongodb://localhost:27017/'):
     if file_directory[0] == r'~':
         file_directory = expanduser(file_directory)
-    edit_confile('servers', 'PRODUCTION', 'base_folder', abspath(file_directory))
+    edit_confile(
+        'servers',
+        'PRODUCTION',
+        'base_folder',
+        abspath(file_directory))
     edit_confile('servers', 'PRODUCTION', 'server_neo4j', neo4jserver)
     edit_confile('servers', 'PRODUCTION', 'mongodb_server', mongoserver)
     StructureGenerator.build_source_config('yeast')

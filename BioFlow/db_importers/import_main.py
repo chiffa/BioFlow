@@ -12,8 +12,8 @@ from BioFlow.db_importers.reactome_importer import clear_all, insert_all, run_di
 from biogrid_importer import import_BioGRID
 
 
-#TODO: add the aboundance import
-#TODO: add the derivative importance contribution
+# TODO: add the aboundance import
+# TODO: add the derivative importance contribution
 
 # #################################
 # redirecting all to a log file

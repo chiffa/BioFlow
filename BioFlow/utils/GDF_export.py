@@ -4,7 +4,7 @@ without the need to export the whole relation matrix
 """
 import numpy as np
 from scipy.sparse import lil_matrix
-from BioFlow.configs2 import Dumps
+from BioFlow.main_configs import Dumps
 from BioFlow.utils.general_utils.high_level_os_io import mkdir_recursive
 
 # TODO: this class needs to be split into the GDF core that does all the work on a matrix rendering
@@ -27,8 +27,17 @@ class GDF_export_Interface(object):
 
     Authorised_names = ['VARCHAR', 'DOUBLE', 'BOOLEAN']
 
-    def __init__(self, target_fname, field_names, field_types, node_properties_dict,
-                 mincurrent, Idx2Label, Label2Idx, current_Matrix, directed=False):
+    def __init__(
+            self,
+            target_fname,
+            field_names,
+            field_types,
+            node_properties_dict,
+            mincurrent,
+            Idx2Label,
+            Label2Idx,
+            current_Matrix,
+            directed=False):
         mkdir_recursive(target_fname)
         self.target_file = open(target_fname, 'w')
         self.field_types = field_types
@@ -46,9 +55,8 @@ class GDF_export_Interface(object):
 
         # rebuilding a new current Matrix and creating a dict to map the relations from the
         # previous matrix into a new one.
-        self.mincurrent = mincurrent * self.current_Matrix[self.current_Matrix.nonzero()].toarray(
-
-        ).max()
+        self.mincurrent = mincurrent * \
+            self.current_Matrix[self.current_Matrix.nonzero()].toarray().max()
         # minimal current for which we will be performing filtering out of the conductances and
         # nodes through which the traffic is below that limit
         self.directed = directed
@@ -64,7 +72,8 @@ class GDF_export_Interface(object):
         if len(self.field_types) != len(self.field_types):
             raise Exception('GDF Node declaration is wrong')
         if not set(self.Authorised_names) >= set(self.field_types):
-            raise Exception('Wrong types were declared. please refer to the Doc')
+            raise Exception(
+                'Wrong types were declared. please refer to the Doc')
 
     def write_nodedefs(self):
         """
@@ -85,9 +94,11 @@ class GDF_export_Interface(object):
         """
         for nodename, nodeprops in self.node_properties.iteritems():
             if self.mincurrent and float(nodeprops[0]) > self.mincurrent:
-                self.target_file.write(nodename + ', ' + ', '.join(nodeprops)+'\n')
+                self.target_file.write(
+                    nodename + ', ' + ', '.join(nodeprops) + '\n')
             else:
-                self.target_file.write(nodename + ', ' + ', '.join(nodeprops)+'\n')
+                self.target_file.write(
+                    nodename + ', ' + ', '.join(nodeprops) + '\n')
 
     def write_edgedefs(self):
         """

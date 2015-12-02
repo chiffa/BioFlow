@@ -22,8 +22,8 @@ from scipy.sparse.linalg import eigsh
 
 from BioFlow.utils.GDF_export import GDF_export_Interface
 from BioFlow.utils.IO_Routines import write_to_csv, dump_object, undump_object
-from BioFlow.configs2 import Chromosome_source, Chromosome_file_filter
-from BioFlow.configs2 import edge_type_filters, Adjacency_Martix_Dict, Conductance_Matrix_Dict, Dumps, Outputs, Interactome_rand_samp
+from BioFlow.main_configs import Chromosome_source, Chromosome_file_filter
+from BioFlow.main_configs import edge_type_filters, Adjacency_Martix_Dict, Conductance_Matrix_Dict, Dumps, Outputs, Interactome_rand_samp
 from BioFlow.neo4j_db.db_io_routines import reaction_participant_getter, expand_from_seed, erase_custom_fields
 from BioFlow.neo4j_db.GraphDeclarator import DatabaseGraph
 from BioFlow.analysis import conduction_routines as CR
@@ -32,7 +32,8 @@ from BioFlow.analysis import conduction_routines as CR
 # Debug Log:
 #       Main connex set is 24k nodes, with 4331 UP links and 1051 Hint links
 #       With the full UP import, the main connex set is 25k Nodes, with 4336 UP Links and 1191 HiNT links
-#       With forbidding overloaded items: 24k771 Nodes, 4293 UP Links, 1186 HiNT links
+# With forbidding overloaded items: 24k771 Nodes, 4293 UP Links, 1186 HiNT
+# links
 
 
 class MatrixGetter(object):
@@ -49,8 +50,10 @@ class MatrixGetter(object):
     # List of all the reaction types present in the DatabaseGraph that will be
     # used as roots to build the interaction network (not all nodes are necessary
     # within the connex part of the graph)
-    ReactionsList = [DatabaseGraph.TemplateReaction, DatabaseGraph.Degradation, DatabaseGraph.BiochemicalReaction]
-
+    ReactionsList = [
+        DatabaseGraph.TemplateReaction,
+        DatabaseGraph.Degradation,
+        DatabaseGraph.BiochemicalReaction]
 
     def __init__(self, Connexity_Aware, full_impact):
         self.Connexity_Aware = Connexity_Aware
@@ -59,13 +62,14 @@ class MatrixGetter(object):
         self.init_time = time()
         self.partial_time = time()
 
-        self.Ajacency_Matrix = np.zeros((4,4))
-        self.Conductance_Matrix = np.zeros((4,4))    # This is just non-normalized laplacian matrix
+        self.Ajacency_Matrix = np.zeros((4, 4))
+        # This is just non-normalized laplacian matrix
+        self.Conductance_Matrix = np.zeros((4, 4))
 
-        self.adj_eigenvects = np.zeros((4,4))
-        self.adj_eigenvals = np.zeros((4,4))
-        self.cond_eigenvects = np.zeros((4,4))
-        self.cond_eigenvals = np.zeros((4,4))
+        self.adj_eigenvects = np.zeros((4, 4))
+        self.adj_eigenvals = np.zeros((4, 4))
+        self.cond_eigenvects = np.zeros((4, 4))
+        self.cond_eigenvals = np.zeros((4, 4))
 
         self.NodeID2MatrixNumber = {}
         self.MatrixNumber2NodeID = {}
@@ -75,7 +79,7 @@ class MatrixGetter(object):
         self.ID2Localization = {}
         self.Uniprots = []
         self.Uniprot_complete = []
-        self.Uniprot_attachments = {} # currently maintained for legacy reasons
+        self.Uniprot_attachments = {}  # currently maintained for legacy reasons
         self.Uniprot_Mat_idxs = []
 
         self.ReactLinks = []
@@ -94,12 +98,12 @@ class MatrixGetter(object):
         self.Matrix_reality = Dumps.matrix_corrs
 
         char_set = string.ascii_uppercase + string.digits
-        self.r_ID = ''.join(sample(char_set*6, 6))
+        self.r_ID = ''.join(sample(char_set * 6, 6))
 
         self.analytic_Uniprots = []
         self.UP2UP_voltages = {}
         self.UP2voltage_and_circ = {}
-        self.current_accumulator = np.zeros((2,2))
+        self.current_accumulator = np.zeros((2, 2))
         self.node_current = {}
 
         self.UP2Chrom = {}
@@ -115,16 +119,16 @@ class MatrixGetter(object):
         :return: tuple containing the time since the creation of the Matrix_getter object and since the last cal of function formatted as string
         :rtype: str
         """
-        it, pt = (round(time() - self.init_time), round(time() - self.partial_time))
-        pload = 'total: %s m %s s, \t partial: %s m %s s' % (int(it) / 60, it % 60, int(pt) / 60, pt % 60)
+        it, pt = (round(time() - self.init_time),
+                  round(time() - self.partial_time))
+        pload = 'total: %s m %s s, \t partial: %s m %s s' % (
+            int(it) / 60, it % 60, int(pt) / 60, pt % 60)
         self.partial_time = time()
         return pload
-
 
     def _time(self):
         pt = time() - self.partial_time
         return pt
-
 
     def dump_Matrices(self):
         """
@@ -133,14 +137,12 @@ class MatrixGetter(object):
         dump_object(Dumps.ValMat, self.Ajacency_Matrix)
         dump_object(Dumps.ConMat, self.Conductance_Matrix)
 
-
     def undump_Matrices(self):
         """
         undumps self.Ajacency_Matrix and self.Conductance_Matrix
         """
         self.Ajacency_Matrix = undump_object(Dumps.ValMat)
         self.Conductance_Matrix = undump_object(Dumps.ConMat)
-
 
     def dump_Eigens(self):
         """
@@ -149,49 +151,60 @@ class MatrixGetter(object):
         write_to_csv(Dumps.eigen_VaMat, self.adj_eigenvals)
         write_to_csv(Dumps.eigen_ConMat, self.cond_eigenvals)
         dump_object(Dumps.val_eigen, (self.adj_eigenvals, self.adj_eigenvects))
-        dump_object(Dumps.cond_eigen, (self.cond_eigenvals, self.cond_eigenvects))
-
+        dump_object(
+            Dumps.cond_eigen,
+            (self.cond_eigenvals,
+             self.cond_eigenvects))
 
     def undump_Eigens(self):
         """
         undumps self.adj_eigenvals and self.Conductance_Matrix
         """
-        self.adj_eigenvals, self.adj_eigenvects = undump_object(Dumps.val_eigen)
-        self.cond_eigenvals, self.cond_eigenvects = undump_object(Dumps.cond_eigen)
-
-
+        self.adj_eigenvals, self.adj_eigenvects = undump_object(
+            Dumps.val_eigen)
+        self.cond_eigenvals, self.cond_eigenvects = undump_object(
+            Dumps.cond_eigen)
 
     def dump_Maps(self):
         """
         dumps all the elements required for the mapping between the types and ids of database entries and matrix columns
         """
-        dump_object(Dumps.matrix_corrs,
-                         (self.NodeID2MatrixNumber, self.MatrixNumber2NodeID,
-                          self.ID2displayName, self.ID2LegacyId, self.ID2Type, self.ID2Localization,
-                          self.Uniprots, self.Uniprot_complete, self.Uniprot_attachments, self.UP2Chrom, self.Chrom2UP,
-                          self.Uniprot_Mat_idxs))
-
+        dump_object(
+            Dumps.matrix_corrs,
+            (self.NodeID2MatrixNumber,
+             self.MatrixNumber2NodeID,
+             self.ID2displayName,
+             self.ID2LegacyId,
+             self.ID2Type,
+             self.ID2Localization,
+             self.Uniprots,
+             self.Uniprot_complete,
+             self.Uniprot_attachments,
+             self.UP2Chrom,
+             self.Chrom2UP,
+             self.Uniprot_Mat_idxs))
 
     def undump_Maps(self):
         """
         undumps all the elements required for the mapping between the types and ids of database entries and matrix columns
         """
         self.NodeID2MatrixNumber, self.MatrixNumber2NodeID, self.ID2displayName, self.ID2LegacyId, self.ID2Type,\
-        self.ID2Localization, self.Uniprots, self.Uniprot_complete, self.Uniprot_attachments, self.UP2Chrom,\
-        self.Chrom2UP, self.Uniprot_Mat_idxs = undump_object(Dumps.matrix_corrs)
-
-
+            self.ID2Localization, self.Uniprots, self.Uniprot_complete, self.Uniprot_attachments, self.UP2Chrom,\
+            self.Chrom2UP, self.Uniprot_Mat_idxs = undump_object(Dumps.matrix_corrs)
 
     def dump_memoized(self):
-        md5 = hashlib.md5(json.dumps( sorted(self.analytic_Uniprots), sort_keys=True)).hexdigest()
-        payload = {'UP_hash' : md5,
-                        'sys_hash' : self._MD5hash(),
-                        'size' : len(self.analytic_Uniprots),
-                        'UPs' : pickle.dumps(self.analytic_Uniprots),
-                        'currents' : pickle.dumps((self.current_accumulator, self.node_current)),
-                        'voltages' : pickle.dumps(self.UP2voltage_and_circ)}
+        md5 = hashlib.md5(
+            json.dumps(
+                sorted(
+                    self.analytic_Uniprots),
+                sort_keys=True)).hexdigest()
+        payload = {
+            'UP_hash': md5, 'sys_hash': self._MD5hash(), 'size': len(
+                self.analytic_Uniprots), 'UPs': pickle.dumps(
+                self.analytic_Uniprots), 'currents': pickle.dumps(
+                (self.current_accumulator, self.node_current)), 'voltages': pickle.dumps(
+                    self.UP2voltage_and_circ)}
         dump_object(Dumps.Interactome_Analysis_memoized, payload)
-
 
     def undump_memoized(self):
         """
@@ -200,9 +213,7 @@ class MatrixGetter(object):
         """
         return undump_object(Dumps.Interactome_Analysis_memoized)
 
-
     def full_load_LS(self):
-
         """
         Performs the loading of all the objects and the relations in the database according to the following algorithm:
             - get all the reaction nodes, i.e. reactions specified in the self.Reaction_List.
@@ -242,7 +253,8 @@ class MatrixGetter(object):
                 for Reaction in ReactionType.get_all():
                     if Reaction is None:
                         continue
-                    LocalList, cnt = reaction_participant_getter(Reaction, self.Connexity_Aware)
+                    LocalList, cnt = reaction_participant_getter(
+                        Reaction, self.Connexity_Aware)
                     count += cnt
 
                     if len(LocalList) > 1:
@@ -251,7 +263,7 @@ class MatrixGetter(object):
 
             return ReagentClusters, Seeds, count
 
-        def get_expansion( SubSeed, edge_type_filter):
+        def get_expansion(SubSeed, edge_type_filter):
             '''
             Recovers all the nodes reached from the SubSeed according to a the relations listed
             in edge_type_filter
@@ -272,13 +284,13 @@ class MatrixGetter(object):
             SuperSeed.update(SubSeed)
             count = 0
             for element in SubSeed:
-                LocalList, count_increase = expand_from_seed(element, edge_type_filter, self.Connexity_Aware)
+                LocalList, count_increase = expand_from_seed(
+                    element, edge_type_filter, self.Connexity_Aware)
                 if len(LocalList) > 0:
                     Clusters[element] = copy(LocalList)
                     SuperSeed.update(LocalList)
                     count += count_increase
             return Clusters, SuperSeed, count
-
 
         def characterise(name, Links, Group, count):
             """
@@ -296,7 +308,7 @@ class MatrixGetter(object):
             print len(Links), len(Group), count
             print self.pretty_time()
 
-        ################################################################################################################
+        #######################################################################
 
         # TODO: this step is inherently recursive and must be formalized as such, intaking only the database and
         #       data types defined in the configs files
@@ -304,42 +316,68 @@ class MatrixGetter(object):
         self.ReactLinks, self.InitSet, c = get_Reaction_blocks()
         characterise('Reactions', self.ReactLinks, self.InitSet, c)
 
-        self.GroupLinks, self.GroupSet, c = get_expansion(self.InitSet, edge_type_filters["Group"])
+        self.GroupLinks, self.GroupSet, c = get_expansion(
+            self.InitSet, edge_type_filters["Group"])
         characterise('Groups', self.GroupLinks, self.GroupSet, c)
 
-        self.SecLinks, self.SecSet, c = get_expansion(self.GroupSet, edge_type_filters["Contact_interaction"])
+        self.SecLinks, self.SecSet, c = get_expansion(
+            self.GroupSet, edge_type_filters["Contact_interaction"])
         characterise('Secondary Links', self.SecLinks, self.SecSet, c)
 
         for i in range(0, 5):
-            SecLinks2, SecSet2, c = get_expansion(self.SecSet, edge_type_filters["Contact_interaction"])
+            SecLinks2, SecSet2, c = get_expansion(
+                self.SecSet, edge_type_filters["Contact_interaction"])
             self.SecSet = SecSet2
             self.SecLinks = SecLinks2
-            characterise('Secondary Links ' + str(i) + ' ', self.SecLinks, self.SecSet, c)
+            characterise(
+                'Secondary Links ' +
+                str(i) +
+                ' ',
+                self.SecLinks,
+                self.SecSet,
+                c)
 
-        self.UP_Links, self.UPSet, c = get_expansion(self.SecSet, edge_type_filters["Same"])
+        self.UP_Links, self.UPSet, c = get_expansion(
+            self.SecSet, edge_type_filters["Same"])
         characterise('Uniprot Links', self.UP_Links, self.UPSet, c)
 
-        self.HiNT_Links, self.pre_FullSet, c = get_expansion(self.UPSet, edge_type_filters["HiNT_Contact_interaction"])
+        self.HiNT_Links, self.pre_FullSet, c = get_expansion(
+            self.UPSet, edge_type_filters["HiNT_Contact_interaction"])
         characterise('HiNT Links', self.HiNT_Links, self.pre_FullSet, c)
 
         for i in range(0, 5):
-            HiNT_Links2, FullSet2, c = get_expansion(self.pre_FullSet, edge_type_filters["HiNT_Contact_interaction"])
+            HiNT_Links2, FullSet2, c = get_expansion(
+                self.pre_FullSet, edge_type_filters["HiNT_Contact_interaction"])
             self.pre_FullSet = FullSet2
             self.HiNT_Links = HiNT_Links2
-            characterise('HiNT Links ' + str(i) + ' ', self.HiNT_Links, self.pre_FullSet, c)
+            characterise(
+                'HiNT Links ' +
+                str(i) +
+                ' ',
+                self.HiNT_Links,
+                self.pre_FullSet,
+                c)
 
-        self.BioGRID_Links, self.FullSet, c = get_expansion(self.pre_FullSet, edge_type_filters["BioGRID_Contact_interaction"])
+        self.BioGRID_Links, self.FullSet, c = get_expansion(
+            self.pre_FullSet, edge_type_filters["BioGRID_Contact_interaction"])
         characterise('BioGRID Links', self.BioGRID_Links, self.FullSet, c)
 
         for i in range(0, 5):
-            BioGRID_Links2, FullSet2, c = get_expansion(self.FullSet, edge_type_filters["BioGRID_Contact_interaction"])
+            BioGRID_Links2, FullSet2, c = get_expansion(
+                self.FullSet, edge_type_filters["BioGRID_Contact_interaction"])
             self.FullSet = FullSet2
             self.BioGRID_Links = BioGRID_Links2
-            characterise('HiNT Links ' + str(i) + ' ', self.BioGRID_Links, self.FullSet, c)
+            characterise(
+                'HiNT Links ' +
+                str(i) +
+                ' ',
+                self.BioGRID_Links,
+                self.FullSet,
+                c)
 
-        self.Super_Links, self.ExpSet, c = get_expansion(self.FullSet, edge_type_filters["possibly_same"])
+        self.Super_Links, self.ExpSet, c = get_expansion(
+            self.FullSet, edge_type_filters["possibly_same"])
         characterise('Looks_similar Links', self.Super_Links, self.ExpSet, c)
-
 
     def map_rows_to_names(self,):
         """ Maps Node Database IDs, Legacy IDs, display names and types to matrix row/column indexes; """
@@ -359,14 +397,13 @@ class MatrixGetter(object):
             if location in Location_Buffer_Dict.keys():
                 return Location_Buffer_Dict[location]
             else:
-                generator = DatabaseGraph.Location.index.lookup(ID = location)
+                generator = DatabaseGraph.Location.index.lookup(ID=location)
                 if generator is not None:
                     for elt in generator:
                         Location_Buffer_Dict[location] = str(elt.displayName)
                         return str(elt.displayName)
 
-        ######################################################################################################################
-
+        #######################################################################
 
         counter = 0
         LocationBufferDict = {}
@@ -385,7 +422,8 @@ class MatrixGetter(object):
                 self.Uniprots.append(ID)
                 self.Uniprot_Mat_idxs.append(counter)
             if Vertex.localization is not None:
-                self.ID2Localization[ID] = request_location(LocationBufferDict, Vertex.localization)
+                self.ID2Localization[ID] = request_location(
+                    LocationBufferDict, Vertex.localization)
             counter += 1
 
         self.Uniprot_complete += self.Uniprots
@@ -401,8 +439,6 @@ class MatrixGetter(object):
 
         self.Uniprot_complete = list(set(self.Uniprot_complete))
 
-
-
     def fast_row_insert(self, element, index_type):
         """
         Performs an correct insertion of an edge to the matrix.
@@ -413,14 +449,31 @@ class MatrixGetter(object):
                             or Conductance_Martix_Dict from the configs file
         :type index_type: str
         """
-        self.Ajacency_Matrix[element[0], element[1]] = min(self.Ajacency_Matrix[element[0], element[1]] + Adjacency_Martix_Dict[index_type], 1)
-        self.Ajacency_Matrix[element[1], element[0]] = min(self.Ajacency_Matrix[element[1], element[0]] + Adjacency_Martix_Dict[index_type], 1)
+        self.Ajacency_Matrix[
+            element[0],
+            element[1]] = min(
+            self.Ajacency_Matrix[
+                element[0],
+                element[1]] +
+            Adjacency_Martix_Dict[index_type],
+            1)
+        self.Ajacency_Matrix[
+            element[1],
+            element[0]] = min(
+            self.Ajacency_Matrix[
+                element[1],
+                element[0]] +
+            Adjacency_Martix_Dict[index_type],
+            1)
 
-        self.Conductance_Matrix[element[0], element[1]] -= Conductance_Matrix_Dict[index_type]
-        self.Conductance_Matrix[element[1], element[0]] -= Conductance_Matrix_Dict[index_type]
-        self.Conductance_Matrix[element[1], element[1]] += Conductance_Matrix_Dict[index_type]
-        self.Conductance_Matrix[element[0], element[0]] += Conductance_Matrix_Dict[index_type]
-
+        self.Conductance_Matrix[element[0], element[
+            1]] -= Conductance_Matrix_Dict[index_type]
+        self.Conductance_Matrix[element[1], element[
+            0]] -= Conductance_Matrix_Dict[index_type]
+        self.Conductance_Matrix[element[1], element[
+            1]] += Conductance_Matrix_Dict[index_type]
+        self.Conductance_Matrix[element[0], element[
+            0]] += Conductance_Matrix_Dict[index_type]
 
     def create_val_matrix(self):
         """
@@ -446,40 +499,54 @@ class MatrixGetter(object):
 
         for group in self.ReactLinks:
             for elt in itertools.combinations(group, 2):
-                element = (self.NodeID2MatrixNumber[elt[0]], self.NodeID2MatrixNumber[elt[1]])
+                element = (
+                    self.NodeID2MatrixNumber[
+                        elt[0]], self.NodeID2MatrixNumber[
+                        elt[1]])
                 self.fast_row_insert(element, "Reaction")
 
         for key in self.GroupLinks.keys():
             for val in self.GroupLinks[key]:
-                element = (self.NodeID2MatrixNumber[key], self.NodeID2MatrixNumber[val])
+                element = (
+                    self.NodeID2MatrixNumber[key],
+                    self.NodeID2MatrixNumber[val])
                 self.fast_row_insert(element, "Group")
 
         for key in self.SecLinks.keys():
             for val in self.SecLinks[key]:
-                element = (self.NodeID2MatrixNumber[key], self.NodeID2MatrixNumber[val])
+                element = (
+                    self.NodeID2MatrixNumber[key],
+                    self.NodeID2MatrixNumber[val])
                 self.fast_row_insert(element, "Contact_interaction")
 
         for key in self.UP_Links.keys():
             for val in self.UP_Links[key]:
-                element = (self.NodeID2MatrixNumber[key], self.NodeID2MatrixNumber[val])
+                element = (
+                    self.NodeID2MatrixNumber[key],
+                    self.NodeID2MatrixNumber[val])
                 self.fast_row_insert(element, "Same")
 
         for key in self.HiNT_Links.keys():
             for val in self.HiNT_Links[key]:
-                element = (self.NodeID2MatrixNumber[key], self.NodeID2MatrixNumber[val])
+                element = (
+                    self.NodeID2MatrixNumber[key],
+                    self.NodeID2MatrixNumber[val])
                 self.fast_row_insert(element, "Contact_interaction")
 
         for key in self.BioGRID_Links.keys():
             for val in self.BioGRID_Links[key]:
-                element = (self.NodeID2MatrixNumber[key], self.NodeID2MatrixNumber[val])
+                element = (
+                    self.NodeID2MatrixNumber[key],
+                    self.NodeID2MatrixNumber[val])
                 self.fast_row_insert(element, "weak_contact")
 
         if self.full_impact:
             for key in self.Super_Links.keys():
                 for val in self.Super_Links[key]:
-                    element = (self.NodeID2MatrixNumber[key], self.NodeID2MatrixNumber[val])
+                    element = (
+                        self.NodeID2MatrixNumber[key],
+                        self.NodeID2MatrixNumber[val])
                     self.fast_row_insert(element, "possibly_same")
-
 
     def get_eigenspectrum(self, numberEigvals):
         """
@@ -491,13 +558,15 @@ class MatrixGetter(object):
         :raise Exception: "Matrix must be pre-loaded first" if self.Ajacency_Matrix and self.Conductance_Matrix have not
                             been computed anew or pre-loaded first
         """
-        if self.Conductance_Matrix.shape == (4,4):
+        if self.Conductance_Matrix.shape == (4, 4):
             raise Exception("Matrix must be pre-loaded first")
 
         print "entering eigenvect computation", self.pretty_time()
 
-        self.adj_eigenvals, self.adj_eigenvects = eigsh(self.Ajacency_Matrix, numberEigvals)
-        self.cond_eigenvals, self.cond_eigenvects = eigsh(self.Conductance_Matrix, numberEigvals)
+        self.adj_eigenvals, self.adj_eigenvects = eigsh(
+            self.Ajacency_Matrix, numberEigvals)
+        self.cond_eigenvals, self.cond_eigenvects = eigsh(
+            self.Conductance_Matrix, numberEigvals)
 
         print self.adj_eigenvals
         print '<======================>'
@@ -507,8 +576,7 @@ class MatrixGetter(object):
 
         print self.pretty_time()
 
-
-    def get_normalized_laplacian(self, fudge = 1E-18):
+    def get_normalized_laplacian(self, fudge=1E-18):
         """
         Returns the normalized conductance matrix (Conductance matrix is actually the matrix laplacian of the associated
         Graph)
@@ -517,9 +585,8 @@ class MatrixGetter(object):
         :return: normalized matrix
         """
         d, V = np.linalg.eigh(self.Conductance_Matrix)
-        D = np.diag(1./np.sqrt(d + fudge))
+        D = np.diag(1. / np.sqrt(d + fudge))
         return np.dot(np.dot(V, D), V.T)
-
 
     def Write_Connexity_Infos(self):
         """
@@ -528,7 +595,7 @@ class MatrixGetter(object):
 
             :warning: This process has to ber re-run each time the underlying database is changed in a way that migh affect the main connex graph
         """
-        CCOmps = connected_components(self.Ajacency_Matrix, directed = False)
+        CCOmps = connected_components(self.Ajacency_Matrix, directed=False)
 
         counters = np.zeros((CCOmps[0], 1))
         for elt in range(0, len(CCOmps[1])):
@@ -537,7 +604,7 @@ class MatrixGetter(object):
 
         ln = len(CCOmps[1])
         for i in range(0, len(CCOmps[1])):
-            print 'Marking graph main connex elements: %s done' % str("{0:.2f}".format(float(i)/float(ln)*100))
+            print 'Marking graph main connex elements: %s done' % str("{0:.2f}".format(float(i) / float(ln) * 100))
             if CCOmps[1][i] == major_Index:
                 Node = DatabaseGraph.vertices.get(self.MatrixNumber2NodeID[i])
                 Node.custom = 'Main_Connex'
@@ -545,14 +612,13 @@ class MatrixGetter(object):
                 Node.save()
         print "Marking of %s nodes for connexity was done in %s" % (str(ln), str(self.pretty_time()))
 
-
     def full_rebuild(self):
         """
         Performs the initial loading routines that set up in place the sytem of dump files to allow fast loading in the
         future
         """
 
-        CA  = self.Connexity_Aware
+        CA = self.Connexity_Aware
         self.Connexity_Aware = False
 
         self.create_val_matrix()
@@ -565,12 +631,12 @@ class MatrixGetter(object):
         self.create_val_matrix()
         self.get_eigenspectrum(100)
 
-        # self.map_UPs_to_chromosomes()  #TODO: revert once the chromosome downloading from BioMart and assembly has been succesfully completed
+        # self.map_UPs_to_chromosomes()  #TODO: revert once the chromosome
+        # downloading from BioMart and assembly has been succesfully completed
 
         self.dump_Maps()
         self.dump_Matrices()
         self.dump_Eigens()
-
 
     def fast_load(self):
         """
@@ -579,7 +645,6 @@ class MatrixGetter(object):
         self.undump_Maps()
         self.undump_Matrices()
         self.undump_Eigens()
-
 
     def get_descriptor_for_index(self, index):
         """
@@ -597,7 +662,6 @@ class MatrixGetter(object):
             return (self.ID2Type[self.MatrixNumber2NodeID[index]],
                     self.ID2displayName[self.MatrixNumber2NodeID[index]])
 
-
     def compute_Uniprot_Attachments(self):
         """
         Computes the dictionarry of attachements between the Uniprots and Reactome proteins
@@ -610,10 +674,9 @@ class MatrixGetter(object):
                 for item in Generator:
                     ID = str(item).split('/')[-1][:-1]
                     self.Uniprot_attachments[SP_Node_ID].append(ID)
-                print 'attached %s Reactome proteins to the node %s' %(len(self.Uniprot_attachments[SP_Node_ID]), SP_Node_ID)
+                print 'attached %s Reactome proteins to the node %s' % (len(self.Uniprot_attachments[SP_Node_ID]), SP_Node_ID)
             else:
                 print 'No attachement for the node %s' % SP_Node_ID
-
 
     def hacky_corr(self):
         """
@@ -630,16 +693,18 @@ class MatrixGetter(object):
         print len(self.Uniprot_Mat_idxs)
         self.dump_Maps()
 
-
     def _MD5hash(self):
         """
         Return the MD hash of self to ensure that all the defining properties have been correctly defined before dump/retrieval
         """
         sorted_initset = sorted(self.NodeID2MatrixNumber.keys(), key=str.lower)
-        data = [self.Connexity_Aware, sorted_initset, self.full_impact, self.background]
+        data = [
+            self.Connexity_Aware,
+            sorted_initset,
+            self.full_impact,
+            self.background]
         md5 = hashlib.md5(json.dumps(data, sort_keys=True)).hexdigest()
         return str(md5)
-
 
     def set_Uniprot_source(self, Uniprots):
         """
@@ -650,12 +715,19 @@ class MatrixGetter(object):
         :raise Warning: if the uniprots were not present in the set of GOs for which we built the system or had no GO attached to them
         """
         if not set(Uniprots) <= set(self.NodeID2MatrixNumber.keys()):
-            ex_pload = 'Following Uniprots were not retrieved upon the circulation matrix construction: \n %s' % (set(Uniprots) - set(self.NodeID2MatrixNumber.keys()))
+            ex_pload = 'Following Uniprots were not retrieved upon the circulation matrix construction: \n %s' % (
+                set(Uniprots) - set(self.NodeID2MatrixNumber.keys()))
             print Warning(ex_pload)
-        self.analytic_Uniprots =self.analytic_Uniprots = [ uniprot for uniprot in Uniprots if uniprot in self.NodeID2MatrixNumber.keys()]
+        self.analytic_Uniprots = self.analytic_Uniprots = [
+            uniprot for uniprot in Uniprots if uniprot in self.NodeID2MatrixNumber.keys()]
 
-
-    def build_extended_conduction_system(self, memoized=True, sourced=False, incremental=False, cancellation=True, sparse_samples=False):
+    def build_extended_conduction_system(
+            self,
+            memoized=True,
+            sourced=False,
+            incremental=False,
+            cancellation=True,
+            sparse_samples=False):
         """
         Builds a conduction matrix that integrates uniprots, in order to allow an easier knowledge flow analysis
 
@@ -668,26 +740,30 @@ class MatrixGetter(object):
         :type sparse_samples: int
         :return: adjusted conduction system
         """
-        if not incremental or self.current_accumulator == np.zeros((2,2)):
-            self.current_accumulator = lil_matrix(self.Conductance_Matrix.shape)
+        if not incremental or self.current_accumulator == np.zeros((2, 2)):
+            self.current_accumulator = lil_matrix(
+                self.Conductance_Matrix.shape)
             self.UP2UP_voltages = {}
             self.node_current = defaultdict(float)
             if not sourced:
                 self.UP2voltage_and_circ = {}
 
         if sparse_samples:
-            current_accumulator = CR.sample_pairwise_flow(self.Conductance_Matrix,
-                                                                                   [self.NodeID2MatrixNumber[UP] for UP in self.analytic_Uniprots],
-                                                                                   resamples=sparse_samples,
-                                                                                   cancellation=cancellation)
+            current_accumulator = CR.sample_pairwise_flow(
+                self.Conductance_Matrix,
+                [
+                    self.NodeID2MatrixNumber[UP] for UP in self.analytic_Uniprots],
+                resamples=sparse_samples,
+                cancellation=cancellation)
         else:
             current_accumulator, UP_pair2voltage_current = CR.get_better_pairwise_flow(self.Conductance_Matrix,
-                                                                                   [self.NodeID2MatrixNumber[UP] for UP in self.analytic_Uniprots],
-                                                                                   cancellation=cancellation,
-                                                                                   memoized=memoized,
-                                                                                   memory_source=self.UP2voltage_and_circ)
+                                                                                       [self.NodeID2MatrixNumber[UP] for UP in self.analytic_Uniprots],
+                                                                                       cancellation=cancellation,
+                                                                                       memoized=memoized,
+                                                                                       memory_source=self.UP2voltage_and_circ)
             # self.UP2voltage_and_circ.update(UP_pair2voltage_current)
-            self.UP2UP_voltages.update(dict((key, val1) for key, (val1, val2) in UP_pair2voltage_current.iteritems()))
+            self.UP2UP_voltages.update(
+                dict((key, val1) for key, (val1, val2) in UP_pair2voltage_current.iteritems()))
 
         if incremental:
             self.current_accumulator = self.current_accumulator + current_accumulator
@@ -699,10 +775,13 @@ class MatrixGetter(object):
 
         index_current = CR.get_current_through_nodes(self.current_accumulator)
         print current_accumulator.shape
-        self.node_current.update(dict((self.MatrixNumber2NodeID[idx], val) for idx, val in enumerate(index_current)))
+        self.node_current.update(
+            dict(
+                (self.MatrixNumber2NodeID[idx],
+                 val) for idx,
+                val in enumerate(index_current)))
 
-
-    def format_Node_props(self, node_current, limit = 0.01):
+    def format_Node_props(self, node_current, limit=0.01):
         """
         Formats the nodes for the analysis by in the knowledge_access_analysis module
 
@@ -711,13 +790,12 @@ class MatrixGetter(object):
         :return: {Entity:[node current, node degree]}
         """
         charDict = {}
-        limcurr = max(node_current.values())*limit
+        limcurr = max(node_current.values()) * limit
         for NodeID, i in self.NodeID2MatrixNumber.iteritems():
             if node_current[NodeID] > limcurr:
-                charDict[NodeID] = [ node_current[NodeID],
-                                     self.Conductance_Matrix[i, i]]
+                charDict[NodeID] = [node_current[NodeID],
+                                    self.Conductance_Matrix[i, i]]
         return charDict
-
 
     def export_conduction_system(self):
         """
@@ -728,10 +806,23 @@ class MatrixGetter(object):
         """
 
         if self.incomplete_compute:
-            raise Warning('Computation of the information circulation was not complete, most likely due to the sampling')
+            raise Warning(
+                'Computation of the information circulation was not complete, most likely due to the sampling')
 
-        nodecharnames = ['Current', 'Type', 'Legacy_ID', 'Names', 'Degree', 'Source']
-        nodechartypes = ['DOUBLE', 'VARCHAR', 'VARCHAR', 'VARCHAR', 'DOUBLE', 'DOUBLE']
+        nodecharnames = [
+            'Current',
+            'Type',
+            'Legacy_ID',
+            'Names',
+            'Degree',
+            'Source']
+        nodechartypes = [
+            'DOUBLE',
+            'VARCHAR',
+            'VARCHAR',
+            'VARCHAR',
+            'DOUBLE',
+            'DOUBLE']
         charDict = {}
 
         print self.Conductance_Matrix.shape
@@ -739,20 +830,23 @@ class MatrixGetter(object):
 
         for NodeID in self.node_current.iterkeys():
             i = self.NodeID2MatrixNumber[NodeID]
-            charDict[NodeID] = [ str(self.node_current[NodeID]),
-                             self.ID2Type[NodeID],
-                             self.ID2LegacyId[NodeID],
-                             self.ID2displayName[NodeID].replace(',', '-'),
-                             str(self.Conductance_Matrix[i, i]),
-                             str(float(int(NodeID in self.analytic_Uniprots)))]
+            charDict[NodeID] = [str(self.node_current[NodeID]),
+                                self.ID2Type[NodeID],
+                                self.ID2LegacyId[NodeID],
+                                self.ID2displayName[NodeID].replace(',', '-'),
+                                str(self.Conductance_Matrix[i, i]),
+                                str(float(int(NodeID in self.analytic_Uniprots)))]
 
-        GDF_exporter = GDF_export_Interface(target_fname = Outputs.Interactome_GDF_output, field_names = nodecharnames,
-                                            field_types = nodechartypes, node_properties_dict = charDict,
-                                            mincurrent = 0.01, Idx2Label = self.MatrixNumber2NodeID,
-                                            Label2Idx = self.NodeID2MatrixNumber,
-                                            current_Matrix = self.current_accumulator)
+        GDF_exporter = GDF_export_Interface(
+            target_fname=Outputs.Interactome_GDF_output,
+            field_names=nodecharnames,
+            field_types=nodechartypes,
+            node_properties_dict=charDict,
+            mincurrent=0.01,
+            Idx2Label=self.MatrixNumber2NodeID,
+            Label2Idx=self.NodeID2MatrixNumber,
+            current_Matrix=self.current_accumulator)
         GDF_exporter.write()
-
 
     def export_subsystem(self, UP_system, UP_subsystem):
         """
@@ -766,15 +860,23 @@ class MatrixGetter(object):
                             is stored in the dumps
         """
         current_recombinator = self.undump_memoized()
-        if not set(UP_system) == set(pickle.loads(current_recombinator['UPs'])):
+        if not set(UP_system) == set(
+                pickle.loads(current_recombinator['UPs'])):
             raise Exception('Wrong UP system re-analyzed')
-        self.UP2voltage_and_circ = pickle.loads(current_recombinator['voltages'])
+        self.UP2voltage_and_circ = pickle.loads(
+            current_recombinator['voltages'])
         self.set_Uniprot_source(UP_subsystem)
-        self.build_extended_conduction_system(memoized = False, sourced = True)
+        self.build_extended_conduction_system(memoized=False, sourced=True)
         self.export_conduction_system()
 
-
-    def randomly_sample(self, samples_size, samples_each_size, sparse_rounds=False, chromosome_specific=False, memoized=False, No_add=False):
+    def randomly_sample(
+            self,
+            samples_size,
+            samples_each_size,
+            sparse_rounds=False,
+            chromosome_specific=False,
+            memoized=False,
+            No_add=False):
         """
         Randomly samples the set of Uniprots used to create the model. This is the null model creation routine
 
@@ -794,38 +896,51 @@ class MatrixGetter(object):
         if not len(samples_size) == len(samples_each_size):
             raise Exception('Not the same list sizes!')
 
-        self_connectable_UPs = [NodeID for NodeID, idx in self.NodeID2MatrixNumber.iteritems() if idx<(self.Conductance_Matrix.shape[0]-1)]
+        self_connectable_UPs = [
+            NodeID for NodeID,
+            idx in self.NodeID2MatrixNumber.iteritems() if idx < (
+                self.Conductance_Matrix.shape[0] - 1)]
 
         if self.background is not None:
-            self_connectable_UPs = list(set(self_connectable_UPs).intersection(set(self.background)))
+            self_connectable_UPs = list(
+                set(self_connectable_UPs).intersection(set(self.background)))
 
         if chromosome_specific:
-            self_connectable_UPs = list(set(self_connectable_UPs).intersection(set(self.Chrom2UP[str(chromosome_specific)])))
+            self_connectable_UPs = list(set(self_connectable_UPs).intersection(
+                set(self.Chrom2UP[str(chromosome_specific)])))
 
         for sample_size, iterations in zip(samples_size, samples_each_size):
             for i in range(0, iterations):
                 shuffle(self_connectable_UPs)
                 analytics_UP_list = self_connectable_UPs[:sample_size]
                 self.set_Uniprot_source(analytics_UP_list)
-                self.build_extended_conduction_system(memoized=memoized, sourced=False, sparse_samples=sparse_rounds)
+                self.build_extended_conduction_system(
+                    memoized=memoized, sourced=False, sparse_samples=sparse_rounds)
 
-                md5 = hashlib.md5(json.dumps( sorted(analytics_UP_list), sort_keys=True)).hexdigest()
+                md5 = hashlib.md5(
+                    json.dumps(
+                        sorted(analytics_UP_list),
+                        sort_keys=True)).hexdigest()
 
                 # print 'debug1 \t', self.UP2UP_voltages
 
                 if not No_add:
-                    Interactome_rand_samp.insert({'UP_hash' : md5,
-                                     'sys_hash' : self._MD5hash(),
-                                     'size' : sample_size,
-                                     'chrom': str(chromosome_specific),
-                                     'sparse_rounds': sparse_rounds,
-                                     'UPs' : pickle.dumps(analytics_UP_list),
-                                     'currents' : pickle.dumps((self.current_accumulator, self.node_current)),
-                                     'voltages' : pickle.dumps(self.UP2UP_voltages)})
+                    Interactome_rand_samp.insert(
+                        {
+                            'UP_hash': md5,
+                            'sys_hash': self._MD5hash(),
+                            'size': sample_size,
+                            'chrom': str(chromosome_specific),
+                            'sparse_rounds': sparse_rounds,
+                            'UPs': pickle.dumps(analytics_UP_list),
+                            'currents': pickle.dumps(
+                                (self.current_accumulator,
+                                 self.node_current)),
+                            'voltages': pickle.dumps(
+                                self.UP2UP_voltages)})
 
-                print 'Random ID: %s \t Sample size: %s \t iteration: %s\t compops: %s \t time: %s ' %(self.r_ID,
-                        sample_size, i, "{0:.2f}".format(sample_size*(sample_size-1)/2/self._time()), self.pretty_time())
-
+                print 'Random ID: %s \t Sample size: %s \t iteration: %s\t compops: %s \t time: %s ' % (self.r_ID,
+                                                                                                        sample_size, i, "{0:.2f}".format(sample_size * (sample_size - 1) / 2 / self._time()), self.pretty_time())
 
     def map_UPs_to_chromosomes(self):
         """
@@ -837,9 +952,9 @@ class MatrixGetter(object):
         #          if this is the case,
         for fle in os.listdir(Chromosome_source):
             if Chromosome_file_filter in fle:
-                source_fle = Chromosome_source+'/'+fle
+                source_fle = Chromosome_source + '/' + fle
                 id = fle.split('.')[0].split(Chromosome_file_filter)[1]
-                resdict[id]=open(source_fle).read()
+                resdict[id] = open(source_fle).read()
 
         for i, (key, val) in enumerate(Mat_gter.ID2LegacyId.iteritems()):
             for id, textblock in resdict.iteritems():
@@ -848,7 +963,6 @@ class MatrixGetter(object):
                     self.Chrom2UP[id].append(key)
 
         self.Chrom2UP = dict(self.Chrom2UP)
-
 
 
 if __name__ == "__main__":
@@ -867,5 +981,3 @@ if __name__ == "__main__":
     # Mat_gter.export_conduction_system()
 
     # Mat_gter.randomly_sample([100,250],[5,5], sparse_rounds=10)
-
-

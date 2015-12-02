@@ -8,11 +8,13 @@ Last updated on Nov 6, 2015
 
 from csv import reader as csv_reader
 from collections import defaultdict
-from BioFlow.configs2 import Hint_csv
+from BioFlow.main_configs import Hint_csv
 from BioFlow.neo4j_db.GraphDeclarator import DatabaseGraph
 
 
-def get_prot2prot_rels(_hint_csv):  # TODO HiNT is subject to modification and thus parsing should be tested and shown
+# TODO HiNT is subject to modification and thus parsing should be tested
+# and shown
+def get_prot2prot_rels(_hint_csv):
     """
     Reads protein-protein relationships from a HiNT database file
 
@@ -30,7 +32,7 @@ def get_prot2prot_rels(_hint_csv):  # TODO HiNT is subject to modification and t
     return dict(local_relations)
 
 
-def get_uniprots():  #TODO: refactoring requires moving to the Database IO module
+def get_uniprots():  # TODO: refactoring requires moving to the Database IO module
     """
     Connects to the Graph database and pulls out all of the uniprots by their identifiers
 
@@ -45,7 +47,9 @@ def get_uniprots():  #TODO: refactoring requires moving to the Database IO modul
     return uniprot_dict
 
 
-def cross_ref_HiNT(flush):  # TODO: dissociate indentification of elements that need to be joined and graph database action
+# TODO: dissociate indentification of elements that need to be joined and
+# graph database action
+def cross_ref_HiNT(flush):
     """
     Pulls Hint relationships and connects Uniprots in the database
 
@@ -64,6 +68,6 @@ def cross_ref_HiNT(flush):  # TODO: dissociate indentification of elements that 
                     i += 1
                     print 'HINT links:', key, subkey
                     if flush:
-                        DatabaseGraph.is_interacting.create(UniProtRefDict[key], UniProtRefDict[subkey])
+                        DatabaseGraph.is_interacting.create(
+                            UniProtRefDict[key], UniProtRefDict[subkey])
     print i, len(Treated)
-

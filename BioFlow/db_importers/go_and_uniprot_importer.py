@@ -23,8 +23,10 @@ console.setFormatter(formatter)
 logging.getLogger('').addHandler(console)
 
 
-GODict = {} # Stores relations between GO IDs and the objects in the neo4j database
-UniprotDict = {} # Stores relations between the SWISSPROT UNIPROT IDs and the neo4j database objects
+GODict = {}  # Stores relations between GO IDs and the objects in the neo4j database
+# Stores relations between the SWISSPROT UNIPROT IDs and the neo4j
+# database objects
+UniprotDict = {}
 
 
 def import_GOs():
@@ -38,19 +40,26 @@ def import_GOs():
     i = 0
     for GO_Term in GO_Terms.keys():
         i += 1
-        logging.debug('GO %s %%', str("{0:.2f}".format(float(i) / float(leng) * 100)))
-        primary = DatabaseGraph.GOTerm.create(ID = GO_Terms[GO_Term]['id'],
-                                              Name = GO_Terms[GO_Term]['name'],
-                                              displayName = GO_Terms[GO_Term]['name'],
-                                              Namespace = GO_Terms[GO_Term]['namespace'],
-                                              Definition = GO_Terms[GO_Term]['def'])
+        logging.debug(
+            'GO %s %%', str(
+                "{0:.2f}".format(
+                    float(i) / float(leng) * 100)))
+        primary = DatabaseGraph.GOTerm.create(
+            ID=GO_Terms[GO_Term]['id'],
+            Name=GO_Terms[GO_Term]['name'],
+            displayName=GO_Terms[GO_Term]['name'],
+            Namespace=GO_Terms[GO_Term]['namespace'],
+            Definition=GO_Terms[GO_Term]['def'])
         GODict[GO_Term] = primary
     # Create the structure between them:
     leng = len(GO_Terms_Structure)
     i = 0
     for relation in GO_Terms_Structure:
         i += 1
-        logging.debug('inter GO relations %s %%', str("{0:.2f}".format(float(i) / float(leng) * 100)))
+        logging.debug(
+            'inter GO relations %s %%', str(
+                "{0:.2f}".format(
+                    float(i) / float(leng) * 100)))
         primary = GODict[relation[0]]
         secondary = GODict[relation[2]]
         Type = relation[1]
@@ -60,16 +69,17 @@ def import_GOs():
             DatabaseGraph.is_part_of_go.create(primary, secondary)
         if 'regul' in Type:
             if Type == 'positively_regulates':
-                DatabaseGraph.is_regulant.create(primary, secondary,
-                                                 controlType = 'ACTIVATES',
-                                                 ID = str('GO' + primary.ID + secondary.ID))
+                DatabaseGraph.is_regulant.create(
+                    primary, secondary, controlType='ACTIVATES', ID=str(
+                        'GO' + primary.ID + secondary.ID))
             if Type == 'negatively_regulates':
-                DatabaseGraph.is_regulant.create(primary, secondary,
-                                                 controlType = 'INHIBITS',
-                                                 ID = str('GO' + primary.ID + secondary.ID))
+                DatabaseGraph.is_regulant.create(
+                    primary, secondary, controlType='INHIBITS', ID=str(
+                        'GO' + primary.ID + secondary.ID))
             else:
-                DatabaseGraph.is_regulant.create(primary, secondary,
-                                                 ID = str('GO' + primary.ID + secondary.ID))
+                DatabaseGraph.is_regulant.create(
+                    primary, secondary, ID=str(
+                        'GO' + primary.ID + secondary.ID))
 
 
 def getExistingAcnums():
@@ -81,17 +91,20 @@ def getExistingAcnums():
     :raise Exception: if the generator that performs a lookup of existing uniprot acnum annotation nodes is null (Reactome
     wasn't imported yet)
     """
-    annot_node_with_acc_nums_generator = DatabaseGraph.AnnotNode.index.lookup(ptype = 'UniProt')
+    annot_node_with_acc_nums_generator = DatabaseGraph.AnnotNode.index.lookup(
+        ptype='UniProt')
     if annot_node_with_acc_nums_generator is None:
-        raise Exception("Reactome was not loaded or contains no acc_num cross-references to Uniprot")
-    AcnumList = {} #acnum to AnnotNode
+        raise Exception(
+            "Reactome was not loaded or contains no acc_num cross-references to Uniprot")
+    AcnumList = {}  # acnum to AnnotNode
     for annot_node in annot_node_with_acc_nums_generator:
         if annot_node is not None:
             annot_node_ID = str(annot_node).split('/')[-1][:-1]
             AnnotObj = DatabaseGraph.vertices.get(annot_node_ID)
             AcnumList[str(AnnotObj.payload)] = AnnotObj
     if len(AcnumList) < 10:
-        raise Exception("Reactome was not loaded or contains no acc_num cross-references to Uniprot")
+        raise Exception(
+            "Reactome was not loaded or contains no acc_num cross-references to Uniprot")
     ReactProtList = {}
     for acc_num in AcnumList.keys():
         ReactProtGen = AcnumList[acc_num].bothV()
@@ -102,7 +115,7 @@ def getExistingAcnums():
                     ReactProtList[acc_num].append(vertex)
     logging.debug('1 %s', len(ReactProtList))
     return ReactProtList
-    
+
 
 def manage_acnums(acnum, Acnum2RProts):
     """
@@ -127,7 +140,7 @@ def link_annotation(CH_PROT_ID, p_type, p_load):
     :param p_load: content of the annotation
     """
     prot_node = UniprotDict[CH_PROT_ID]
-    annot_node = DatabaseGraph.AnnotNode.create(ptype = p_type, payload = p_load)
+    annot_node = DatabaseGraph.AnnotNode.create(ptype=p_type, payload=p_load)
     DatabaseGraph.is_annotated.create(prot_node, annot_node)
 
 
@@ -139,26 +152,33 @@ def import_UNIPROTS():
     Acnums2RProts = getExistingAcnums()
     i = 0
     j = 0
-    Acnum_key_no = len(Acnums2RProts.keys())/100.
-    UP_key_no = len(Uniprot.keys())/100.
+    Acnum_key_no = len(Acnums2RProts.keys()) / 100.
+    UP_key_no = len(Uniprot.keys()) / 100.
     for k, CH_PROT_ID in enumerate(Uniprot.keys()):
         set1 = set(Uniprot[CH_PROT_ID]['Acnum'])
         set2 = set(Acnums2RProts.keys())
-        #Create uniprot terms
-        primary = DatabaseGraph.UNIPORT.create(ID = CH_PROT_ID,
-                                       displayName = Uniprot[CH_PROT_ID]['Names']['Full'],
-                                       main_connex = False)
+        # Create uniprot terms
+        primary = DatabaseGraph.UNIPORT.create(
+            ID=CH_PROT_ID,
+            displayName=Uniprot[CH_PROT_ID]['Names']['Full'],
+            main_connex=False)
         print CH_PROT_ID, primary
         # check inclusion in Reactome
-        # TODO: if all explodes on the next import, check the line below and revert the import behavior of Uniprot
+        # TODO: if all explodes on the next import, check the line below and
+        # revert the import behavior of Uniprot
         if not set1.isdisjoint(set2):
-            logging.debug('Uniprot %s intersects Reactome on the following acnums: %s'%(str(CH_PROT_ID), str(set1)))
+            logging.debug(
+                'Uniprot %s intersects Reactome on the following acnums: %s' %
+                (str(CH_PROT_ID), str(set1)))
             i += len(set1)
             primary.involved = True
-        # TODO: if all explodes on the next import, check the line above and revert the import behavior of Uniprot
+        # TODO: if all explodes on the next import, check the line above and
+        # revert the import behavior of Uniprot
         advance_1 = i / Acnum_key_no
         advance_2 = k / UP_key_no
-        logging.debug('loading UNIPROT: Acnums cross-linked - %.2f %% ; Total loaded: - %.2f %%' % (advance_1, advance_2 ))
+        logging.debug(
+            'loading UNIPROT: Acnums cross-linked - %.2f %% ; Total loaded: - %.2f %%' %
+            (advance_1, advance_2))
         # Add the newly created uniprot to the buffer
         UniprotDict[CH_PROT_ID] = primary
         # Insert references to GOs
@@ -166,7 +186,9 @@ def import_UNIPROTS():
             if GO_Term in GODict.keys():
                 secondary = GODict[GO_Term]
                 DatabaseGraph.is_go_annotation.create(primary, secondary)
-        # Find intersection between logged acnums and acnums pointed out by the Reactome.org. Create a direct bridge between a reactome ID and a SWISSPROT ID
+        # Find intersection between logged acnums and acnums pointed out by the
+        # Reactome.org. Create a direct bridge between a reactome ID and a
+        # SWISSPROT ID
         for acnum in Uniprot[CH_PROT_ID]['Acnum']:
             proteins = manage_acnums(acnum, Acnums2RProts)
             if proteins is not []:
@@ -174,9 +196,13 @@ def import_UNIPROTS():
                     secondary = prot
                     DatabaseGraph.is_same.create(primary, secondary)
                     j += 1
-        for acc_num in Uniprot[CH_PROT_ID]['Acnum']: # Already linked via reactome, but with a different identifier
+        for acc_num in Uniprot[CH_PROT_ID][
+                'Acnum']:  # Already linked via reactome, but with a different identifier
             link_annotation(CH_PROT_ID, 'UNIPROT_Accnum', acc_num)
-        link_annotation(CH_PROT_ID, 'UNIPROT_Name', Uniprot[CH_PROT_ID]['Names']['Full'])
+        link_annotation(
+            CH_PROT_ID,
+            'UNIPROT_Name',
+            Uniprot[CH_PROT_ID]['Names']['Full'])
         for name in Uniprot[CH_PROT_ID]['Names']['AltNames']:
             link_annotation(CH_PROT_ID, 'UNIPROT_Name', name.upper())
 
@@ -191,12 +217,23 @@ def import_UNIPROTS():
             link_annotation(CH_PROT_ID, 'UNIPROT_Ensembl', name.upper())
 
         for dico in Uniprot[CH_PROT_ID]['EMBL']:
-            link_annotation(CH_PROT_ID, 'UNIPROT_EMBL_AC|'+dico['status']+'|'+dico['type'], dico['Accession'].upper())
-            link_annotation(CH_PROT_ID, 'UNIPROT_EMBL_ID|'+dico['status']+'|'+dico['type'], dico['ID'].upper())
+            link_annotation(
+                CH_PROT_ID,
+                'UNIPROT_EMBL_AC|' +
+                dico['status'] +
+                '|' +
+                dico['type'],
+                dico['Accession'].upper())
+            link_annotation(
+                CH_PROT_ID,
+                'UNIPROT_EMBL_ID|' +
+                dico['status'] +
+                '|' +
+                dico['type'],
+                dico['ID'].upper())
 
         for name in Uniprot[CH_PROT_ID]['PDB']:
             link_annotation(CH_PROT_ID, 'UNIPROT_PDB', name.upper())
-
 
 
 def getGOs():
@@ -227,7 +264,7 @@ def getUniprots():
         primary = ObjectType.get(ID)
         UniprotDict[CH_PROT_ID] = primary
     logging.debug('UNIPROT Loaded')
-    
+
 
 if __name__ == "__main__":
     import_UNIPROTS()

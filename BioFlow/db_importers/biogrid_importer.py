@@ -2,7 +2,7 @@ __author__ = 'ank'
 
 from csv import reader
 
-from BioFlow.configs2 import BioGRID
+from BioFlow.main_configs import BioGRID
 from BioFlow.neo4j_db.db_io_routines import look_up_annotation_set
 from BioFlow.neo4j_db.GraphDeclarator import DatabaseGraph
 
@@ -17,7 +17,7 @@ def parse_BioGRID(_BioGRID):
     ret_dict = {}
     base = []
 
-    with open(_BioGRID,'rb') as sourcefile:
+    with open(_BioGRID, 'rb') as sourcefile:
         rdr = reader(sourcefile, 'excel-tab')
         rdr.next()
         for row in rdr:
@@ -32,22 +32,32 @@ def parse_BioGRID(_BioGRID):
 
 def convert_to_DB_Ids(base):
     warnlist, resdict, reslist = look_up_annotation_set(set(base))
-    retdict = dict((key, value[0][2]) for key, value in resdict.iteritems() if key not in warnlist)
+    retdict = dict(
+        (key,
+         value[0][2]) for key,
+        value in resdict.iteritems() if key not in warnlist)
     print 'BioGrid ID cast converter length: %s' % len(retdict)
     return retdict
 
 
 def cast_into_DB(re_caster, ret_dict):
-    final_dicts = dict(((re_caster[key[0]],re_caster[key[1]]),value) for key, value in ret_dict.iteritems()
-                       if key[0] in re_caster.keys() and key[1] in re_caster.keys())
+    final_dicts = dict(
+        ((re_caster[
+            key[0]],
+            re_caster[
+            key[1]]),
+            value) for key,
+        value in ret_dict.iteritems() if key[0] in re_caster.keys() and key[1] in re_caster.keys())
 
     for (node_name1, node_name2), arglist in final_dicts.iteritems():
         node1 = DatabaseGraph.UNIPORT.get(node_name1)
         node2 = DatabaseGraph.UNIPORT.get(node_name2)
         if len(arglist) > 1:
-            DatabaseGraph.is_weakly_interacting.create(node1,node2, throughput=arglist[0], confidence=float(arglist[1]))
+            DatabaseGraph.is_weakly_interacting.create(node1, node2, throughput=arglist[
+                                                       0], confidence=float(arglist[1]))
         else:
-            DatabaseGraph.is_weakly_interacting.create(node1,node2, throughput=arglist[0])
+            DatabaseGraph.is_weakly_interacting.create(
+                node1, node2, throughput=arglist[0])
 
 
 def import_BioGRID():

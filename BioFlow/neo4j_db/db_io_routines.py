@@ -10,8 +10,8 @@ from csv import reader, writer
 from pprint import PrettyPrinter
 
 from BioFlow.neo4j_db.GraphDeclarator import DatabaseGraph
-from BioFlow.configs2 import IDFilter, Leg_ID_Filter, edge_type_filters, Dumps, Hits_source, prename1, prename2, Background_source, bgList
-from configs import annotation_nodes_ptypes
+from BioFlow.main_configs import IDFilter, Leg_ID_Filter, edge_type_filters, Dumps, Hits_source, \
+    prename1, prename2, Background_source, bgList, annotation_nodes_ptypes
 
 pp = PrettyPrinter(indent=4)
 
@@ -26,7 +26,7 @@ def lookup_by_id(domain, req):
     :return: list of the items found
     """
     accumulator = []
-    retset = domain.index.lookup(ID = req)
+    retset = domain.index.lookup(ID=req)
     if not retset:
         print "nothing found"
     if retset:
@@ -99,7 +99,8 @@ def run_through(node_generator):
             node_id = rel_node.ID
             node_type = rel_node.element_type
             node_display = rel_node.displayName
-            set_of_interest.append((node_type, node_display, node_db_id, node_id))
+            set_of_interest.append(
+                (node_type, node_display, node_db_id, node_id))
     return set_of_interest
 
 
@@ -145,7 +146,8 @@ def look_up_annotation_node(p_load, p_type=''):
         :return: list of found annotation nodes satisfying both payload content and payload type
          conditions
         """
-        inner_node_generator = DatabaseGraph.AnnotNode.index.lookup(payload=pay_load)
+        inner_node_generator = DatabaseGraph.AnnotNode.index.lookup(
+            payload=pay_load)
         results = []
         if inner_node_generator:  # if there is anything in the inner node generator
             for node in inner_node_generator:
@@ -183,7 +185,8 @@ def look_up_annotation_set(p_load_list, p_type=''):
         else:
             return ''
 
-    tuple_list = [(p_load, look_up_annotation_node(p_load, p_type)) for p_load in p_load_list]
+    tuple_list = [(p_load, look_up_annotation_node(p_load, p_type))
+                  for p_load in p_load_list]
     db_id_list = [db_id_mapping_helper(value) for key, value in tuple_list]
     warnings_list = [key for key, value in tuple_list if value == []]
     for warnId in warnings_list:
@@ -201,14 +204,14 @@ def erase_custom_fields():
         Unlike the method in the Matrix_retrieval cluster, this method is very time-consuming, since it iterates
         on all the elements of all the classes susceptible to have the costum field.
     """
-    Node_gen = DatabaseGraph.vertices.index.lookup(costum = 'Main_Connex')
+    Node_gen = DatabaseGraph.vertices.index.lookup(costum='Main_Connex')
     if Node_gen:
         for Node in Node_gen:
             Node.custom = ''
             Node.main_connex = False
             Node.save()
 
-    Node_gen = DatabaseGraph.vertices.index.lookup(main_connex = True)
+    Node_gen = DatabaseGraph.vertices.index.lookup(main_connex=True)
     if Node_gen:
         for Node in Node_gen:
             Node.custom = ''
@@ -230,7 +233,7 @@ def reaction_participant_getter(Reaction, main_connex_only):
     LocalList = []
     count = 0
     for edge_type in edge_type_filter:
-        if Reaction.bothV(edge_type) == None:
+        if Reaction.bothV(edge_type) is None:
             continue
         for elt in Reaction.bothV(edge_type):
             Connex = True
@@ -261,7 +264,7 @@ def expand_from_seed(Seed_Node_ID, edge_filter, main_connex_only):
     LocalList = []
     count = 0
     for edge_type in edge_filter:
-        if Seed_Node.bothV(edge_type) != None:
+        if Seed_Node.bothV(edge_type) is not None:
             for elt in Seed_Node.bothV(edge_type):
                 Connex = True
 
@@ -288,7 +291,8 @@ def recompute_forbidden_IDs(Node_Type_Dict):
     retlist = set()
     for bulbs_type in Node_Type_Dict.itervalues():
         for forbidden_Legacy_ID in Leg_ID_Filter:
-            generator = bulbs_type.index.lookup(displayName = forbidden_Legacy_ID)
+            generator = bulbs_type.index.lookup(
+                displayName=forbidden_Legacy_ID)
             UNW = unwrap_DB_ID(generator)
             retlist.update(UNW)
     print retlist
@@ -306,15 +310,16 @@ def recover_UP_chars(UP_Nodes, UP_are_IDs):
         return retdict
 
     for node_leg_Id in UP_Nodes:
-        generator = DatabaseGraph.UNIPORT.index.lookup(ID = node_leg_Id)
+        generator = DatabaseGraph.UNIPORT.index.lookup(ID=node_leg_Id)
         if not generator:
             continue
         retlist = []
         for node in generator:
             retlist.append(node.displayName)
-        if len(retlist)!=1:
-            raise Exception('Something went wrong with the UP retrieval for the UP %s, too many display names: %s' %
-                            (node_leg_Id,retlist))
+        if len(retlist) != 1:
+            raise Exception(
+                'Something went wrong with the UP retrieval for the UP %s, too many display names: %s' %
+                (node_leg_Id, retlist))
         else:
             retdict[node_leg_Id] = retlist
     return retdict
@@ -340,7 +345,7 @@ def recover_annotation(Node_Id_set, annotation_type):
 
 
 def unwrap_source():
-    retlist=[]
+    retlist = []
     with open(Hits_source) as src:
         csv_reader = reader(src)
         for row in csv_reader:
@@ -352,7 +357,7 @@ def unwrap_source():
 
 
 def unwrap_background():
-    retlist=[]
+    retlist = []
 
     with open(Background_source) as src:
         csv_reader = reader(src)
@@ -368,7 +373,8 @@ def unwrap_background():
     source = look_up_annotation_set(retlist)
     writer(open(bgList, 'w'), delimiter='\n').writerow(source[2])
 
-# Yes, I know what goes below here is ugly and shouldn't be in the production part of the code
+# Yes, I know what goes below here is ugly and shouldn't be in the
+# production part of the code
 
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
 on_unittest = os.environ.get('UNITTESTING') == 'True'
@@ -383,13 +389,15 @@ else:
     Forbidden_verification_dict = {}
 
 if on_unittest:
-    # Yes, this is dangerous as hell. Can't see a better way of doing it though for now.
+    # Yes, this is dangerous as hell. Can't see a better way of doing it
+    # though for now.
     import sys
     import unittests.Mocks.DB_IO_Mocks as self_mock
     sys.modules[__name__] = self_mock
 
 # TODO: why are we manipulating the Forbidden_verification dictionary and Reactome import
-# dictionary? Is it because they are used elsewhere and we need to cause a skip in code elsewhere?
+# dictionary? Is it because they are used elsewhere and we need to cause a
+# skip in code elsewhere?
 
 
 if __name__ == "__main__":

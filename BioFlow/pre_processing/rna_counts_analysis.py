@@ -10,7 +10,7 @@ import numpy as np
 from scipy.stats import t
 
 from BioFlow.utils.IO_Routines import dump_object
-from BioFlow.configs2 import RNA_source, Dumps
+from BioFlow.main_configs import RNA_source, Dumps
 from BioFlow.neo4j_db import db_io_routines
 
 pre_dict = {1: 0.80,
@@ -46,7 +46,8 @@ def load_rna_counts_table(rna_source, experiments_to_load):
         rdr.next()  # skipping the headers
         for row in rdr:
             gene_names.append(np.array([row[0], '']))
-            counts_for_gene = [float(f) for f in row[2: experiments_to_load + 2]]
+            counts_for_gene = [float(f)
+                               for f in row[2: experiments_to_load + 2]]
             table.append(np.array(counts_for_gene, dtype=np.float64))
             uxon_lengths.append(np.array([float(row[1])]))
     gene_names = np.array(gene_names)
@@ -83,11 +84,16 @@ def convert_to_rpkm(uxon_length, table):
     :return: table of RPKMs
     """
     total_series_reads = np.sum(table, axis=0)
-    re_table = table / total_series_reads[np.newaxis, :] / uxon_length[:, 0][:, np.newaxis] * 10e12
+    re_table = table / \
+        total_series_reads[np.newaxis, :] / uxon_length[:, 0][:, np.newaxis] * 10e12
     return re_table
 
 
-def significantly_different_genes(rpkm_table, experiment_groups, intergroups, target_p_value=0.05):
+def significantly_different_genes(
+        rpkm_table,
+        experiment_groups,
+        intergroups,
+        target_p_value=0.05):
     """
     Performs a test that uses the error function to determine if we can reject the hypothesis that
     all the genes are sampled from the same distribution.
@@ -103,15 +109,28 @@ def significantly_different_genes(rpkm_table, experiment_groups, intergroups, ta
     for i, group in enumerate(experiment_groups):
         groups_means[:, i] = np.mean(rpkm_table[:, group], axis=1)
         groups_var[:, i] = np.var(rpkm_table[:, group], axis=1) / \
-            estimator_dilatation_table[len(group)]**2
+            estimator_dilatation_table[len(group)] ** 2
 
     group_comparison = []
     for bi_group in intergroups:
-        groups_mean_difference = np.fabs(groups_means[:,
-                                         bi_group[0]] - groups_means[:, bi_group[1]])
-        groups_combined_std = np.sqrt(groups_var[:, bi_group[0]] + groups_var[:, bi_group[1]])
-        p_val = t.sf(groups_mean_difference / groups_combined_std, (len(experiment_groups[
-            bi_group[0]]) + len(experiment_groups[bi_group[1]]))/2)
+        groups_mean_difference = np.fabs(
+            groups_means[
+                :,
+                bi_group[0]] -
+            groups_means[
+                :,
+                bi_group[1]])
+        groups_combined_std = np.sqrt(
+            groups_var[
+                :,
+                bi_group[0]] +
+            groups_var[
+                :,
+                bi_group[1]])
+        p_val = t.sf(groups_mean_difference /
+                     groups_combined_std, (len(experiment_groups[bi_group[0]]) +
+                                           len(experiment_groups[bi_group[1]])) /
+                     2)
         sorted_p_vals = np.sort(p_val, axis=0)
         lower_index = np.array(range(0, sorted_p_vals.shape[0])) *\
             target_p_value / sorted_p_vals.shape[0]
@@ -125,8 +144,13 @@ def significantly_different_genes(rpkm_table, experiment_groups, intergroups, ta
     return group_comparison
 
 
-def run_analysis_suite(rna_source, no_of_experiments, experimental_groups, groups_to_compare,
-                       count_filter_level=5, false_discovery_rate=0.05):
+def run_analysis_suite(
+        rna_source,
+        no_of_experiments,
+        experimental_groups,
+        groups_to_compare,
+        count_filter_level=5,
+        false_discovery_rate=0.05):
     """
     Imports counts table, runs test suite and stores the result of statistical analysis for further
     computation. returns stored values to the standard output.
@@ -139,18 +163,26 @@ def run_analysis_suite(rna_source, no_of_experiments, experimental_groups, group
     :param false_discovery_rate: desired false discovery rate
     """
 
-    names, lengths, counts = load_rna_counts_table(rna_source, no_of_experiments)
-    _, _, names[:, 1] = db_io_routines.look_up_annotation_set(names[:, 0].tolist())
+    names, lengths, counts = load_rna_counts_table(
+        rna_source, no_of_experiments)
+    _, _, names[:, 1] = db_io_routines.look_up_annotation_set(names[
+                                                              :, 0].tolist())
 
-    filter_mask = counts_filter(counts, experimental_groups, filter_level=count_filter_level)
+    filter_mask = counts_filter(
+        counts,
+        experimental_groups,
+        filter_level=count_filter_level)
 
     names = names[filter_mask, :]
     lengths = lengths[filter_mask, :]
     counts = counts[filter_mask, :]
 
     rpkms = convert_to_rpkm(lengths, counts)
-    testres = significantly_different_genes(rpkms, experimental_groups,
-                                            groups_to_compare, false_discovery_rate)
+    testres = significantly_different_genes(
+        rpkms,
+        experimental_groups,
+        groups_to_compare,
+        false_discovery_rate)
     filter_masks = [test_[1] for test_ in testres]
     dump_object(Dumps.RNA_seq_counts_compare, filter_masks)
 
@@ -163,4 +195,10 @@ if __name__ == "__main__":
     exp_groups = [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
     test_groups_to_compare = [[0, 1], [0, 2]]
 
-    run_analysis_suite(RNA_source, 9, exp_groups, test_groups_to_compare, 10, 0.05)
+    run_analysis_suite(
+        RNA_source,
+        9,
+        exp_groups,
+        test_groups_to_compare,
+        10,
+        0.05)

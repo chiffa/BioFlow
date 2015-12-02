@@ -27,7 +27,8 @@ def better_2d_density_plot(x_data, y_data, threshold=3, bins=(100, 100)):
     :param bins: number of bins along each axis
     """
     xy_range = [[min(x_data), max(x_data)], [min(y_data), max(y_data)]]
-    distortion = (xy_range[1][1] - xy_range[1][0]) / (xy_range[0][1] - xy_range[0][0])
+    distortion = (xy_range[1][1] - xy_range[1][0]) / \
+        (xy_range[0][1] - xy_range[0][0])
     x_data = x_data * distortion
 
     xy_range = [[min(x_data), max(x_data)], [min(y_data), max(y_data)]]
@@ -36,7 +37,8 @@ def better_2d_density_plot(x_data, y_data, threshold=3, bins=(100, 100)):
     pos_y = np.digitize(y_data, loc_y)
 
     ind = (pos_x > 0) & (pos_x <= bins[0]) & (pos_y > 0) & (pos_y <= bins[1])
-    hh_sub = hh[pos_x[ind] - 1, pos_y[ind] - 1]  # values of the histogram where the points are
+    # values of the histogram where the points are
+    hh_sub = hh[pos_x[ind] - 1, pos_y[ind] - 1]
     x_dat1 = x_data[ind][hh_sub < threshold]  # low density points
     y_dat1 = y_data[ind][hh_sub < threshold]
     hh[hh < threshold] = np.nan  # fill the areas with low density by NaNs
@@ -62,12 +64,21 @@ def violin_plot(axis, data_, position_, box_plot=False):
         kernel_density = gaussian_kde(d)
         low_bound = kernel_density.dataset.min()
         upper_bound = kernel_density.dataset.max()
-        violing_support = np.arange(low_bound, upper_bound, (upper_bound - low_bound) / 100.)
+        violing_support = np.arange(
+            low_bound,
+            upper_bound,
+            (upper_bound - low_bound) / 100.)
         violin_profile = kernel_density.evaluate(violing_support)
         violin_profile = violin_profile / violin_profile.max() * w
         # scaling the violin to the available space
-        axis.fill_betweenx(violing_support, p, violin_profile + p, facecolor='y', alpha=0.3)
-        axis.fill_betweenx(violing_support, p, -violin_profile + p, facecolor='y', alpha=0.3)
+        axis.fill_betweenx(
+            violing_support,
+            p,
+            violin_profile + p,
+            facecolor='y',
+            alpha=0.3)
+        axis.fill_betweenx(
+            violing_support, p, -violin_profile + p, facecolor='y', alpha=0.3)
     if box_plot:
         axis.boxplot(data_, notch=1, positions=position_, vert=1)
 
@@ -86,15 +97,17 @@ def kde_compute(bi_array, bin_no=30, samples=10, show=True):
     repeated_sample_correction = bi_array.shape[1] / float(samples)
     x, y = bi_array
 
-    # Evaluate a gaussian kde on a regular grid of nbins x nbins over data extents
+    # Evaluate a gaussian kde on a regular grid of nbins x nbins over data
+    # extents
     k = gaussian_kde(bi_array)
     xi, yi = np.mgrid[x.min():x.max():bin_no * 1j, y.min():y.max():bin_no * 1j]
-    zi = np.tanh(k(np.vstack([xi.flatten(), yi.flatten()]))*repeated_sample_correction)
+    zi = np.tanh(k(np.vstack([xi.flatten(), yi.flatten()]))
+                 * repeated_sample_correction)
 
     if show:
         plt.pcolormesh(xi, yi, zi.reshape(xi.shape))
 
-    return lambda x_: np.tanh(k(x_)*repeated_sample_correction)
+    return lambda x_: np.tanh(k(x_) * repeated_sample_correction)
 
 
 def view_laplacian_off_terms(non_normalized_laplacian):

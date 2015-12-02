@@ -3,7 +3,7 @@ __author__ = 'ank'
 import click
 
 from BioFlow.utils.ConfigsIO import StructureGenerator, set_folders
-from BioFlow.configs2 import neo4j_server
+from BioFlow.main_configs import neo4j_server
 from BioFlow.neo4j_db.db_io_routines import look_up_annotation_set
 from BioFlow.db_importers.import_main import build_db, destroy_db
 from BioFlow.analysis.InteractomeInterface import MatrixGetter as InteractomeInterface

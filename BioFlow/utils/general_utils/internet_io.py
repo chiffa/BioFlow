@@ -36,7 +36,9 @@ def url_to_local_path(URL, path):
             r.raw.decode_content = True
             shutil.copyfileobj(r.raw, f)
     else:
-        raise Exception("Something is wrong with the url provided: %s.\n Please attempt downloading files manually" % URL)
+        raise Exception(
+            "Something is wrong with the url provided: %s.\n Please attempt downloading files manually" %
+            URL)
 
 
 def url_to_local_pZip(URL, path):
@@ -52,9 +54,11 @@ def url_to_local_pZip(URL, path):
     if r.status_code == 200:
         r.raw.decode_content = True
         z = zipfile.ZipFile(StringIO.StringIO(r.content))
-        z.extractall(path)  #This is unsafe as hell
+        z.extractall(path)  # This is unsafe as hell
     else:
-        raise Exception("Something is wrong with the url provided: %s.\n Please attempt downloading files manually" % URL)
+        raise Exception(
+            "Something is wrong with the url provided: %s.\n Please attempt downloading files manually" %
+            URL)
 
 
 def url_to_local_pGz(URL, path):
@@ -64,7 +68,7 @@ def url_to_local_pGz(URL, path):
     :param path:
     :return:
     """
-    if URL[:3] =='ftp':
+    if URL[:3] == 'ftp':
         requests_ftp.monkeypatch_session()
         s = requests.Session()
         r = s.retr(URL)
@@ -78,7 +82,9 @@ def url_to_local_pGz(URL, path):
         f_out.close()
         f_in.close()
     else:
-        raise Exception("Something is wrong with the url provided: %s.\n Please attempt downloading files manually" % URL)
+        raise Exception(
+            "Something is wrong with the url provided: %s.\n Please attempt downloading files manually" %
+            URL)
 
 
 def url_to_local(URL, path):

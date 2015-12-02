@@ -17,20 +17,40 @@ Uniprot = { SWISSPROT_ID:{
     'PDB': [],
     'GeneID': [], }}
 """
-import BioFlow.configs2 as conf
+import BioFlow.main_configs as conf
 from BioFlow.utils.LogManager import logger
 import copy
 
 interesting_lines = ['ID', 'AC', 'DE', 'GN', 'OX', 'DR']
 interesting_xrefs = ['EMBL', 'GO', 'Pfam', 'Ensembl', 'KEGG', 'PDB', 'GeneID']
-names_to_ignore = ['Contains', 'Allergen', 'EC=', 'Flags: ', 'CD_antigen', 'INN=']
-starting_dict = {'Acnum': [], 'Names': {'Full': '', 'AltNames': []},
-                 'GeneRefs': {'Names': [], 'OrderedLocusNames': [], 'ORFNames': []},
-                 'Ensembl': [], 'KEGG': [], 'EMBL': [], 'GO': [], 'Pfam': [], 'SUPFAM': [],
-                 'PDB': [], 'GeneID': []}
+names_to_ignore = [
+    'Contains',
+    'Allergen',
+    'EC=',
+    'Flags: ',
+    'CD_antigen',
+    'INN=']
+starting_dict = {
+    'Acnum': [],
+    'Names': {
+        'Full': '',
+        'AltNames': []},
+    'GeneRefs': {
+        'Names': [],
+        'OrderedLocusNames': [],
+        'ORFNames': []},
+    'Ensembl': [],
+    'KEGG': [],
+    'EMBL': [],
+    'GO': [],
+    'Pfam': [],
+    'SUPFAM': [],
+    'PDB': [],
+    'GeneID': []}
 
 
-_ignore = [False, 2]  # a steady constant that regulates a behavior specific to the line skipping
+# a steady constant that regulates a behavior specific to the line skipping
+_ignore = [False, 2]
 
 
 def parse_xref(dico, line):
@@ -105,7 +125,8 @@ def parse_name(dico, line):
         dico['Names']['Full'] = line.split('RecName: Full=')[1].split(';')[0]
         return ''
     if 'AltName: Full=' in line:
-        dico['Names']['AltNames'].append(line.split('AltName: Full=')[1].split(';')[0])
+        dico['Names']['AltNames'].append(
+            line.split('AltName: Full=')[1].split(';')[0])
         return ''
     if 'Short=' in line:
         dico['Names']['AltNames'].append(line.split('Short=')[1].split(';')[0])
@@ -121,7 +142,7 @@ def parse_name(dico, line):
         _ignore[0] = True
         return ''
     if any(x in line for x in names_to_ignore):
-        return ''         
+        return ''
 
 
 def process_line(dico, line, keyword):
@@ -164,7 +185,9 @@ def end_block(dico, uniprot, tax_id_list):
     return copy.deepcopy(starting_dict)
 
 
-def parse_uniprot(source_path=conf.UNIPROT_source, tax_id_to_parse=conf.up_tax_ids):
+def parse_uniprot(
+        source_path=conf.UNIPROT_source,
+        tax_id_to_parse=conf.up_tax_ids):
     """
     Performs the entire uniprot file parsing and importing
 
@@ -183,7 +206,8 @@ def parse_uniprot(source_path=conf.UNIPROT_source, tax_id_to_parse=conf.up_tax_i
             break
         keyword = line[0:2]
         if keyword == '//':
-            local_dictionary = end_block(local_dictionary, uniprot, tax_id_to_parse)
+            local_dictionary = end_block(
+                local_dictionary, uniprot, tax_id_to_parse)
         if keyword in interesting_lines:
             process_line(local_dictionary, line, keyword)
 
@@ -191,9 +215,11 @@ def parse_uniprot(source_path=conf.UNIPROT_source, tax_id_to_parse=conf.up_tax_i
     return uniprot
 
 
-def get_access_dicts(source_path=conf.UNIPROT_source, tax_id_to_parse=conf.up_tax_ids):
+def get_access_dicts(
+        source_path=conf.UNIPROT_source,
+        tax_id_to_parse=conf.up_tax_ids):
     """
-    Returns an access dictionary that would plot genes names, AcNums or EMBL identifiers to the 
+    Returns an access dictionary that would plot genes names, AcNums or EMBL identifiers to the
     Swissprot IDs
 
     :param source_path: path towards the uniprot test file

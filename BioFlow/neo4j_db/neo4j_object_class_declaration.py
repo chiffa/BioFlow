@@ -20,17 +20,20 @@ class CostumNode(Node):             # Serves as a basis for the annotation
     main_connex = Bool()
     custom = String()                 # Just in case
     load = Float()                    # Deprecated. To freeze information transmission score
-    # TODO: remove deprecated properties and rename properties their wanted names
+    # TODO: remove deprecated properties and rename properties their wanted
+    # names
 
 
-class AnnotNode(Node):                # Used mainly the simplest annotation basis annotation
+class AnnotNode(
+        Node):                # Used mainly the simplest annotation basis annotation
     """
     Available AnnotNode Types are listed in AnnotNode_ptypes
     """
     element_type = "AnnotNode"
     ptype = String(nullable=False)    # Payload type
     payload = String(nullable=False)  # Indexed payload
-    # TODO: move the supported annotation types nodes to the main documentation set.
+    # TODO: move the supported annotation types nodes to the main
+    # documentation set.
 
 
 class CostumLink(Relationship):
@@ -56,7 +59,7 @@ class Fragment(CostumNode):
 
 class Instantiation_Type(CostumNode):
     element_type = "Instantiation_Type"
-    type = String()                   # Instantiation type: 
+    type = String()                   # Instantiation type:
 
 
 class Instance(CostumNode):
@@ -219,7 +222,8 @@ class is_next_in_pathway(CostumLink):
 
 class UNIPROT(Meta):
     element_type = "UNIPROT"
-    involved = Bool()  # 1 / 0 -> if it is involved in the Reactome.org interactions or not.
+    # 1 / 0 -> if it is involved in the Reactome.org interactions or not.
+    involved = Bool()
 
 
 class GOTerm(CostumNode):
@@ -245,7 +249,8 @@ class is_same(CostumLink):
     label = "is_same"
 
 
-class is_interacting(CostumLink):   # According to the Yu lab hint database for humans there is one-to-one interaction
+class is_interacting(
+        CostumLink):   # According to the Yu lab hint database for humans there is one-to-one interaction
     label = "is_interacting"
 
 
@@ -253,5 +258,3 @@ class is_weakly_interacting(CostumLink):  # interaction according to BioGRID
     label = "is_weakly_interacting"
     throughput = String()      # high or all
     confidence = Float()        # float
-
-

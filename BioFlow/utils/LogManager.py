@@ -25,7 +25,8 @@ def mkdir_recursive(path):
     if not os.path.exists(directory_name):
         mkdir_recursive(directory_name)
     if not os.path.exists(path):
-        if '.' not in path.split('/')[-1][-5:]:  # should be able to suppress specific file creation
+        if '.' not in path.split(
+                '/')[-1][-5:]:  # should be able to suppress specific file creation
             os.mkdir(path)
 
 
@@ -34,7 +35,8 @@ mkdir_recursive(log_location)  # create location where the code will be stored
 logger = logging.getLogger('main_logger')
 logger.setLevel(logging.DEBUG)
 
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+formatter = logging.Formatter(
+    '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 fh = logging.FileHandler(os.path.join(log_location, 'debug.log'), mode='a')
 fh.setLevel(logging.DEBUG)

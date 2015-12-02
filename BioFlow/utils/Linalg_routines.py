@@ -26,9 +26,12 @@ def normalize_laplacian(non_normalized_laplacian):
     non_normalized_laplacian = lil_matrix(non_normalized_laplacian)
     diagonal_terms = np.array(non_normalized_laplacian.diagonal().tolist())
     diagonal_terms[diagonal_terms == 0] = 1
-    diagonal_terms = np.reshape(diagonal_terms, (non_normalized_laplacian.shape[0], 1))
+    diagonal_terms = np.reshape(
+        diagonal_terms, (non_normalized_laplacian.shape[0], 1))
     normalisation_matrix = np.sqrt(np.dot(diagonal_terms, diagonal_terms.T))
-    matrix_to_return = lil_matrix(non_normalized_laplacian / normalisation_matrix)
+    matrix_to_return = lil_matrix(
+        non_normalized_laplacian /
+        normalisation_matrix)
     return matrix_to_return
 
 
@@ -46,17 +49,28 @@ def average_off_diag_in_sub_matrix(matrix, indexes, show=False):
     # inverts the sorting of the indexes?
 
     for index1, index2 in combinations_with_replacement(indexes, 2):
-        extracted_matrix[main2local_idx[index1], main2local_idx[index2]] = matrix[index1, index2]
-        extracted_matrix[main2local_idx[index2], main2local_idx[index1]] = matrix[index2, index1]
+        extracted_matrix[
+            main2local_idx[index1],
+            main2local_idx[index2]] = matrix[
+            index1,
+            index2]
+        extracted_matrix[
+            main2local_idx[index2],
+            main2local_idx[index1]] = matrix[
+            index2,
+            index1]
 
     if show:
-        plt.imshow(extracted_matrix.toarray(), cmap='jet', interpolation="nearest")
+        plt.imshow(
+            extracted_matrix.toarray(),
+            cmap='jet',
+            interpolation="nearest")
         plt.colorbar()
         plt.show()
 
     if extracted_matrix.shape[0] > 1:
-        retvalue = np.sum(np.triu(extracted_matrix.toarray(), 1)) / (extracted_matrix.shape[0] * (
-            extracted_matrix.shape[0] - 1) / 2)
+        retvalue = np.sum(np.triu(extracted_matrix.toarray(), 1)) / \
+            (extracted_matrix.shape[0] * (extracted_matrix.shape[0] - 1) / 2)
         return retvalue
     else:
         return 0
@@ -96,7 +110,8 @@ def show_eigenvals_and_eigenvects(eigenvals, eigenvects, biggest_limit,
     """
     logger.info(annotation)
     logger.info('########################')
-    # if no index characters are supplied, just prints all the the eigenvalues and exits
+    # if no index characters are supplied, just prints all the the eigenvalues
+    # and exits
     if not eigenvect_indexing_names:
         for eigval in eigenvals.tolist():
             logger.info(eigval)
@@ -109,15 +124,18 @@ def show_eigenvals_and_eigenvects(eigenvals, eigenvects, biggest_limit,
     # iterate through the  the eigenvalues, sums the contribution of each position in the N biggest
     # eigenvectors and adds it ot the log console
     for i, eigval in enumerate(reversed(eigenvals.tolist())):
-        string_to_render = ['associated eigval: %s' % str(eigval), 'Index \t value \t Descriptor']
+        string_to_render = [
+            'associated eigval: %s' %
+            str(eigval),
+            'Index \t value \t Descriptor']
         local_set = set()
         # the couple of lines below a kind a little bit esoteric...
         for index, value in reversed(zip(biggest_eigenvects[:, i],
                                          absolute[biggest_eigenvects[:, i], i])):
             if int(value ** 2 * 1000) > 0:
                 local_set.add(index)
-                string_to_render.append('\t'.join([str(index), str('{0:.4f}'.format(value ** 2)),
-                                                   str(eigenvect_indexing_names[index])]))
+                string_to_render.append('\t'.join([str(index), str(
+                    '{0:.4f}'.format(value ** 2)), str(eigenvect_indexing_names[index])]))
         string_to_render.append('<==================>')
         # log the string we want to render only if it is the first time local set has been
         # encountered
@@ -129,8 +147,11 @@ def show_eigenvals_and_eigenvects(eigenvals, eigenvects, biggest_limit,
 
 
 @time_it_wrapper
-def analyze_eigenvects(non_normalized_laplacian, num_first_eigenvals_to_analyse, index_chars,
-                       permutations_limiter=1e7):
+def analyze_eigenvects(
+        non_normalized_laplacian,
+        num_first_eigenvals_to_analyse,
+        index_chars,
+        permutations_limiter=1e7):
     """
     Performs an analysis of eigenvalues and eigenvectors of a non-normalized laplacian matrix
     in order to detect if anything found is statistically significant compared to a permutation
@@ -142,12 +163,13 @@ def analyze_eigenvects(non_normalized_laplacian, num_first_eigenvals_to_analyse,
     :param permutations_limiter: maximal number of permutations
     :return:
     """
-    logger.debug('analyzing the laplacian with %s items and %s non-zero elts' % (
-        non_normalized_laplacian.shape[0] ** 2, len(non_normalized_laplacian.nonzero()[0])))
+    logger.debug('analyzing the laplacian with %s items and %s non-zero elts' %
+                 (non_normalized_laplacian.shape[0] ** 2, len(non_normalized_laplacian.nonzero()[0])))
 
     # normalize the laplacian
     normalized_laplacian = normalize_laplacian(non_normalized_laplacian)
-    true_eigenvals, true_eigenvects = eigsh(normalized_laplacian, num_first_eigenvals_to_analyse)
+    true_eigenvals, true_eigenvects = eigsh(
+        normalized_laplacian, num_first_eigenvals_to_analyse)
 
     # extract non-zero indexes of matrix off-diagonal terms
     triangular_upper = lil_matrix(triu(normalized_laplacian))
@@ -155,7 +177,7 @@ def analyze_eigenvects(non_normalized_laplacian, num_first_eigenvals_to_analyse,
     triangular_upper_nonzero_idxs = triangular_upper.nonzero()
 
     print "reassigning the indexes for %s items, with %s non-zero elements" % (
-        triangular_upper.shape[0]**2, len(triangular_upper_nonzero_idxs[0]))
+        triangular_upper.shape[0] ** 2, len(triangular_upper_nonzero_idxs[0]))
 
     # permute the off-diagonal terms
     nonzero_coordinates = zip(triangular_upper_nonzero_idxs[0].tolist(),
@@ -168,20 +190,28 @@ def analyze_eigenvects(non_normalized_laplacian, num_first_eigenvals_to_analyse,
     for i, j in nonzero_coordinates:
         k = randrange(1, triangular_upper.shape[0] - 1)
         l = randrange(k + 1, triangular_upper.shape[0])
-        triangular_upper[i, j], triangular_upper[k, l] = (triangular_upper[k, l],
-                                                          triangular_upper[i, j])
+        triangular_upper[
+            i, j], triangular_upper[
+            k, l] = (
+            triangular_upper[
+                k, l], triangular_upper[
+                    i, j])
     # rebuild normalized laplacian matrix from diagonal matrix
     off_diag_laplacian = triangular_upper + triangular_upper.T
-    diag_laplacian = [- item for sublist in off_diag_laplacian.sum(axis=0).tolist()
-                      for item in sublist]
+    diag_laplacian = [- item for sublist in off_diag_laplacian.sum(
+        axis=0).tolist() for item in sublist]
     off_diag_laplacian.setdiag(diag_laplacian)
     normalized_permutation_control = normalize_laplacian(off_diag_laplacian)
     # recompute the eigenvalues
-    control_eigenvals, control_eigenvects = eigsh(normalized_permutation_control,
-                                                  num_first_eigenvals_to_analyse)
+    control_eigenvals, control_eigenvects = eigsh(
+        normalized_permutation_control, num_first_eigenvals_to_analyse)
     show_eigenvals_and_eigenvects(true_eigenvals, true_eigenvects, 20,
                                   'true laplacian', index_chars)
-    show_eigenvals_and_eigenvects(control_eigenvals, control_eigenvects, 20, 'random')
+    show_eigenvals_and_eigenvects(
+        control_eigenvals,
+        control_eigenvects,
+        20,
+        'random')
 
 
 def cluster_nodes(dist_laplacian, clusters=3, show=False):
@@ -198,10 +228,16 @@ def cluster_nodes(dist_laplacian, clusters=3, show=False):
     norm_laplacian.setdiag(0)
     norm_laplacian = -norm_laplacian
     if show:
-        plt.imshow(norm_laplacian.toarray(), cmap='jet', interpolation="nearest")
+        plt.imshow(
+            norm_laplacian.toarray(),
+            cmap='jet',
+            interpolation="nearest")
         plt.colorbar()
         plt.show()
-    labels = spectral_clustering(norm_laplacian, n_clusters=clusters, eigen_solver='arpack')
+    labels = spectral_clustering(
+        norm_laplacian,
+        n_clusters=clusters,
+        eigen_solver='arpack')
     return np.reshape(labels, (dist_laplacian.shape[0], 1))
 
 

@@ -3,7 +3,7 @@ Tests the logger behavior
 """
 import unittest
 import os
-from BioFlow.configs2 import log_location
+from BioFlow.main_configs import log_location
 from BioFlow.utils.general_utils.high_level_os_io import wipe_dir
 from BioFlow.utils.LogManager import logger
 
@@ -20,6 +20,7 @@ class TestLogs(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        print os.path.abspath(log_location)
         wipe_dir(log_location)
 
     def test_file_creation(self):

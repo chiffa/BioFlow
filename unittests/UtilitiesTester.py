@@ -71,7 +71,7 @@ class LinalgRoutinesTester(unittest.TestCase):
 
 class GdfExportTester(unittest.TestCase):
     test_location = os.path.join(os.path.dirname(__file__),
-                                 'Dumps/GDF_export_test.gdf')
+                                 'dumps/GDF_export_test.gdf')
     reference_location = os.path.join(os.path.dirname(__file__),
                                       'UT_examples/GDF_export_reference.gdf')
 
@@ -103,7 +103,8 @@ class GdfExportTester(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        wipe_dir('Dumps')
+        print cls.test_location
+        wipe_dir(cls.test_location)
 
     def test_GDF_export(self):
         with open(self.test_location, 'r') as tested, \
