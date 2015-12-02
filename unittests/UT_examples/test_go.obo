@@ -1,0 +1,57 @@
+ontology: go
+
+[Term]
+id: GO:0000001
+name: mitochondrion inheritance
+namespace: biological_process
+def: "The distribution of mitochondria, including the mitochondrial genome, into daughter cells after mitosis or meiosis, mediated by interactions between mitochondria and the cytoskeleton." [GOC:mcc, PMID:10873824, PMID:11389764]
+synonym: "mitochondrial inheritance" EXACT []
+is_a: GO:0048308 ! organelle inheritance
+is_a: GO:0048311 ! mitochondrion distribution
+
+[Term]
+id: GO:0000002
+name: mitochondrial genome maintenance
+namespace: biological_process
+def: "The maintenance of the structure and integrity of the mitochondrial genome; includes replication and segregation of the mitochondrial chromosome." [GOC:ai, GOC:vw]
+is_a: GO:0007005 ! mitochondrion organization
+
+[Term]
+id: GO:0000036
+name: ACP phosphopantetheine attachment site binding involved in fatty acid biosynthetic process
+namespace: molecular_function
+def: "Interacting selectively and non-covalently with the attachment site of the phosphopantetheine prosthetic group of an acyl carrier protein (ACP) as part of the process of fatty acid biosynthesis." [CHEBI:22221, GOC:jl, GOC:vw]
+comment: Note that this term was moved from transporter to binding because we decided that ACP is not a true transporter, but instead tethers the growing entity that is acted on to make the fatty acid, so binding is the more correct parent. July 2012.
+subset: gosubset_prok
+synonym: "acyl carrier activity" EXACT []
+is_a: GO:0044620 ! ACP phosphopantetheine attachment site binding
+
+[Term]
+id: GO:0000039
+name: obsolete plasma membrane long-chain fatty acid transporter
+namespace: molecular_function
+def: "OBSOLETE (was not defined before being made obsolete)." [GOC:ai]
+comment: This term was made obsolete because it describes a gene product and it contains component information.
+synonym: "plasma membrane long-chain fatty acid transporter" EXACT []
+is_obsolete: true
+consider: GO:0005324
+consider: GO:0005886
+
+[Term]
+id: GO:0000045
+name: autophagosome assembly
+namespace: biological_process
+def: "The formation of a double membrane-bounded structure, the autophagosome, that occurs when a specialized membrane sac, called the isolation membrane, starts to enclose a portion of the cytoplasm." [GOC:autophagy, PMID:9412464]
+synonym: "autophagic vacuole assembly" EXACT [GOC:autophagy]
+synonym: "autophagic vacuole formation" RELATED [GOC:mah]
+synonym: "autophagosome formation" EXACT []
+synonym: "PAS formation" NARROW []
+is_a: GO:0007033 ! vacuole organization
+is_a: GO:0070925 ! organelle assembly
+relationship: part_of GO:0016236 ! macroautophagy
+
+[Term]
+broken line:
+
+[Term]
+

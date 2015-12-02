@@ -18,7 +18,7 @@ Uniprot = { SWISSPROT_ID:{
     'GeneID': [], }}
 """
 import BioFlow.main_configs as conf
-from BioFlow.utils.LogManager import logger
+from BioFlow.utils.log_behavior import logger
 import copy
 
 interesting_lines = ['ID', 'AC', 'DE', 'GN', 'OX', 'DR']

@@ -3,7 +3,7 @@ Saner io and filesystem manipulation compared to python defaults
 """
 import os
 from shutil import rmtree
-from BioFlow.utils.LogManager import logger
+from BioFlow.utils.log_behavior import logger
 
 
 def mkdir_recursive(path):

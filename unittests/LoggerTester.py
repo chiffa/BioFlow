@@ -5,7 +5,7 @@ import unittest
 import os
 from BioFlow.main_configs import log_location
 from BioFlow.utils.general_utils.high_level_os_io import wipe_dir
-from BioFlow.utils.LogManager import logger
+from BioFlow.utils.log_behavior import logger
 
 
 class TestLogs(unittest.TestCase):

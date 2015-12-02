@@ -11,7 +11,7 @@ from scipy.sparse.linalg import eigsh
 from sklearn.cluster import spectral_clustering
 
 from BioFlow.utils.general_utils.useful_wrappers import time_it_wrapper
-from BioFlow.utils.LogManager import logger
+from BioFlow.utils.log_behavior import logger
 
 
 @time_it_wrapper
