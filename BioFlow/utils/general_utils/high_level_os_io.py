@@ -38,22 +38,30 @@ def wipe_dir(path):
     :return: True on success
     """
     path = os.path.abspath(path)
+    logger.debug('entered ')
+
+    if not os.path.exists(path):
+        logger.debug('path does not exist')
+        return True  # Nothing to do: destruction already done
+
     if os.path.isdir(path):
         directory_name = path
     else:
         directory_name = os.path.dirname(path)
-    logger.debug('going to wipe {0}'.format(directory_name))
+
+    logger.debug('going to wipe {0} for path {1}'.format(directory_name, path))
     if not os.path.isdir(directory_name):
         logger.exception(
             'failed to delete {0}: for path {1}, not a dir'.format(directory_name, path))
         return False
+
     for sub_path in os.listdir(directory_name):
         if os.path.isdir(sub_path):
             logger.exception(
                 'failed to delete {0}: for path {1}, anti rm -rf flag'.format(directory_name, path))
-        return False
-    if not os.path.exists(directory_name):
-        return True  # Nothing to do: destruction already done
+            return False
+
     else:
+        logger.debug('performing a rmtree')
         rmtree(path)
         return True

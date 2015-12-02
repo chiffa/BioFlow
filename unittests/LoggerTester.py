@@ -20,7 +20,6 @@ class TestLogs(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        print os.path.abspath(log_location)
         wipe_dir(log_location)
 
     def test_file_creation(self):
