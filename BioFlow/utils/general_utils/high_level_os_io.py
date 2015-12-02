@@ -63,5 +63,5 @@ def wipe_dir(path):
 
     else:
         logger.debug('performing a rmtree')
-        rmtree(path)
+        rmtree(directory_name)
         return True
