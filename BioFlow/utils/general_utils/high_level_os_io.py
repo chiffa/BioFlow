@@ -38,8 +38,11 @@ def wipe_dir(path):
     :return: True on success
     """
     path = os.path.abspath(path)
-    directory_name = os.path.dirname(path)
-    logger.debug(directory_name)
+    if os.path.isdir(path):
+        directory_name = path
+    else:
+        directory_name = os.path.dirname(path)
+    logger.debug('going to wipe {0}'.format(directory_name))
     if not os.path.isdir(directory_name):
         logger.exception(
             'failed to delete {0}: for path {1}, not a dir'.format(directory_name, path))
