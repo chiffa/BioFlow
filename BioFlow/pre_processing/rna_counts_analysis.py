@@ -2,15 +2,16 @@
 Module responsible for importing raw RNA-seq per-gene counts and pulling out statistically
 significantly different genes
 """
-from BioFlow.configs2 import RNA_source, Dumps
-from BioFlow.neo4j_analyzer import DB_IO_Routines
-from BioFlow.neo4j_analyzer.IO_Routines import dump_object
 from collections import defaultdict
-import numpy as np
-from scipy.stats import t
 from csv import reader
 from pprint import PrettyPrinter
 
+import numpy as np
+from scipy.stats import t
+
+from BioFlow.utils.IO_Routines import dump_object
+from BioFlow.configs2 import RNA_source, Dumps
+from BioFlow.neo4j_db import db_io_routines
 
 pre_dict = {1: 0.80,
             2: 0.89,
@@ -139,7 +140,7 @@ def run_analysis_suite(rna_source, no_of_experiments, experimental_groups, group
     """
 
     names, lengths, counts = load_rna_counts_table(rna_source, no_of_experiments)
-    _, _, names[:, 1] = DB_IO_Routines.look_up_annotation_set(names[:, 0].tolist())
+    _, _, names[:, 1] = db_io_routines.look_up_annotation_set(names[:, 0].tolist())
 
     filter_mask = counts_filter(counts, experimental_groups, filter_level=count_filter_level)
 

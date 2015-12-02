@@ -1,9 +1,10 @@
 __author__ = 'ank'
 
 from csv import reader
+
 from BioFlow.configs2 import BioGRID
-from BioFlow.neo4j_analyzer.DB_IO_Routines import look_up_annotation_set
-from BioFlow.neo4j_Declarations.Graph_Declarator import DatabaseGraph
+from BioFlow.neo4j_db.db_io_routines import look_up_annotation_set
+from BioFlow.neo4j_db.GraphDeclarator import DatabaseGraph
 
 
 def parse_BioGRID(_BioGRID):

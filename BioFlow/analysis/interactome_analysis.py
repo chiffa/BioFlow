@@ -3,17 +3,17 @@ New analytical routines for the interactome
 """
 __author__ = 'ank'
 import pickle
-import numpy as np
 from collections import namedtuple
-from multiprocessing import Pool
-from pprint import PrettyPrinter
-from matplotlib import pyplot as plt
 from csv import reader
-from Matrix_Interactome_DB_interface import  MatrixGetter
-from BioFlow.configs2 import Interactome_rand_samp, Dumps, prename2
-from BioFlow.Utils.dataviz import kde_compute
-from BioFlow.neo4j_analyzer.Conduction_routines import perform_clustering
-from BioFlow.neo4j_analyzer.IO_Routines import undump_object
+from multiprocessing import Pool
+
+import numpy as np
+from matplotlib import pyplot as plt
+
+from BioFlow.utils.dataviz import kde_compute
+from BioFlow.configs2 import Interactome_rand_samp, prename2
+from BioFlow.analysis.conduction_routines import perform_clustering
+from InteractomeInterface import  MatrixGetter
 
 
 def MG_gen():

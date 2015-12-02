@@ -4,29 +4,30 @@ This module contains all the routines that are respojnsible for pulling
 the matrixes out of the neo4j graph and processing them.
 """
 
-import os
 import hashlib
-import json
 import itertools
+import json
+import os
 import pickle
 import string
-import numpy as np
-from copy import copy
-from time import time
-from random import shuffle, sample
 from collections import defaultdict
-from pprint import PrettyPrinter
-from scipy.sparse import lil_matrix
-from scipy.sparse.linalg import eigsh
-from scipy.sparse.csgraph import connected_components
+from copy import copy
+from random import shuffle, sample
+from time import time
 
+import numpy as np
+from scipy.sparse import lil_matrix
+from scipy.sparse.csgraph import connected_components
+from scipy.sparse.linalg import eigsh
+
+from BioFlow.utils.GDF_export import GDF_export_Interface
+from BioFlow.utils.IO_Routines import write_to_csv, dump_object, undump_object
 from BioFlow.configs2 import Chromosome_source, Chromosome_file_filter
 from BioFlow.configs2 import edge_type_filters, Adjacency_Martix_Dict, Conductance_Matrix_Dict, Dumps, Outputs, Interactome_rand_samp
-from BioFlow.Utils.GDF_export import GDF_export_Interface
-from BioFlow.neo4j_Declarations.Graph_Declarator import DatabaseGraph
-from BioFlow.neo4j_analyzer.DB_IO_Routines import reaction_participant_getter, expand_from_seed, erase_custom_fields
-from BioFlow.neo4j_analyzer.IO_Routines import write_to_csv, dump_object, undump_object
-from BioFlow.neo4j_analyzer import Conduction_routines as CR
+from BioFlow.neo4j_db.db_io_routines import reaction_participant_getter, expand_from_seed, erase_custom_fields
+from BioFlow.neo4j_db.GraphDeclarator import DatabaseGraph
+from BioFlow.analysis import conduction_routines as CR
+
 
 # Debug Log:
 #       Main connex set is 24k nodes, with 4331 UP links and 1051 Hint links

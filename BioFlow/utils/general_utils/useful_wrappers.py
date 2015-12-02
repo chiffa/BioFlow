@@ -3,7 +3,7 @@ Contains a set of wrappers that are useful for debugging and operation profiling
 """
 import matplotlib.pyplot as plt
 from time import time
-from BioFlow.Utils.LogManager import logger
+from BioFlow.utils.LogManager import logger
 
 
 def render_2d_matrix(matrix, name):

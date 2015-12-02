@@ -9,7 +9,7 @@ Last updated on Nov 6, 2015
 from csv import reader as csv_reader
 from collections import defaultdict
 from BioFlow.configs2 import Hint_csv
-from BioFlow.neo4j_Declarations.Graph_Declarator import DatabaseGraph
+from BioFlow.neo4j_db.GraphDeclarator import DatabaseGraph
 
 
 def get_prot2prot_rels(_hint_csv):  # TODO HiNT is subject to modification and thus parsing should be tested and shown

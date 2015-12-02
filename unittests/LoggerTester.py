@@ -4,8 +4,8 @@ Tests the logger behavior
 import unittest
 import os
 from BioFlow.configs2 import log_location
-from BioFlow.Utils.GeneralUtils.SanerFilesystem import wipe_dir
-from BioFlow.Utils.LogManager import logger
+from BioFlow.utils.general_utils.high_level_os_io import wipe_dir
+from BioFlow.utils.LogManager import logger
 
 
 class TestLogs(unittest.TestCase):

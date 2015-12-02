@@ -3,16 +3,15 @@ Module responsible for the declaration of all the database access routines that 
 modules. In case a different back-end than neo4j is used, all methods in this cluster have to be
 re-implemented
 """
-from BioFlow.neo4j_Declarations.Graph_Declarator import DatabaseGraph
-from BioFlow.configs.internals_config import annotation_nodes_ptypes
-from BioFlow.configs2 import IDFilter, Leg_ID_Filter, edge_type_filters, Dumps, Outputs,  \
-    Hits_source, prename1, prename2
-from BioFlow.configs2 import Background_source, bgList
+import os
 import pickle
-from pprint import PrettyPrinter
 from collections import defaultdict
 from csv import reader, writer
-import os
+from pprint import PrettyPrinter
+
+from BioFlow.neo4j_db.GraphDeclarator import DatabaseGraph
+from BioFlow.configs2 import IDFilter, Leg_ID_Filter, edge_type_filters, Dumps, Hits_source, prename1, prename2, Background_source, bgList
+from configs import annotation_nodes_ptypes
 
 pp = PrettyPrinter(indent=4)
 
@@ -133,7 +132,7 @@ def look_up_annotation_node(p_load, p_type=''):
     :param p_type: payload type. servers to restrict search to a specific ID subset
     :return: (node type, node's displayName, node's db_ID, node's legacy ID)
     :raise Exception: "p_type unsupported", in case a p_type is not on the supported list
-    specified  in the neo4j_Declarations.neo4j_typeDec
+    specified  in the neo4j_db.neo4j_typeDec
     """
 
     def double_index_search(pay_load, payload_type):

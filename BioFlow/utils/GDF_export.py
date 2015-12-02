@@ -5,7 +5,7 @@ without the need to export the whole relation matrix
 import numpy as np
 from scipy.sparse import lil_matrix
 from BioFlow.configs2 import Dumps
-from BioFlow.Utils.GeneralUtils.SanerFilesystem import mkdir_recursive
+from BioFlow.utils.general_utils.high_level_os_io import mkdir_recursive
 
 # TODO: this class needs to be split into the GDF core that does all the work on a matrix rendering
 # and filters that filter out the unwanted variables

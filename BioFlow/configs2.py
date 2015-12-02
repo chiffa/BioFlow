@@ -1,19 +1,20 @@
 """
 Holds all the configurations of the environmental variables for the whole project
 """
-
-import pickle
-from pprint import PrettyPrinter
-from os import path, makedirs
 import os
+import pickle
+from os import path, makedirs
+from pprint import PrettyPrinter
+
 from pymongo import MongoClient
-from BioFlow.Utils.ConfigsIO import parse_configs, conf_file_path_flattener
-from BioFlow.configs.internals_config import edge_type_filters, Leg_ID_Filter, fudge, Adjacency_Martix_Dict, Conductance_Matrix_Dict
+
+from BioFlow.utils.ConfigsIO import parse_configs, conf_file_path_flattener
+from BioFlow.utils.general_utils import high_level_os_io as SF
 
 Servers, Options, Sources, Predictions = parse_configs()
 
 # SERVERS CONFIGURATIONS
-MongoDB_url = Servers['PRODUCTION']['mongodb_server']
+mongo_db_url = Servers['PRODUCTION']['mongodb_server']
 neo4j_server = Servers['PRODUCTION']['server_neo4j']
 ReadSourceDBs = conf_file_path_flattener(Sources)
 
@@ -38,21 +39,21 @@ pymongo_prefix = Sources['INTERNAL']['mongoprefix']
 pymongo_suffix = Sources['INTERNAL']['mongosuffix']
 
 # Builds static entry points for mongodatabase access
-client = MongoClient(MongoDB_url)
+client = MongoClient(mongo_db_url)
 db = client.PolyPharma_database
 UP_rand_samp = db[pymongo_prefix+"UP_r_samples"+pymongo_suffix]
 Interactome_rand_samp = db[pymongo_prefix+"Interactome_samples"+pymongo_suffix]
 
 
-#########################################################################
-#  Defines the dumping locations for different intermediate computations
-#########################################################################
 class Dumps(object):
     """
     A class that contains and controls all the dumps related to accelerated loading of mappings
     between the graph DB and the mapping matrix holders
     """
-    prefix = str(path.abspath(path.dirname(__file__)+'/dumps'))
+    prefix = path.join(path.abspath(
+        path.join(path.dirname(__file__), os.pardir)), 'dumps')
+    SF.mkdir_recursive(prefix)
+
     prefix_2 = Sources['INTERNAL']['dumpprefix']
     postfix = '.dump'
 
@@ -89,46 +90,42 @@ class Dumps(object):
     RNA_seq_counts_compare = prefix + prefix_2 + '/RNA_seq_compare'+postfix
 
 
-####################################################
-#  Defines the locations to output actual results  #
-####################################################
 class Outputs(object):
-    prefix = str(path.abspath(path.dirname(__file__)+'/outputs'))  # TODO: use path.join instead
+    """
+    Defines the locations to output actual results
+    """
+    prefix = path.join(path.abspath(
+        path.join(path.dirname(__file__), os.pardir)), 'outputs')
+    SF.mkdir_recursive(prefix)
+
     GO_GDF_output = prefix + '/GO_Analysis_output.gdf'
     Interactome_GDF_output = prefix + '/Interactome_Analysis_output.gdf'
     RNA_pre_filter_output = prefix + '/RNA_pre_filter_output.tsv'
     cross_refs = prefix + '/cross_refs.tsv'
 
 
-#########################################################################
-#  Declares overloaded IDs, pickles from the dumps of already computed  #
-#########################################################################
+#  Declares overloaded IDs, pickles from the dumps of already computed
 IDFilter = []
 if path.isfile(Dumps.Forbidden_IDs):
     IDFilter = pickle.load(file(Dumps.Forbidden_IDs, 'r'))
 
-#####################################################################################
+
 # Where the RNA counts source, hits and background deduced from it are to be found  #
-#####################################################################################
 # TODO: these should be input dynamically; or at least from a different source file because of a
-# different modification flrequency
+# different modification frequency
 RNA_source = "/home/ank/Documents/External_Predictions/Ben_RNA_seq/counts.tsv"
 Hits_source = "/home/andrei/support/tmp/Chr_10.txt"
 Background_source = "/home/ank/projects_files/2014/Poly_Pharma/HJ-screen/Allgene_R2.csv"
 
 # these are remappings to the inner master database IDs
-prename1 = Hits_source[:-4]+'_'+'pPh_name_maps.txt'
-prename2 = Hits_source[:-4]+'_'+'pPh_id_list.csv'
-bgList = Background_source[:-4]+'_'+'pPh_id_list.csv'
+prename1 = Hits_source[:-4] + '_' + 'pPh_name_maps.txt'
+prename2 = Hits_source[:-4] + '_' + 'pPh_id_list.csv'
+bgList = Background_source[:-4] + '_' + 'pPh_id_list.csv'
 
-log_location = path.join(path.abspath(
-    path.join(path.dirname(__file__), os.pardir)), 'logs')
 
 output_location = path.join(path.abspath(
     path.join(path.dirname(__file__), os.pardir)), 'outputs')
 
-
-# TODO: move the output location to the actual output interface
 
 if __name__ == "__main__":
     pp = PrettyPrinter(indent=4)

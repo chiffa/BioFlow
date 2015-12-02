@@ -3,6 +3,7 @@ Saner io and filesystem manipulation compared to python defaults
 """
 import os
 from shutil import rmtree
+from BioFlow.utils.LogManager import logger
 
 
 def mkdir_recursive(path):
@@ -12,20 +13,21 @@ def mkdir_recursive(path):
     :param path:
     :return:
     """
-    print 'trying to read: ', path
+    logger.debug('trying to create recursively path containing: {0}'.format(path))
     path = os.path.abspath(path)
     directory_name = os.path.dirname(path)
-    print 'subpath: %s' % directory_name
+    logger.debug('subpath: {0}'.format(directory_name))
     if not os.path.exists(directory_name):
         mkdir_recursive(directory_name)
     if not os.path.exists(path):
-        print 'path %s does not exist yet, looks like file: %s' % (path,
-                                                                   '.' in path.split('/')[-1][-5:]),
+        logger.debug(
+            'path {0} does not exist yet, looks like file: {1}'.format(path,
+                                                                '.' in path.split('/')[-1][-5:]))
         if '.' not in path.split('/')[-1][-5:]:  # should be able to suppress specific file creation
             os.mkdir(path)
-            print '; created'
+            logger.debug('; created')
         else:
-            print '; creation skipped'
+            logger.debug('; creation skipped')
 
 
 def wipe_dir(path):
@@ -36,9 +38,9 @@ def wipe_dir(path):
     """
     path = os.path.abspath(path)
     directory_name = os.path.dirname(path)
-    print directory_name
+    logger.debug(directory_name)
     if not os.path.isdir(path):
-        print Exception('failed to delete %s: not a directory')
+        logger.exception('failed to delete {0}: not a directory'.format(directory_name))
         return False
     if not os.path.exists(directory_name):
         return True  # Nothing to do: destruction already done

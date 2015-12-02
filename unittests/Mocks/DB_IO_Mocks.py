@@ -1,5 +1,5 @@
 from mock import Mock as MagicMock
-from BioFlow.Utils.LogManager import logger
+from BioFlow.utils.LogManager import logger
 
 logger.debug('Mocking DB_IO module')
 

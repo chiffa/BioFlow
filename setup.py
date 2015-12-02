@@ -1,10 +1,6 @@
 """
-:created:
-:@author: Andrei Kucharavy
-
+Generic Setup configured for the project
 """
-__author__ = 'ank'
-
 from setuptools import setup, find_packages  # Always prefer setuptools over distutils
 from codecs import open  # To use a consistent encoding
 from os import path
@@ -48,7 +44,7 @@ setup(
         'Intended Audience :: Science/Research, Developers',
         'Intended Audience :: Developers',
         'Topic :: Scientific/Engineering :: Bio-Informatics',
-        'Topic :: Scientific/Engineering :: Information Analysis',
+        'Topic :: Scientific/Engineering :: Information analysis',
         'Topic :: Software Development :: Libraries :: Python Modules',
         'Operating System :: POSIX :: Linux',
 
@@ -66,30 +62,31 @@ setup(
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
-    packages=['BioFlow']+find_packages(exclude=['contrib', 'docs', 'tests*']),
-    package_dir = {'BioFlow':'BioFlow'},
+    packages=['BioFlow'] + find_packages(exclude=['contrib', 'docs', 'tests*']),
+    package_dir={'BioFlow': 'BioFlow'},
     # List run-time dependencies here.  These will be installed by pip when your
     # project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/technical.html#install-requires-vs-requirements-files
-    install_requires=[  'numpy',
-                        'scipy',
-                        'matplotlib',
-                        'scikit-learn',
-                        'python-Levenshtein',
-                        'cython',
-                        'bulbs',
-                        'pymongo',
-                        'requests',
-                        'click',
-                        'scikits.sparse',
-                        'mock',
-                        'requests-ftp'],
+    install_requires=[
+        'numpy',
+        'scipy',
+        'matplotlib',
+        'scikit-learn',
+        'python-Levenshtein',
+        'cython',
+        'bulbs',
+        'pymongo',
+        'requests',
+        'click',
+        'scikits.sparse',
+        'mock',
+        'requests-ftp'],
 
     # List additional groups of dependencies here (e.g. development dependencies).
     # You can install these using the following syntax, for example:
     # $ pip install -e .[dev,test]
-    extras_require = {
+    extras_require={
         'dev': [],
         'test': [],
     },
@@ -112,7 +109,7 @@ setup(
     # To provide executable scripts, use entry points in preference to the
     # "scripts" keyword. Entry points provide cross-platform support and allow
     # pip to create the appropriate form of executable for the target platform.
-    entry_points = """
+    entry_points="""
     [console_scripts]
     truegrid = CLUI:truegird
     """,

@@ -1,12 +1,10 @@
 """
-Created on Jul 2, 2013
-
-@author: andrei
+An interface declaration required by bulbs module
 """
 from bulbs.neo4jserver import Graph as Neo4jGraph, Config
-import neo4j_typeDec as DDL
+import neo4j_object_class_declaration as DDL
 from BioFlow.configs2 import neo4j_server
-from BioFlow.Utils.LogManager import logger
+from BioFlow.utils.LogManager import logger
 import os
 
 if neo4j_server != 'http://localhost:7474':

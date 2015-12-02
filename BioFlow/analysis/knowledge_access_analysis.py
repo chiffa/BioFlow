@@ -4,21 +4,23 @@ Builds on the knowledge
 __author__ = 'ank'
 
 import pickle
-import numpy as np
-from csv import reader
-from copy import copy
-from random import shuffle
 from collections import namedtuple
+from copy import copy
+from csv import reader
 from multiprocessing import Pool
 from pprint import PrettyPrinter
+from random import shuffle
+
+import numpy as np
 from matplotlib import pyplot as plt
-from BioFlow.neo4j_analyzer.Matrix_Interactome_DB_interface import  MatrixGetter
-from BioFlow.neo4j_analyzer.Matrix_Knowledge_DB_Interface import GO_Interface
-from BioFlow.configs2 import UP_rand_samp, Dumps, prename2, Background_source, bgList
-from BioFlow.Utils.dataviz import kde_compute
-from BioFlow.Utils.Linalg_routines import analyze_eigenvects
-from BioFlow.neo4j_analyzer.Conduction_routines import perform_clustering
-from BioFlow.neo4j_analyzer.IO_Routines import undump_object
+
+from BioFlow.utils.IO_Routines import undump_object
+from BioFlow.utils.Linalg_routines import analyze_eigenvects
+from BioFlow.utils.dataviz import kde_compute
+from BioFlow.configs2 import UP_rand_samp, Dumps, prename2, bgList
+from BioFlow.analysis.conduction_routines import perform_clustering
+from BioFlow.analysis.InteractomeInterface import  MatrixGetter
+from BioFlow.analysis.BioKnowledgeInterface import GO_Interface
 
 
 # TODO: refactor, this is currently a wrapper method used in the

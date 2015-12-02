@@ -11,28 +11,29 @@ __author__ = 'ank'
 
 import hashlib
 import json
+import pickle
 import random
 import string
-from copy import copy
-import pickle
-import numpy as np
-from csv import reader
-from time import time
-from random import shuffle
-from itertools import combinations, chain
-from pprint import PrettyPrinter
-from math import log
 from collections import defaultdict
+from copy import copy
+from csv import reader
+from itertools import combinations, chain
+from math import log
+from pprint import PrettyPrinter
+from random import shuffle
+from time import time
 from warnings import warn
+
+import numpy as np
 from scipy.sparse import lil_matrix
 from scipy.sparse.csgraph import shortest_path
-from BioFlow.configs2 import Dumps, Outputs, UP_rand_samp, Background_source, bgList
-from BioFlow.neo4j_Declarations.Graph_Declarator import DatabaseGraph
-from BioFlow.Utils.GDF_export import GDF_export_Interface
-from BioFlow.neo4j_analyzer.Matrix_Interactome_DB_interface import MatrixGetter
-from BioFlow.neo4j_analyzer.IO_Routines import dump_object, undump_object
-from BioFlow.neo4j_analyzer import Conduction_routines as CR
 
+from BioFlow.utils.GDF_export import GDF_export_Interface
+from BioFlow.utils.IO_Routines import dump_object, undump_object
+from BioFlow.configs2 import Dumps, Outputs, UP_rand_samp, bgList
+from BioFlow.neo4j_db.GraphDeclarator import DatabaseGraph
+from BioFlow.analysis import conduction_routines as CR
+from BioFlow.analysis.InteractomeInterface import MatrixGetter
 
 
 def _characterise(objekt):

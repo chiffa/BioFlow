@@ -6,13 +6,13 @@ Performs IO from the setup .ini files and casts into relevant Python Dictionarie
 from os.path import join, abspath, expanduser
 import os
 from string import lower
-from BioFlow.Utils.GeneralUtils.SanerConfigsParser import ini_configs2dict, dict2init_configs
-from BioFlow.Utils.GeneralUtils.SanerFilesystem import mkdir_recursive
-from BioFlow.Utils.GeneralUtils.InternetIO import url_to_local
+from BioFlow.utils.general_utils.dict_like_configs_parser import ini_configs2dict, dict2init_configs
+from BioFlow.utils.general_utils.high_level_os_io import mkdir_recursive
+from BioFlow.utils.general_utils.internet_io import url_to_local
 from collections import defaultdict
 
 
-configs_rootdir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../configs/'))
+configs_rootdir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../configs/'))
 
 shortnames = ['servers', 'options', 'sources', 'predictions']
 configsfiles = dict([(name, join(configs_rootdir, name+'.ini')) for name in shortnames])

@@ -33,7 +33,7 @@ install:
     - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib
     - source activate test-environment
     - conda install python=$TRAVIS_PYTHON_VERSION cython scikit-learn coverage pylint
-    - pip install coveralls
+    - pip install coveralls pyflake pep8-naming mccabe flake8
     - pip install -r requirements.txt
 
 script:
@@ -42,7 +42,7 @@ script:
 
 after_success:
     - coveralls
-    - "pylint -d C -d import-error -d no-name-in-module -d no-member -d fixme -d too-few-public-methods -d no-init BioFlow"
+    - flake8 --ignore=E501 --max-complexity 7 --statistics --show-source BioFlow
 
 notifications:
     email: false

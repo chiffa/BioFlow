@@ -5,9 +5,9 @@ Created on Jul 5, 2013
 '''
 import logging
 
-from BioFlow.data_parsers.GO_Structure_Parser import fill_GO_Terms
-from BioFlow.data_parsers.UNIPROT_Parser import parse_uniprot
-from BioFlow.neo4j_Declarations.Graph_Declarator import DatabaseGraph
+from BioFlow.bio_db_parsers.gene_ontology_parser import fill_GO_Terms
+from BioFlow.bio_db_parsers.uniprot_text_parser import parse_uniprot
+from BioFlow.neo4j_db.GraphDeclarator import DatabaseGraph
 
 logging.basicConfig(level=logging.DEBUG,
                     format='%(levelname)-8s %(message)s',
@@ -29,7 +29,7 @@ UniprotDict = {} # Stores relations between the SWISSPROT UNIPROT IDs and the ne
 
 def import_GOs():
     """
-    Imports GOs by loading GO_Terms and GO_Terms structure from Utils.GO_Structure_Parser
+    Imports GOs by loading GO_Terms and GO_Terms structure from utils.GO_Structure_Parser
     """
     # generate terms:
     GO_Terms, GO_Terms_Structure = fill_GO_Terms()

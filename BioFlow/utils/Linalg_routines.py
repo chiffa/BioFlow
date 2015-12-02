@@ -10,8 +10,8 @@ from scipy.sparse import lil_matrix, triu
 from scipy.sparse.linalg import eigsh
 from sklearn.cluster import spectral_clustering
 
-from BioFlow.Utils.GeneralUtils.ComfWrappers import time_it_wrapper
-from BioFlow.Utils.LogManager import logger
+from BioFlow.utils.general_utils.useful_wrappers import time_it_wrapper
+from BioFlow.utils.LogManager import logger
 
 
 @time_it_wrapper

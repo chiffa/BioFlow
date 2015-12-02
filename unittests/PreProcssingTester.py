@@ -4,7 +4,7 @@ Tests the pre-processing module
 import os
 import unittest
 import numpy as np
-from BioFlow.PreProcessing import RnaCountsProcessor as RCP
+from BioFlow.pre_processing import rna_counts_analysis as RCP
 
 
 class TestRnaCountsProcessor(unittest.TestCase):

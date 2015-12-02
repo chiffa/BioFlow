@@ -8,7 +8,9 @@
  - replace all the print Warning() with logging behavior at the level of a warning or a critical 
  error
 
-- destroy the print output from the logging system in case the $UNITTEST$ is set to True in the environment variables.
+ - destroy the print output from the logging system in case the $UNITTEST$ is set to True in the environment variables.
+
+ - move the dump and output directories to the top level
 
 
 ## Minor refactoring suggestions:
@@ -21,7 +23,26 @@
  
  - modify the config generator code so that there is only one place where the default 
  configurations are stored and can be modified from hte command line interface, instead of a 
- complex CofigsIO class management
+ complex CofigsIO class management. We actually have several levels of configs:
+ 
+    - Configs that are required to properly stitch the code that were introduced during the 
+    development
+    
+    - Configs managing the third-party services
+    
+    - Configs that are specific to a deploy:
+        - Where to direct the flow of the loggers at every level
+        - Where the datastores are located
+        - How to connect to a database
+        
+    - Configs that allow switching between organisms
+        - Forking and switching the databases
+        - Re-filling the database
+        - Re-building the intermediate representations
+        - Re-building the mongoDB reference and average heatmap
+ 
+ - build a condas-compatible package that would be installable cross-plateform and would contain 
+ pre-compiled binaries for C-extenstions.
 
 
 ## Major refactoring suggestions:
@@ -37,11 +58,14 @@
     - approximate matching capacities for gene names mistypes
  
  - in all the DB calls, add a mock-able wrapper that would read the state of a project-wide 
- variable and if it is set to True (in unittests) will switch it to 
+ variable and if it is set to True (in unittests) will switch it to
+ 
+ - Introduce signal over noise ratio: amount of current in the current configuration compared to 
+ what we would have expected in case of a random set of nodes. We could introduce this as a 
+ bootstrap on a random subset of nodes to figure which ones are random and which ones aren't
 
 
-
-## Required:
+## Required documentation:
 
 Following the interaction with Wahid when I was explaining him what my methods were doing:
 

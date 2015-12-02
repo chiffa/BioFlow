@@ -3,15 +3,13 @@ Created on Jun 15, 2013
 :author: andrei
 """
 import logging
-import pickle
 import os
+import pickle
 
-from BioFlow.neo4j_Declarations.Graph_Declarator import DatabaseGraph
+from BioFlow.utils.general_utils.high_level_os_io import mkdir_recursive
 from BioFlow.configs2 import Dumps, Leg_ID_Filter
-from BioFlow.Utils.GeneralUtils.SanerFilesystem import mkdir_recursive
-from BioFlow.neo4j_analyzer.DB_IO_Routines import get_attached_annotations
-
-
+from BioFlow.neo4j_db.db_io_routines import get_attached_annotations
+from BioFlow.neo4j_db.GraphDeclarator import DatabaseGraph
 
 ####################################################################################
 #
@@ -344,7 +342,7 @@ def insert_all(Skip='N'):
     :param Skip:     * N => will skip nothing and implement the import once and for all.
                      * M => skips meta import, recovers the metas and resumes from the Reactions import.
     """
-    from BioFlow.data_parsers import Reactome_org_parser as DG
+    from BioFlow.bio_db_parsers import reactome_xml_parser as DG
 
     if Skip=='N':
         InsertCellLocations(DG.CellularLocations)

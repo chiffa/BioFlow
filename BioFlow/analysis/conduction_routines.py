@@ -11,7 +11,7 @@ from BioFlow.configs2 import fudge
 from scikits.sparse.cholmod import cholesky
 from itertools import combinations, repeat
 from copy import copy
-from BioFlow.Utils.Linalg_routines import cluster_nodes, average_off_diag_in_sub_matrix, average_interset_linkage, normalize_laplacian
+from BioFlow.utils.Linalg_routines import cluster_nodes, average_off_diag_in_sub_matrix, average_interset_linkage, normalize_laplacian
 from scipy.sparse import lil_matrix
 from scipy.sparse.linalg import eigsh
 from matplotlib import pyplot as plt
