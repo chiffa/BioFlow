@@ -38,7 +38,7 @@ install:
 
 script:
     - python -m unittests.TestAll
-    - coverage run --source BioFlow -m unittests.TestAll
+    - coverage run -m unittests.TestAll
 
 after_success:
     - coveralls

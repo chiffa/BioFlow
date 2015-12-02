@@ -11,6 +11,9 @@ log_location = path.join(path.abspath(
         path.join(path.dirname(__file__), os.pardir),
         os.pardir)), 'logs')
 
+on_unittest = os.environ.get('UNITTESTING') == 'True'  # if we are unittesting
+on_remote_unittest = os.environ.get('REMOTE_UNIT_TEST') == 'True'  # if we are testing on CI tools
+
 
 def mkdir_recursive(path):
     """
@@ -48,10 +51,14 @@ fh.setLevel(logging.INFO)
 fh.setFormatter(formatter)
 logger.addHandler(fh)
 
-ch = logging.StreamHandler(sys.stdout)
-ch.setLevel(logging.INFO)
-ch.setFormatter(formatter)
-logger.addHandler(ch)
+if not on_remote_unittest:
+    ch = logging.StreamHandler(sys.stdout)
+    if on_unittest:
+        ch.setLevel(logging.DEBUG)
+    else:
+        ch.setLevel(logging.INFO)
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
 
 fh = logging.FileHandler(os.path.join(log_location, 'warning.log'), mode='a')
 fh.setLevel(logging.WARNING)
