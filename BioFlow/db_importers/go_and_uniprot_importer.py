@@ -4,9 +4,9 @@ Created on Jul 5, 2013
 @author: andrei
 '''
 import logging
-from BioFlow.main_configs import GeneOntology
+from BioFlow import main_configs as conf
 from BioFlow.bio_db_parsers.gene_ontology_parser import GOTermsParser
-from BioFlow.bio_db_parsers.uniprot_text_parser import parse_uniprot
+from BioFlow.bio_db_parsers.new_unioprot_paser import UniProtParser
 from BioFlow.neo4j_db.GraphDeclarator import DatabaseGraph
 
 logging.basicConfig(level=logging.DEBUG,
@@ -34,7 +34,7 @@ def import_GOs():
     Imports GOs by loading GO_Terms and GO_Terms structure from utils.GO_Structure_Parser
     """
     # generate terms:
-    GO_Terms, GO_Terms_Structure = GOTermsParser().parse_go_terms(GeneOntology)
+    GO_Terms, GO_Terms_Structure = GOTermsParser().parse_go_terms(conf.GeneOntology)
     # Create Terms
     leng = len(GO_Terms.keys())
     i = 0
@@ -148,7 +148,7 @@ def import_UNIPROTS():
     """
     Imports the whole parsed uniprot dictionary from the utils.uniprot parser into the database
     """
-    Uniprot = parse_uniprot()
+    Uniprot = UniProtParser(conf.up_tax_ids).parse_uniprot(conf.UNIPROT_source)
     Acnums2RProts = getExistingAcnums()
     i = 0
     j = 0

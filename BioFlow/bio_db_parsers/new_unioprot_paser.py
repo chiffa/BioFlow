@@ -19,13 +19,13 @@ Uniprot = { SWISSPROT_ID:{
     'GeneID': [], }}
 """
 import copy
-import BioFlow.main_configs as conf
 from BioFlow.utils.log_behavior import logger
 from BioFlow.internals_config import interesting_lines, interesting_xrefs,\
     names_to_ignore, starting_dict
 
 
 class UniProtParser(object):
+    """Wraps the Uniprot parser """
 
     def __init__(self, tax_ids_to_parse):
         """
@@ -33,8 +33,14 @@ class UniProtParser(object):
         :param tax_ids_to_parse: list of NCBI taxonomy identifiers we are interested in
         :return:
         """
+        # TODO: below: change to self.interesting_xrefs, lines, names; it is an internal behavior
+        # TODO: default to all supported in case provided are left unfilled ( or [] )
+
         self._ignore = [False, 2]  # TODO: second element of Ignore does not get used. Is it normal?
-        self.dico = {}
+        self.interesting_lines = interesting_lines
+        self.interesting_xrefs = interesting_xrefs
+        self.names_to_ignore = names_to_ignore
+        self._single_up_dict = {}
         self.uniprot = {}
         self.parsed = False
         self.tax_id_list = tax_ids_to_parse
@@ -60,23 +66,23 @@ class UniProtParser(object):
                            'status': contents_list[3].strip(),
                            'type': ''}
 
-            self.dico['EMBL'].append(package)
+            self._single_up_dict['EMBL'].append(package)
         if 'GO; GO:' in line:
-            self.dico['GO'].append(line.split(';')[1].split(':')[1].strip())
+            self._single_up_dict['GO'].append(line.split(';')[1].split(':')[1].strip())
         if 'Pfam; ' in line:
-            self.dico['Pfam'].append(line.split(';')[1].strip())
+            self._single_up_dict['Pfam'].append(line.split(';')[1].strip())
         if 'SUPFAM; ' in line:
-            self.dico['SUPFAM'].append(line.split(';')[1].strip())
+            self._single_up_dict['SUPFAM'].append(line.split(';')[1].strip())
         if 'Ensembl; ' in line:
-            self.dico['Ensembl'].append(line.split(';')[1].strip())
-            self.dico['Ensembl'].append(line.split(';')[2].strip())
-            self.dico['Ensembl'].append(line.split(';')[3].strip().strip('.'))
+            self._single_up_dict['Ensembl'].append(line.split(';')[1].strip())
+            self._single_up_dict['Ensembl'].append(line.split(';')[2].strip())
+            self._single_up_dict['Ensembl'].append(line.split(';')[3].strip().strip('.'))
         if 'KEGG; ' in line:
-            self.dico['KEGG'].append(line.split(';')[1].strip())
+            self._single_up_dict['KEGG'].append(line.split(';')[1].strip())
         if 'PDB; ' in line:
-            self.dico['PDB'].append(line.split(';')[1].strip())
+            self._single_up_dict['PDB'].append(line.split(';')[1].strip())
         if 'GeneID; ' in line:
-            self.dico['GeneID'].append(line.split(';')[1].strip())
+            self._single_up_dict['GeneID'].append(line.split(';')[1].strip())
 
     def parse_gene_references(self, line):
         """
@@ -88,13 +94,13 @@ class UniProtParser(object):
         for word in words:
             if 'ORFNames' in word:
                 for subword in word.split('=')[1].strip().split(','):
-                    self.dico['GeneRefs']['ORFNames'].append(subword.strip())
+                    self._single_up_dict['GeneRefs']['ORFNames'].append(subword.strip())
             if 'OrderedLocusNames' in word:
                 for subword in word.split('=')[1].strip().split(','):
-                    self.dico['GeneRefs']['OrderedLocusNames'].append(subword.strip())
+                    self._single_up_dict['GeneRefs']['OrderedLocusNames'].append(subword.strip())
             if 'Name=' in word or 'Synonyms=' in word:
                 for subword in word.split('=')[1].strip().split(','):
-                    self.dico['GeneRefs']['Names'].append(subword.strip())
+                    self._single_up_dict['GeneRefs']['Names'].append(subword.strip())
 
     def parse_name(self, line):
         """
@@ -104,14 +110,14 @@ class UniProtParser(object):
         :return:
         """
         if 'RecName: Full=' in line:
-            self.dico['Names']['Full'] = line.split('RecName: Full=')[1].split(';')[0]
+            self._single_up_dict['Names']['Full'] = line.split('RecName: Full=')[1].split(';')[0]
             return ''
         if 'AltName: Full=' in line:
-            self.dico['Names']['AltNames'].append(
+            self._single_up_dict['Names']['AltNames'].append(
                 line.split('AltName: Full=')[1].split(';')[0])
             return ''
         if 'Short=' in line:
-            self.dico['Names']['AltNames'].append(line.split('Short=')[1].split(';')[0])
+            self._single_up_dict['Names']['AltNames'].append(line.split('Short=')[1].split(';')[0])
             return ''
         if self._ignore[0]:
             if self._ignore[1] == 0:
@@ -123,7 +129,7 @@ class UniProtParser(object):
         if ' Includes:' in line:
             self._ignore[0] = True
             return ''
-        if any(x in line for x in names_to_ignore):
+        if any(x in line for x in self.names_to_ignore):
             return ''
 
     def process_line(self, line, keyword):
@@ -136,18 +142,18 @@ class UniProtParser(object):
         print 'debug-main'
         if keyword == 'ID':
             words = filter(lambda a: a != '', line.split(' '))
-            self.dico['ID'] = words[1]
+            self._single_up_dict['ID'] = words[1]
         if keyword == 'AC':
             words = filter(lambda a: a != '', line.split(' '))
             for word in words[1:]:
-                self.dico['Acnum'].append(word.split(';')[0])
+                self._single_up_dict['Acnum'].append(word.split(';')[0])
         if keyword == 'OX':
-            self.dico['TaxID'] = line.split('NCBI_TaxID=')[1].split(';')[0]
+            self._single_up_dict['TaxID'] = line.split('NCBI_TaxID=')[1].split(';')[0]
         if keyword == 'DE':
             self.parse_name(line)
         if keyword == 'GN':
             self.parse_gene_references(line)
-        if keyword == 'DR' and any(x in line for x in interesting_xrefs):
+        if keyword == 'DR' and any(x in line for x in self.interesting_xrefs):
             self.parse_xref(line)
 
     def end_block(self):
@@ -156,19 +162,19 @@ class UniProtParser(object):
 
         :return:
         """
-        if self.dico['TaxID'] in self.tax_id_list:
+        if self._single_up_dict['TaxID'] in self.tax_id_list:
             self._ignore[0] = False
-            self.uniprot[self.dico['ID']] = self.dico
+            self.uniprot[self._single_up_dict['ID']] = self._single_up_dict
         return copy.deepcopy(starting_dict)
 
-    def parse_uniprot(self, source_path=conf.UNIPROT_source):
+    def parse_uniprot(self, source_path):
         """
         Performs the entire uniprot file parsing and importing
 
         :param source_path: path towards the uniprot test file
         :return: uniprot parse dictionary
         """
-        self.dico = copy.deepcopy(starting_dict)
+        self._single_up_dict = copy.deepcopy(starting_dict)
         source_file = open(source_path, "r")
         line_counter = 0
         while True:
@@ -178,8 +184,8 @@ class UniProtParser(object):
                 break
             keyword = line[0:2]
             if keyword == '//':
-                self.dico = self.end_block()
-            if keyword in interesting_lines:
+                self._single_up_dict = self.end_block()
+            if keyword in self.interesting_lines:
                 self.process_line(line, keyword)
 
         logger.info("%s lines scanned during UNIPROT import" % line_counter)
