@@ -2,8 +2,8 @@ import os
 import unittest
 from pprint import pprint
 from BioFlow.utils.IO_Routines import dump_object, undump_object
-from BioFlow.bio_db_parsers.gene_ontology_parser import GOTermsParser
-from BioFlow.bio_db_parsers.new_unioprot_paser import UniProtParser
+from BioFlow.bio_db_parsers.geneOntologyParser import GOTermsParser
+from BioFlow.bio_db_parsers.uniprotParser import UniProtParser
 
 
 class GoParserTester(unittest.TestCase):

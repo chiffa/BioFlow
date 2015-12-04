@@ -62,15 +62,15 @@ class StructureGenerator(object):
     _Human = {
         'shortname': 'human',
         'tax_id': '9606',
-        'Reactome_name': 'Homo_Sapiens',
+        'Reactome_name': 'Homo_sapiens.owl',
         'Biogrid_name': 'Homo_Sapiens',
-        'HINT_name': 'MouseBinaryHQ.txt'}
+        'HINT_name': 'HumanBinaryHQ.txt'}
 
     # default configuration elements for mice proteins analysis
     _Mice = {
         'shortname': 'mouse',
         'tax_id': '10090',
-        'Reactome_name': 'Mus_Musculus',
+        'Reactome_name': 'Mus_musculus.owl',
         'Biogrid_name': 'Mus_musculus',
         'HINT_name': 'HumanBinaryHQ.txt'}
 
@@ -247,7 +247,7 @@ def set_folders(file_directory, neo4jserver='http://localhost:7474',
 
 if __name__ == "__main__":
     set_folders('~/support/')
-    StructureGenerator.build_source_config('yeast')
+    StructureGenerator.build_source_config('human')
     # pp = PrettyPrinter(indent=4)
     # pp.pprint(parse_configs())
-    StructureGenerator.pull_online_dbs()
+    # StructureGenerator.pull_online_dbs()
