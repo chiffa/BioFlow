@@ -1,6 +1,9 @@
 import os
 import unittest
+from pprint import pprint
+from BioFlow.utils.IO_Routines import dump_object, undump_object
 from BioFlow.bio_db_parsers.gene_ontology_parser import GOTermsParser
+from BioFlow.bio_db_parsers.new_unioprot_paser import UniProtParser
 
 
 class GoParserTester(unittest.TestCase):
@@ -33,6 +36,22 @@ class GoParserTester(unittest.TestCase):
         self.assertIn('CHEBI', self.terms['0000036'].keys())
         self.assertIn('22221', self.terms['0000036']['CHEBI'])
 
+
+class UniprotParserTester(unittest.TestCase):
+
+    up_to_parse = os.path.join(os.path.dirname(__file__), 'UT_examples/test_uniprot.dat')
+    ref_parses = os.path.join(os.path.dirname(__file__), 'UT_examples/ref_up_parse.dmp')
+
+    @classmethod
+    def setUpClass(cls):
+        parser_object = UniProtParser(['199310', '405955'])
+        cls.uniprot_dict = parser_object.parse_uniprot(cls.up_to_parse)
+        cls.acces_dict = parser_object.get_access_dicts()
+        cls.ref_uniprot_dict, cls.ref_acces_dict = undump_object(cls.ref_parses)
+
+    def test_total(self):  # TODO: in future, expand in smaller set of tests
+        self.assertDictEqual(self.uniprot_dict, self.ref_uniprot_dict)
+        self.assertDictEqual(self.acces_dict, self.ref_acces_dict)
 
 if __name__ == "__main__":
     unittest.main()

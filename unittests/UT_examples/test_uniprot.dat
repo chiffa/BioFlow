@@ -1,0 +1,402 @@
+ID   DAPD_ECOL6              Reviewed;         274 AA.
+AC   Q8FL11;
+DT   19-JUL-2005, integrated into UniProtKB/Swiss-Prot.
+DT   01-MAR-2003, sequence version 1.
+DT   14-OCT-2015, entry version 89.
+DE   RecName: Full=2,3,4,5-tetrahydropyridine-2,6-dicarboxylate N-succinyltransferase {ECO:0000255|HAMAP-Rule:MF_00811};
+DE            EC=2.3.1.117 {ECO:0000255|HAMAP-Rule:MF_00811};
+DE   AltName: Full=Tetrahydrodipicolinate N-succinyltransferase {ECO:0000255|HAMAP-Rule:MF_00811};
+DE            Short=THDP succinyltransferase {ECO:0000255|HAMAP-Rule:MF_00811};
+DE            Short=THP succinyltransferase {ECO:0000255|HAMAP-Rule:MF_00811};
+DE            Short=Tetrahydropicolinate succinylase {ECO:0000255|HAMAP-Rule:MF_00811};
+DE            Short=3-beta-HSD I;
+DE   Includes:
+DE     RecName: Full=3-beta-hydroxy-Delta(5)-steroid dehydrogenase;
+DE              EC=1.1.1.145;
+DE     AltName: Full=3-beta-hydroxy-5-ene steroid dehydrogenase;
+DE     AltName: Full=Progesterone reductase;
+DE   Includes:
+DE     RecName: Full=Steroid Delta-isomerase;
+DE              EC=5.3.3.1;
+DE     AltName: Full=Delta-5-3-ketosteroid isomerase;
+GN   Name=dapD {ECO:0000255|HAMAP-Rule:MF_00811}; OrderedLocusNames=c0201;
+OS   Escherichia coli O6:H1 (strain CFT073 / ATCC 700928 / UPEC).
+OC   Bacteria; Proteobacteria; Gammaproteobacteria; Enterobacteriales;
+OC   Enterobacteriaceae; Escherichia.
+OX   NCBI_TaxID=199310;
+RN   [1]
+RP   NUCLEOTIDE SEQUENCE [LARGE SCALE GENOMIC DNA].
+RC   STRAIN=CFT073 / ATCC 700928 / UPEC;
+RX   PubMed=12471157; DOI=10.1073/pnas.252529799;
+RA   Welch R.A., Burland V., Plunkett G. III, Redford P., Roesch P.,
+RA   Rasko D., Buckles E.L., Liou S.-R., Boutin A., Hackett J., Stroud D.,
+RA   Mayhew G.F., Rose D.J., Zhou S., Schwartz D.C., Perna N.T.,
+RA   Mobley H.L.T., Donnenberg M.S., Blattner F.R.;
+RT   "Extensive mosaic structure revealed by the complete genome sequence
+RT   of uropathogenic Escherichia coli.";
+RL   Proc. Natl. Acad. Sci. U.S.A. 99:17020-17024(2002).
+CC   -!- CATALYTIC ACTIVITY: Succinyl-CoA + (S)-2,3,4,5-tetrahydropyridine-
+CC       2,6-dicarboxylate + H(2)O = CoA + N-succinyl-L-2-amino-6-
+CC       oxoheptanedioate. {ECO:0000255|HAMAP-Rule:MF_00811}.
+CC   -!- PATHWAY: Amino-acid biosynthesis; L-lysine biosynthesis via DAP
+CC       pathway; LL-2,6-diaminopimelate from (S)-tetrahydrodipicolinate
+CC       (succinylase route): step 1/3. {ECO:0000255|HAMAP-Rule:MF_00811}.
+CC   -!- SUBUNIT: Homotrimer. {ECO:0000255|HAMAP-Rule:MF_00811}.
+CC   -!- SUBCELLULAR LOCATION: Cytoplasm {ECO:0000255|HAMAP-Rule:MF_00811}.
+CC   -!- SIMILARITY: Belongs to the transferase hexapeptide repeat family.
+CC       {ECO:0000255|HAMAP-Rule:MF_00811}.
+DR   EMBL; AE014075; AAN78695.1; -
+DR   SUPFAM; SSF51161; SSF51161; 1.
+DR   ProteinModelPortal; Q8FL11; -.
+DR   SMR; Q8FL11; 2-274.
+DR   STRING; 199310.c0201; -.
+DR   EnsemblBacteria; AAN78695; AAN78695; c0201.
+DR   Ensembl; ENST00000543831; ENSP00000445122; ENSG00000203859. [P26439-1]
+DR   PATRIC; 18278466; VBIEscCol75197_0188.
+DR   HOGENOM; HOG000003295; -.
+DR   OMA; QVPCALI; -.
+DR   OrthoDB; EOG68H8BV; -.
+DR   BioCyc; ECOL199310:C0201-MONOMER; -.
+DR   UniPathway; UPA00034; UER00019.
+DR   Proteomes; UP000001410; Chromosome.
+DR   GO; GO:0005737; C:cytoplasm; IEA:UniProtKB-SubCell.
+DR   GO; GO:0008666; F:2,3,4,5-tetrahydropyridine-2,6-dicarboxylate N-succinyltransferase activity; IEA:UniProtKB-HAMAP.
+DR   GO; GO:0019877; P:diaminopimelate biosynthetic process; IEA:UniProtKB-HAMAP.
+DR   GO; GO:0009089; P:lysine biosynthetic process via diaminopimelate; IEA:UniProtKB-HAMAP.
+DR   Gene3D; 1.10.166.10; -; 1.
+DR   HAMAP; MF_00811; DapD; 1.
+DR   InterPro; IPR005664; DapD_Trfase_Hexpep_rpt_fam.
+DR   InterPro; IPR001451; Hexapep.
+DR   InterPro; IPR018357; Hexapep_transf_CS.
+DR   InterPro; IPR023180; THP_succinylTrfase_dom1.
+DR   InterPro; IPR011004; Trimer_LpxA-like.
+DR   PANTHER; PTHR19136:SF52; PTHR19136:SF52; 1.
+DR   GeneID; 2931683; -.
+DR   Pfam; PF00132; Hexapep; 1.
+DR   Pfam; PF14602; Hexapep_2; 1.
+DR   Pfam; PF14805; THDPS_N_2; 1.
+DR   SUPFAM; SSF51161; SSF51161; 1.
+DR   TIGRFAMs; TIGR00965; dapD; 1.
+DR   PROSITE; PS00101; HEXAPEP_TRANSFERASES; 1.
+DR   PDB; 3FSX; X-ray; 2.15 A; A/B/C/D/E=2-317.
+PE   3: Inferred from homology;
+KW   Acyltransferase; Amino-acid biosynthesis; Complete proteome;
+KW   Cytoplasm; Diaminopimelate biosynthesis; Lysine biosynthesis; Repeat;
+KW   Transferase.
+FT   CHAIN         1    274       2,3,4,5-tetrahydropyridine-2,6-
+FT                                dicarboxylate N-succinyltransferase.
+FT                                /FTId=PRO_0000196935.
+FT   BINDING     104    104       Substrate. {ECO:0000255|HAMAP-
+FT                                Rule:MF_00811}.
+FT   BINDING     141    141       Substrate. {ECO:0000255|HAMAP-
+FT                                Rule:MF_00811}.
+SQ   SEQUENCE   274 AA;  29848 MW;  A8318AD20EDFF0FB CRC64;
+     MQQLQNIIET AFERRAEITP ANADTVTREA VNQVIALLDS GALRVAEKID GQWVTHQWLK
+     KAVLLSFRIN DNQVIEGAES RYFDKVPMKF ANYDEALFQK EGFRVVPPAA VRQGAFIARN
+     TVLMPSYVNI GAYVDEGTMV DTWATVGSCA QIGKNVHLSG GVGIGGVLEP LQANPTIIED
+     NCFIGARSEV VEGVIVEEGS VISMGVYIGQ STRIYDRETG EIHYGRVPAG SVVVSGNLPS
+     KDGKYSLYCA VIVKKVDAKT RGKVGINELL RTID
+//
+ID   DAPB_ECOK1              Reviewed;         273 AA.
+AC   A1A780;
+DT   15-JAN-2008, integrated into UniProtKB/Swiss-Prot.
+DT   23-JAN-2007, sequence version 1.
+DT   14-OCT-2015, entry version 73.
+DE   RecName: Full=4-hydroxy-tetrahydrodipicolinate reductase {ECO:0000255|HAMAP-Rule:MF_00102};
+DE            Short=HTPA reductase {ECO:0000255|HAMAP-Rule:MF_00102};
+DE            EC=1.17.1.8 {ECO:0000255|HAMAP-Rule:MF_00102};
+GN   Name=dapB {ECO:0000255|HAMAP-Rule:MF_00102};
+GN   OrderedLocusNames=Ecok1_00260; ORFNames=APECO1_1951;
+OS   Escherichia coli O1:K1 / APEC.
+OC   Bacteria; Proteobacteria; Gammaproteobacteria; Enterobacteriales;
+OC   Enterobacteriaceae; Escherichia.
+OX   NCBI_TaxID=405955;
+RN   [1]
+RP   NUCLEOTIDE SEQUENCE [LARGE SCALE GENOMIC DNA].
+RX   PubMed=17293413; DOI=10.1128/JB.01726-06;
+RA   Johnson T.J., Kariyawasam S., Wannemuehler Y., Mangiamele P.,
+RA   Johnson S.J., Doetkott C., Skyberg J.A., Lynne A.M., Johnson J.R.,
+RA   Nolan L.K.;
+RT   "The genome sequence of avian pathogenic Escherichia coli strain
+RT   O1:K1:H7 shares strong similarities with human extraintestinal
+RT   pathogenic E. coli genomes.";
+RL   J. Bacteriol. 189:3228-3236(2007).
+CC   -!- FUNCTION: Catalyzes the conversion of 4-hydroxy-
+CC       tetrahydrodipicolinate (HTPA) to tetrahydrodipicolinate.
+CC       {ECO:0000255|HAMAP-Rule:MF_00102}.
+CC   -!- CATALYTIC ACTIVITY: (S)-2,3,4,5-tetrahydropyridine-2,6-
+CC       dicarboxylate + NAD(P)(+) + H(2)O = (2S,4S)-4-hydroxy-2,3,4,5-
+CC       tetrahydrodipicolinate + NAD(P)H. {ECO:0000255|HAMAP-
+CC       Rule:MF_00102}.
+CC   -!- PATHWAY: Amino-acid biosynthesis; L-lysine biosynthesis via DAP
+CC       pathway; (S)-tetrahydrodipicolinate from L-aspartate: step 4/4.
+CC       {ECO:0000255|HAMAP-Rule:MF_00102}.
+CC   -!- SUBUNIT: Homotetramer. {ECO:0000255|HAMAP-Rule:MF_00102}.
+CC   -!- SUBCELLULAR LOCATION: Cytoplasm {ECO:0000255|HAMAP-Rule:MF_00102}.
+CC   -!- SIMILARITY: Belongs to the DapB family. {ECO:0000255|HAMAP-
+CC       Rule:MF_00102}.
+CC   -!- CAUTION: Was originally thought to be a dihydrodipicolinate
+CC       reductase (DHDPR), catalyzing the conversion of
+CC       dihydrodipicolinate to tetrahydrodipicolinate. However, it was
+CC       shown in E.coli that the substrate of the enzymatic reaction is
+CC       not dihydrodipicolinate (DHDP) but in fact (2S,4S)-4-hydroxy-
+CC       2,3,4,5-tetrahydrodipicolinic acid (HTPA), the product released by
+CC       the DapA-catalyzed reaction. {ECO:0000305}.
+DR   EMBL; CP000468; ABI99519.1; -; Genomic_DNA.
+DR   RefSeq; WP_000543585.1; NC_008563.1.
+DR   ProteinModelPortal; A1A780; -.
+DR   SMR; A1A780; 2-273.
+DR   EnsemblBacteria; ABI99519; ABI99519; APECO1_1951.
+DR   KEGG; ecv:APECO1_1951; -.
+DR   PATRIC; 18211433; VBIEscCol127180_0030.
+DR   eggNOG; COG0289; -.
+DR   HOGENOM; HOG000227153; -.
+DR   KO; K00215; -.
+DR   OMA; RDLKECA; -.
+DR   OrthoDB; EOG6SV5DS; -.
+DR   UniPathway; UPA00034; UER00018.
+DR   Proteomes; UP000008216; Chromosome.
+DR   GO; GO:0005737; C:cytoplasm; IEA:UniProtKB-SubCell.
+DR   GO; GO:0008839; F:4-hydroxy-tetrahydrodipicolinate reductase; IEA:UniProtKB-EC.
+DR   GO; GO:0051287; F:NAD binding; IEA:UniProtKB-HAMAP.
+DR   GO; GO:0050661; F:NADP binding; IEA:UniProtKB-HAMAP.
+DR   GO; GO:0016726; F:oxidoreductase activity, acting on CH or CH2 groups, NAD or NADP as acceptor; IEA:UniProtKB-HAMAP.
+DR   GO; GO:0019877; P:diaminopimelate biosynthetic process; IEA:UniProtKB-HAMAP.
+DR   GO; GO:0009089; P:lysine biosynthetic process via diaminopimelate; IEA:UniProtKB-HAMAP.
+DR   Gene3D; 3.40.50.720; -; 1.
+DR   HAMAP; MF_00102; DapB; 1.
+DR   InterPro; IPR022663; DapB_C.
+DR   InterPro; IPR000846; DapB_N.
+DR   InterPro; IPR022664; DapB_N_CS.
+DR   InterPro; IPR023940; DHDPR_bac.
+DR   InterPro; IPR016040; NAD(P)-bd_dom.
+DR   PANTHER; PTHR20836; PTHR20836; 1.
+DR   Pfam; PF05173; DapB_C; 1.
+DR   Pfam; PF01113; DapB_N; 1.
+DR   PIRSF; PIRSF000161; DHPR; 1.
+DR   TIGRFAMs; TIGR00036; dapB; 1.
+DR   PROSITE; PS01298; DAPB; 1.
+DR   EnsemblBacteria; ACM19491; ACM19491; Geob_1131.
+PE   3: Inferred from homology;
+KW   Amino-acid biosynthesis; Complete proteome; Cytoplasm;
+KW   Diaminopimelate biosynthesis; Lysine biosynthesis; NAD; NADP;
+KW   Oxidoreductase.
+FT   CHAIN         1    273       4-hydroxy-tetrahydrodipicolinate
+FT                                reductase.
+FT                                /FTId=PRO_1000008561.
+FT   NP_BIND      12     17       NAD(P). {ECO:0000255|HAMAP-
+FT                                Rule:MF_00102}.
+FT   NP_BIND     102    104       NAD(P). {ECO:0000255|HAMAP-
+FT                                Rule:MF_00102}.
+FT   NP_BIND     126    129       NAD(P). {ECO:0000255|HAMAP-
+FT                                Rule:MF_00102}.
+FT   REGION      169    170       Substrate binding. {ECO:0000255|HAMAP-
+FT                                Rule:MF_00102}.
+FT   ACT_SITE    159    159       Proton donor/acceptor.
+FT                                {ECO:0000255|HAMAP-Rule:MF_00102}.
+FT   ACT_SITE    163    163       Proton donor. {ECO:0000255|HAMAP-
+FT                                Rule:MF_00102}.
+FT   BINDING      38     38       NAD. {ECO:0000255|HAMAP-Rule:MF_00102}.
+FT   BINDING      39     39       NADP. {ECO:0000255|HAMAP-Rule:MF_00102}.
+FT   BINDING     160    160       Substrate. {ECO:0000255|HAMAP-
+FT                                Rule:MF_00102}.
+SQ   SEQUENCE   273 AA;  28771 MW;  FCBA3BF1C4C8EEF5 CRC64;
+     MHDANIRVAI AGAGGRMGRQ LIQAALALEG VQLGAALERE GSSLLGSDAG ELAGAGKTGV
+     TVQSSLDAIK DDFDVFIDFT RPEGTLNHLA FCRQHGKGMV IGTTGFDEAG KQAIRDAAAD
+     IAIVFAANFS VGVNVMLKLL EKAAKVMGDY TDIEIIEAHH RHKVDAPSGT ALAMGEAIAH
+     ALDKDLKDCA VYSREGHTGE RVPGTIGFAT VRAGDIVGEH TAMFADIGER LEITHKASSR
+     MTFANGAVRS ALWLSGKESG LFDMRDVLDL NNL
+//
+ID   DAPD_MYCTU              Reviewed;         317 AA.
+AC   P9WP21; L0T666; O05302; Q7D8M6;
+DT   16-APR-2014, integrated into UniProtKB/Swiss-Prot.
+DT   16-APR-2014, sequence version 1.
+DT   16-SEP-2015, entry version 15.
+DE   RecName: Full=2,3,4,5-tetrahydropyridine-2,6-dicarboxylate N-succinyltransferase;
+DE            EC=2.3.1.117;
+DE   AltName: Full=Tetrahydrodipicolinate N-succinyltransferase;
+DE            Short=THDP succinyltransferase;
+DE            Short=THP succinyltransferase;
+DE   AltName: Full=Tetrahydropicolinate succinylase;
+GN   Name=dapD; OrderedLocusNames=Rv1201c;
+OS   Mycobacterium tuberculosis (strain ATCC 25618 / H37Rv).
+OC   Bacteria; Actinobacteria; Corynebacteriales; Mycobacteriaceae;
+OC   Mycobacterium; Mycobacterium tuberculosis complex.
+OX   NCBI_TaxID=83332;
+RN   [1]
+RP   NUCLEOTIDE SEQUENCE [LARGE SCALE GENOMIC DNA].
+RC   STRAIN=ATCC 25618 / H37Rv;
+RX   PubMed=9634230; DOI=10.1038/31159;
+RA   Cole S.T., Brosch R., Parkhill J., Garnier T., Churcher C.M.,
+RA   Harris D.E., Gordon S.V., Eiglmeier K., Gas S., Barry C.E. III,
+RA   Tekaia F., Badcock K., Basham D., Brown D., Chillingworth T.,
+RA   Connor R., Davies R.M., Devlin K., Feltwell T., Gentles S., Hamlin N.,
+RA   Holroyd S., Hornsby T., Jagels K., Krogh A., McLean J., Moule S.,
+RA   Murphy L.D., Oliver S., Osborne J., Quail M.A., Rajandream M.A.,
+RA   Rogers J., Rutter S., Seeger K., Skelton S., Squares S., Squares R.,
+RA   Sulston J.E., Taylor K., Whitehead S., Barrell B.G.;
+RT   "Deciphering the biology of Mycobacterium tuberculosis from the
+RT   complete genome sequence.";
+RL   Nature 393:537-544(1998).
+RN   [2]
+RP   CRYSTALLIZATION, AND SUBUNIT.
+RC   STRAIN=ATCC 25618 / H37Rv;
+RX   PubMed=18765924; DOI=10.1107/S1744309108026559;
+RA   Schuldt L., Weyand S., Kefala G., Weiss M.S.;
+RT   "Cloning, expression, purification, crystallization and preliminary X-
+RT   ray diffraction analysis of tetrahydrodipicolinate-N-
+RT   succinyltransferase (Rv1201c) from Mycobacterium tuberculosis.";
+RL   Acta Crystallogr. F 64:863-866(2008).
+RN   [3]
+RP   IDENTIFICATION AS A DRUG TARGET [LARGE SCALE ANALYSIS].
+RC   STRAIN=ATCC 25618 / H37Rv;
+RX   PubMed=19099550; DOI=10.1186/1752-0509-2-109;
+RA   Raman K., Yeturu K., Chandra N.;
+RT   "targetTB: a target identification pipeline for Mycobacterium
+RT   tuberculosis through an interactome, reactome and genome-scale
+RT   structural analysis.";
+RL   BMC Syst. Biol. 2:109-109(2008).
+RN   [4]
+RP   IDENTIFICATION BY MASS SPECTROMETRY [LARGE SCALE ANALYSIS].
+RC   STRAIN=ATCC 25618 / H37Rv;
+RX   PubMed=21969609; DOI=10.1074/mcp.M111.011627;
+RA   Kelkar D.S., Kumar D., Kumar P., Balakrishnan L., Muthusamy B.,
+RA   Yadav A.K., Shrivastava P., Marimuthu A., Anand S., Sundaram H.,
+RA   Kingsbury R., Harsha H.C., Nair B., Prasad T.S., Chauhan D.S.,
+RA   Katoch K., Katoch V.M., Kumar P., Chaerkady R., Ramachandran S.,
+RA   Dash D., Pandey A.;
+RT   "Proteogenomic analysis of Mycobacterium tuberculosis by high
+RT   resolution mass spectrometry.";
+RL   Mol. Cell. Proteomics 10:M111.011627-M111.011627(2011).
+RN   [5]
+RP   X-RAY CRYSTALLOGRAPHY (1.97 ANGSTROMS) OF APOENZYME AND COMPLEX WITH
+RP   SUCCINYL-COA AND MAGNESIUM, FUNCTION, CATALYTIC ACTIVITY, ENZYME
+RP   REGULATION, ACTIVE SITE, REACTION MECHANISM, AND MUTAGENESIS OF
+RP   GLU-199 AND GLY-222.
+RC   STRAIN=ATCC 25618 / H37Rv;
+RX   PubMed=19394346; DOI=10.1016/j.jmb.2009.04.046;
+RA   Schuldt L., Weyand S., Kefala G., Weiss M.S.;
+RT   "The three-dimensional structure of a mycobacterial DapD provides
+RT   insights into DapD diversity and reveals unexpected particulars about
+RT   the enzymatic mechanism.";
+RL   J. Mol. Biol. 389:863-879(2009).
+CC   -!- FUNCTION: Catalyzes the conversion of the cyclic
+CC       tetrahydrodipicolinate (THDP) into the acyclic N-succinyl-L-2-
+CC       amino-6-oxopimelate using succinyl-CoA.
+CC       {ECO:0000269|PubMed:19394346}.
+CC   -!- CATALYTIC ACTIVITY: Succinyl-CoA + (S)-2,3,4,5-tetrahydropyridine-
+CC       2,6-dicarboxylate + H(2)O = CoA + N-succinyl-L-2-amino-6-
+CC       oxoheptanedioate. {ECO:0000269|PubMed:19394346}.
+CC   -!- ENZYME REGULATION: Is activated by Mg(2+), Ca(2+) and Mn(2+), and
+CC       inhibited by Zn(2+) and Co(2+). Is not inhibited by EDTA in vitro.
+CC       {ECO:0000269|PubMed:19394346}.
+CC   -!- PATHWAY: Amino-acid biosynthesis; L-lysine biosynthesis via DAP
+CC       pathway; LL-2,6-diaminopimelate from (S)-tetrahydrodipicolinate
+CC       (succinylase route): step 1/3.
+CC   -!- SUBUNIT: Homotrimer. {ECO:0000269|PubMed:18765924}.
+CC   -!- SUBCELLULAR LOCATION: Cytoplasm {ECO:0000250}.
+CC   -!- MISCELLANEOUS: Was identified as a high-confidence drug target.
+CC   -!- SIMILARITY: Belongs to the type 2 tetrahydrodipicolinate N-
+CC       succinyltransferase family. {ECO:0000305}.
+DR   EMBL; AL123456; CCP43957.1; -; Genomic_DNA.
+DR   PIR; G70608; G70608.
+DR   RefSeq; NP_215717.1; NC_000962.3.
+DR   RefSeq; WP_003898768.1; NC_000962.3.
+DR   PDB; 3FSX; X-ray; 2.15 A; A/B/C/D/E=2-317.
+DR   PDB; 3FSY; X-ray; 1.97 A; A/B/C/D/E=2-317.
+DR   PDBsum; 3FSX; -.
+DR   PDBsum; 3FSY; -.
+DR   ProteinModelPortal; P9WP21; -.
+DR   SMR; P9WP21; 3-310.
+DR   STRING; 83332.Rv1201c; -.
+DR   EnsemblBacteria; CCP43957; CCP43957; Rv1201c.
+DR   GeneID; 886088; -.
+DR   KEGG; mtu:Rv1201c; -.
+DR   KEGG; mtv:RVBD_1201c; -.
+DR   TubercuList; Rv1201c; -.
+DR   KO; K00674; -.
+DR   OMA; TVLDTWF; -.
+DR   PhylomeDB; P9WP21; -.
+DR   UniPathway; UPA00034; UER00019.
+DR   Proteomes; UP000001584; Chromosome.
+DR   GO; GO:0005618; C:cell wall; IDA:MTBBASE.
+DR   GO; GO:0005737; C:cytoplasm; IEA:UniProtKB-SubCell.
+DR   GO; GO:0005886; C:plasma membrane; IDA:MTBBASE.
+DR   GO; GO:0008666; F:2,3,4,5-tetrahydropyridine-2,6-dicarboxylate N-succinyltransferase activity; IDA:MTBBASE.
+DR   GO; GO:0050662; F:coenzyme binding; IDA:MTBBASE.
+DR   GO; GO:0000287; F:magnesium ion binding; IDA:MTBBASE.
+DR   GO; GO:0031402; F:sodium ion binding; IDA:MTBBASE.
+DR   GO; GO:0019877; P:diaminopimelate biosynthetic process; IEA:UniProtKB-HAMAP.
+DR   GO; GO:0040007; P:growth; IMP:MTBBASE.
+DR   GO; GO:0009089; P:lysine biosynthetic process via diaminopimelate; IEA:UniProtKB-HAMAP.
+DR   HAMAP; MF_02122; DapD_type2; 1.
+DR   InterPro; IPR019875; DapD_actinobacteria.
+DR   InterPro; IPR001451; Hexapep.
+DR   InterPro; IPR011004; Trimer_LpxA-like.
+DR   InterPro; IPR026586; Type2_DapD.
+DR   Pfam; PF14602; Hexapep_2; 1.
+DR   SUPFAM; SSF51161; SSF51161; 1.
+DR   TIGRFAMs; TIGR03535; DapD_actino; 1.
+PE   1: Evidence at protein level;
+KW   3D-structure; Acyltransferase; Amino-acid biosynthesis;
+KW   Complete proteome; Cytoplasm; Diaminopimelate biosynthesis;
+KW   Lysine biosynthesis; Magnesium; Metal-binding; Reference proteome;
+KW   Transferase.
+FT   CHAIN         1    317       2,3,4,5-tetrahydropyridine-2,6-
+FT                                dicarboxylate N-succinyltransferase.
+FT                                /FTId=PRO_0000412254.
+FT   REGION      257    258       Succinyl-CoA binding.
+FT   REGION      290    293       Succinyl-CoA binding.
+FT   ACT_SITE    199    199       Acyl-anhydride intermediate.
+FT                                {ECO:0000305|PubMed:19394346}.
+FT   METAL       166    166       Magnesium 1; shared with trimeric
+FT                                partners.
+FT   METAL       183    183       Magnesium 2; shared with trimeric
+FT                                partners.
+FT   BINDING     201    201       Succinyl-CoA.
+FT   BINDING     216    216       Succinyl-CoA; via amide nitrogen.
+FT   BINDING     219    219       Succinyl-CoA.
+FT   BINDING     242    242       Succinyl-CoA; via amide nitrogen.
+FT   BINDING     265    265       Succinyl-CoA; via carbonyl oxygen.
+FT   BINDING     277    277       Succinyl-CoA.
+FT   MUTAGEN     199    199       E->A: Loss of activity.
+FT                                {ECO:0000269|PubMed:19394346}.
+FT   MUTAGEN     222    222       G->P: Loss of activity.
+FT                                {ECO:0000269|PubMed:19394346}.
+FT   STRAND        5     15       {ECO:0000244|PDB:3FSY}.
+FT   STRAND       21     25       {ECO:0000244|PDB:3FSY}.
+FT   STRAND       30     34       {ECO:0000244|PDB:3FSY}.
+FT   STRAND       38     41       {ECO:0000244|PDB:3FSY}.
+FT   HELIX        44     46       {ECO:0000244|PDB:3FSY}.
+FT   HELIX        49     52       {ECO:0000244|PDB:3FSY}.
+FT   STRAND       56     58       {ECO:0000244|PDB:3FSY}.
+FT   TURN         59     62       {ECO:0000244|PDB:3FSY}.
+FT   STRAND       63     73       {ECO:0000244|PDB:3FSY}.
+FT   HELIX        82     93       {ECO:0000244|PDB:3FSY}.
+FT   HELIX       107    110       {ECO:0000244|PDB:3FSY}.
+FT   STRAND      114    117       {ECO:0000244|PDB:3FSY}.
+FT   STRAND      120    124       {ECO:0000244|PDB:3FSY}.
+FT   HELIX       127    134       {ECO:0000244|PDB:3FSY}.
+FT   TURN        135    137       {ECO:0000244|PDB:3FSY}.
+FT   STRAND      142    148       {ECO:0000244|PDB:3FSY}.
+FT   HELIX       151    153       {ECO:0000244|PDB:3FSY}.
+FT   STRAND      161    163       {ECO:0000244|PDB:3FSY}.
+FT   HELIX       165    167       {ECO:0000244|PDB:3FSY}.
+FT   STRAND      172    174       {ECO:0000244|PDB:3FSY}.
+FT   STRAND      178    180       {ECO:0000244|PDB:3FSX}.
+FT   STRAND      190    194       {ECO:0000244|PDB:3FSY}.
+FT   STRAND      200    202       {ECO:0000244|PDB:3FSY}.
+FT   STRAND      267    269       {ECO:0000244|PDB:3FSY}.
+FT   STRAND      275    277       {ECO:0000244|PDB:3FSY}.
+FT   HELIX       278    281       {ECO:0000244|PDB:3FSY}.
+FT   STRAND      285    291       {ECO:0000244|PDB:3FSY}.
+FT   TURN        293    295       {ECO:0000244|PDB:3FSY}.
+FT   STRAND      298    303       {ECO:0000244|PDB:3FSY}.
+SQ   SEQUENCE   317 AA;  32642 MW;  EF204F46B90ADFF3 CRC64;
+     MSTVTGAAGI GLATLAADGS VLDTWFPAPE LTESGTSATS RLAVSDVPVE LAALIGRDDD
+     RRTETIAVRT VIGSLDDVAA DPYDAYLRLH LLSHRLVAPH GLNAGGLFGV LTNVVWTNHG
+     PCAIDGFEAV RARLRRRGPV TVYGVDKFPR MVDYVVPTGV RIADADRVRL GAHLAPGTTV
+     MHEGFVNYNA GTLGASMVEG RISAGVVVGD GSDVGGGASI MGTLSGGGTH VISIGKRCLL
+     GANSGLGISL GDDCVVEAGL YVTAGTRVTM PDSNSVKARE LSGSSNLLFR RNSVSGAVEV
+     LARDGQGIAL NEDLHAN
+//

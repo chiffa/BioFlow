@@ -63,3 +63,33 @@ annotation_nodes_ptypes = [
     'UNIPROT_EMBL_ID|~',
     'UNIPROT_PDB',
     'UNIPROT_GeneID', ]
+
+interesting_lines = ['ID', 'AC', 'DE', 'GN', 'OX', 'DR']
+
+interesting_xrefs = ['EMBL', 'GO', 'Pfam', 'Ensembl', 'KEGG', 'PDB', 'GeneID', 'SUPFAM']
+
+names_to_ignore = [
+    'Contains',
+    'Allergen',
+    'EC=',
+    'Flags: ',
+    'CD_antigen',
+    'INN=']
+
+starting_dict = {
+    'Acnum': [],
+    'Names': {
+        'Full': '',
+        'AltNames': []},
+    'GeneRefs': {
+        'Names': [],
+        'OrderedLocusNames': [],
+        'ORFNames': []},
+    'Ensembl': [],
+    'KEGG': [],
+    'EMBL': [],
+    'GO': [],
+    'Pfam': [],
+    'SUPFAM': [],
+    'PDB': [],
+    'GeneID': []}
