@@ -52,7 +52,6 @@ class UniProtParser(object):
 
         :param line:
         """
-        print 'debug: x-ref', line
         if 'EMBL; ' in line and 'ChEMBL' not in line:
             contents_list = line.split(';')
             if len(contents_list) > 4:
@@ -139,7 +138,6 @@ class UniProtParser(object):
         :param line:
         :param keyword:
         """
-        print 'debug-main'
         if keyword == 'ID':
             words = filter(lambda a: a != '', line.split(' '))
             self._single_up_dict['ID'] = words[1]

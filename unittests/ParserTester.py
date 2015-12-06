@@ -1,9 +1,11 @@
 import os
 import unittest
 from pprint import pprint
+from BioFlow import main_configs
 from BioFlow.utils.IO_Routines import dump_object, undump_object
 from BioFlow.bio_db_parsers.geneOntologyParser import GOTermsParser
 from BioFlow.bio_db_parsers.uniprotParser import UniProtParser
+from BioFlow.bio_db_parsers.new_reactome_parser import ReactomeParser
 
 
 class GoParserTester(unittest.TestCase):
@@ -49,9 +51,32 @@ class UniprotParserTester(unittest.TestCase):
         cls.acces_dict = parser_object.get_access_dicts()
         cls.ref_uniprot_dict, cls.ref_acces_dict = undump_object(cls.ref_parses)
 
-    def test_total(self):  # TODO: in future, expand in smaller set of tests
+    def test_total(self):  # TODO: in future, expand into a more granular set of tests
         self.assertDictEqual(self.uniprot_dict, self.ref_uniprot_dict)
         self.assertDictEqual(self.acces_dict, self.ref_acces_dict)
+
+
+class ReactomeParseTester(unittest.TestCase):
+    # This test will not run on the Travis-ci because of the large files it requires. to avoid
+    # it,  we will not importing this test into the main test space.
+
+    reactome_to_parse = main_configs.ReactomeBioPax
+    reactome_to_parse = os.path.join(os.path.dirname(reactome_to_parse), 'Homo_sapiens.owl')
+    ref_parse = os.path.join(os.path.dirname(__file__), 'UT_examples/ref_reactome_parse.dmp')
+
+    @classmethod
+    def setUpClass(cls):
+        cls.actual_parser = ReactomeParser()
+        cls.actual_parser.parse_all()
+        # print cls.actual_parser.parsed
+        dump_object(cls.ref_parse, cls.actual_parser)
+        cls.ref_parser = undump_object(cls.ref_parse)  # TODO: create a smaller set of elements
+        # to parse
+
+    def test_total(self):  # TODO: in future, expand into a more granular set of tests
+
+        self.assertDictEqual(self.actual_parser.get_parse_dicts(),
+                             self.ref_parser.get_parse_dicts())
 
 if __name__ == "__main__":
     unittest.main()
