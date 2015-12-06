@@ -66,15 +66,18 @@ class ReactomeParseTester(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.actual_parser = ReactomeParser()
+        cls.actual_parser = ReactomeParser(cls.reactome_to_parse)
         cls.actual_parser.parse_all()
         # print cls.actual_parser.parsed
         dump_object(cls.ref_parse, cls.actual_parser)
         cls.ref_parser = undump_object(cls.ref_parse)  # TODO: create a smaller set of elements
         # to parse
 
-    def test_total(self):  # TODO: in future, expand into a more granular set of tests
+    def test_bioSources(self):
+        self.assertDictEqual(self.actual_parser.get_parse_dicts()['BioSources'],
+                             self.ref_parser.get_parse_dicts()['BioSources'])
 
+    def test_total(self):  # TODO: in future, expand into a more granular set of tests
         self.assertDictEqual(self.actual_parser.get_parse_dicts(),
                              self.ref_parser.get_parse_dicts())
 

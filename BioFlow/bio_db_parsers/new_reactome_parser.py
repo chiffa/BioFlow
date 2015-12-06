@@ -8,7 +8,6 @@ from BioFlow.utils.IO_Routines import dump_object, undump_object
 import BioFlow.main_configs as conf
 
 
-
 def zip_dicts(dict1, dict2):
     """
     defines a dictionary update rules that are required for a proper dictionary update
@@ -142,29 +141,28 @@ class ReactomeParser(object):
         """
         search_pattern = '{http://www.biopax.org/release/biopax-level3.owl#}%s' % term_name
         xml_iterator = self.root.findall(search_pattern)
-        print(search_pattern)
         return xml_iterator
 
-    @staticmethod
-    def simple_double_tag(sub_dict, _property, term1, term_set2):
+    def simple_double_tag(self, primary_term, target_dict, term1_2_term2):
         """
-        A function that manages dictionary insert
 
-        :param sub_dict: selected_dict[key]
-        :param _property:
-        :param term1:
-        :param term_set2:
+        :param primary_term:
+        :param target_dict:
+        :param term1_2_term2:
         :return:
         """
-        if term1 in _property.tag and _property.text:
-            for term2 in term_set2:
-                if term2 in _property.text:
-                    for word in _property.text.split():
-                        if term2 in word:
-                            sub_dict[term2[:-1]] = word.split(':')[1]
-
-    def parse_tags_with_secondary_switch(self, term_name, tag_to_behavior_dict):
-        pass
+        for _property in self.find_in_root(primary_term):
+            key_ = _property.attrib.values()[0]
+            for term1, term_set2 in term1_2_term2.iteritems():
+                if term1 in _property.tag and _property.text:
+                    if not term_set2:
+                        target_dict[key_] = _property.text
+                    else:
+                        for term2 in term_set2:
+                            if term2 in _property.text:
+                                for word in _property.text.split():
+                                    if term2 in word:
+                                        target_dict[key_][term2[:-1]] = word.split(':')[1]
 
     def parse_bio_source(self):
         bio_sources_xml = self.root.findall(
@@ -175,6 +173,9 @@ class ReactomeParser(object):
                 if '}name' in bio_source_ref_property.tag:
                     self.BioSources[key] = bio_source_ref_property.text
                     break
+
+    # def parse_bio_source(self):
+    #     self.simple_double_tag('BioSource', self.BioSources, {'}name': ()})
 
     def parse_cellular_locations(self):
         cellular_locations_xml = self.root.findall(
