@@ -69,15 +69,35 @@ class ReactomeParseTester(unittest.TestCase):
         cls.actual_parser = ReactomeParser(cls.reactome_to_parse)
         cls.actual_parser.parse_all()
         # print cls.actual_parser.parsed
-        dump_object(cls.ref_parse, cls.actual_parser)
+        # dump_object(cls.ref_parse, cls.actual_parser)
         cls.ref_parser = undump_object(cls.ref_parse)  # TODO: create a smaller set of elements
         # to parse
 
-    def test_bioSources(self):
-        self.assertDictEqual(self.actual_parser.get_parse_dicts()['BioSources'],
-                             self.ref_parser.get_parse_dicts()['BioSources'])
+    def test_BioSources(self):
+        self.assertDictEqual(self.actual_parser.BioSources,
+                             self.ref_parser.BioSources)
 
-    def test_total(self):  # TODO: in future, expand into a more granular set of tests
+    def test_CellularLocations(self):
+        self.assertDictEqual(self.actual_parser.CellularLocations,
+                             self.ref_parser.CellularLocations)
+
+    def test_SeqModVoc(self):
+        self.assertDictEqual(self.actual_parser.SeqModVoc,
+                             self.ref_parser.SeqModVoc)
+
+    def test_SeqSite(self):
+        self.assertDictEqual(self.actual_parser.SeqSite,
+                             self.ref_parser.SeqSite)
+
+    # def test_Pathways(self):
+    #     self.assertDictEqual(self.actual_parser.Pathways,
+    #                          self.ref_parser.Pathways)
+
+    # def test_PathwaySteps(self):
+    #     self.assertDictEqual(self.actual_parser.PathwaySteps,
+    #                          self.ref_parser.PathwaySteps)
+
+    def test_all_dicts(self):  # TODO: in future, expand into a more granular set of tests
         self.assertDictEqual(self.actual_parser.get_parse_dicts(),
                              self.ref_parser.get_parse_dicts())
 

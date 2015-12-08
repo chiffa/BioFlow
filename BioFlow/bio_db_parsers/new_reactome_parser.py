@@ -6,6 +6,16 @@ import xml.etree.ElementTree as ET
 from BioFlow.utils.log_behavior import logger
 from BioFlow.utils.IO_Routines import dump_object, undump_object
 import BioFlow.main_configs as conf
+from time import time
+
+
+def my_timer(message='', previous_time=[]):
+    if not previous_time:
+        print 'set timer'
+        previous_time.append(time())
+    else:
+        print '%s timer reset. Time since previous %s' % (message, time() - previous_time[0])
+        previous_time[0] = time()
 
 
 def zip_dicts(dict1, dict2):
@@ -88,9 +98,10 @@ class ReactomeParser(object):
     def __init__(self, path_to_biopax_file=conf.ReactomeBioPax):
 
         print path_to_biopax_file
-
+        my_timer()
         self.tree = ET.parse(path_to_biopax_file)
         self.root = self.tree.getroot()
+        my_timer('tree parsed')
 
         self.BioSources = {}
         self.CellularLocations = {}
@@ -125,13 +136,14 @@ class ReactomeParser(object):
         self.Modulations = {}
 
         self.parsed = False
+        my_timer('set-up finished')
 
     # all the functions below obey the same pattern:
     #   - recover a tag
     #   - pull the context of a specific tag
     #   - insert it into an appropriated dictionary
 
-    def find_in_root(self, term_name):
+    def find_in_root(self, term_name):  # TODO: inline the function in the bigger scope
         """
         Abstracts the simplest xml foot finding of a path. Currently a test function to be
         integrated in more high-level functions
@@ -143,66 +155,50 @@ class ReactomeParser(object):
         xml_iterator = self.root.findall(search_pattern)
         return xml_iterator
 
-    def simple_double_tag(self, primary_term, target_dict, term1_2_term2):
+    def single_tag_parse(self, primary_term, target_dict, term_to_parse):
+        for object_of_interest in self.find_in_root(primary_term):
+            key_ = object_of_interest.attrib.values()[0]
+            for object_property in object_of_interest:
+                if term_to_parse in object_property.tag:
+                    target_dict[key_] = object_property.text
+
+    # function returns tag to insert and where to insert
+    def double_tag_parse(self, primary_term, target_dict, tag2terms, tags2functions=None):
         """
 
         :param primary_term:
         :param target_dict:
-        :param term1_2_term2:
+        :param tag2terms:
+        :param tags2functions:
         :return:
         """
-        for _property in self.find_in_root(primary_term):
-            key_ = _property.attrib.values()[0]
-            for term1, term_set2 in term1_2_term2.iteritems():
-                if term1 in _property.tag and _property.text:
-                    if not term_set2:
-                        target_dict[key_] = _property.text
-                    else:
-                        for term2 in term_set2:
-                            if term2 in _property.text:
-                                for word in _property.text.split():
-                                    if term2 in word:
-                                        target_dict[key_][term2[:-1]] = word.split(':')[1]
+        for object_of_interest in self.find_in_root(primary_term):
+            key_ = object_of_interest.attrib.values()[0]
+            for object_property in object_of_interest:
+                for term1, term_set2 in tag2terms.iteritems():
+                    if term1 in object_property.tag:
+                        if not term_set2:
+                            target_dict[key_] = object_property.text
+
+                        elif object_property.text:
+                            for term2 in term_set2:
+                                if term2 in object_property.text:
+                                    for word in object_property.text.split():
+                                        if term2 in word:
+                                            target_dict[key_][term2[:-1]] = word.split(':')[
+                                                1].strip('[]')
 
     def parse_bio_source(self):
-        bio_sources_xml = self.root.findall(
-            '{http://www.biopax.org/release/biopax-level3.owl#}BioSource')
-        for single_bio_source in bio_sources_xml:
-            key = single_bio_source.attrib.values()[0]
-            for bio_source_ref_property in single_bio_source:
-                if '}name' in bio_source_ref_property.tag:
-                    self.BioSources[key] = bio_source_ref_property.text
-                    break
-
-    # def parse_bio_source(self):
-    #     self.simple_double_tag('BioSource', self.BioSources, {'}name': ()})
+        self.single_tag_parse('BioSource', self.BioSources, '}name')
 
     def parse_cellular_locations(self):
-        cellular_locations_xml = self.root.findall(
-            '{http://www.biopax.org/release/biopax-level3.owl#}CellularLocationVocabulary')
-        for single_cellular_location in cellular_locations_xml:
-            key = single_cellular_location.attrib.values()[0]
-            for loc_ref in single_cellular_location:
-                if '}term' in loc_ref.tag:
-                    self.CellularLocations[key] = loc_ref.text
+        self.single_tag_parse('CellularLocationVocabulary', self.CellularLocations, '}term')
 
     def parse_sequence_modification_vocabulary(self):
-        seq_mod_voc_xml = self.root.findall(
-            '{http://www.biopax.org/release/biopax-level3.owl#}SequenceModificationVocabulary')
-        for single_SeqMod in seq_mod_voc_xml:
-            key = single_SeqMod.attrib.values()[0]
-            for mod_ref in single_SeqMod:
-                if '}term' in mod_ref.tag:
-                    self.SeqModVoc[key] = mod_ref.text
+        self.single_tag_parse('SequenceModificationVocabulary', self.SeqModVoc, '}term')
 
     def parse_seq_site(self):
-        seq_site_xml = self.root.findall(
-            '{http://www.biopax.org/release/biopax-level3.owl#}SequenceSite')
-        for single_SeqSite in seq_site_xml:
-            key = single_SeqSite.attrib.values()[0]
-            for site_ref in single_SeqSite:
-                if '}sequencePosition' in site_ref.tag:
-                    self.SeqSite[key] = site_ref.text
+        self.single_tag_parse('SequenceSite', self.SeqSite, '}sequencePosition')
 
     # this is the first function that acts differently. After calling the common core, it
     # parses two tags and not one. In addition to that, it calls a more complex function running
@@ -229,6 +225,12 @@ class ReactomeParser(object):
     #  if a more complex behavior is encountered, it can be implemented as a separate function and
     #  injected later on.
 
+    # they also have an initial pattern dict creation for a key:
+    # for instance single_Dna_Ref[key] = {'name': []}, that collects everything under a name
+    # unless that name can be classified to something else
+
+    # this is a common pattern for parsing the references.
+
     def parse_dna_refs(self):
         dna_refs_xml = self.root.findall(
             '{http://www.biopax.org/release/biopax-level3.owl#}DnaReference')
@@ -246,8 +248,11 @@ class ReactomeParser(object):
                                 self.DnaRefs[key]['ENSEMBL'] = word.split(':')[1]
                     else:
                         self.DnaRefs[key]['name'].append(dna_ref_property.text)
-                if '}organism' in dna_ref_property.tag and dna_ref_property.attrib.values()[0][
-                        1:] != 'BioSource1':
+                if '}organism' in dna_ref_property.tag \
+                        and dna_ref_property.attrib.values()[0][1:] != 'BioSource1':
+                        # exclude the main organism being scanned?
+                        # => Move to the post-processing or abandon.
+                        # We can also define this one as an ejection set are abandoning for now.
                     self.DnaRefs[key]['organism'] = self.BioSources[
                         dna_ref_property.attrib.values()[0][1:]]
 
@@ -282,8 +287,8 @@ class ReactomeParser(object):
                                         self.RnaRefs[key]['EMBL'] = word.split(':')[1]
                             else:
                                 self.RnaRefs[key]['name'].append(rna_ref_property.text)
-                if '}organism' in rna_ref_property.tag and rna_ref_property.attrib.values()[0][
-                        1:] != 'BioSource1':
+                if '}organism' in rna_ref_property.tag \
+                        and rna_ref_property.attrib.values()[0][1:] != 'BioSource1':
                     self.RnaRefs[key]['organism'] = self.BioSources[
                         rna_ref_property.attrib.values()[0][1:]]
 
@@ -332,17 +337,22 @@ class ReactomeParser(object):
                     self.ProteinRefs[key]['organism'] = self.BioSources[
                         protein_ref_property.attrib.values()[0][1:]]
 
+    # this pattern stops here, where it is actually a simple parse, but with an ID present.
+    # this can be implemented as a post-processor
+
     def parse_modification_features(self):
         modification_features_xml = self.root.findall(
             '{http://www.biopax.org/release/biopax-level3.owl#}ModificationFeature')
         for single_ModificationFeature in modification_features_xml:
             key = single_ModificationFeature.attrib.values()[0]
-            self.ModificationFeatures[key] = {'ID': key}
+            self.ModificationFeatures[key] = {'ID': key}  # pre-processing
             for modification_property in single_ModificationFeature:
-                if '}featureLocation' in modification_property.tag:
+                if '}featureLocation' in modification_property.tag:  # trigger #1
+                    # dict_position = element to retrieve
                     self.ModificationFeatures[key]['location'] = self.SeqSite[
-                        modification_property.attrib.values()[0][1:]]
+                        modification_property.attrib.values()[0][1:]]  # trigger #2
                 if '}modificationType' in modification_property.tag:
+                    # dict_position = element to retrieve
                     self.ModificationFeatures[key]['modification'] = self.SeqModVoc[
                         modification_property.attrib.values()[0][1:]]
 
@@ -519,8 +529,7 @@ class ReactomeParser(object):
             local_dict = {'references': {'name': []}}
             for TemplateReaction_property in single_TemplateReaction:
                 if '}product' in TemplateReaction_property.tag:
-                    local_dict['product'] = TemplateReaction_property.attrib.values()[0][
-                        1:]
+                    local_dict['product'] = TemplateReaction_property.attrib.values()[0][1:]
                 if '}displayName' in TemplateReaction_property.tag:
                     local_dict['displayName'] = TemplateReaction_property.text
                 if '}name' in TemplateReaction_property.tag:
@@ -569,6 +578,8 @@ class ReactomeParser(object):
         # TODO: refactor, cyclomatic complexity is too high => just factor out three separate
         # methods. They would be looking almost like clonse of one another.
 
+        # the only difference is that the last one actually performs exclusion of certain tags
+
         catalysis_xml = self.root.findall(
             '{http://www.biopax.org/release/biopax-level3.owl#}Catalysis')
         for single_Catalysis in catalysis_xml:
@@ -616,8 +627,7 @@ class ReactomeParser(object):
                 if '}controller' in control_property.tag:
                     self.Catalysises[key]['controller'] = control_property.attrib.values()[0][1:]
                 if '}controlType' in control_property.tag \
-                        and 'BiochemicalReaction' in control_property.attrib.values()[
-                        0]:
+                        and 'BiochemicalReaction' in control_property.attrib.values()[0]:
                     self.Catalysises[key]['ControlType'] = control_property.text
 
     def parse_modulations(self):
@@ -686,6 +696,7 @@ class ReactomeParser(object):
 
     def parse_all(self):
 
+        my_timer('starting parsing')
         self.parse_bio_source()
         self.parse_cellular_locations()
         self.parse_sequence_modification_vocabulary()
@@ -715,44 +726,45 @@ class ReactomeParser(object):
 
         self.parsed = True
 
+        my_timer('finished parsing everything else')
+
     def get_parse_dicts(self):
         return {
-        'BioSources': self.BioSources,
-        'CellularLocations': self.CellularLocations,
-        'SeqModVoc': self.SeqModVoc,
-        'SeqSite': self.SeqSite,
-        'Pathways': self.Pathways,
-        'PathwaySteps': self.PathwaySteps,
+                'BioSources': self.BioSources,
+                'CellularLocations': self.CellularLocations,
+                'SeqModVoc': self.SeqModVoc,
+                'SeqSite': self.SeqSite,
+                'Pathways': self.Pathways,
+                'PathwaySteps': self.PathwaySteps,
 
-        'DnaRefs': self.DnaRefs,
-        'RnaRefs': self.RnaRefs,
-        'SmallMoleculeRefs': self.SmallMoleculeRefs,
-        'ProteinRefs': self.ProteinRefs,
-        'ModificationFeatures': self.ModificationFeatures,
+                'DnaRefs': self.DnaRefs,
+                'RnaRefs': self.RnaRefs,
+                'SmallMoleculeRefs': self.SmallMoleculeRefs,
+                'ProteinRefs': self.ProteinRefs,
+                'ModificationFeatures': self.ModificationFeatures,
 
-        'Dnas': self.Dnas,
-        'Dna_Collections': self.Dna_Collections,
-        'Rnas': self.Rnas,
-        'Rna_Collections': self.Rna_Collections,
-        'SmallMolecules': self.SmallMolecules,
-        'SmallMolecule_Collections': self.SmallMolecule_Collections,
-        'Proteins': self.Proteins,
-        'Protein_Collections': self.Protein_Collections,
-        'PhysicalEntities': self.PhysicalEntities,
-        'PhysicalEntity_Collections': self.PhysicalEntity_Collections,
-        'Complexes': self.Complexes,
-        'Complex_Collections': self.Complex_Collections,
+                'Dnas': self.Dnas,
+                'Dna_Collections': self.Dna_Collections,
+                'Rnas': self.Rnas,
+                'Rna_Collections': self.Rna_Collections,
+                'SmallMolecules': self.SmallMolecules,
+                'SmallMolecule_Collections': self.SmallMolecule_Collections,
+                'Proteins': self.Proteins,
+                'Protein_Collections': self.Protein_Collections,
+                'PhysicalEntities': self.PhysicalEntities,
+                'PhysicalEntity_Collections': self.PhysicalEntity_Collections,
+                'Complexes': self.Complexes,
+                'Complex_Collections': self.Complex_Collections,
 
-        'TemplateReactions': self.TemplateReactions,
-        'Degradations': self.Degradations,
-        'BiochemicalReactions': self.BiochemicalReactions,
-        'Catalysises': self.Catalysises,
-        'Modulations': self.Modulations,
+                'TemplateReactions': self.TemplateReactions,
+                'Degradations': self.Degradations,
+                'BiochemicalReactions': self.BiochemicalReactions,
+                'Catalysises': self.Catalysises,
+                'Modulations': self.Modulations,
 
-        'parsed': self.parsed,
-        }
+                'parsed': self.parsed,
+                }
 
 if __name__ == "__main__":
     RP = ReactomeParser()
     RP.parse_all()
-    dump_object('../../dumps', RP)

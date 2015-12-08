@@ -2,14 +2,14 @@ __author__ = 'ank'
 
 import click
 
-from BioFlow.utils.ConfigsIO import StructureGenerator, set_folders
-from BioFlow.main_configs import neo4j_server
-from BioFlow.neo4j_db.db_io_routines import look_up_annotation_set
-from BioFlow.db_importers.import_main import build_db, destroy_db
-from BioFlow.analysis.InteractomeInterface import MatrixGetter as InteractomeInterface
+from BioFlow.Configs_manager import StructureGenerator, set_folders
 from BioFlow.analysis.BioKnowledgeInterface import GO_Interface as AnnotomeInterface, get_background
+from BioFlow.analysis.InteractomeInterface import MatrixGetter as InteractomeInterface
 from BioFlow.analysis.interactome_analysis import auto_analyze as interactome_analysis
 from BioFlow.analysis.knowledge_access_analysis import auto_analyze as knowledge_analysis
+from BioFlow.db_importers.import_main import build_db, destroy_db
+from BioFlow.main_configs import neo4j_server
+from BioFlow.neo4j_db.db_io_routines import look_up_annotation_set
 
 
 @click.group()

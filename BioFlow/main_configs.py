@@ -5,10 +5,11 @@ import os
 import pickle
 from os import path, makedirs
 from pprint import PrettyPrinter
+
 from pymongo import MongoClient
-from BioFlow.utils.ConfigsIO import parse_configs, conf_file_path_flattener
+
+from BioFlow.Configs_manager import parse_configs, conf_file_path_flattener
 from BioFlow.utils.general_utils import high_level_os_io as SF
-from BioFlow.internals_config import *  # TODO: remove and refactor broken links
 
 Servers, Options, Sources, Predictions = parse_configs()
 

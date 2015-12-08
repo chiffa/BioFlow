@@ -15,7 +15,7 @@ from collections import defaultdict
 configs_rootdir = os.path.abspath(
     os.path.join(
         os.path.dirname(__file__),
-        '../../configs/'))
+        '../configs/'))
 
 shortnames = ['servers', 'options', 'sources', 'predictions']
 configsfiles = dict([(name, join(configs_rootdir, name + '.ini'))
@@ -247,7 +247,7 @@ def set_folders(file_directory, neo4jserver='http://localhost:7474',
 
 if __name__ == "__main__":
     set_folders('~/support/')
-    StructureGenerator.build_source_config('yeast')
+    StructureGenerator.build_source_config('human')
     # pp = PrettyPrinter(indent=4)
     # pp.pprint(parse_configs())
     # StructureGenerator.pull_online_dbs()
