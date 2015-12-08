@@ -72,6 +72,7 @@ class ReactomeParseTester(unittest.TestCase):
         # dump_object(cls.ref_parse, cls.actual_parser)
         cls.ref_parser = undump_object(cls.ref_parse)  # TODO: create a smaller set of elements
         # to parse
+        cls.maxDiff = None
 
     def test_BioSources(self):
         self.assertDictEqual(self.actual_parser.BioSources,
@@ -92,6 +93,18 @@ class ReactomeParseTester(unittest.TestCase):
     def test_DnaRefs(self):
         self.assertDictEqual(self.actual_parser.DnaRefs,
                              self.ref_parser.DnaRefs)
+
+    def test_RnaRefs(self):
+        self.assertDictEqual(self.actual_parser.RnaRefs,
+                             self.ref_parser.RnaRefs)
+
+    def test_SmallMoleculeRefs(self):
+        self.assertDictEqual(self.actual_parser.SmallMoleculeRefs,
+                             self.ref_parser.SmallMoleculeRefs)
+
+    def test_ProteinRefs(self):
+        self.assertDictEqual(self.actual_parser.ProteinRefs,
+                             self.ref_parser.ProteinRefs)
 
     # def test_Pathways(self):
     #     self.assertDictEqual(self.actual_parser.Pathways,

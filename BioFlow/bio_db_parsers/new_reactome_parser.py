@@ -138,11 +138,6 @@ class ReactomeParser(object):
         self.parsed = False
         my_timer('set-up finished')
 
-    # all the functions below obey the same pattern:
-    #   - recover a tag
-    #   - pull the context of a specific tag
-    #   - insert it into an appropriated dictionary
-
     def find_in_root(self, term_name):  # TODO: inline the function in the bigger scope
         """
         Abstracts the simplest xml foot finding of a path. Currently a test function to be
@@ -162,32 +157,6 @@ class ReactomeParser(object):
                 if term_to_parse in object_property.tag:
                     target_dict[key_] = object_property.text
 
-    # function returns tag to insert and where to insert
-    def double_tag_parse(self, primary_term, target_dict, tag2terms, tags2functions=None):
-        """
-
-        :param primary_term:
-        :param target_dict:
-        :param tag2terms:
-        :param tags2functions:
-        :return:
-        """
-        for object_of_interest in self.find_in_root(primary_term):
-            key_ = object_of_interest.attrib.values()[0]
-            for object_property in object_of_interest:
-                for term1, term_set2 in tag2terms.iteritems():
-                    if term1 in object_property.tag:
-                        if not term_set2:
-                            target_dict[key_] = object_property.text
-
-                        elif object_property.text:
-                            for term2 in term_set2:
-                                if term2 in object_property.text:
-                                    for word in object_property.text.split():
-                                        if term2 in word:
-                                            target_dict[key_][term2[:-1]] = word.split(':')[
-                                                1].strip('[]')
-
     def parse_bio_source(self):
         self.single_tag_parse('BioSource', self.BioSources, '}name')
 
@@ -200,145 +169,43 @@ class ReactomeParser(object):
     def parse_seq_site(self):
         self.single_tag_parse('SequenceSite', self.SeqSite, '}sequencePosition')
 
-    # this is the first function that acts differently. After calling the common core, it
-    # parses two tags and not one. In addition to that, it calls a more complex function running
-    # additional verifications within the tag.
-
-    # maybe a good pattern to refactor that function would be to:
-    #  - factor out the common core ({http://www.biopax.org/release/biopax-level3.owl#})
-    #  - match specific context in the property tags
-    #  form that point our code only uses two variables: the key that was retrieved from the xml
-    # tree and
-    #  - execute a function that is either a simple lambda to insert key or can be a more elaborate
-    #  - static function
-
-    # instead of using an overkill of a static function, we could use a dict ot represent a
-    # case-switch with default statement. That would resolve the following patterns:
-
-    #     if 'ENSEMBL:' in dna_ref_property.text:
-    #     line = dna_ref_property.text
-    #     line = line.split()
-    #     for word in line:
-    #         if 'ENSEMBL:' in word:
-    #             self.DnaRefs[key]['ENSEMBL'] = word.split(':')[1]
-
-    #  if a more complex behavior is encountered, it can be implemented as a separate function and
-    #  injected later on.
-
-    # they also have an initial pattern dict creation for a key:
-    # for instance single_Dna_Ref[key] = {'name': []}, that collects everything under a name
-    # unless that name can be classified to something else
-
-    # this is a common pattern for parsing the references.
+    def parse_xref(self, primary_term, target_dict, mapped_terms):
+        for object_of_interest in self.find_in_root(primary_term):
+            key_ = object_of_interest.attrib.values()[0]
+            target_dict[key_] = {'name': []}
+            for object_property in object_of_interest:
+                if '}name' in object_property.tag and object_property.text:
+                    other_term_inserted = False
+                    for term in mapped_terms:
+                        if term in object_property.text:
+                            for word in object_property.text.split():
+                                if term in word:
+                                    tag = word.split(':')[0].strip('[]')
+                                    tagged = word.split(':')[1].strip('[]')
+                                    target_dict[key_][tag] = tagged
+                                    other_term_inserted = True
+                    if not other_term_inserted:
+                        target_dict[key_]['name'].append(object_property.text)
+                if '}organism' in object_property.tag \
+                        and object_property.attrib.values()[0][1:] != 'BioSource1':
+                    # second condition removes references to the main organism in the xml file
+                    target_dict[key_]['organism'] = self.BioSources[
+                        object_property.attrib.values()[0][1:]]
 
     def parse_dna_refs(self):
-        dna_refs_xml = self.root.findall(
-            '{http://www.biopax.org/release/biopax-level3.owl#}DnaReference')
-        for single_Dna_Ref in dna_refs_xml:
-            key = single_Dna_Ref.attrib.values()[0]
-            self.DnaRefs[key] = {'name': []}
-            for dna_ref_property in single_Dna_Ref:
-                if '}name' in dna_ref_property.tag and dna_ref_property.text:
-
-                    if 'ENSEMBL:' in dna_ref_property.text:
-                        line = dna_ref_property.text
-                        line = line.split()
-                        for word in line:
-                            if 'ENSEMBL:' in word:
-                                self.DnaRefs[key]['ENSEMBL'] = word.split(':')[1]
-                    else:
-                        self.DnaRefs[key]['name'].append(dna_ref_property.text)
-                if '}organism' in dna_ref_property.tag \
-                        and dna_ref_property.attrib.values()[0][1:] != 'BioSource1':
-                        # exclude the main organism being scanned?
-                        # => Move to the post-processing or abandon.
-                        # We can also define this one as an ejection set are abandoning for now.
-                    self.DnaRefs[key]['organism'] = self.BioSources[
-                        dna_ref_property.attrib.values()[0][1:]]
+        self.parse_xref('DnaReference', self.DnaRefs, ['ENSEMBL:'])
 
     def parse_rna_refs(self):
-        # TODO: refactor, cyclomatic complexity is too high: 14
-        rna_refs_xml = self.root.findall(
-            '{http://www.biopax.org/release/biopax-level3.owl#}RnaReference')
-        for single_Rna_Ref in rna_refs_xml:
-            key = single_Rna_Ref.attrib.values()[0]
-            self.RnaRefs[key] = {'name': []}
-            for rna_ref_property in single_Rna_Ref:
-                if '}name' in rna_ref_property.tag:
-                    if 'ENSEMBL:' in rna_ref_property.text:
-                        line = rna_ref_property.text
-                        line = line.split()
-                        for word in line:
-                            if 'ENSEMBL:' in word:
-                                self.RnaRefs[key]['ENSEMBL'] = word.split(':')[1]
-                    else:
-                        if 'miRBase:' in rna_ref_property.text:
-                            line = rna_ref_property.text
-                            line = line.split()
-                            for word in line:
-                                if 'miRBase:' in word:
-                                    self.RnaRefs[key]['miRBase'] = word.split(':')[1]
-                        else:
-                            if 'EMBL:' in rna_ref_property.text:
-                                line = rna_ref_property.text
-                                line = line.split()
-                                for word in line:
-                                    if 'EMBL:' in word:
-                                        self.RnaRefs[key]['EMBL'] = word.split(':')[1]
-                            else:
-                                self.RnaRefs[key]['name'].append(rna_ref_property.text)
-                if '}organism' in rna_ref_property.tag \
-                        and rna_ref_property.attrib.values()[0][1:] != 'BioSource1':
-                    self.RnaRefs[key]['organism'] = self.BioSources[
-                        rna_ref_property.attrib.values()[0][1:]]
+        self.parse_xref('RnaReference', self.RnaRefs, ['ENSEMBL:', 'miRBase:', 'EMBL:'])
 
     def parse_small_molecules_refs(self):
-        small_molecules_refs_xml = self.root.findall(
-            '{http://www.biopax.org/release/biopax-level3.owl#}SmallMoleculeReference')
-        for single_SmallMolecule_Ref in small_molecules_refs_xml:
-            key = single_SmallMolecule_Ref.attrib.values()[0]
-            self.SmallMoleculeRefs[key] = {'name': []}
-            for SmallMolecule_ref_property in single_SmallMolecule_Ref:
-                if '}name' in SmallMolecule_ref_property.tag:
-                    if 'ChEBI:' in SmallMolecule_ref_property.text:
-                        line = SmallMolecule_ref_property.text
-                        line = line.split()
-                        for word in line:
-                            if 'ChEBI:' in word:
-                                self.SmallMoleculeRefs[key]['ChEBI'] = word.split(':')[
-                                    1].strip(']')
-                    else:
-                        self.SmallMoleculeRefs[key]['name'].append(
-                            SmallMolecule_ref_property.text)
-                if '}organism' in SmallMolecule_ref_property.tag \
-                        and SmallMolecule_ref_property.attrib.values()[
-                        0][1:] != 'BioSource1':
-                    self.SmallMoleculeRefs[key]['organism'] = self.BioSources[
-                        SmallMolecule_ref_property.attrib.values()[0][1:]]
+        self.parse_xref('SmallMoleculeReference', self.SmallMoleculeRefs, ['ChEBI:'])
 
     def parse_protein_refs(self):
-        protein_refs_xml = self.root.findall(
-            '{http://www.biopax.org/release/biopax-level3.owl#}ProteinReference')
-        for single_Protein_Ref in protein_refs_xml:
-            key = single_Protein_Ref.attrib.values()[0]
-            self.ProteinRefs[key] = {'name': []}
-            for protein_ref_property in single_Protein_Ref:
-                if '}name' in protein_ref_property.tag:
-                    if 'UniProt:' in protein_ref_property.text:
-                        line = protein_ref_property.text
-                        line = line.split()
-                        for word in line:
-                            if 'UniProt:' in word:
-                                self.ProteinRefs[key]['UniProt'] = word.split(':')[1]
-                    else:
-                        self.ProteinRefs[key]['name'].append(protein_ref_property.text)
-                if '}organism' in protein_ref_property.tag and protein_ref_property.attrib.values()[
-                        0][1:] != 'BioSource1':
-                    self.ProteinRefs[key]['organism'] = self.BioSources[
-                        protein_ref_property.attrib.values()[0][1:]]
+        self.parse_xref('ProteinReference', self.ProteinRefs, ['UniProt:'])
 
-    # this pattern stops here, where it is actually a simple parse, but with an ID present.
-    # this can be implemented as a post-processor
+    # simple pattern #1: pre-set a dict for every feature
+    # simple pattern #2: trigger in tag - where to insert - what to insert
 
     def parse_modification_features(self):
         modification_features_xml = self.root.findall(
@@ -382,6 +249,31 @@ class ReactomeParser(object):
             local_dict['collectionMembers'].append(
                 local_property.attrib.values()[0][1:])
         return is_collection
+        # optional references:
+
+        # manage collection references
+
+        # '}entityReference' in dna_property.tag:
+        #             local_dict['references'] = \
+        #                 zip_dicts(self.DnaRefs[dna_property.attrib.values()[0][1:]],
+        #                           local_dict['references'])
+
+        # manage features
+
+        # if '}feature' in Protein_property.tag \
+        #         and 'ModificationFeature' in Protein_property.attrib.values()[0]:
+        #     local_dict['modification'].append(self.ModificationFeatures[Protein_property.attrib.values()[0][1:]])
+        #
+        # if not local_dict['modification']:
+        #     del local_dict['modification']
+
+        # manage collections
+
+        # if is_collection:
+        #         self.Protein_Collections[key] = local_dict
+        # else:
+        #     del local_dict['collectionMembers']
+        #     self.Proteins[key] = local_dict
 
     def parse_dna(self):
         dna_xml = self.root.findall(
@@ -398,6 +290,7 @@ class ReactomeParser(object):
                         self.DnaRefs[
                             dna_property.attrib.values()[0][
                                 1:]], local_dict['references'])
+            # below is the code for collection members cleaning; it is shared and can be
             if is_collection:
                 self.Dna_Collections[key] = local_dict
             else:
@@ -520,6 +413,10 @@ class ReactomeParser(object):
             else:
                 del local_dict['collectionMembers']
                 self.Complexes[key] = local_dict
+
+    # meta-parsing ends here.
+    # reaction parsing starts here and the three types of reaction parses can be reduced to
+    # single class if
 
     def parse_template_reactions(self):
         template_reaction_xml = self.root.findall(
@@ -767,4 +664,6 @@ class ReactomeParser(object):
 
 if __name__ == "__main__":
     RP = ReactomeParser()
+    RP.parse_small_molecules_refs()
+    raise Exception('debug')
     RP.parse_all()
