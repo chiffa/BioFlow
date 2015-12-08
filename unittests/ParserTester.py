@@ -89,6 +89,10 @@ class ReactomeParseTester(unittest.TestCase):
         self.assertDictEqual(self.actual_parser.SeqSite,
                              self.ref_parser.SeqSite)
 
+    def test_DnaRefs(self):
+        self.assertDictEqual(self.actual_parser.DnaRefs,
+                             self.ref_parser.DnaRefs)
+
     # def test_Pathways(self):
     #     self.assertDictEqual(self.actual_parser.Pathways,
     #                          self.ref_parser.Pathways)
