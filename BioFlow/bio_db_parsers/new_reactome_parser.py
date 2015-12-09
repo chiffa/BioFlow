@@ -89,12 +89,6 @@ class ReactomeParser(object):
 
     # TODO: this needs to be a singleton in order to avoid multiple reloads
 
-    # TODO: more in-depth refactoring:
-    #  - it looks like there is a lot of repetitive code because of the similarities in structure
-    # and copy-paste style of programming I had back at the time of writing of this module.
-    #  - this code is heavily reliant on the string matching and manipulation and case statements
-    # are not the best ways of dealing with this.
-
     # TODO: set the logging.info for all the relevant segments of parsing.
 
     def __init__(self, path_to_biopax_file=conf.ReactomeBioPax):
@@ -140,7 +134,7 @@ class ReactomeParser(object):
         self.parsed = False
         my_timer('set-up finished')
 
-    def find_in_root(self, term_name):  # TODO: inline the function in the bigger scope
+    def find_in_root(self, term_name):
         """
         Abstracts the simplest xml foot finding of a path. Currently a test function to be
         integrated in more high-level functions
@@ -193,6 +187,7 @@ class ReactomeParser(object):
                     # second condition removes references to the main organism in the xml file
                     target_dict[key_]['organism'] = self.BioSources[
                         object_property.attrib.values()[0][1:]]
+            target_dict[key_]['name'] = list(set(target_dict[key_]['name']))
 
     def parse_dna_refs(self):
         self.parse_xref('DnaReference', self.DnaRefs, ['ENSEMBL:'])
@@ -223,11 +218,7 @@ class ReactomeParser(object):
                     self.ModificationFeatures[key]['modification'] = self.SeqModVoc[
                         modification_property.attrib.values()[0][1:]]
 
-    ##########################################################################
-    #
-    # Core parses : parsing at the same time objects and their collections
-    #
-    ##########################################################################
+
     @staticmethod
     def old_meta_parse_tag(local_dict, local_property, is_collection):
         """
@@ -310,6 +301,10 @@ class ReactomeParser(object):
 
             for meta_property in meta_object:
                 is_collection = self.meta_parse_tag(base_dict, meta_property, meta_refs, is_collection)
+
+            base_dict['references']['name'] = list(set(base_dict['references']['name']))
+            base_dict['modification'] = [dict(t) for t in set([tuple(d.items())
+                                                               for d in base_dict['modification']])]
 
             if is_collection:
                 del base_dict['modification']
