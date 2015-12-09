@@ -2,7 +2,9 @@
 Module containing the reactome parser routines.
 """
 import os
+from pprint import pprint
 import xml.etree.ElementTree as ET
+from collections import defaultdict
 from BioFlow.utils.log_behavior import logger
 from BioFlow.utils.IO_Routines import dump_object, undump_object
 import BioFlow.main_configs as conf
@@ -208,9 +210,7 @@ class ReactomeParser(object):
     # simple pattern #2: trigger in tag - where to insert - what to insert
 
     def parse_modification_features(self):
-        modification_features_xml = self.root.findall(
-            '{http://www.biopax.org/release/biopax-level3.owl#}ModificationFeature')
-        for single_ModificationFeature in modification_features_xml:
+        for single_ModificationFeature in self.find_in_root('ModificationFeature'):
             key = single_ModificationFeature.attrib.values()[0]
             self.ModificationFeatures[key] = {'ID': key}  # pre-processing
             for modification_property in single_ModificationFeature:
@@ -229,7 +229,7 @@ class ReactomeParser(object):
     #
     ##########################################################################
     @staticmethod
-    def meta_parser_secondary_loop(local_dict, local_property, is_collection):
+    def old_meta_parse_tag(local_dict, local_property, is_collection):
         """
         Same approach for all the projects
 
@@ -249,172 +249,105 @@ class ReactomeParser(object):
             local_dict['collectionMembers'].append(
                 local_property.attrib.values()[0][1:])
         return is_collection
-        # optional references:
 
-        # manage collection references
+    def meta_parse_tag(self, local_dict, local_property, meta_refs, is_collection):
+        """
+        Same approach for all the projects
 
-        # '}entityReference' in dna_property.tag:
-        #             local_dict['references'] = \
-        #                 zip_dicts(self.DnaRefs[dna_property.attrib.values()[0][1:]],
-        #                           local_dict['references'])
+        :param local_dict: local dictionary where the parser needs to be returned
+        :param local_property: if
+        :param meta_refs:
+        :param is_collection: True of we are parsing a collection, false otherwise
+        :return:
+        """
+        if '}cellularLocation' in local_property.tag:
+            local_dict['cellularLocation'] = local_property.attrib.values()[0][1:]
+        if '}displayName' in local_property.tag:
+            local_dict['displayName'] = local_property.text
+        if '}name' in local_property.tag:
+            local_dict['references']['name'].append(local_property.text)
+        if '}memberPhysicalEntity' in local_property.tag:
+            is_collection = True
+            local_dict['collectionMembers'].append(
+                local_property.attrib.values()[0][1:])
+        if '}entityReference' in local_property.tag:
+                    local_dict['references'] = \
+                        zip_dicts(meta_refs[local_property.attrib.values()[0][1:]],
+                                  local_dict['references'])
+        if '}feature' in local_property.tag \
+                and 'ModificationFeature' in local_property.attrib.values()[0]:
+            local_dict['modification'].append(self.ModificationFeatures[
+                                                  local_property.attrib.values()[0][1:]])
+        if '}component' in local_property.tag \
+                and 'Stoichiometry' not in local_property.tag:
+                    local_dict['parts'].append(
+                        local_property.attrib.values()[0][1:])
+        return is_collection
 
-        # manage features
+    def meta_parse(self, primary_term, meta_dict, meta_collection_dict, meta_refs,
+                   sup_mods=False, sup_parts=False):
+        """
+        A great parse round that is used to parse all the meta-objects
 
-        # if '}feature' in Protein_property.tag \
-        #         and 'ModificationFeature' in Protein_property.attrib.values()[0]:
-        #     local_dict['modification'].append(self.ModificationFeatures[Protein_property.attrib.values()[0][1:]])
-        #
-        # if not local_dict['modification']:
-        #     del local_dict['modification']
+        :param primary_term:
+        :param meta_dict:
+        :param meta_collection_dict:
+        :param meta_refs:
+        :param sup_mods:
+        :param sup_parts:
+        :return:
+        """
+        for meta_object in self.find_in_root(primary_term):
 
-        # manage collections
+            key_ = meta_object.attrib.values()[0]
+            base_dict = {'collectionMembers': [],
+                         'modification': [],
+                         'parts': [],
+                         'references': {
+                             'name': []}
+                         }
+            is_collection = False
 
-        # if is_collection:
-        #         self.Protein_Collections[key] = local_dict
-        # else:
-        #     del local_dict['collectionMembers']
-        #     self.Proteins[key] = local_dict
+            for meta_property in meta_object:
+                is_collection = self.meta_parse_tag(base_dict, meta_property, meta_refs, is_collection)
+
+            if is_collection:
+                del base_dict['modification']
+                del base_dict['parts']
+                meta_collection_dict[key_] = base_dict
+
+            else:
+                del base_dict['collectionMembers']
+                if not base_dict['modification'] or sup_mods:
+                    del base_dict['modification']
+                if not base_dict['parts'] or sup_parts:
+                    del base_dict['parts']
+                meta_dict[key_] = base_dict
 
     def parse_dna(self):
-        dna_xml = self.root.findall(
-            '{http://www.biopax.org/release/biopax-level3.owl#}Dna')
-        for single_Dna in dna_xml:
-            key = single_Dna.attrib.values()[0]
-            local_dict = {'collectionMembers': [], 'references': {'name': []}}
-            is_collection = False
-            for dna_property in single_Dna:
-                is_collection = self.meta_parser_secondary_loop(
-                    local_dict, dna_property, is_collection)
-                if '}entityReference' in dna_property.tag:
-                    local_dict['references'] = zip_dicts(
-                        self.DnaRefs[
-                            dna_property.attrib.values()[0][
-                                1:]], local_dict['references'])
-            # below is the code for collection members cleaning; it is shared and can be
-            if is_collection:
-                self.Dna_Collections[key] = local_dict
-            else:
-                del local_dict['collectionMembers']
-                self.Dnas[key] = local_dict
+        self.meta_parse('Dna', self.Dnas, self.Dna_Collections, self.DnaRefs,
+                        sup_mods=True, sup_parts=True)
 
     def parse_rna(self):
-        rna_xml = self.root.findall(
-            '{http://www.biopax.org/release/biopax-level3.owl#}Rna')
-        for single_Rna in rna_xml:
-            key = single_Rna.attrib.values()[0]
-            local_dict = {'collectionMembers': [], 'references': {'name': []}}
-            is_collection = False
-            for Rna_property in single_Rna:
-                is_collection = self.meta_parser_secondary_loop(
-                    local_dict, Rna_property, is_collection)
-                if '}entityReference' in Rna_property.tag:
-                    local_dict['references'] = zip_dicts(
-                        self.RnaRefs[
-                            Rna_property.attrib.values()[0][
-                                1:]], local_dict['references'])
-            if is_collection:
-                self.Rna_Collections[key] = local_dict
-            else:
-                del local_dict['collectionMembers']
-                self.Rnas[key] = local_dict
+        self.meta_parse('Rna', self.Rnas, self.Rna_Collections, self.RnaRefs,
+                        sup_mods=True, sup_parts=True)
 
     def parse_small_molecules(self):
-        small_molecules_xml = self.root.findall(
-            '{http://www.biopax.org/release/biopax-level3.owl#}SmallMolecule')
-        for single_SmallMolecule in small_molecules_xml:
-            key = single_SmallMolecule.attrib.values()[0]
-            local_dict = {'collectionMembers': [], 'references': {'name': []}}
-            is_collection = False
-            for SmallMolecule_property in single_SmallMolecule:
-                is_collection = self.meta_parser_secondary_loop(
-                    local_dict, SmallMolecule_property, is_collection)
-                if '}entityReference' in SmallMolecule_property.tag:
-                    local_dict['references'] = zip_dicts(
-                        self.SmallMoleculeRefs[
-                            SmallMolecule_property.attrib.values()[0][
-                                1:]], local_dict['references'])
-            if is_collection:
-                self.SmallMolecule_Collections[key] = local_dict
-            else:
-                del local_dict['collectionMembers']
-                self.SmallMolecules[key] = local_dict
+        self.meta_parse('SmallMolecule', self.SmallMolecules, self.SmallMolecule_Collections,
+                        self.SmallMoleculeRefs, sup_mods=True, sup_parts=True)
 
     def parse_proteins(self):
-        proteins_xml = self.root.findall(
-            '{http://www.biopax.org/release/biopax-level3.owl#}Protein')
-        for single_Protein in proteins_xml:
-            key = single_Protein.attrib.values()[0]
-            local_dict = {
-                'collectionMembers': [],
-                'modification': [],
-                'references': {
-                    'name': []}}
-            is_collection = False
-            for Protein_property in single_Protein:
-                is_collection = self.meta_parser_secondary_loop(
-                    local_dict, Protein_property, is_collection)
-                if '}entityReference' in Protein_property.tag:
-                    local_dict['references'] = zip_dicts(
-                        self.ProteinRefs[
-                            Protein_property.attrib.values()[0][
-                                1:]], local_dict['references'])
-                if '}feature' in Protein_property.tag \
-                        and 'ModificationFeature' in Protein_property.attrib.values()[
-                        0]:
-                    local_dict['modification'].append(
-                        self.ModificationFeatures[
-                            Protein_property.attrib.values()[0][
-                                1:]])
-            if not local_dict['modification']:
-                del local_dict['modification']
-            if is_collection:
-                self.Protein_Collections[key] = local_dict
-            else:
-                del local_dict['collectionMembers']
-                self.Proteins[key] = local_dict
+        self.meta_parse('Protein', self.Proteins, self.Protein_Collections,
+                        self.ProteinRefs, sup_mods=False, sup_parts=True)
 
     def parse_physical_entities(self):
-        physical_entities_xml = self.root.findall(
-            '{http://www.biopax.org/release/biopax-level3.owl#}PhysicalEntity')
-        for single_PhysicalEntity in physical_entities_xml:
-            key = single_PhysicalEntity.attrib.values()[0]
-            local_dict = {'collectionMembers': [], 'references': {'name': []}}
-            is_collection = False
-            for PhysicalEntity_property in single_PhysicalEntity:
-                is_collection = self.meta_parser_secondary_loop(
-                    local_dict, PhysicalEntity_property, is_collection)
-            if is_collection:
-                self.PhysicalEntity_Collections[key] = local_dict
-            else:
-                del local_dict['collectionMembers']
-                self.PhysicalEntities[key] = local_dict
+        self.meta_parse('PhysicalEntity', self.PhysicalEntities, self.PhysicalEntity_Collections,
+                        defaultdict(None), sup_mods=True, sup_parts=True)
 
     def parse_complexes(self):
-        complex_xml = self.root.findall(
-            '{http://www.biopax.org/release/biopax-level3.owl#}Complex')
-        for single_Complex in complex_xml:
-            key = single_Complex.attrib.values()[0]
-            local_dict = {
-                'collectionMembers': [],
-                'parts': [],
-                'references': {
-                    'name': []}}
-            is_collection = False
-            for complex_property in single_Complex:
-                is_collection = self.meta_parser_secondary_loop(
-                    local_dict, complex_property, is_collection)
-                if '}component' in complex_property.tag \
-                        and 'Stoichiometry' not in complex_property.tag:
-                    local_dict['parts'].append(
-                        complex_property.attrib.values()[0][1:])
-            if is_collection:
-                del local_dict['parts']
-                self.Complex_Collections[key] = local_dict
-            else:
-                del local_dict['collectionMembers']
-                self.Complexes[key] = local_dict
+        self.meta_parse('Complex', self.Complexes, self.Complex_Collections,
+                        defaultdict(None), sup_mods=True, sup_parts=False)
 
-    # meta-parsing ends here.
     # reaction parsing starts here and the three types of reaction parses can be reduced to
     # single class if
 
@@ -599,12 +532,14 @@ class ReactomeParser(object):
         self.parse_sequence_modification_vocabulary()
         self.parse_seq_site()
 
+        my_timer('starting refs parsing')
         self.parse_dna_refs()
         self.parse_rna_refs()
         self.parse_small_molecules_refs()
         self.parse_protein_refs()
         self.parse_modification_features()
 
+        my_timer('starting meta parsing')
         self.parse_dna()
         self.parse_rna()
         self.parse_small_molecules()
@@ -664,6 +599,12 @@ class ReactomeParser(object):
 
 if __name__ == "__main__":
     RP = ReactomeParser()
-    RP.parse_small_molecules_refs()
-    raise Exception('debug')
     RP.parse_all()
+    for prot_name, protein_props in RP.Proteins.iteritems():
+        if 'modification' in protein_props.keys():
+            print prot_name
+            pprint(protein_props)
+
+    # TODO: how to make names be inserted only once?
+
+

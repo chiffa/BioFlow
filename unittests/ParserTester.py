@@ -106,6 +106,46 @@ class ReactomeParseTester(unittest.TestCase):
         self.assertDictEqual(self.actual_parser.ProteinRefs,
                              self.ref_parser.ProteinRefs)
 
+    def test_ModificationFeatures(self):
+        self.assertDictEqual(self.actual_parser.ModificationFeatures,
+                             self.ref_parser.ModificationFeatures)
+
+    def test_Dna(self):
+        self.assertDictEqual(self.actual_parser.Dnas,
+                             self.ref_parser.Dnas)
+        self.assertDictEqual(self.actual_parser.Dna_Collections,
+                             self.ref_parser.Dna_Collections)
+
+    def test_Rna(self):
+        self.assertDictEqual(self.actual_parser.Rnas,
+                             self.ref_parser.Rnas)
+        self.assertDictEqual(self.actual_parser.Rna_Collections,
+                             self.ref_parser.Rna_Collections)
+
+    def test_SmallMolecules(self):
+        self.assertDictEqual(self.actual_parser.SmallMolecules,
+                             self.ref_parser.SmallMolecules)
+        self.assertDictEqual(self.actual_parser.SmallMolecule_Collections,
+                             self.ref_parser.SmallMolecule_Collections)
+
+    def test_Proteins(self):
+        self.assertDictEqual(self.actual_parser.Proteins,
+                             self.ref_parser.Proteins)
+        self.assertDictEqual(self.actual_parser.Protein_Collections,
+                             self.ref_parser.Protein_Collections)
+
+    def test_PhysicalEntities(self):
+        self.assertDictEqual(self.actual_parser.PhysicalEntities,
+                             self.ref_parser.PhysicalEntities)
+        self.assertDictEqual(self.actual_parser.PhysicalEntity_Collections,
+                             self.ref_parser.PhysicalEntity_Collections)
+
+    def test_Complexes(self):
+        self.assertDictEqual(self.actual_parser.Complexes,
+                             self.ref_parser.Complexes)
+        self.assertDictEqual(self.actual_parser.Complex_Collections,
+                             self.ref_parser.Complex_Collections)
+
     # def test_Pathways(self):
     #     self.assertDictEqual(self.actual_parser.Pathways,
     #                          self.ref_parser.Pathways)
@@ -114,9 +154,9 @@ class ReactomeParseTester(unittest.TestCase):
     #     self.assertDictEqual(self.actual_parser.PathwaySteps,
     #                          self.ref_parser.PathwaySteps)
 
-    def test_all_dicts(self):  # TODO: in future, expand into a more granular set of tests
-        self.assertDictEqual(self.actual_parser.get_parse_dicts(),
-                             self.ref_parser.get_parse_dicts())
+    # def test_all_dicts(self):  # TODO: in future, expand into a more granular set of tests
+    #     self.assertDictEqual(self.actual_parser.get_parse_dicts(),
+    #                          self.ref_parser.get_parse_dicts())
 
 if __name__ == "__main__":
     unittest.main()
