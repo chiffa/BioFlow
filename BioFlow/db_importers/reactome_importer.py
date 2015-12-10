@@ -7,9 +7,11 @@ import os
 import pickle
 
 from BioFlow.utils.general_utils.high_level_os_io import mkdir_recursive
-from BioFlow.main_configs import Dumps, Leg_ID_Filter
+from BioFlow.main_configs import Dumps, ReactomeBioPax
+from BioFlow.internals_config import Leg_ID_Filter
 from BioFlow.neo4j_db.db_io_routines import get_attached_annotations
 from BioFlow.neo4j_db.GraphDeclarator import DatabaseGraph
+from BioFlow.bio_db_parsers.reactomeParser import ReactomeParser
 
 ##########################################################################
 #
@@ -369,64 +371,67 @@ def run_diagnostics(instruction_dict):
     print 'Total: ', supercounter
 
 
-def insert_all(Skip='N'):
+def insert_all(skip_import='N'):
     """
     Performs the massive import of the Reactome database into the local neo4j database.
 
-    :param Skip:     * N => will skip nothing and implement the import once and for all.
+    :param skip_import:     * N => will skip nothing and implement the import once and for all.
                      * M => skips meta import, recovers the metas and resumes from the Reactions import.
     """
-    from BioFlow.bio_db_parsers import reactome_xml_parser as DG
+    reactome_parser = ReactomeParser(ReactomeBioPax)
+    reactome_parser.parse_all()
 
-    if Skip == 'N':
-        InsertCellLocations(DG.CellularLocations)
+    if skip_import == 'N':
 
-        MetaInsert(DatabaseGraph.DNA, DG.Dnas)
-        MetaInsert(DatabaseGraph.DNA_Collection, DG.Dna_Collections)
-        MetaInsert(DatabaseGraph.RNA, DG.Rnas)
-        MetaInsert(DatabaseGraph.RNA_Collection, DG.Rna_Collections)
-        MetaInsert(DatabaseGraph.SmallMolecule, DG.SmallMolecules)
+        InsertCellLocations(reactome_parser.CellularLocations)
+
+        MetaInsert(DatabaseGraph.DNA, reactome_parser.Dnas)
+        MetaInsert(DatabaseGraph.DNA_Collection, reactome_parser.Dna_Collections)
+        MetaInsert(DatabaseGraph.RNA, reactome_parser.Rnas)
+        MetaInsert(DatabaseGraph.RNA_Collection, reactome_parser.Rna_Collections)
+        MetaInsert(DatabaseGraph.SmallMolecule, reactome_parser.SmallMolecules)
         MetaInsert(
             DatabaseGraph.SmallMolecule_Collection,
-            DG.SmallMolecule_Collections)
-        MetaInsert(DatabaseGraph.Protein, DG.Proteins)
-        MetaInsert(DatabaseGraph.Protein_Collection, DG.Protein_Collections)
-        MetaInsert(DatabaseGraph.Complex, DG.Complexes)
-        MetaInsert(DatabaseGraph.Complex_Collection, DG.Complex_Collections)
-        MetaInsert(DatabaseGraph.PhysicalEntity, DG.PhysicalEntities)
+            reactome_parser.SmallMolecule_Collections)
+        MetaInsert(DatabaseGraph.Protein, reactome_parser.Proteins)
+        MetaInsert(DatabaseGraph.Protein_Collection, reactome_parser.Protein_Collections)
+        MetaInsert(DatabaseGraph.Complex, reactome_parser.Complexes)
+        MetaInsert(DatabaseGraph.Complex_Collection, reactome_parser.Complex_Collections)
+        MetaInsert(DatabaseGraph.PhysicalEntity, reactome_parser.PhysicalEntities)
         MetaInsert(
             DatabaseGraph.PhysicalEntity_Collection,
-            DG.PhysicalEntity_Collections)
-        CollectionRefsInsert(DG.Dna_Collections)
-        CollectionRefsInsert(DG.Rna_Collections)
-        CollectionRefsInsert(DG.SmallMolecule_Collections)
-        CollectionRefsInsert(DG.Protein_Collections)
-        CollectionRefsInsert(DG.Complex_Collections)
-        CollectionRefsInsert(DG.PhysicalEntity_Collections)
+            reactome_parser.PhysicalEntity_Collections)
 
-        ComplexPartsInsert(DG.Complexes)
+        CollectionRefsInsert(reactome_parser.Dna_Collections)
+        CollectionRefsInsert(reactome_parser.Rna_Collections)
+        CollectionRefsInsert(reactome_parser.SmallMolecule_Collections)
+        CollectionRefsInsert(reactome_parser.Protein_Collections)
+        CollectionRefsInsert(reactome_parser.Complex_Collections)
+        CollectionRefsInsert(reactome_parser.PhysicalEntity_Collections)
+
+        ComplexPartsInsert(reactome_parser.Complexes)
 
         # NOW dump the ForbiddenIDs
         pickle.dump(ForbiddenIDs, open(Dumps.Forbidden_IDs, 'w'))
 
-    if Skip == 'M':
+    if skip_import == 'M':
         getAllMetaSets()
 
     # Meta insert/retrieval finished
 
-    ReactionInsert(DatabaseGraph.TemplateReaction, DG.TemplateReactions)
-    ReactionInsert(DatabaseGraph.Degradation, DG.Degradations)
-    ReactionInsert(DatabaseGraph.BiochemicalReaction, DG.BiochemicalReactions)
+    ReactionInsert(DatabaseGraph.TemplateReaction, reactome_parser.TemplateReactions)
+    ReactionInsert(DatabaseGraph.Degradation, reactome_parser.Degradations)
+    ReactionInsert(DatabaseGraph.BiochemicalReaction, reactome_parser.BiochemicalReactions)
 
     # Reaction insert finished
-    CatalysisInsert(DG.Catalysises)
-    ModulationInsert(DG.Modulations)
-    Pathways_Insert(DG.PathwaySteps, DG.Pathways)
+    CatalysisInsert(reactome_parser.Catalysises)
+    ModulationInsert(reactome_parser.Modulations)
+    Pathways_Insert(reactome_parser.PathwaySteps, reactome_parser.Pathways)
 
 
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
-if not on_rtd:
+if not on_rtd:  # TODO: this should be removed entirely.
     full_dict = {'DNA': (DatabaseGraph.DNA, "DNA"),
                  'DNA Collection': (DatabaseGraph.DNA_Collection, "DNA_Collection"),
                  'RNA': (DatabaseGraph.RNA, "RNA"),
