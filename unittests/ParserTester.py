@@ -1,7 +1,6 @@
 import os
 import unittest
 from pprint import pprint
-from BioFlow import main_configs
 from BioFlow.utils.IO_Routines import dump_object, undump_object
 from BioFlow.bio_db_parsers.geneOntologyParser import GOTermsParser
 from BioFlow.bio_db_parsers.uniprotParser import UniProtParser
@@ -60,8 +59,7 @@ class ReactomeParseTester(unittest.TestCase):
     # This test will not run on the Travis-ci because of the large files it requires. to avoid
     # it,  we will not importing this test into the main test space.
 
-    reactome_to_parse = main_configs.ReactomeBioPax
-    reactome_to_parse = os.path.join(os.path.dirname(reactome_to_parse), 'Homo_sapiens.owl')
+    reactome_to_parse = os.path.join(os.path.dirname(__file__), 'UT_examples/Homo_sapiens.owl')
     ref_parse = os.path.join(os.path.dirname(__file__), 'UT_examples/ref_reactome_parse.dmp')
 
     @classmethod
@@ -70,7 +68,7 @@ class ReactomeParseTester(unittest.TestCase):
         cls.actual_parser.parse_all()
         # print cls.actual_parser.parsed
         # dump_object(cls.ref_parse, cls.actual_parser)
-        cls.ref_parser = undump_object(cls.ref_parse)  # TODO: create a smaller set of elements
+        cls.ref_parser = undump_object(cls.ref_parse)
         # to parse
         cls.maxDiff = None
 
@@ -146,17 +144,34 @@ class ReactomeParseTester(unittest.TestCase):
         self.assertDictEqual(self.actual_parser.Complex_Collections,
                              self.ref_parser.Complex_Collections)
 
-    # def test_Pathways(self):
-    #     self.assertDictEqual(self.actual_parser.Pathways,
-    #                          self.ref_parser.Pathways)
+    def test_TemplateReactions(self):
+        self.assertDictEqual(self.actual_parser.TemplateReactions,
+                             self.ref_parser.TemplateReactions)
 
-    # def test_PathwaySteps(self):
-    #     self.assertDictEqual(self.actual_parser.PathwaySteps,
-    #                          self.ref_parser.PathwaySteps)
+    def test_Degradations(self):
+        self.assertDictEqual(self.actual_parser.Degradations,
+                             self.ref_parser.Degradations)
 
-    # def test_all_dicts(self):  # TODO: in future, expand into a more granular set of tests
-    #     self.assertDictEqual(self.actual_parser.get_parse_dicts(),
-    #                          self.ref_parser.get_parse_dicts())
+    def test_BiochemicalReactions(self):
+        self.assertDictEqual(self.actual_parser.BiochemicalReactions,
+                             self.ref_parser.BiochemicalReactions)
+
+    def test_Catalysises(self):
+        self.assertDictEqual(self.actual_parser.Catalysises,
+                             self.ref_parser.Catalysises)
+
+    def test_Modulation(self):
+        self.assertDictEqual(self.actual_parser.Modulations,
+                             self.ref_parser.Modulations)
+
+    def test_Pathways(self):
+        self.assertDictEqual(self.actual_parser.Pathways,
+                             self.ref_parser.Pathways)
+
+    def test_PathwaySteps(self):
+        self.assertDictEqual(self.actual_parser.PathwaySteps,
+                             self.ref_parser.PathwaySteps)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -7,6 +7,13 @@ from BioFlow.utils.log_behavior import logger
 
 
 def render_2d_matrix(matrix, name):
+    """
+    Subroutine requried by the rendering wrapper.
+
+    :param matrix:
+    :param name:
+    :return:
+    """
     plt.title(name)
     plt.imshow(matrix, interpolation='nearest')
     plt.colorbar()
@@ -14,6 +21,12 @@ def render_2d_matrix(matrix, name):
 
 
 def debug_wrapper(function_of_interest):
+    """
+    Convenient wrapper inspecting the results of a function returning a single matrix
+
+    :param function_of_interest:
+    :return: wrapped functions with copied name and documentation
+    """
 
     def check_matrix(*args, **kwargs):
         result = function_of_interest(*args, **kwargs)
@@ -29,6 +42,11 @@ def debug_wrapper(function_of_interest):
 
 
 def time_it_wrapper(function_of_interest):
+    """
+    Convenient wrapper for timing the execution time of functions
+    :param function_of_interest:
+    :return: wrapped functions with copied name and documentation
+    """
 
     def time_execution(*args, **kwargs):
         start = time()
@@ -41,3 +59,12 @@ def time_it_wrapper(function_of_interest):
         return result
 
     return time_execution
+
+
+def my_timer(message='', previous_time=[]):
+    if not previous_time:
+        print 'set timer'
+        previous_time.append(time())
+    else:
+        print '%s timer reset. Time since previous %s' % (message, time() - previous_time[0])
+        previous_time[0] = time()

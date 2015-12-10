@@ -43,6 +43,9 @@
  
  - build a condas-compatible package that would be installable cross-plateform and would contain 
  pre-compiled binaries for C-extenstions.
+ 
+ - In case we are calling time-consuming parsers from several location, we might want to insert 
+ "singleton" module into the block, that performs all the parsings only once per program run.
 
 
 ## Major refactoring suggestions:
