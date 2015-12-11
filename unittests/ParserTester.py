@@ -56,10 +56,9 @@ class UniprotParserTester(unittest.TestCase):
 
 
 class ReactomeParseTester(unittest.TestCase):
-    # This test will not run on the Travis-ci because of the large files it requires. to avoid
-    # it,  we will not importing this test into the main test space.
-
-    reactome_to_parse = os.path.join(os.path.dirname(__file__), 'UT_examples/Homo_sapiens.owl')
+    # Developers, please notice that for the real modification you would need to load the real
+    # reactome and run tests against it's initial dump first.
+    reactome_to_parse = os.path.join(os.path.dirname(__file__), 'UT_examples/reactome_extract.owl')
     ref_parse = os.path.join(os.path.dirname(__file__), 'UT_examples/ref_reactome_parse.dmp')
 
     @classmethod

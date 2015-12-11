@@ -4,7 +4,7 @@ Module containing the Reactome Biopax lvl3 .owl file parser
 import xml.etree.ElementTree as ET
 from collections import defaultdict
 from BioFlow.utils.log_behavior import logger
-import BioFlow.main_configs as conf
+from BioFlow import main_configs
 
 
 def zip_dicts(dict1, dict2):
@@ -57,28 +57,30 @@ class ReactomeParser(object):
     {Id:{'cellularLocation':'', displayName:'', collectionMembers':[], 'references':{
     'names':[],...}}}
 
-
     Those entities include:
 
-        self.Dnas = {}
-        self.Dna_Collections = {}
-        self.Rnas = {}
-        self.Rna_Collections = {}
-        self.SmallMolecules = {}
-        self.SmallMolecule_Collections = {}
-        self.Proteins = {}
-        self.Protein_Collections = {}
-        self.PhysicalEntities = {}
-        self.PhysicalEntity_Collections = {}
-        self.Complexes = {}
-        self.Complex_Collections = {}
+        self.Dnas
+        self.Dna_Collections
+        self.Rnas
+        self.Rna_Collections
+        self.SmallMolecules
+        self.SmallMolecule_Collections
+        self.Proteins
+        self.Protein_Collections
+        self.PhysicalEntities
+        self.PhysicalEntity_Collections
+        self.Complexes
+        self.Complex_Collections
     """
 
     # TODO: modify external elements to remove legacy methods support
-
+    # TODO: add unification x-ref parsing to match things like cellular locations to GO terms
     # TODO: move the definition of the file to parse from the __inti__ method to the execution tree
+    # TODO: add the following post-processing filters: , ['BiochemicalReaction'] on Catalysis
+    # when parsing 'Control' object set
+    # TODO:
 
-    def __init__(self, path_to_biopax_file=conf.ReactomeBioPax):
+    def __init__(self, path_to_biopax_file=main_configs.ReactomeBioPax):
 
         self.tree = ET.parse(path_to_biopax_file)
         self.root = self.tree.getroot()
@@ -325,13 +327,12 @@ class ReactomeParser(object):
 
             target_dict[key_] = base_dict
 
-    def _parse_a_catalysis(self, primary_term, target_dict, secondary_selector=()):
+    def _parse_a_catalysis(self, primary_term, target_dict):
         """
         General function of catalysis parsing
 
         :param primary_term: term in the Reactome we would like to parse
         :param target_dict: dictionary into which we would like to insert parse results
-        :param secondary_selector: class name root that we would like to retain for control type
         (legacy reasons)
         """
         for catalysis_object in self._find_in_root(primary_term):
@@ -339,17 +340,12 @@ class ReactomeParser(object):
             base_dict = {}
             for catalysis_property in catalysis_object:
                 if '}controlled' in catalysis_property.tag:
-                    base_dict['controlled'] = catalysis_property.attrib.values()[0][
-                        1:]
+                    # TODO: biochemical reaction filtering should be around here
+                    base_dict['controlled'] = catalysis_property.attrib.values()[0][1:]
                 if '}controller' in catalysis_property.tag:
-                    base_dict['controller'] = catalysis_property.attrib.values()[0][
-                        1:]
+                    base_dict['controller'] = catalysis_property.attrib.values()[0][1:]
                 if '}controlType' in catalysis_property.tag:
-                    if not secondary_selector:
-                        base_dict['ControlType'] = catalysis_property.text
-                    elif any(item in catalysis_property.attrib.values()[0]
-                             for item in secondary_selector):
-                        base_dict['ControlType'] = catalysis_property.text
+                    base_dict['ControlType'] = catalysis_property.text
 
             if 'Pathway' not in base_dict['controlled']:
                 target_dict[key_] = base_dict
@@ -412,11 +408,11 @@ class ReactomeParser(object):
             key = single_Pathway_step.attrib.values()[0]
             local_dict = {'components': [], 'nextStep': []}
             for pathway_property in single_Pathway_step:
-                if '}stepProcess ' in pathway_property.tag and not any(
+                if '}stepProcess' in pathway_property.tag and not any(
                         x in pathway_property.attrib.values()[0] for x in exclude):
                     local_dict['components'].append(
                         pathway_property.attrib.values()[0][1:])
-                if '}nextStep ' in pathway_property.tag:
+                if '}nextStep' in pathway_property.tag:
                     local_dict['nextStep'].append(
                         pathway_property.attrib.values()[0][1:])
             self.PathwaySteps[key] = local_dict
@@ -458,7 +454,7 @@ class ReactomeParser(object):
 
         self._parse_a_catalysis('Catalysis', self.Catalysises)
         self._parse_a_catalysis('TemplateReactionRegulation', self.Catalysises)
-        self._parse_a_catalysis('Control', self.Catalysises, ['BiochemicalReaction'])
+        self._parse_a_catalysis('Control', self.Catalysises)
 
         self._parse_modulations()
         self._parse_pathways()
@@ -467,3 +463,9 @@ class ReactomeParser(object):
         self.parsed = True
 
         logger.info('Reactome parser finished parsing xml tree to dict collection')
+
+if __name__ == "__main__":
+    source_file = "/home/andrei/PycharmProjects/BioFlow/unittests/UT_examples/reactome_extract.owl"
+    # source_file = main_configs.ReactomeBioPax
+    RP = ReactomeParser(source_file)
+    RP.parse_all()

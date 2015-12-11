@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:bp="http://www.biopax.org/release/biopax-level3.owl#" xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#" xmlns:owl="http://www.w3.org/2002/07/owl#" xmlns:xsd="http://www.w3.org/2001/XMLSchema#" xml:base="http://www.reactome.org/biopax/54/48887#">
+
+  <owl:Ontology rdf:about="">
+    <owl:imports rdf:resource="http://www.biopax.org/release/biopax-level3.owl" />
+  </owl:Ontology>
+
+  <bp:BioSource rdf:ID="BioSource1">
+    <bp:name rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Homo sapiens</bp:name>
+  </bp:BioSource>
+
+  <bp:CellularLocationVocabulary rdf:ID="CellularLocationVocabulary1">
+    <bp:term rdf:datatype="http://www.w3.org/2001/XMLSchema#string">extracellular region</bp:term>
+  </bp:CellularLocationVocabulary>
+
+  <bp:SequenceModificationVocabulary rdf:ID="SequenceModificationVocabulary1">
+    <bp:term rdf:datatype="http://www.w3.org/2001/XMLSchema#string">myristoylated residue</bp:term>
+  </bp:SequenceModificationVocabulary>
+
+  <bp:SequenceSite rdf:ID="SequenceSite1">
+    <bp:sequencePosition rdf:datatype="http://www.w3.org/2001/XMLSchema#int">497</bp:sequencePosition>
+    <bp:positionStatus rdf:datatype="http://www.w3.org/2001/XMLSchema#string">EQUAL</bp:positionStatus>
+  </bp:SequenceSite>
+
+  <bp:DnaReference rdf:ID="DnaReference1">
+    <bp:organism rdf:resource="#BioSource1" />
+    <bp:name rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ENSEMBL:ENSG00000105327 BBC3</bp:name>
+    <bp:name rdf:datatype="http://www.w3.org/2001/XMLSchema#string">BBC3</bp:name>
+  </bp:DnaReference>
+
+  <bp:RnaReference rdf:ID="RnaReference1">
+    <bp:organism rdf:resource="#BioSource1" />
+    <bp:name rdf:datatype="http://www.w3.org/2001/XMLSchema#string">miRBase:miR0003560 MIR92b</bp:name>
+    <bp:name rdf:datatype="http://www.w3.org/2001/XMLSchema#string">EMBL:X04293 U5 snRNA</bp:name>
+    <bp:name rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ENSEMBL:ENST00000263341 IL1B</bp:name>
+    <bp:name rdf:datatype="http://www.w3.org/2001/XMLSchema#string">IL1B mRNA</bp:name>
+    <bp:name rdf:datatype="http://www.w3.org/2001/XMLSchema#string">IL1B</bp:name>
+  </bp:RnaReference>
+
+  <bp:SmallMoleculeReference rdf:ID="SmallMoleculeReference1">
+    <bp:name rdf:datatype="http://www.w3.org/2001/XMLSchema#string">hydroperoxyl [ChEBI:25935]</bp:name>
+    <bp:name rdf:datatype="http://www.w3.org/2001/XMLSchema#string">hydroperoxyl</bp:name>
+    <bp:name rdf:datatype="http://www.w3.org/2001/XMLSchema#string">HO2(.)</bp:name>
+    <bp:name rdf:datatype="http://www.w3.org/2001/XMLSchema#string">hydrogen dioxide</bp:name>
+    <bp:name rdf:datatype="http://www.w3.org/2001/XMLSchema#string">perhydroxyl radical</bp:name>
+    <bp:name rdf:datatype="http://www.w3.org/2001/XMLSchema#string">hydroperoxo</bp:name>
+    <bp:name rdf:datatype="http://www.w3.org/2001/XMLSchema#string">(HO2)(.)</bp:name>
+    <bp:name rdf:datatype="http://www.w3.org/2001/XMLSchema#string">peroxyl radical</bp:name>
+    <bp:name rdf:datatype="http://www.w3.org/2001/XMLSchema#string">hydroperoxy radical</bp:name>
+    <bp:name rdf:datatype="http://www.w3.org/2001/XMLSchema#string">dioxidanyl</bp:name>
+  </bp:SmallMoleculeReference>
+
+  <bp:ProteinReference rdf:ID="ProteinReference1">
+    <bp:organism rdf:resource="#BioSource1" />
+    <bp:name rdf:datatype="http://www.w3.org/2001/XMLSchema#string">UniProt:O00429 DNM1L</bp:name>
+    <bp:name rdf:datatype="http://www.w3.org/2001/XMLSchema#string">DNM1L</bp:name>
+    <bp:name rdf:datatype="http://www.w3.org/2001/XMLSchema#string">DLP1</bp:name>
+    <bp:name rdf:datatype="http://www.w3.org/2001/XMLSchema#string">DRP1</bp:name>
+    <bp:xref rdf:resource="#UnificationXref99790" />
+    <bp:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">FUNCTION Functions in </bp:comment>
+  </bp:ProteinReference>
+
+  <bp:Dna rdf:ID="Dna1">
+    <bp:displayName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">LMNA gene</bp:displayName>
+    <bp:cellularLocation rdf:resource="#CellularLocationVocabulary1" />
+    <bp:entityReference rdf:resource="#DnaReference1" />
+  </bp:Dna>
+
+  <bp:Rna rdf:ID="Rna1">
+    <bp:displayName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">IL1B mRNA</bp:displayName>
+    <bp:cellularLocation rdf:resource="#CellularLocationVocabulary1" />
+    <bp:entityReference rdf:resource="#RnaReference1" />
+  </bp:Rna>
+
+   <bp:SmallMolecule rdf:ID="SmallMolecule2">
+    <bp:displayName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">CH2O</bp:displayName>
+    <bp:name rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Methanal</bp:name>
+    <bp:name rdf:datatype="http://www.w3.org/2001/XMLSchema#string">formaldehyde</bp:name>
+    <bp:name rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Oxomethane</bp:name>
+    <bp:name rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Oxomethylene</bp:name>
+    <bp:name rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Methylene oxide</bp:name>
+    <bp:cellularLocation rdf:resource="#CellularLocationVocabulary1" />
+    <bp:entityReference rdf:resource="#SmallMoleculeReference1" />
+  </bp:SmallMolecule>
+
+  <bp:SmallMolecule rdf:ID="SmallMolecule1">
+    <bp:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Converted from EntitySet in Reactome</bp:comment>
+    <bp:memberPhysicalEntity rdf:resource="#SmallMolecule2" />
+    <bp:displayName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">PIPs</bp:displayName>
+    <bp:name rdf:datatype="http://www.w3.org/2001/XMLSchema#string">PI4P,PI(4,5)P2,PIP3</bp:name>
+    <bp:cellularLocation rdf:resource="#CellularLocationVocabulary1" />
+  </bp:SmallMolecule>
+
+  <bp:Complex rdf:ID="Complex1">
+    <bp:displayName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">HPGD dimer</bp:displayName>
+    <bp:cellularLocation rdf:resource="#CellularLocationVocabulary1" />
+    <bp:component rdf:resource="#SmallMolecule1" />
+    <bp:componentStoichiometry rdf:resource="#Stoichiometry5722" />
+  </bp:Complex>
+
+  <bp:Complex rdf:ID="Complex2">
+    <bp:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Converted from EntitySet in Reactome</bp:comment>
+    <bp:memberPhysicalEntity rdf:resource="#Complex1" />
+    <bp:memberPhysicalEntity rdf:resource="#Dna1" />
+    <bp:memberPhysicalEntity rdf:resource="#Protein2" />
+    <bp:displayName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">DISC</bp:displayName>
+    <bp:name rdf:datatype="http://www.w3.org/2001/XMLSchema#string">death-inducing signaling complex</bp:name>
+    <bp:cellularLocation rdf:resource="#CellularLocationVocabulary1" />
+  </bp:Complex>
+
+  <bp:Protein rdf:ID="Protein1">
+    <bp:displayName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">K48pUb-BIRC3</bp:displayName>
+    <bp:name rdf:datatype="http://www.w3.org/2001/XMLSchema#string">K48polyUB-BIRC</bp:name>
+    <bp:name rdf:datatype="http://www.w3.org/2001/XMLSchema#string">K48polyUb-cIAP2</bp:name>
+    <bp:cellularLocation rdf:resource="#CellularLocationVocabulary1" />
+    <bp:entityReference rdf:resource="#ProteinReference1" />
+    <bp:feature rdf:resource="#ModificationFeature1" />
+    <bp:feature rdf:resource="#FragmentFeature16533" />
+    <bp:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Reactome DB_ID: 5675478</bp:comment>
+  </bp:Protein>
+
+  <bp:Protein rdf:ID="Protein2">
+    <bp:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Converted from EntitySet in Reactome</bp:comment>
+    <bp:memberPhysicalEntity rdf:resource="#Protein1" />
+    <bp:displayName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">K48pUb- BIRC2,3,4</bp:displayName>
+    <bp:cellularLocation rdf:resource="#CellularLocationVocabulary" />
+  </bp:Protein>
+
+   <bp:PhysicalEntity rdf:ID="PhysicalEntity1">
+    <bp:displayName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">DFF cleaved DNA fragments</bp:displayName>
+    <bp:cellularLocation rdf:resource="#CellularLocationVocabulary1" />
+  </bp:PhysicalEntity>
+
+  <bp:Pathway rdf:ID="Pathway1">
+    <bp:name rdf:datatype="http://www.w3.org/2001/XMLSchema#string">BBC3</bp:name>
+    <bp:pathwayComponent rdf:resource="#Pathway2" />
+    <bp:pathwayComponent rdf:resource="#BiochemicalReaction1" />
+    <bp:organism rdf:resource="#BioSource1" />
+    <bp:displayName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Amine compound SLC transporters</bp:displayName>
+
+  </bp:Pathway>
+  <bp:Pathway rdf:ID="Pathway2">
+    <bp:pathwayComponent rdf:resource="#BiochemicalReaction1" />
+    <bp:pathwayOrder rdf:resource="#PathwayStep1" />
+    <bp:organism rdf:resource="#BioSource1" />
+    <bp:displayName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Na+/Cl- dependent neurotransmitter transporters</bp:displayName>
+  </bp:Pathway>
+
+   <bp:PathwayStep rdf:ID="PathwayStep1">
+    <bp:stepProcess rdf:resource="#BiochemicalReaction8542" />
+    <bp:nextStep rdf:resource="#PathwayStep2"/>
+  </bp:PathwayStep>
+
+  <bp:TemplateReaction rdf:ID="TemplateReaction1">
+    <bp:product rdf:resource="#Protein1" />
+    <bp:displayName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Expression of IFN-beta</bp:displayName>
+  </bp:TemplateReaction>
+
+  <bp:Degradation rdf:ID="Degradation1">
+    <bp:left rdf:resource="#Complex1" />
+    <bp:displayName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Degradation of ubiquitinated SMAD3</bp:displayName>
+  </bp:Degradation>
+
+  <bp:BiochemicalReaction rdf:ID="BiochemicalReaction1">
+    <bp:conversionDirection rdf:datatype="http://www.w3.org/2001/XMLSchema#string">LEFT-TO-RIGHT</bp:conversionDirection>
+    <bp:left rdf:resource="#Protein1" />
+    <bp:left rdf:resource="#PhysicalEntity1" />
+    <bp:right rdf:resource="#Complex1" />
+    <bp:name rdf:datatype="http://www.w3.org/2001/XMLSchema#string">DRP1</bp:name>
+    <bp:eCNumber rdf:datatype="http://www.w3.org/2001/XMLSchema#string">6.3.2.19</bp:eCNumber>
+    <bp:displayName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">BIRC2/3 (cIAP1/2) is autoubiquitinated</bp:displayName>
+  </bp:BiochemicalReaction>
+
+  <bp:Catalysis rdf:ID="Catalysis1">
+    <bp:controller rdf:resource="#Protein1" />
+    <bp:controlled rdf:resource="#BiochemicalReaction1" />
+    <bp:controlType rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ACTIVATION</bp:controlType>
+  </bp:Catalysis>
+
+  <bp:Control rdf:ID="Control1">
+    <bp:displayName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">'DISC:procaspase-8:FLIP(S) [plasma membrane]'
+     positively regulates 'RIPK3 binds RIPK1'</bp:displayName>
+    <bp:controlType rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ACTIVATION</bp:controlType>
+    <bp:controller rdf:resource="#Complex1" />
+    <bp:controlled rdf:resource="#BiochemicalReaction1" />
+  </bp:Control>
+
+  <bp:TemplateReactionRegulation rdf:ID="TemplateReactionRegulation1">
+    <bp:displayName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">'IRF3 bound to IFN-beta promoter [nucleoplasm]' positively regulates 'Expression of IFN-beta'</bp:displayName>
+    <bp:controlType rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ACTIVATION</bp:controlType>
+    <bp:controller rdf:resource="#Complex1" />
+    <bp:controlled rdf:resource="#TemplateReaction1" />
+  </bp:TemplateReactionRegulation>
+
+  <bp:Modulation rdf:ID="Modulation1">
+    <bp:displayName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">'Guanylyl cyclase
+    activating protein 2 (GCAP2) (Guanylate cyclase activator 1B)' positively regulates 'cyclase
+     activity of Guanylyl cyclase [integral to membrane]'</bp:displayName>
+    <bp:controlType rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ACTIVATION</bp:controlType>
+    <bp:controller rdf:resource="#Protein1" />
+    <bp:controlled rdf:resource="#Catalysis1" />
+  </bp:Modulation>
+
+  <bp:ModificationFeature rdf:ID="ModificationFeature1">
+    <bp:featureLocation rdf:resource="#SequenceSite1" />
+    <bp:modificationType rdf:resource="#SequenceModificationVocabulary1" />
+  </bp:ModificationFeature>
+
+  <bp:ProteinReference rdf:ID="ProteinReference8676">
+    <bp:organism rdf:resource="#BioSource2" />
+    <bp:name rdf:datatype="http://www.w3.org/2001/XMLSchema#string">UniProt:Q76RF1</bp:name>
+    <bp:name rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ORF71</bp:name>
+  </bp:ProteinReference>
+
+  <bp:BioSource rdf:ID="BioSource2">
+    <bp:name rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Human herpesvirus 8</bp:name>
+    <bp:xref rdf:resource="#UnificationXref98992" />
+  </bp:BioSource>
+
+
+</rdf:RDF>

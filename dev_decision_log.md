@@ -79,6 +79,23 @@ Following the interaction with Wahid when I was explaining him what my methods w
 - Print out the twist ration into the GDF: observed to expected ratio/ P_value
 
 
+## Improvements to different modules:
+
+### Biological data parsers
+
+**Reactome BioPax lvl3 owl parser**
+
+ - perform parsing of unification x-refs in all the meta-types and reactions in order to retrieve
+  joins with other databases.
+  
+ - return the connecting databases with the number of connections and the number of entities 
+ getting connected
+ 
+ - collapse meta-types into a single type and use a type field to distinguish them
+ 
+ - 
+
+
 ## Add additional Sources/Dimensions
 
  - DONE: perform a recovery of important domains from PDB
