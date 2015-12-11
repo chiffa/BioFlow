@@ -286,8 +286,10 @@ class ReactomeParser(object):
         :param flatten: if we want to flatten left/right tags parse results (legacy support)
         :param remap: if we want to rename some terms we've parsed (legacy support)
         """
+        # TODO: cyclomatic complexity of this method is close to 17, which is waaay to much. We
+        # need to get rid of remapping and flattening rountines downstream => CC. down to 11.
+        # then if we pull out the
         for reaction_object in self._find_in_root(primary_term):
-
             key_ = reaction_object.attrib.values()[0]
             base_dict = {'right': [],
                          'left': [],
@@ -309,21 +311,21 @@ class ReactomeParser(object):
                 if '}right' in reaction_property.tag:
                     base_dict['right'].append(reaction_property.attrib.values()[0][1:])
 
-            if flatten:
-                if len(base_dict['left']) == 1:
-                    base_dict['left'] = base_dict['left'][0]
-                if len(base_dict['right']) == 1:
-                    base_dict['right'] = base_dict['right'][0]
+            # if flatten:
+            #     if len(base_dict['left']) == 1:
+            #         base_dict['left'] = base_dict['left'][0]
+            #     if len(base_dict['right']) == 1:
+            #         base_dict['right'] = base_dict['right'][0]
 
             for key in base_dict.keys():
                 if key not in tags_to_parse and key not in ['references', 'displayName']:
                     del base_dict[key]
 
-            if remap:
-                for key in base_dict.keys():
-                    if key in remap.keys():
-                        base_dict[remap[key]] = base_dict[key]
-                        del base_dict[key]
+            # if remap:
+            #     for key in base_dict.keys():
+            #         if key in remap.keys():
+            #             base_dict[remap[key]] = base_dict[key]
+            #             del base_dict[key]
 
             target_dict[key_] = base_dict
 

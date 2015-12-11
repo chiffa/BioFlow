@@ -6,7 +6,7 @@ from shutil import rmtree
 from BioFlow.utils.log_behavior import logger
 
 
-def mkdir_recursive(path):
+def mkdir_recursive(path):  # pragma: no cover
     """
     Recursively creates a directory that would contain a file given win-like filename (xxx.xxx)
     or directory name
@@ -31,7 +31,7 @@ def mkdir_recursive(path):
             logger.debug('; creation skipped')
 
 
-def wipe_dir(path):
+def wipe_dir(path):  # pragma: no cover
     """
     wipes the indicated directory
     :param path:
