@@ -373,6 +373,22 @@ def unwrap_background():
     source = look_up_annotation_set(retlist)
     writer(open(bgList, 'w'), delimiter='\n').writerow(source[2])
 
+
+def get_uniprots():
+    """
+    Connects to the Graph database and pulls out all of the uniprots by their identifiers
+
+    :return:
+    """
+    uniprot_dict = {}
+    for elt in DatabaseGraph.UNIPORT.get_all():
+        primary = DatabaseGraph.UNIPORT.get(elt._id)
+        uniprot_dict[str(primary.ID).split('_')[0]] = primary
+    return uniprot_dict
+
+
+
+
 # Yes, I know what goes below here is ugly and shouldn't be in the
 # production part of the code
 

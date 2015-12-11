@@ -46,6 +46,8 @@
  
  - In case we are calling time-consuming parsers from several location, we might want to insert 
  "singleton" module into the block, that performs all the parsings only once per program run.
+ 
+ - to important functions that we need user or 
 
 
 ## Major refactoring suggestions:
@@ -83,7 +85,7 @@ Following the interaction with Wahid when I was explaining him what my methods w
 
 ### Biological data parsers
 
-**Reactome BioPax lvl3 owl parser**
+**Reactome BioPax lvl3 owl parser:**
 
  - perform parsing of unification x-refs in all the meta-types and reactions in order to retrieve
   joins with other databases.
@@ -93,7 +95,15 @@ Following the interaction with Wahid when I was explaining him what my methods w
  
  - collapse meta-types into a single type and use a type field to distinguish them
  
- - 
+### Utils and general Utils:
+**Wrappers:**
+
+ - debug wrapper that logs to the debug channel. In case we are performing a graphical debug, we 
+ log it as a picture saved with the name of calling and the time of calling to the project root
+ 
+ - visual debugger for the matrix operations that allows to specify what input matrixes we would 
+ like to inspect and what output matrixes we would like to inspect (by index)
+
 
 
 ## Add additional Sources/Dimensions

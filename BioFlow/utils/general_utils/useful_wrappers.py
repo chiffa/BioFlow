@@ -32,7 +32,7 @@ def debug_wrapper(function_of_interest):
         result = function_of_interest(*args, **kwargs)
         if not isinstance(result, tuple):
             render_2d_matrix(result, function_of_interest.__name__)
-        else:  # TODO: perform a vector rendering of function results
+        else:
             render_2d_matrix(result[0], function_of_interest.__name__)
         check_matrix.__name__ = function_of_interest.__name__
         check_matrix.__doc__ = function_of_interest.__doc__
@@ -62,9 +62,28 @@ def time_it_wrapper(function_of_interest):
 
 
 def my_timer(message='', previous_time=[]):
+    """
+    A small timer to be used in code to measure the execution duration of elements of code
+
+    :param message:
+    :param previous_time:
+    :return:
+    """
     if not previous_time:
         print 'set timer'
         previous_time.append(time())
     else:
         print '%s timer reset. Time since previous %s' % (message, time() - previous_time[0])
         previous_time[0] = time()
+
+
+def autolog(function):
+    """
+    Logs entry and exit of a function every time it is called to the logger.info channel.
+
+    It also acts as a point of capture of exceptions and logging them to 'CRITICAL channel'
+
+    :param function:
+    :return:
+    """
+    pass

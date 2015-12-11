@@ -1,73 +1,33 @@
 """
 Set of tools to work with HiNT database
-Created on Jul 10, 2013
-Last updated on Nov 6, 2015
-
-:author: Andrei Kucharavy
 """
-
-from csv import reader as csv_reader
-from collections import defaultdict
+from BioFlow.bio_db_parsers.proteinRelParsers import parse_hint
 from BioFlow.main_configs import Hint_csv
+from BioFlow.neo4j_db.db_io_routines import get_uniprots
 from BioFlow.neo4j_db.GraphDeclarator import DatabaseGraph
+from BioFlow.utils.log_behavior import logger
 
 
-# TODO HiNT is subject to modification and thus parsing should be tested
-# and shown
-def get_prot2prot_rels(_hint_csv):
-    """
-    Reads protein-protein relationships from a HiNT database file
-
-    :param _hint_csv: location of the HiNT database tsv file
-    :return: {UP_Identifier:[UP_ID1, UP_ID2, ...]}
-    """
-    local_relations = defaultdict(list)
-    with open(_hint_csv, 'r') as source_docu:
-        rdr = csv_reader(source_docu, delimiter='\t')
-        rdr.next()
-        for i, fields in enumerate(rdr):
-            if fields[2] != fields[3]:
-                local_relations[fields[3]].append(fields[2])
-                local_relations[fields[2]].append(fields[3])
-    return dict(local_relations)
-
-
-def get_uniprots():  # TODO: refactoring requires moving to the Database IO module
-    """
-    Connects to the Graph database and pulls out all of the uniprots by their identifiers
-
-    :return:
-    """
-    uniprot_dict = {}
-    for elt in DatabaseGraph.UNIPORT.get_all():
-        ID = str(elt).split('/')[-1][:-1]
-        print ID, elt._id  # TODO: check for potential simplification
-        primary = DatabaseGraph.UNIPORT.get(ID)
-        uniprot_dict[str(primary.ID).split('_')[0]] = primary
-    return uniprot_dict
-
-
-# TODO: dissociate indentification of elements that need to be joined and
-# graph database action
-def cross_ref_HiNT(flush):
+def cross_ref_hint(flush=True):
     """
     Pulls Hint relationships and connects Uniprots in the database
 
     :param flush: if True, relationships are pushed to the actual graph database
     :return:
     """
-    RelationDict = get_prot2prot_rels(Hint_csv)
-    UniProtRefDict = get_uniprots()
-    Treated = set()
-    i = 0
-    for key in UniProtRefDict.keys():
-        if key in RelationDict.keys():
-            Treated.add(key)
-            for subkey in RelationDict[key]:
-                if subkey in UniProtRefDict.keys() and subkey not in Treated:
-                    i += 1
-                    print 'HINT links:', key, subkey
+    relations_dict = parse_hint(Hint_csv)
+    uniprot_ref_dict = get_uniprots()
+    processed_pairs = set()
+    actual_cross_links = 0
+    for key in uniprot_ref_dict.keys():
+        if key in relations_dict.keys():
+            processed_pairs.add(key)
+            for subkey in relations_dict[key]:
+                if subkey in uniprot_ref_dict.keys() and subkey not in processed_pairs:
+                    actual_cross_links += 1
+                    logger.debug('HINT links: %s, %s' % (key, subkey))
                     if flush:
+                        # TODO: dissociate insertion from database IO operations:
                         DatabaseGraph.is_interacting.create(
-                            UniProtRefDict[key], UniProtRefDict[subkey])
-    print i, len(Treated)
+                            uniprot_ref_dict[key], uniprot_ref_dict[subkey])
+    print actual_cross_links, len(processed_pairs)
