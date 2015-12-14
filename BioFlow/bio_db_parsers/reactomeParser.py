@@ -276,7 +276,7 @@ class ReactomeParser(object):
                     del base_dict['parts']
                 meta_dict[key_] = base_dict
 
-    def _parse_reaction(self, primary_term, target_dict, tags_to_parse=(), flatten=False, remap={}):
+    def _parse_reaction(self, primary_term, target_dict, tags_to_parse=()):
         """
         A meta-parser for the reactions type of data
 

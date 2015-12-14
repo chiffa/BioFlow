@@ -27,7 +27,6 @@ def cross_ref_hint(flush=True):
                     actual_cross_links += 1
                     logger.debug('HINT links: %s, %s' % (key, subkey))
                     if flush:
-                        # TODO: dissociate insertion from database IO operations:
                         DatabaseGraph.is_interacting.create(
                             uniprot_ref_dict[key], uniprot_ref_dict[subkey])
     print actual_cross_links, len(processed_pairs)

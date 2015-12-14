@@ -37,7 +37,6 @@ def insert_into_the_database(_up_ids_2_inner_ids, _up_ids_2_properties):
         if key[0] in _up_ids_2_inner_ids.keys() and key[1] in _up_ids_2_inner_ids.keys())
 
     for (node1_id, node2_id), link_parameters in final_dicts.iteritems():
-        # TODO: This can be factored out to the database io as cross-linking Uniprots
         node1 = DatabaseGraph.UNIPORT.get(node1_id)
         node2 = DatabaseGraph.UNIPORT.get(node2_id)
         if len(link_parameters) > 1:
