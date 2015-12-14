@@ -28,12 +28,12 @@ import numpy as np
 from scipy.sparse import lil_matrix
 from scipy.sparse.csgraph import shortest_path
 
+from BioFlow.algorithms_bank import conduction_routines as CR
+from BioFlow.main_configs import Dumps, Outputs, UP_rand_samp, bgList
+from BioFlow.molecular_network.InteractomeInterface import MatrixGetter
+from BioFlow.neo4j_db.GraphDeclarator import DatabaseGraph
 from BioFlow.utils.GDF_export import GDF_export_Interface
 from BioFlow.utils.IO_Routines import dump_object, undump_object
-from BioFlow.main_configs import Dumps, Outputs, UP_rand_samp, bgList
-from BioFlow.neo4j_db.GraphDeclarator import DatabaseGraph
-from BioFlow.analysis import conduction_routines as CR
-from BioFlow.analysis.InteractomeInterface import MatrixGetter
 
 
 def _characterise(objekt):
@@ -705,7 +705,7 @@ class GO_Interface(object):
                 UP1] + self.UP2GO_Reachable_nodes[UP2] + [UP1] + [UP2]
             reach = [self.inflated_lbl2idx[label] for label in pre_reach]
             current_upper, voltage_diff = CR.get_current_with_reach_limitations(
-                inflated_laplacian=self.inflated_Laplacian, Idx_pair=(
+                inflated_laplacian=self.inflated_Laplacian, idx_pair=(
                     Idx1, Idx2), reach_limiter = reach)
             self.current_accumulator = self.current_accumulator + \
                 CR.sparse_abs(current_upper)

@@ -1,10 +1,10 @@
-__author__ = 'andrei'
-
-
-from BioFlow.analysis.InteractomeInterface import MatrixGetter as InteractomeInterface
-from BioFlow.analysis.BioKnowledgeInterface import GO_Interface as AnnotomeInterface, get_background
-from BioFlow.analysis.interactome_analysis import auto_analyze as interactome_analysis
-from BioFlow.analysis.knowledge_access_analysis import auto_analyze as knowledge_analysis
+"""
+Provides the implementation of routines responsible for the analysis implementation
+"""
+from BioFlow.annotation_network.BioKnowledgeInterface import GO_Interface as AnnotomeInterface, get_background
+from BioFlow.annotation_network.knowledge_access_analysis import auto_analyze as knowledge_analysis
+from BioFlow.molecular_network.InteractomeInterface import MatrixGetter as InteractomeInterface
+from BioFlow.molecular_network.interactome_analysis import auto_analyze as interactome_analysis
 
 
 def analyze_interactome(source, background=None, depth=100, processors=2):

@@ -5,7 +5,6 @@ import os
 import pickle
 from os import path, makedirs
 from pprint import PrettyPrinter
-
 from pymongo import MongoClient
 from BioFlow.internals_config import *
 from BioFlow.Configs_manager import parse_configs, conf_file_path_flattener
@@ -121,7 +120,7 @@ RNA_source = "/home/ank/Documents/External_Predictions/Ben_RNA_seq/counts.tsv"
 Hits_source = "/home/andrei/support/tmp/Chr_10.txt"
 Background_source = "/home/ank/projects_files/2014/Poly_Pharma/HJ-screen/Allgene_R2.csv"
 
-# these are remappings to the inner master database IDs
+# these are re-mappings to the inner master database IDs
 prename1 = Hits_source[:-4] + '_' + 'pPh_name_maps.txt'
 prename2 = Hits_source[:-4] + '_' + 'pPh_id_list.csv'
 bgList = Background_source[:-4] + '_' + 'pPh_id_list.csv'

@@ -14,13 +14,13 @@ from random import shuffle
 import numpy as np
 from matplotlib import pyplot as plt
 
+from BioFlow.algorithms_bank.conduction_routines import perform_clustering
+from BioFlow.annotation_network.BioKnowledgeInterface import GO_Interface
+from BioFlow.main_configs import UP_rand_samp, Dumps, prename2, bgList
+from BioFlow.molecular_network.InteractomeInterface import MatrixGetter
 from BioFlow.utils.IO_Routines import undump_object
 from BioFlow.utils.Linalg_routines import analyze_eigenvects
 from BioFlow.utils.dataviz import kde_compute
-from BioFlow.main_configs import UP_rand_samp, Dumps, prename2, bgList
-from BioFlow.analysis.conduction_routines import perform_clustering
-from BioFlow.analysis.InteractomeInterface import MatrixGetter
-from BioFlow.analysis.BioKnowledgeInterface import GO_Interface
 
 
 # TODO: refactor, this is currently a wrapper method used in the

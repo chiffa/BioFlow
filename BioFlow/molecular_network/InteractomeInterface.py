@@ -1,4 +1,3 @@
-__author__ = 'ank'
 """
 This module contains all the routines that are respojnsible for pulling
 the matrixes out of the neo4j graph and processing them.
@@ -20,14 +19,13 @@ from scipy.sparse import lil_matrix
 from scipy.sparse.csgraph import connected_components
 from scipy.sparse.linalg import eigsh
 
-from BioFlow.utils.GDF_export import GDF_export_Interface
-from BioFlow.utils.IO_Routines import write_to_csv, dump_object, undump_object
+from BioFlow.algorithms_bank import conduction_routines as CR
 from BioFlow.main_configs import Chromosome_source, Chromosome_file_filter
 from BioFlow.main_configs import edge_type_filters, Adjacency_Martix_Dict, Conductance_Matrix_Dict, Dumps, Outputs, Interactome_rand_samp
-from BioFlow.neo4j_db.db_io_routines import reaction_participant_getter, expand_from_seed, erase_custom_fields
 from BioFlow.neo4j_db.GraphDeclarator import DatabaseGraph
-from BioFlow.analysis import conduction_routines as CR
-
+from BioFlow.neo4j_db.db_io_routines import reaction_participant_getter, expand_from_seed, erase_custom_fields
+from BioFlow.utils.GDF_export import GDF_export_Interface
+from BioFlow.utils.IO_Routines import write_to_csv, dump_object, undump_object
 
 # Debug Log:
 #       Main connex set is 24k nodes, with 4331 UP links and 1051 Hint links

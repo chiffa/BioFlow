@@ -304,7 +304,7 @@ def get_all_meta_sets():
         get_one_meta_set(function)
 
 
-def insert_all(skip_import='N'):
+def insert_reactome(skip_import='N'):
     """
     Performs the massive import of the Reactome database into the local neo4j database.
 

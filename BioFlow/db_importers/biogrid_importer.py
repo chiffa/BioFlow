@@ -48,7 +48,7 @@ def insert_into_the_database(_up_ids_2_inner_ids, _up_ids_2_properties):
                                                        throughput=link_parameters[0])
 
 
-def import_bio_grid():
+def cross_ref_bio_grid():
     """    performs the total BioGRID parse. """
     logger.info('Starting BioGrid Parsing')
     up_ids_2_properties, up_ids = parse_bio_grid(BioGRID)

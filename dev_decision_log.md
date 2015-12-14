@@ -3,14 +3,11 @@
 
 ## Confirmed minor refactoring requiring a sane rollback:
 
- - replace `str(vertex).split('/')[-1][:-1]` with `vertex._id`
- 
  - replace all the print Warning() with logging behavior at the level of a warning or a critical 
  error
+ 
+ - render the usage of analytical/background sets uniform throughout the system.
 
- - destroy the print output from the logging system in case the $UNITTEST$ is set to True in the environment variables.
-
- - move the dump and output directories to the top level
 
 
 ## Minor refactoring suggestions:
@@ -49,6 +46,15 @@
  
  - In case of go/uniprot and reactome parsers, create wrapping objects, that would contain 
  memoization dictionaries.
+ 
+ - change to element import directories from which too many functions/objects are imported 
+ (import numpy as np)
+ 
+ - refactor the configs to contain the following elements:
+    - Configs computed based on the .ini files
+    - Inner configs that has an effect on what is being computed
+    - Inner configs that has only anything to do with the project structure and implementation
+    
 
 
 ## Major refactoring suggestions:
@@ -69,6 +75,8 @@
  - Introduce signal over noise ratio: amount of current in the current configuration compared to 
  what we would have expected in case of a random set of nodes. We could introduce this as a 
  bootstrap on a random subset of nodes to figure which ones are random and which ones aren't
+ 
+ - Add protein abundance level
 
 
 ## Required documentation:

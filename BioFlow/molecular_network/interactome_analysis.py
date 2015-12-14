@@ -10,10 +10,10 @@ from multiprocessing import Pool
 import numpy as np
 from matplotlib import pyplot as plt
 
-from BioFlow.utils.dataviz import kde_compute
+from BioFlow.algorithms_bank.conduction_routines import perform_clustering
 from BioFlow.main_configs import Interactome_rand_samp, prename2
-from BioFlow.analysis.conduction_routines import perform_clustering
-from InteractomeInterface import MatrixGetter
+from BioFlow.molecular_network.InteractomeInterface import MatrixGetter
+from BioFlow.utils.dataviz import kde_compute
 
 
 def MG_gen():
