@@ -6,7 +6,7 @@
 [![Code Health](https://landscape.io/github/chiffa/BioFlow/master/landscape.svg?style=flat)](https://landscape.io/github/chiffa/BioFlow/master)
 
 # BioFlow Project
-PInformation Flow Analysis toolkit for biological networks
+Information Flow Analysis in biological networks
 
 Branch v.0.03 - Unstable
 
