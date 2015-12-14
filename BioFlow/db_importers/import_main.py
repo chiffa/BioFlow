@@ -4,15 +4,16 @@ The main method of the neo4j database building
 On a clean database, we should be able to yeast databases in ~ 6-7 hours and humans in less than
 24 hours.
 """
-from BioFlow.neo4j_db.db_io_routines import recompute_forbidden_IDs, Forbidden_verification_dict
+from BioFlow.neo4j_db.db_io_routines import recompute_forbidden_IDs, Forbidden_verification_dict, \
+    clear_all, run_diagnostics, full_dict
 from BioFlow.neo4j_db.GraphDeclarator import DatabaseGraph
 from BioFlow.db_importers.go_and_uniprot_importer import getGOs, import_GOs, import_UNIPROTS
 from BioFlow.db_importers.hint_importer import cross_ref_hint
-from BioFlow.db_importers.reactome_importer import clear_all, insert_all, run_diagnostics, full_dict
+from BioFlow.db_importers.reactome_importer import insert_all
 from biogrid_importer import import_bio_grid
 
 
-# TODO: add the aboundance import
+# TODO: add the abundance import
 # TODO: add the derivative importance contribution
 
 # #################################

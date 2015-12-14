@@ -387,6 +387,64 @@ def get_uniprots():
     return uniprot_dict
 
 
+def clear_all(instruction_dict):
+    """
+    empties the whole BioPax-bound node set.
+
+    :param instruction_dict:
+    """
+    for name, bulbs_class in instruction_dict.iteritems():
+        print 'processing class: %s, alias %s' % (name, bulbs_class)
+        if bulbs_class[0].get_all():
+            IDlist = [str(bulbs_class_instance).split('/')[-1][:-1]
+                      for bulbs_class_instance in bulbs_class[0].get_all()]
+            IDL_len = len(IDlist) / 100.
+            for counter, ID in enumerate(IDlist):
+                del_set = get_attached_annotations(ID)
+                for annot_node_id in del_set:
+                    DatabaseGraph.AnnotNode.delete(annot_node_id)
+                bulbs_class[0].delete(ID)
+                if counter % 100 == 0:
+                    print 'deleting class %s %.2f %%:' % (name, counter / IDL_len)
+            print 'deleting class %s %.2f %%:' % (name, 100)
+
+
+def run_diagnostics(instruction_dict):
+    """
+    Checks the number of nodes of each type.
+
+    :param instruction_dict:
+    """
+    super_counter = 0
+    for name, (bulbs_class, bulbs_alias) in instruction_dict.iteritems():
+        counter = bulbs_class.index.count(element_type=bulbs_alias)
+        print name, ':', counter
+        super_counter += counter
+    print 'Total: ', super_counter
+
+full_dict = {'DNA': (DatabaseGraph.DNA, "DNA"),
+             'DNA Collection': (DatabaseGraph.DNA_Collection, "DNA_Collection"),
+             'RNA': (DatabaseGraph.RNA, "RNA"),
+             'RNA Collection': (DatabaseGraph.RNA_Collection, "RNA_Collection"),
+             'Small Molecule': (DatabaseGraph.SmallMolecule, "SmallMolecule"),
+             'Small Molecule Collection': (DatabaseGraph.SmallMolecule_Collection, "SmallMolecule_Collection"),
+             'Protein': (DatabaseGraph.Protein, "Protein"),
+             'Protein Collection': (DatabaseGraph.Protein_Collection, "Protein_Collection"),
+             'Complex': (DatabaseGraph.Complex, "Complex"),
+             'Complex Collection': (DatabaseGraph.Complex_Collection, "Complex_Collection"),
+             'Physical Entity': (DatabaseGraph.PhysicalEntity, "PhysicalEntity"),
+             'Physical Entity Collection': (DatabaseGraph.PhysicalEntity_Collection, "PhysicalEntity_Collection"),
+             'TemplateReaction': (DatabaseGraph.TemplateReaction, "Template_Reaction"),
+             'Degradation': (DatabaseGraph.Degradation, "Degradation"),
+             'BiochemicalReaction': (DatabaseGraph.BiochemicalReaction, "BiochemicalReaction"),
+             'Pathway Step': (DatabaseGraph.PathwayStep, "Pathway_Step"),
+             'Pathway': (DatabaseGraph.Pathway, "Pathway"),
+             'Cell Locations': (DatabaseGraph.Location, "Location"),
+             'Annotations': (DatabaseGraph.AnnotNode, "AnnotNode"),
+             'Modification Feature': (DatabaseGraph.ModificationFeature, "ModificationFeature"),
+             'UNIPROT': (DatabaseGraph.UNIPORT, "UNIPROT"),
+             'GO Term': (DatabaseGraph.GOTerm, "GOTerm"),
+             }
 
 
 # Yes, I know what goes below here is ugly and shouldn't be in the

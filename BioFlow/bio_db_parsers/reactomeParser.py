@@ -286,19 +286,17 @@ class ReactomeParser(object):
         :param flatten: if we want to flatten left/right tags parse results (legacy support)
         :param remap: if we want to rename some terms we've parsed (legacy support)
         """
-        # TODO: cyclomatic complexity of this method is close to 17, which is waaay to much. We
-        # need to get rid of remapping and flattening rountines downstream => CC. down to 11.
-        # then if we pull out the
+        # TODO: cyclomatic complexity of this method is close to 11, which is on the edge of
+        # acceptable
         for reaction_object in self._find_in_root(primary_term):
             key_ = reaction_object.attrib.values()[0]
             base_dict = {'right': [],
                          'left': [],
                          'references': {
-                             'name': []}
-                         }
+                             'name': []}}
             for reaction_property in reaction_object:
                 if '}product' in reaction_property.tag:
-                    base_dict['product'] = reaction_property.attrib.values()[0][1:]
+                    base_dict['right'].append(reaction_property.attrib.values()[0][1:])
                 if '}displayName' in reaction_property.tag:
                     base_dict['displayName'] = reaction_property.text
                 if '}name' in reaction_property.tag:
@@ -311,21 +309,9 @@ class ReactomeParser(object):
                 if '}right' in reaction_property.tag:
                     base_dict['right'].append(reaction_property.attrib.values()[0][1:])
 
-            if flatten:
-                if len(base_dict['left']) == 1:
-                    base_dict['left'] = base_dict['left'][0]
-                if len(base_dict['right']) == 1:
-                    base_dict['right'] = base_dict['right'][0]
-
             for key in base_dict.keys():
                 if key not in tags_to_parse and key not in ['references', 'displayName']:
                     del base_dict[key]
-
-            if remap:
-                for key in base_dict.keys():
-                    if key in remap.keys():
-                        base_dict[remap[key]] = base_dict[key]
-                        del base_dict[key]
 
             target_dict[key_] = base_dict
 
@@ -450,8 +436,7 @@ class ReactomeParser(object):
                          defaultdict(None), sup_mods=True, sup_parts=False)
 
         self._parse_reaction('TemplateReaction', self.TemplateReactions, ['product'])
-        self._parse_reaction('Degradation', self.Degradations, ['left'],
-                             flatten=True, remap={'left': 'product'})
+        self._parse_reaction('Degradation', self.Degradations, ['left'])
         self._parse_reaction('BiochemicalReaction', self.BiochemicalReactions, ['left', 'right'])
 
         self._parse_a_catalysis('Catalysis', self.Catalysises)
