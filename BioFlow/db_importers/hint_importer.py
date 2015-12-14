@@ -3,9 +3,21 @@ Set of tools to work with HiNT database
 """
 from BioFlow.bio_db_parsers.proteinRelParsers import parse_hint
 from BioFlow.main_configs import Hint_csv
-from BioFlow.neo4j_db.db_io_routines import get_uniprots
+from BioFlow.neo4j_db.db_io_routines import get_meta
 from BioFlow.neo4j_db.GraphDeclarator import DatabaseGraph
 from BioFlow.utils.log_behavior import logger
+
+
+def get_uniprots_for_hint():
+    """
+    Recovers UP Gene names maps to UNIPROT nodes containing them.
+
+    :return:
+    """
+    inital_dict = get_meta(DatabaseGraph.UNIPORT)
+    for key in inital_dict.keys():
+        inital_dict[key.split('_')[0]] = inital_dict.pop(key)
+    return inital_dict
 
 
 def cross_ref_hint(flush=True):
@@ -16,7 +28,7 @@ def cross_ref_hint(flush=True):
     :return:
     """
     relations_dict = parse_hint(Hint_csv)
-    uniprot_ref_dict = get_uniprots()
+    uniprot_ref_dict = get_uniprots_for_hint()
     processed_pairs = set()
     actual_cross_links = 0
     for key in uniprot_ref_dict.keys():

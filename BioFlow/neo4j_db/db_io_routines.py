@@ -9,6 +9,7 @@ from collections import defaultdict
 from csv import reader, writer
 from pprint import PrettyPrinter
 
+from BioFlow.utils.log_behavior import logger as log
 from BioFlow.neo4j_db.GraphDeclarator import DatabaseGraph
 from BioFlow.main_configs import IDFilter, Leg_ID_Filter, edge_type_filters, Dumps, Hits_source, \
     prename1, prename2, Background_source, bgList, annotation_nodes_ptypes
@@ -374,18 +375,28 @@ def unwrap_background():
     writer(open(bgList, 'w'), delimiter='\n').writerow(source[2])
 
 
-def get_uniprots():
+def get_meta(bulbs_type, dict_to_load_into=None):
     """
-    Connects to the Graph database and pulls out all of the uniprots by their identifiers
+    Loads a bulbs type ID_2_object into a supplied dict. If no dict supplied returns the dict as
+    a result
 
+    :param bulbs_type:
+    :param dict_to_load_into:
     :return:
     """
-    uniprot_dict = {}
-    for elt in DatabaseGraph.UNIPORT.get_all():
-        primary = DatabaseGraph.UNIPORT.get(elt._id)
-        uniprot_dict[str(primary.ID).split('_')[0]] = primary
-    return uniprot_dict
+    if dict_to_load_into is None:
+        dict_to_load_into = {}
 
+    log.info('starting %s memoization load' % bulbs_type)
+    for uniprot_node in bulbs_type.get_all():
+        dict_to_load_into[uniprot_node.ID] = bulbs_type.get(uniprot_node._id)
+    log.info('%s Loaded, contains %s elements' % (bulbs_type, len(dict_to_load_into)))
+
+    return dict_to_load_into
+
+
+# TODO: the following two functions rely on instruction dicts that can and should be simplified,
+# so that a list of keys is sufficient to execute the function.
 
 def clear_all(instruction_dict):
     """
@@ -421,6 +432,9 @@ def run_diagnostics(instruction_dict):
         print name, ':', counter
         super_counter += counter
     print 'Total: ', super_counter
+
+
+# TODO: this dict needst to be moved into the internal configurations section.
 
 full_dict = {'DNA': (DatabaseGraph.DNA, "DNA"),
              'DNA Collection': (DatabaseGraph.DNA_Collection, "DNA_Collection"),

@@ -1,12 +1,14 @@
 """
 This module is responsible for the import of the data parsed from the UNIPROT text file
 """
-from BioFlow import main_configs as conf
+from BioFlow import main_configs
 from BioFlow.utils.log_behavior import logger as log
 from BioFlow.bio_db_parsers.geneOntologyParser import GOTermsParser
 from BioFlow.bio_db_parsers.uniprotParser import UniProtParser
 from BioFlow.neo4j_db.GraphDeclarator import DatabaseGraph
+from BioFlow.neo4j_db.db_io_routines import get_meta
 
+# TODO: this should be refactored into a class to wrap memoization dicts
 # Stores relations between GO IDs and the objects in the neo4j database
 GO_term_memoization_dict = {}
 # Stores relations between the SWISSPROT UNIPROT IDs and the neo4j database objects
@@ -20,8 +22,6 @@ def import_gene_ontology(go_terms, go_terms_structure):
     :param go_terms:
     :param go_terms_structure:
     """
-    # generate terms:
-    go_terms, go_terms_structure = GOTermsParser().parse_go_terms(conf.GeneOntology)
     # Create Terms
     go_terms_number = len(go_terms.keys())
     for i, GO_Term in enumerate(go_terms.keys()):
@@ -42,10 +42,12 @@ def import_gene_ontology(go_terms, go_terms_structure):
         go_term_1 = GO_term_memoization_dict[relation[0]]
         go_term_2 = GO_term_memoization_dict[relation[2]]
         go_relation_type = relation[1]
+
         if go_relation_type == 'is_a':
             DatabaseGraph.is_a_go.create(go_term_1, go_term_2)
         if go_relation_type == 'part_of':
             DatabaseGraph.is_part_of_go.create(go_term_1, go_term_2)
+
         if 'regul' in go_relation_type:
             if go_relation_type == 'positively_regulates':
                 DatabaseGraph.is_regulant.create(
@@ -61,189 +63,185 @@ def import_gene_ontology(go_terms, go_terms_structure):
                         'GO' + go_term_1.ID + go_term_2.ID))
 
 
-def getExistingAcnums():
+def pull_up_acc_nums_from_reactome():
     """
-    Attempts to retrieve acnums from the neo4j database
+    Attempts to retrieve accession numbers nums from the neo4j database
 
     :return: dict that maps acnums to nodes in the database to which they point (Reactome proteins)
-
-    :raise Exception: if the generator that performs a lookup of existing uniprot acnum annotation nodes is null (Reactome
-    wasn't imported yet)
+    :raise Exception: if the generator that performs a lookup of existing uniprot acnum annotation
+    nodes is null (Reactome wasn't imported yet) or a wrong uniprot is crosslinked with a wrong
+    reactome
     """
-    annot_node_with_acc_nums_generator = DatabaseGraph.AnnotNode.index.lookup(
-        ptype='UniProt')
-    if annot_node_with_acc_nums_generator is None:
+    acc_num_annot_nodes = DatabaseGraph.AnnotNode.index.lookup(ptype='UniProt')
+    if acc_num_annot_nodes is None:
         raise Exception(
             "Reactome was not loaded or contains no acc_num cross-references to Uniprot")
-    AcnumList = {}  # acnum to AnnotNode
-    for annot_node in annot_node_with_acc_nums_generator:
-        if annot_node is not None:
-            annot_node_ID = str(annot_node).split('/')[-1][:-1]
-            AnnotObj = DatabaseGraph.vertices.get(annot_node_ID)
-            AcnumList[str(AnnotObj.payload)] = AnnotObj
-    if len(AcnumList) < 10:
+
+    acc_num_dict = {}  # acnum to AnnotNode
+    for annotation_node in acc_num_annot_nodes:
+        if annotation_node is not None:
+            annot_obj = DatabaseGraph.vertices.get(annotation_node._id)
+            acc_num_dict[str(annot_obj.payload)] = annot_obj
+
+    if len(acc_num_dict) < 10:
         raise Exception(
             "Reactome was not loaded or contains no acc_num cross-references to Uniprot")
-    ReactProtList = {}
-    for acc_num in AcnumList.keys():
-        ReactProtGen = AcnumList[acc_num].bothV()
-        ReactProtList[acc_num] = []
-        if ReactProtGen is not None:
-            for vertex in ReactProtGen:
+
+    reactome_proteins = {}
+    for acc_num in acc_num_dict.keys():
+        reactome_proteins_generator = acc_num_dict[acc_num].bothV()
+        reactome_proteins[acc_num] = []
+        if reactome_proteins_generator is not None:
+            for vertex in reactome_proteins_generator:
                 if vertex is not None:
-                    ReactProtList[acc_num].append(vertex)
-    log.debug('1 %s', len(ReactProtList))
-    return ReactProtList
+                    reactome_proteins[acc_num].append(vertex)
+        if reactome_proteins[acc_num] != 1:
+            log.debug('Cross-linking reactome v.s. acc_num %s mapped to %s proteins' %
+                      acc_num, len(reactome_proteins))
+    log.info('Cross-linked %s proteins from reactome v.s. Uniprot' % len(reactome_proteins))
+    return reactome_proteins
 
 
-def manage_acnums(acnum, Acnum2RProts):
+def manage_acc_nums(acc_num, acc_num_2_reactome_proteins):
     """
-    implements an accelerated dict-assisted buffering on retrieval of relations between accession numbers and uniprot IDs
+    implements an accelerated dict-assisted buffering on retrieval of relations between accession
+     numbers and uniprot IDs
 
-    :param acnum: accession number
-    :param Acnum2RProts: Buffering dictionary mapping accession numbers to protein IDs
+    :param acc_num: accession number
+    :param acc_num_2_reactome_proteins: Dictionary mapping accession numbers to protein IDs
     :return: protein list if acession number has been buffered, nothing otherwise
     """
-    if acnum not in Acnum2RProts.keys():
+    if acc_num not in acc_num_2_reactome_proteins.keys():
         return []
-    if acnum in Acnum2RProts.keys():
-        return Acnum2RProts[acnum]
+    if acc_num in acc_num_2_reactome_proteins.keys():
+        return acc_num_2_reactome_proteins[acc_num]
 
 
-def link_annotation(CH_PROT_ID, p_type, p_load):
+def link_annotation(uniprot_id, p_type, p_load):
     """
-    Links a uniprote node to an annotation node
+    Links a uniprot node to an annotation node
 
-    :param CH_PROT_ID: swissprot ID
+    :param uniprot_id: uniprot/swissprot ID
     :param p_type: type of the annotation
     :param p_load: content of the annotation
     """
-    prot_node = Uniprot_memoization_dict[CH_PROT_ID]
-    annot_node = DatabaseGraph.AnnotNode.create(ptype=p_type, payload=p_load)
-    DatabaseGraph.is_annotated.create(prot_node, annot_node)
+    prot_node = Uniprot_memoization_dict[uniprot_id]
+    annotation_node = DatabaseGraph.AnnotNode.create(ptype=p_type, payload=p_load)
+    DatabaseGraph.is_annotated.create(prot_node, annotation_node)
 
 
-def import_UNIPROTS():
+def insert_uniprot_annotations(swiss_prot_id, data_container):
+    """
+    Inserts all the annotations for a single swiss_prot_id contained in a supplied container
+
+    :param swiss_prot_id:
+    :param data_container:
+    :return:
+    """
+    link_annotation(swiss_prot_id, 'UNIPROT_Name',
+                    data_container['Names']['Full'])
+
+    for acc_num in data_container['Acnum']:
+        link_annotation(swiss_prot_id, 'UNIPROT_Accnum', acc_num)
+
+    for name in data_container['Names']['AltNames']:
+        link_annotation(swiss_prot_id, 'UNIPROT_Name', name.upper())
+
+    for name in data_container['GeneRefs']['Names']:
+        link_annotation(swiss_prot_id, 'UNIPROT_GeneName', name.upper())
+
+    for name in data_container['GeneRefs']['OrderedLocusNames']:
+        link_annotation(swiss_prot_id, 'UNIPROT_GeneOL', name.upper())
+
+    for name in data_container['GeneRefs']['ORFNames']:
+        link_annotation(swiss_prot_id, 'UNIPROT_GeneORF', name.upper())
+
+    for name in set(data_container['Ensembl']):
+        link_annotation(swiss_prot_id, 'UNIPROT_Ensembl', name.upper())
+
+    for dico in data_container['EMBL']:
+        link_annotation(
+            swiss_prot_id,
+            'UNIPROT_EMBL_AC|%s|%s' % (dico['status'], dico['type']),
+            dico['Accession'].upper())
+        link_annotation(
+            swiss_prot_id,
+            'UNIPROT_EMBL_ID||%s|%s' % (dico['status'], dico['type']),
+            dico['ID'].upper())
+
+    for name in data_container['PDB']:
+        link_annotation(swiss_prot_id, 'UNIPROT_PDB', name.upper())
+
+
+def import_uniprots(uniprot, reactome_acnum_bindings):
     """
     Imports the whole parsed uniprot dictionary from the utils.uniprot parser into the database
+
+    :param uniprot:
+    :param reactome_acnum_bindings:
     """
-    Uniprot = UniProtParser(conf.up_tax_ids).parse_uniprot(conf.UNIPROT_source)
-    Acnums2RProts = getExistingAcnums()
-    i = 0
-    j = 0
-    Acnum_key_no = len(Acnums2RProts.keys()) / 100.
-    UP_key_no = len(Uniprot.keys()) / 100.
-    for k, CH_PROT_ID in enumerate(Uniprot.keys()):
-        set1 = set(Uniprot[CH_PROT_ID]['Acnum'])
-        set2 = set(Acnums2RProts.keys())
+
+    cross_links = 0
+    is_same_links_no = 0
+    acc_nums_no = len(reactome_acnum_bindings.keys()) / 100.
+    up_no = len(uniprot.keys()) / 100.
+
+    for sp_id_num, swiss_prot_id, data_container in enumerate(uniprot.iteritems()):
+        set1 = set(data_container['Acnum'])
+        set2 = set(reactome_acnum_bindings.keys())
         # Create uniprot terms
-        primary = DatabaseGraph.UNIPORT.create(
-            ID=CH_PROT_ID,
-            displayName=Uniprot[CH_PROT_ID]['Names']['Full'],
+        uniprot_node = DatabaseGraph.UNIPORT.create(
+            ID=swiss_prot_id,
+            displayName=data_container['Names']['Full'],
             main_connex=False)
-        print CH_PROT_ID, primary
-        # check inclusion in Reactome
-        # TODO: if all explodes on the next import, check the line below and
-        # revert the import behavior of Uniprot
+        log.debug('uniprot %s created @ %s' % (swiss_prot_id, uniprot_node))
+
         if not set1.isdisjoint(set2):
             log.debug(
                 'Uniprot %s intersects Reactome on the following acnums: %s' %
-                (str(CH_PROT_ID), str(set1)))
-            i += len(set1)
-            primary.involved = True
-        # TODO: if all explodes on the next import, check the line above and
-        # revert the import behavior of Uniprot
-        advance_1 = i / Acnum_key_no
-        advance_2 = k / UP_key_no
+                (str(swiss_prot_id), str(set1)))
+            cross_links += len(set1)
+            uniprot_node.involved = True
+
         log.debug(
             'loading UNIPROT: Acnums cross-linked - %.2f %% ; Total loaded: - %.2f %%' %
-            (advance_1, advance_2))
+            (cross_links / acc_nums_no, sp_id_num / up_no))
+
         # Add the newly created uniprot to the buffer
-        Uniprot_memoization_dict[CH_PROT_ID] = primary
+        Uniprot_memoization_dict[swiss_prot_id] = uniprot_node
+
         # Insert references to GOs
-        for GO_Term in Uniprot[CH_PROT_ID]['GO']:
+        for GO_Term in data_container['GO']:
             if GO_Term in GO_term_memoization_dict.keys():
-                secondary = GO_term_memoization_dict[GO_Term]
-                DatabaseGraph.is_go_annotation.create(primary, secondary)
-        # Find intersection between logged acnums and acnums pointed out by the
-        # Reactome.org. Create a direct bridge between a reactome ID and a
-        # SWISSPROT ID
-        for acnum in Uniprot[CH_PROT_ID]['Acnum']:
-            proteins = manage_acnums(acnum, Acnums2RProts)
+                linked_go_term = GO_term_memoization_dict[GO_Term]
+                DatabaseGraph.is_go_annotation.create(uniprot_node, linked_go_term)
+
+        for acnum in data_container['Acnum']:
+            proteins = manage_acc_nums(acnum, reactome_acnum_bindings)
             if proteins is not []:
                 for prot in proteins:
                     secondary = prot
-                    DatabaseGraph.is_same.create(primary, secondary)
-                    j += 1
-        for acc_num in Uniprot[CH_PROT_ID][
-                'Acnum']:  # Already linked via reactome, but with a different identifier
-            link_annotation(CH_PROT_ID, 'UNIPROT_Accnum', acc_num)
-        link_annotation(
-            CH_PROT_ID,
-            'UNIPROT_Name',
-            Uniprot[CH_PROT_ID]['Names']['Full'])
-        for name in Uniprot[CH_PROT_ID]['Names']['AltNames']:
-            link_annotation(CH_PROT_ID, 'UNIPROT_Name', name.upper())
+                    DatabaseGraph.is_same.create(uniprot_node, secondary)
+                    is_same_links_no += 1
 
-        for name in Uniprot[CH_PROT_ID]['GeneRefs']['Names']:
-            link_annotation(CH_PROT_ID, 'UNIPROT_GeneName', name.upper())
-        for name in Uniprot[CH_PROT_ID]['GeneRefs']['OrderedLocusNames']:
-            link_annotation(CH_PROT_ID, 'UNIPROT_GeneOL', name.upper())
-        for name in Uniprot[CH_PROT_ID]['GeneRefs']['ORFNames']:
-            link_annotation(CH_PROT_ID, 'UNIPROT_GeneORF', name.upper())
-
-        for name in set(Uniprot[CH_PROT_ID]['Ensembl']):
-            link_annotation(CH_PROT_ID, 'UNIPROT_Ensembl', name.upper())
-
-        for dico in Uniprot[CH_PROT_ID]['EMBL']:
-            link_annotation(
-                CH_PROT_ID,
-                'UNIPROT_EMBL_AC|' +
-                dico['status'] +
-                '|' +
-                dico['type'],
-                dico['Accession'].upper())
-            link_annotation(
-                CH_PROT_ID,
-                'UNIPROT_EMBL_ID|' +
-                dico['status'] +
-                '|' +
-                dico['type'],
-                dico['ID'].upper())
-
-        for name in Uniprot[CH_PROT_ID]['PDB']:
-            link_annotation(CH_PROT_ID, 'UNIPROT_PDB', name.upper())
+        insert_uniprot_annotations(swiss_prot_id, data_container)
 
 
-def getGOs():
+def memoize_go_terms():
     """
-    re-loads GO
+    loads go terms from the
     """
-    print 'recovering GO terms'
-    log.debug('starting GO load')
-    ObjectType = DatabaseGraph.GOTerm
-    for elt in ObjectType.get_all():
-        ID = str(elt).split('/')[-1][:-1]
-        primary = ObjectType.get(ID)
-        GO_term_memoization_dict[primary.ID] = primary
-    log.debug('GO Loaded')
+    get_meta(DatabaseGraph.GOTerm, GO_term_memoization_dict)
 
 
-def getUniprots():
+def memoize_uniprots():
     """
     Pre-loads uniprots
-
     """
-    print 'recovering UNIPROTs'
-    log.debug('starting UNIPROT load')
-    ObjectType = DatabaseGraph.UNIPORT
-    for elt in ObjectType.get_all():
-        CH_PROT_ID = elt.ID
-        ID = str(elt).split('/')[-1][:-1]
-        primary = ObjectType.get(ID)
-        Uniprot_memoization_dict[CH_PROT_ID] = primary
-    log.debug('UNIPROT Loaded')
+    get_meta(DatabaseGraph.UNIPORT, GO_term_memoization_dict)
 
 
 if __name__ == "__main__":
-    import_UNIPROTS()
+    _uniprot = UniProtParser(main_configs.up_tax_ids).parse_uniprot(main_configs.UNIPROT_source)
+    _reactome_acnum_bindings = pull_up_acc_nums_from_reactome()
+    import_uniprots(_uniprot, _reactome_acnum_bindings)

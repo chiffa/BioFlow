@@ -9,10 +9,7 @@ from BioFlow.internals_config import Leg_ID_Filter
 from BioFlow.neo4j_db.GraphDeclarator import DatabaseGraph
 from BioFlow.bio_db_parsers.reactomeParser import ReactomeParser
 
-# TODO: export logs location to the configs file
-# TODO: create a dict that is pickled into the reserve to remember the
-# forbidden IDs
-
+# TODO: refactor everything that uses memoization dictionary into a class
 memoization_dict = {}  # accelerated access pointer to the objects
 ForbiddenIDs = []
 

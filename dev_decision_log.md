@@ -47,7 +47,8 @@
  - In case we are calling time-consuming parsers from several location, we might want to insert 
  "singleton" module into the block, that performs all the parsings only once per program run.
  
- - to important functions that we need user or 
+ - In case of go/uniprot and reactome parsers, create wrapping objects, that would contain 
+ memoization dictionaries.
 
 
 ## Major refactoring suggestions:
