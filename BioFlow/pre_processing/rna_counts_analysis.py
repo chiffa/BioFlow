@@ -9,7 +9,7 @@ from pprint import PrettyPrinter
 import numpy as np
 from scipy.stats import t
 
-from BioFlow.utils.IO_Routines import dump_object
+from BioFlow.utils.io_Routines import dump_object
 from BioFlow.main_configs import RNA_source, Dumps
 from BioFlow.neo4j_db import db_io_routines
 

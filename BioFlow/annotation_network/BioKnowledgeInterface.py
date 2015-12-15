@@ -32,8 +32,8 @@ from BioFlow.algorithms_bank import conduction_routines as CR
 from BioFlow.main_configs import Dumps, Outputs, UP_rand_samp, bgList
 from BioFlow.molecular_network.InteractomeInterface import MatrixGetter
 from BioFlow.neo4j_db.GraphDeclarator import DatabaseGraph
-from BioFlow.utils.GDF_export import GDF_export_Interface
-from BioFlow.utils.IO_Routines import dump_object, undump_object
+from BioFlow.utils.gdfExportInterface import GdfExportInterface
+from BioFlow.utils.io_Routines import dump_object, undump_object
 
 
 def _characterise(objekt):
@@ -790,15 +790,15 @@ class GO_Interface(object):
                             str(self.binding_intesity),
                             '1']
 
-        GDF_exporter = GDF_export_Interface(
+        GDF_exporter = GdfExportInterface(
             target_fname=Outputs.GO_GDF_output,
             field_names=nodecharnames,
             field_types=nodechartypes,
             node_properties_dict=charDict,
-            mincurrent=0.01,
-            Idx2Label=self.inflated_idx2lbl,
-            Label2Idx=self.inflated_lbl2idx,
-            current_Matrix=self.current_accumulator)
+            min_current=0.01,
+            index_2_label=self.inflated_idx2lbl,
+            label_2_index=self.inflated_lbl2idx,
+            current_matrix=self.current_accumulator)
         GDF_exporter.write()
 
     def export_subsystem(self, UP_system, UP_subsystem):

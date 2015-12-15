@@ -24,8 +24,8 @@ from BioFlow.main_configs import Chromosome_source, Chromosome_file_filter
 from BioFlow.main_configs import edge_type_filters, Adjacency_Martix_Dict, Conductance_Matrix_Dict, Dumps, Outputs, Interactome_rand_samp
 from BioFlow.neo4j_db.GraphDeclarator import DatabaseGraph
 from BioFlow.neo4j_db.db_io_routines import reaction_participant_getter, expand_from_seed, erase_custom_fields
-from BioFlow.utils.GDF_export import GDF_export_Interface
-from BioFlow.utils.IO_Routines import write_to_csv, dump_object, undump_object
+from BioFlow.utils.gdfExportInterface import GdfExportInterface
+from BioFlow.utils.io_Routines import write_to_csv, dump_object, undump_object
 
 # Debug Log:
 #       Main connex set is 24k nodes, with 4331 UP links and 1051 Hint links
@@ -835,15 +835,15 @@ class MatrixGetter(object):
                                 str(self.Conductance_Matrix[i, i]),
                                 str(float(int(NodeID in self.analytic_Uniprots)))]
 
-        GDF_exporter = GDF_export_Interface(
+        GDF_exporter = GdfExportInterface(
             target_fname=Outputs.Interactome_GDF_output,
             field_names=nodecharnames,
             field_types=nodechartypes,
             node_properties_dict=charDict,
-            mincurrent=0.01,
-            Idx2Label=self.MatrixNumber2NodeID,
-            Label2Idx=self.NodeID2MatrixNumber,
-            current_Matrix=self.current_accumulator)
+            min_current=0.01,
+            index_2_label=self.MatrixNumber2NodeID,
+            label_2_index=self.NodeID2MatrixNumber,
+            current_matrix=self.current_accumulator)
         GDF_exporter.write()
 
     def export_subsystem(self, UP_system, UP_subsystem):

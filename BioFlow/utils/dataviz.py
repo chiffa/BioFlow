@@ -6,7 +6,7 @@ As a datavisualization routine, this is a little bit hard to unitttest. As such,
 excluded from the unittesting framework
 """
 from scipy.sparse import lil_matrix, triu
-from BioFlow.utils.Linalg_routines import normalize_laplacian
+from BioFlow.utils.linalg_routines import normalize_laplacian
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import histogram2d

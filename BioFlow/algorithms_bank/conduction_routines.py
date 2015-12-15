@@ -12,8 +12,8 @@ from scipy.sparse.linalg import eigsh
 # noinspection PyUnresolvedReferences
 from scikits.sparse.cholmod import cholesky
 from BioFlow.utils.log_behavior import logger as log
-from BioFlow.internals_config import fudge
-from BioFlow.utils.Linalg_routines import cluster_nodes, average_off_diag_in_sub_matrix, \
+from BioFlow.internal_configs import fudge
+from BioFlow.utils.linalg_routines import cluster_nodes, average_off_diag_in_sub_matrix, \
     average_interset_linkage, normalize_laplacian
 
 
@@ -76,20 +76,21 @@ def get_current_matrix(conductivity_laplacian, voltages):
 
     :return: matrix where M[i,j] = current intesity from i to j. Antisymmetric,
     if current i->j : coeff is positive, else coeff is negative.
-    :return: matrix where M[i,j] = current intesity from i to j. Triangular superior,
+    :return: matrix where M[i,j] = current intensity from i to j. Triangular superior,
     if current is from j to i, term is positive, otherwise it is negative.
     :rtype: scipy.sparse.lil_matrix
     """
     diag_voltages = lil_matrix(diags(voltages.T.tolist()[0], 0))
     corr_conductance_matrix = conductivity_laplacian - \
         lil_matrix(diags(conductivity_laplacian.diagonal(), 0))
-    currents = diag_voltages.dot(
-        corr_conductance_matrix) - corr_conductance_matrix.dot(diag_voltages)
+    currents = diag_voltages.dot(corr_conductance_matrix) - \
+        corr_conductance_matrix.dot(diag_voltages)
     return currents, triu(currents)
 
 
 def get_current_through_nodes(non_redundant_current_matrix):
     """
+    Recovers current flow through each node
 
     :param non_redundant_current_matrix: non-redundant (i.e. triangular superior) matrix of
     currents through a conduction system
@@ -99,12 +100,12 @@ def get_current_through_nodes(non_redundant_current_matrix):
     """
     poscurr = lil_matrix(non_redundant_current_matrix.shape)
     poscurr[
-        non_redundant_current_matrix > 0.0] = non_redundant_current_matrix[
-        non_redundant_current_matrix > 0.0]
+        non_redundant_current_matrix > 0.0] = \
+        non_redundant_current_matrix[non_redundant_current_matrix > 0.0]
     negcurr = lil_matrix(non_redundant_current_matrix.shape)
     negcurr[
-        non_redundant_current_matrix < 0.0] = non_redundant_current_matrix[
-        non_redundant_current_matrix < 0.0]
+        non_redundant_current_matrix < 0.0] = \
+        non_redundant_current_matrix[non_redundant_current_matrix < 0.0]
     s = np.array(poscurr.sum(axis=1).T - negcurr.sum(axis=0))
     r = np.array(poscurr.sum(axis=0) - negcurr.sum(axis=1).T)
     ret = copy(s)

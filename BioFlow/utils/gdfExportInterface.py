@@ -11,7 +11,7 @@ from BioFlow.utils.general_utils.high_level_os_io import mkdir_recursive
 # and filters that filter out the unwanted variables
 
 
-class GDF_export_Interface(object):
+class GdfExportInterface(object):
     """
     An interface allowing the export of the matrix relatioin object and node characteristics to a
     GDF format, compatible with visualization with appropriate tools.
@@ -20,9 +20,9 @@ class GDF_export_Interface(object):
     :param field_names: Names of different fields for the node description
     :param field_types: Types of different nodes for the node description
     :param node_properties_dict: dictionary mapping the node labels to outputs
-    :param mincurrent: minimal current below which we are not rendering the links anymore
-    :param Idx2Label: Mapping from the indexes curent matrix lines/columns to the node labels
-    :param current_Matrix: matrix of currents from which we wish to rendred the GDF
+    :param min_current: minimal current below which we are not rendering the links anymore
+    :param index_2_label: Mapping from the indexes curent matrix lines/columns to the node labels
+    :param current_matrix: matrix of currents from which we wish to rendred the GDF
     """
 
     Authorised_names = ['VARCHAR', 'DOUBLE', 'BOOLEAN']
@@ -33,19 +33,19 @@ class GDF_export_Interface(object):
             field_names,
             field_types,
             node_properties_dict,
-            mincurrent,
-            Idx2Label,
-            Label2Idx,
-            current_Matrix,
+            min_current,
+            index_2_label,
+            label_2_index,
+            current_matrix,
             directed=False):
         mkdir_recursive(target_fname)
         self.target_file = open(target_fname, 'w')
         self.field_types = field_types
         self.field_names = field_names
         self.node_properties = node_properties_dict
-        self.Idx2Label = Idx2Label
-        self.Label2Idx = Label2Idx
-        self.current_Matrix = lil_matrix(current_Matrix)
+        self.Idx2Label = index_2_label
+        self.Label2Idx = label_2_index
+        self.current_Matrix = lil_matrix(current_matrix)
         # matrix where M[i,j] = current intesitu from i to j. Triangular superior, if current is
         #  from j to i, current is negative
 
@@ -55,7 +55,7 @@ class GDF_export_Interface(object):
 
         # rebuilding a new current Matrix and creating a dict to map the relations from the
         # previous matrix into a new one.
-        self.mincurrent = mincurrent * \
+        self.mincurrent = min_current * \
             self.current_Matrix[self.current_Matrix.nonzero()].toarray().max()
         # minimal current for which we will be performing filtering out of the conductances and
         # nodes through which the traffic is below that limit

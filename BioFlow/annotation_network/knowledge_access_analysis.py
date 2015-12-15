@@ -18,8 +18,8 @@ from BioFlow.algorithms_bank.conduction_routines import perform_clustering
 from BioFlow.annotation_network.BioKnowledgeInterface import GO_Interface
 from BioFlow.main_configs import UP_rand_samp, Dumps, prename2, bgList
 from BioFlow.molecular_network.InteractomeInterface import MatrixGetter
-from BioFlow.utils.IO_Routines import undump_object
-from BioFlow.utils.Linalg_routines import analyze_eigenvects
+from BioFlow.utils.io_Routines import undump_object
+from BioFlow.utils.linalg_routines import analyze_eigenvects
 from BioFlow.utils.dataviz import kde_compute
 
 
