@@ -747,18 +747,20 @@ class MatrixGetter(object):
                 self.UP2voltage_and_circ = {}
 
         if sparse_samples:
-            current_accumulator = CR.sample_pairwise_flow(
+            current_accumulator = CR.sample_group_edge_current(
                 self.Conductance_Matrix,
                 [
                     self.NodeID2MatrixNumber[UP] for UP in self.analytic_Uniprots],
-                resamples=sparse_samples,
+                re_samples=sparse_samples,
                 cancellation=cancellation)
         else:
-            current_accumulator, UP_pair2voltage_current = CR.get_better_pairwise_flow(self.Conductance_Matrix,
-                                                                                       [self.NodeID2MatrixNumber[UP] for UP in self.analytic_Uniprots],
-                                                                                       cancellation=cancellation,
-                                                                                       memoized=memoized,
-                                                                                       memory_source=self.UP2voltage_and_circ)
+            current_accumulator, UP_pair2voltage_current =\
+                CR.group_edge_current_memoized(self.Conductance_Matrix,
+                                               [self.NodeID2MatrixNumber[UP] for UP in
+                                                      self.analytic_Uniprots],
+                                               cancellation=cancellation,
+                                               # memoized=memoized,
+                                                     memory_source=self.UP2voltage_and_circ)
             # self.UP2voltage_and_circ.update(UP_pair2voltage_current)
             self.UP2UP_voltages.update(
                 dict((key, val1) for key, (val1, val2) in UP_pair2voltage_current.iteritems()))

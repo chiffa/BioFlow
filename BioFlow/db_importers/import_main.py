@@ -14,7 +14,8 @@ from BioFlow.db_importers.biogrid_importer import cross_ref_bio_grid
 from BioFlow.db_importers.go_and_uniprot_importer import memoize_go_terms, import_gene_ontology, \
     import_uniprots, pull_up_acc_nums_from_reactome
 from BioFlow.neo4j_db.db_io_routines import recompute_forbidden_IDs, clear_all, run_diagnostics
-from BioFlow.internal_configs import Forbidden_verification_dict, full_dict
+from BioFlow.internal_configs import full_dict
+from BioFlow.neo4j_db.graph_content import Forbidden_verification_dict, full_dict
 
 
 # TODO: add the abundance import

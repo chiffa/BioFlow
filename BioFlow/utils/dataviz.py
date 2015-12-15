@@ -5,8 +5,8 @@ http://stackoverflow.com/questions/10439961/efficiently-create-a-density-plot-fo
 As a datavisualization routine, this is a little bit hard to unitttest. As such, it has been
 excluded from the unittesting framework
 """
-from scipy.sparse import lil_matrix, triu
-from BioFlow.utils.linalg_routines import normalize_laplacian
+# from scipy.sparse import lil_matrix, triu
+# from BioFlow.utils.linalg_routines import normalize_laplacian
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import histogram2d
@@ -110,19 +110,34 @@ def kde_compute(bi_array, bin_no=30, samples=10, show=True):
     return lambda x_: np.tanh(k(x_) * repeated_sample_correction)
 
 
-def view_laplacian_off_terms(non_normalized_laplacian):
-    """
-    Shows a log-10 histogram of distribution of off-diagonal terms
+# def view_laplacian_off_terms(non_normalized_laplacian):
+#     """
+#     Shows a log-10 histogram of distribution of off-diagonal terms
+#
+#     :param non_normalized_laplacian:
+#     :return:
+#     """
+#     # if we revive, the line below will have to module that will be revived
+#     normalized_laplacian = normalize_laplacian(non_normalized_laplacian)
+#     triangular_upper = lil_matrix(triu(normalized_laplacian))
+#     triangular_upper.setdiag(0)
+#     pre_arr = -triangular_upper[triangular_upper.nonzero()].toarray().flatten()
+#     arr = np.log10(pre_arr)
+#     plt.hist(arr, bins=100, log=True, histtype='step')
+#     plt.show()
 
-    :param non_normalized_laplacian:
+
+def render_2d_matrix(matrix, name):
+    """
+    Subroutine required by the rendering wrapper.
+
+    :param matrix:
+    :param name:
     :return:
     """
-    normalized_laplacian = normalize_laplacian(non_normalized_laplacian)
-    triangular_upper = lil_matrix(triu(normalized_laplacian))
-    triangular_upper.setdiag(0)
-    pre_arr = -triangular_upper[triangular_upper.nonzero()].toarray().flatten()
-    arr = np.log10(pre_arr)
-    plt.hist(arr, bins=100, log=True, histtype='step')
+    plt.title(name)
+    plt.imshow(matrix, interpolation='nearest')
+    plt.colorbar()
     plt.show()
 
 

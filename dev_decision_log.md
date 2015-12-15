@@ -7,6 +7,8 @@
  error
  
  - render the usage of analytical/background sets uniform throughout the system.
+ 
+ - change main logger to a configuration set run on a logger to be retrieved in every single module
 
 
 
@@ -55,7 +57,7 @@
     - Inner configs that has an effect on what is being computed
     - Inner configs that has only anything to do with the project structure and implementation
     
-
+ - remove the memoization of individual pairs during the flow withing the group computation
 
 ## Major refactoring suggestions:
 
@@ -105,6 +107,7 @@ Following the interaction with Wahid when I was explaining him what my methods w
  - collapse meta-types into a single type and use a type field to distinguish them
  
 ### Utils and general Utils:
+
 **Wrappers:**
 
  - debug wrapper that logs to the debug channel. In case we are performing a graphical debug, we 
@@ -112,7 +115,36 @@ Following the interaction with Wahid when I was explaining him what my methods w
  
  - visual debugger for the matrix operations that allows to specify what input matrixes we would 
  like to inspect and what output matrixes we would like to inspect (by index)
+ 
+### Information flow computation:
 
+**Flow with ponderation**
+
+ - transform the computation to allow for different amount of information to be assigned to 
+ different nodes. 
+ 
+ - as a rule of thumb, the main computation core does not change, but the rules of normalization 
+ change. 
+ 
+ - FLOW_1-2 IMPORTANCE = NODE_1_IMPORTANCE/TOTAL_IMPORTANCE*NODE_2_IMPORTANCE/TOTAL_IMPORTANCE
+                       = NODE_1_IMPORTANCE*NODE_2_IMPORTANCE/TOTAL_IMPORTANCE**2
+ - FLOW_STACK =  SUM OF FLOW_I_J_IMPORTANCE*FLOW(I, J)
+
+
+**Flow with signs**
+
+ - calculate potentials separately, then perform a summation of potentials. Once potentials have 
+ been summed, calculate the information flow. This however does not reflect much presentation
+ 
+ - An alternative is to implement a pressure propagation with sign inversion to account for 
+ positive/negative relations. Even though technically relying on the same Laplacian, we will need
+ to re-implement routines computing the regulations:
+    
+     - We need to separate reliability flow from the sign propagation flow
+     - We would need to enforce the rules that would enforce sign propagation only one way: down
+ 
+ - All in all, we are switching to temperature diffusion on a laplacian network. With respect to 
+ that, we need a "diffusion" module and a separate description of the method how to use it.
 
 
 ## Add additional Sources/Dimensions

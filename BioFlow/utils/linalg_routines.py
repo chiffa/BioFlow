@@ -12,6 +12,7 @@ from sklearn.cluster import spectral_clustering
 
 from BioFlow.utils.general_utils.useful_wrappers import time_it_wrapper
 from BioFlow.utils.log_behavior import logger
+from BioFlow.utils.dataviz import render_2d_matrix
 
 
 @time_it_wrapper
@@ -228,16 +229,13 @@ def cluster_nodes(dist_laplacian, clusters=3, show=False):
     norm_laplacian.setdiag(0)
     norm_laplacian = -norm_laplacian
     if show:
-        plt.imshow(
-            norm_laplacian.toarray(),
-            cmap='jet',
-            interpolation="nearest")
-        plt.colorbar()
-        plt.show()
+        render_2d_matrix(norm_laplacian.toarray(), "Node clustering normalized laplacian")
+
     labels = spectral_clustering(
         norm_laplacian,
         n_clusters=clusters,
         eigen_solver='arpack')
+
     return np.reshape(labels, (dist_laplacian.shape[0], 1))
 
 

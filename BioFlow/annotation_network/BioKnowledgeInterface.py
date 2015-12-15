@@ -704,7 +704,7 @@ class GO_Interface(object):
             pre_reach = self.UP2GO_Reachable_nodes[
                 UP1] + self.UP2GO_Reachable_nodes[UP2] + [UP1] + [UP2]
             reach = [self.inflated_lbl2idx[label] for label in pre_reach]
-            current_upper, voltage_diff = CR.get_current_with_reach_limitations(
+            current_upper, voltage_diff = CR.group_edge_current_with_limitations(
                 inflated_laplacian=self.inflated_Laplacian, idx_pair=(
                     Idx1, Idx2), reach_limiter = reach)
             self.current_accumulator = self.current_accumulator + \
