@@ -10,6 +10,7 @@ from scipy.sparse import csc_matrix, diags, triu, lil_matrix  # TODO: can we fac
 from scipy.sparse.linalg import eigsh
 # noinspection PyUnresolvedReferences
 from scikits.sparse.cholmod import cholesky
+import warnings
 from BioFlow.utils.log_behavior import logger as log
 from BioFlow.utils.dataviz import render_2d_matrix
 from BioFlow.internal_configs import fudge
@@ -30,9 +31,14 @@ def sparse_abs(sparse_matrix):
     :param sparse_matrix: sparse matrix for which we want to recover the absolute.
     :return: absolute of that matrix
     """
-    sparse_matrix = csc_matrix(sparse_matrix)
-    sign = sparse_matrix.sign()
-    return sparse_matrix.multiply(sign)
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", "Changing the sparsity structure")
+
+        sparse_matrix = csc_matrix(sparse_matrix)
+        sign = sparse_matrix.sign()
+        ret_mat = sparse_matrix.multiply(sign)
+
+    return ret_mat
 
 
 def get_potentials_from_solver(laplacian_solver, io_array):

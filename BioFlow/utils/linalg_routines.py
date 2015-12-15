@@ -9,10 +9,13 @@ import numpy as np
 from scipy.sparse import lil_matrix, triu
 from scipy.sparse.linalg import eigsh
 from sklearn.cluster import spectral_clustering
+import warnings
 
 from BioFlow.utils.general_utils.useful_wrappers import time_it_wrapper
 from BioFlow.utils.log_behavior import logger
 from BioFlow.utils.dataviz import render_2d_matrix
+
+warnings.filterwarnings("ignore", message="Changing the sparsity structure")
 
 
 @time_it_wrapper

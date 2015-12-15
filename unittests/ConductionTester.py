@@ -2,6 +2,7 @@ import os
 import unittest
 import numpy as np
 from scipy.sparse import lil_matrix, csc_matrix
+import warnings
 from BioFlow.algorithms_bank import conduction_routines as cr
 
 
@@ -11,13 +12,14 @@ class ConductionRoutinesTester(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.test_laplacian = csc_matrix(np.zeros((4, 4)))
-        cls.test_laplacian.setdiag([1, 2, 3, 0])
-        cls.test_laplacian[1, 2] = -2
-        cls.test_laplacian[2, 1] = -2
-        cls.test_laplacian[0, 2] = -1
-        cls.test_laplacian[2, 0] = -1
-        print cls.test_laplacian.toarray()
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", "Changing the sparsity structure")
+            cls.test_laplacian = csc_matrix(np.zeros((4, 4)))
+            cls.test_laplacian.setdiag([1, 2, 3, 0])
+            cls.test_laplacian[1, 2] = -2
+            cls.test_laplacian[2, 1] = -2
+            cls.test_laplacian[0, 2] = -1
+            cls.test_laplacian[2, 0] = -1
 
     def test_sparse_abs(self):
         ref = np.abs(self.test_laplacian.toarray())

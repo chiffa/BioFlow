@@ -5,7 +5,7 @@ import os
 import unittest
 import numpy as np
 from itertools import izip
-
+import warnings
 from BioFlow.utils import linalg_routines
 from BioFlow.utils import gdfExportInterface
 from BioFlow.utils.general_utils import high_level_os_io
@@ -31,12 +31,14 @@ class LinalgRoutinesTester(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.test_lapl = linalg_routines.lil_matrix(np.zeros((4, 4)))
-        cls.test_lapl.setdiag([1, 2, 3, 0])
-        cls.test_lapl[1, 2] = -2
-        cls.test_lapl[2, 1] = -2
-        cls.test_lapl[0, 2] = -1
-        cls.test_lapl[2, 0] = -1
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", "Changing the sparsity structure")
+            cls.test_lapl = linalg_routines.lil_matrix(np.zeros((4, 4)))
+            cls.test_lapl.setdiag([1, 2, 3, 0])
+            cls.test_lapl[1, 2] = -2
+            cls.test_lapl[2, 1] = -2
+            cls.test_lapl[0, 2] = -1
+            cls.test_lapl[2, 0] = -1
 
     def test_normalization(self):
         norm_lapl = linalg_routines.normalize_laplacian(self.test_lapl).toarray()
