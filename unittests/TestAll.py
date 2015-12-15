@@ -19,8 +19,9 @@ class HooksConfigTest(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    my_list = [TestRnaCountsProcessor.__doc__, TestLogs.__doc__, GdfExportTester.__doc__,
-              LinalgRoutinesTester.__doc__, SanerFilesystemTester.__doc__, GoParserTester.__doc__,
-              UniprotParserTester.__doc__, ReactomeParseTester.__doc__,
-               ConductionRoutinesTester.__doc__]
+    my_list = [
+        TestRnaCountsProcessor.__doc__, TestLogs.__doc__, GdfExportTester.__doc__,
+        LinalgRoutinesTester.__doc__, SanerFilesystemTester.__doc__, GoParserTester.__doc__,
+        UniprotParserTester.__doc__, ReactomeParseTester.__doc__,
+        ConductionRoutinesTester.__doc__]
     unittest.main()

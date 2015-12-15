@@ -1,6 +1,6 @@
 from BioFlow.neo4j_db.GraphDeclarator import DatabaseGraph
 
-Forbidden_verification_dict = {
+forbidden_verification_dict = {
     'Small Molecule': DatabaseGraph.SmallMolecule,
     'Small Molecule Collection': DatabaseGraph.SmallMolecule_Collection,
     'Physical Entity': DatabaseGraph.PhysicalEntity,
