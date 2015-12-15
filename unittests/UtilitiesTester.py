@@ -101,7 +101,6 @@ class GdfExportTester(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        print cls.test_location
         wipe_dir(cls.test_location)
 
     def test_GDF_export(self):

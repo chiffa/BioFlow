@@ -10,6 +10,7 @@ import numpy as np
 from scipy.stats import t
 
 from BioFlow.utils.io_Routines import dump_object
+from BioFlow.utils.log_behavior import logger as log
 from BioFlow.main_configs import RNA_source, Dumps
 from BioFlow.neo4j_db import db_io_routines
 
@@ -40,7 +41,7 @@ def load_rna_counts_table(rna_source, experiments_to_load):
     uxon_lengths = []
     table = []
 
-    print 'loading RNA counts table from %s' % rna_source
+    log.info('loading RNA counts table from %s', rna_source)
     with open(rna_source, 'rb') as source_file:
         rdr = reader(source_file, 'excel-tab')
         rdr.next()  # skipping the headers

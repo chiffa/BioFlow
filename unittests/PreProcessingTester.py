@@ -2,8 +2,10 @@
 Tests the pre-processing module
 """
 import os
+os.environ['UNITTESTING'] = 'True'
 import unittest
 import numpy as np
+
 from BioFlow.pre_processing import rna_counts_analysis as RCP
 
 
@@ -53,8 +55,10 @@ class TestRnaCountsProcessor(unittest.TestCase):
     def test_suite(self):
         exp_groups = [[0, 1, 2], [3, 4, 5]]
         test_groups_to_compare = [[0, 1]]
-        print RCP.run_analysis_suite(self.counts_ref, 6, exp_groups,
-                                     test_groups_to_compare, 5, 0.3)
+        comp_val = RCP.run_analysis_suite(self.counts_ref, 6, exp_groups,
+                                     test_groups_to_compare, 5, 0.3)[0]
+        ref_val = np.array([1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0]).astype(np.bool_)
+        self.assertItemsEqual(comp_val, ref_val)
 
 if __name__ == "__main__":
     unittest.main()
