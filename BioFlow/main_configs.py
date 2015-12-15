@@ -6,9 +6,9 @@ import pickle
 from os import path, makedirs
 from pprint import PrettyPrinter
 from pymongo import MongoClient
-from BioFlow.internals_config import *
+from BioFlow.internal_configs import *
 from BioFlow.Configs_manager import parse_configs, conf_file_path_flattener
-from BioFlow.utils.general_utils import high_level_os_io as SF
+from BioFlow.utils.general_utils import high_level_os_io as hl_os_io
 
 Servers, Options, Sources, Predictions = parse_configs()
 
@@ -54,7 +54,7 @@ class Dumps(object):
     """
     prefix = path.join(path.abspath(
         path.join(path.dirname(__file__), os.pardir)), 'dumps')
-    SF.mkdir_recursive(prefix)
+    hl_os_io.mkdir_recursive(prefix)
 
     prefix_2 = Sources['INTERNAL']['dumpprefix']
     postfix = '.dump'
@@ -99,7 +99,7 @@ class Outputs(object):
     """
     prefix = path.join(path.abspath(
         path.join(path.dirname(__file__), os.pardir)), 'outputs')
-    SF.mkdir_recursive(prefix)
+    hl_os_io.mkdir_recursive(prefix)
 
     GO_GDF_output = prefix + '/GO_Analysis_output.gdf'
     Interactome_GDF_output = prefix + '/Interactome_Analysis_output.gdf'

@@ -20,7 +20,7 @@ Uniprot = { SWISSPROT_ID:{
 """
 import copy
 from BioFlow.utils.log_behavior import logger
-from BioFlow.internals_config import interesting_lines, interesting_xrefs,\
+from BioFlow.internal_configs import interesting_lines, interesting_xrefs,\
     names_to_ignore, starting_dict
 
 

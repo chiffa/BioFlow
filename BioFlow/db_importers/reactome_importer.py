@@ -5,7 +5,7 @@ Created on Jun 15, 2013
 import pickle
 from BioFlow.utils.log_behavior import logger as log
 from BioFlow.main_configs import Dumps, ReactomeBioPax
-from BioFlow.internals_config import Leg_ID_Filter
+from BioFlow.internal_configs import Leg_ID_Filter
 from BioFlow.neo4j_db.GraphDeclarator import DatabaseGraph
 from BioFlow.bio_db_parsers.reactomeParser import ReactomeParser
 
