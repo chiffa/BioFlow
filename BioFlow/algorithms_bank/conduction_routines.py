@@ -7,7 +7,6 @@ from copy import copy
 import numpy as np
 from itertools import combinations, repeat
 from scipy.sparse import csc_matrix, diags, triu, lil_matrix
-# TODO: can we factor out lil_matrix to reduce transformation overhead?
 from scipy.sparse.linalg import eigsh
 # noinspection PyUnresolvedReferences
 from scikits.sparse.cholmod import cholesky
@@ -42,17 +41,6 @@ def sparse_abs(sparse_matrix):
     return ret_mat
 
 
-def get_potentials_from_solver(laplacian_solver, io_array):
-    """
-    Solver wrapper for code clarity and acceleration where a solver can be used
-
-    :param laplacian_solver: laplacian system solver
-    :param io_array: array of currents for each node in system
-    :return: potential in each node
-    """
-    return laplacian_solver(io_array)
-
-
 def build_sink_source_current_array(io_index_pair, shape):
     """
     converts index pair to a solver-compatible array
@@ -78,7 +66,7 @@ def get_potentials(conductivity_laplacian, io_index_pair):
     solver = cholesky(csc_matrix(conductivity_laplacian), fudge)
     io_array = build_sink_source_current_array(
         io_index_pair, conductivity_laplacian.shape)
-    return get_potentials_from_solver(solver, io_array)
+    return solver(io_array)
 
 
 def get_current_matrix(conductivity_laplacian, node_potentials):
@@ -176,7 +164,7 @@ def edge_current_iteration(conductivity_laplacian, index_pair,
     i, j = index_pair
     io_array = build_sink_source_current_array((i, j), conductivity_laplacian.shape)
     if solver:
-        voltages = get_potentials_from_solver(solver, io_array)
+        voltages = solver(io_array)
     else:
         voltages = get_potentials(conductivity_laplacian, (i, j))
     _, current_upper = get_current_matrix(conductivity_laplacian, voltages)
@@ -290,34 +278,6 @@ def group_edge_current_memoized(conductivity_laplacian, index_list,
                                cancellation=cancellation,
                                memory_source=memory_source,
                                memoization=True)
-
-
-# def sample_group_edge_current(conductivity_laplacian, index_list, re_samples,
-#                               cancellation=False):
-#
-#     current_accumulator = lil_matrix(conductivity_laplacian.shape)
-#     solver = cholesky(csc_matrix(conductivity_laplacian), fudge)
-#     list_of_pairs = []
-#
-#     for _ in repeat(None, re_samples):
-#         idx_list_c = copy(index_list)
-#         random.shuffle(idx_list_c)
-#         list_of_pairs += zip(idx_list_c[:len(idx_list_c) / 2],
-#                              idx_list_c[len(idx_list_c) / 2:])
-#
-#     for i, j in list_of_pairs:
-#         io_array = build_sink_source_current_array(
-#             (i, j), conductivity_laplacian.shape)
-#         voltages = get_potentials_from_solver(solver, io_array)
-#         currents_full, current_upper = get_current_matrix(
-#             conductivity_laplacian, voltages)
-#         current_accumulator += sparse_abs(current_upper)
-#
-#     if cancellation:
-#         ln = len(index_list)
-#         current_accumulator /= (ln / 2 * re_samples)
-#
-#     return current_accumulator
 
 
 def sample_group_edge_current(conductivity_laplacian, index_list, re_samples,
