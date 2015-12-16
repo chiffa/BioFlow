@@ -6,7 +6,8 @@ import random
 from copy import copy
 import numpy as np
 from itertools import combinations, repeat
-from scipy.sparse import csc_matrix, diags, triu, lil_matrix  # TODO: can we factor out lil_matrix?
+from scipy.sparse import csc_matrix, diags, triu, lil_matrix
+# TODO: can we factor out lil_matrix to reduce transformation overhead?
 from scipy.sparse.linalg import eigsh
 # noinspection PyUnresolvedReferences
 from scikits.sparse.cholmod import cholesky
@@ -43,7 +44,7 @@ def sparse_abs(sparse_matrix):
 
 def get_potentials_from_solver(laplacian_solver, io_array):
     """
-    Solver wrapper for code clarity
+    Solver wrapper for code clarity and acceleration where a solver can be used
 
     :param laplacian_solver: laplacian system solver
     :param io_array: array of currents for each node in system
@@ -99,167 +100,30 @@ def get_current_matrix(conductivity_laplacian, node_potentials):
     return currents, triu(currents)
 
 
-def get_current_through_nodes(non_redundant_current_matrix):
+def get_current_through_nodes(triu_current_matrix):
     """
     Recovers current flowing through each node
 
-    :param non_redundant_current_matrix: non-redundant (i.e. triangular superior) matrix of
+    :param triu_current_matrix: non-redundant (i.e. triangular superior) matrix of
     currents through a conduction system
     :return : current through the individual nodes based on the current matrix as defined in
      the get_current_matrix module
     :rtype: numpy.array
     """
-    pos_curr = lil_matrix(non_redundant_current_matrix.shape)
+    pos_curr = lil_matrix(triu_current_matrix.shape)
     pos_curr[
-        non_redundant_current_matrix > 0.0] = \
-        non_redundant_current_matrix[non_redundant_current_matrix > 0.0]
-    neg_curr = lil_matrix(non_redundant_current_matrix.shape)
+        triu_current_matrix > 0.0] = \
+        triu_current_matrix[triu_current_matrix > 0.0]
+    neg_curr = lil_matrix(triu_current_matrix.shape)
     neg_curr[
-        non_redundant_current_matrix < 0.0] = \
-        non_redundant_current_matrix[non_redundant_current_matrix < 0.0]
+        triu_current_matrix < 0.0] = \
+        triu_current_matrix[triu_current_matrix < 0.0]
     s = np.array(pos_curr.sum(axis=1).T - neg_curr.sum(axis=0))
     r = np.array(pos_curr.sum(axis=0) - neg_curr.sum(axis=1).T)
     ret = copy(s)
     ret[r > s] = r[r > s]
     ret = list(ret.flatten())
     return ret
-
-# TODO: three methods below have a cloned core. They can be melted together.
-# generate a master-method whose particular instance will be called by the methods below.
-# Once conduction routines using methods else have been refactored, collapse these methods into one
-
-
-def group_edge_current(conductivity_laplacian, index_list,
-                       cancellation=False, potential_dominated=True):
-    """
-    Performs a pairwise computation and summation of the
-
-    :param conductivity_laplacian:  Laplacian representing the conductivity
-    :param index_list: list of the indexes acting as current sources/sinks
-    :param cancellation: if True, conductance would be normalized to number of sinks used
-    :param potential_dominated: if set to True, the computation is done by injecting constant
-    potential difference into the system, not a constant current.
-    :return: current matrix for the flow system; current through each node.
-    """
-    current_accumulator = lil_matrix(conductivity_laplacian.shape)
-    solver = cholesky(csc_matrix(conductivity_laplacian), fudge)
-
-    for counter, (i, j) in enumerate(combinations(index_list, 2)):
-        log.debug('getting pairwise flow %s out of %s', counter + 1, len(index_list) ** 2 / 2)
-        io_array = build_sink_source_current_array(
-            (i, j), conductivity_laplacian.shape)
-        voltages = get_potentials_from_solver(solver, io_array)
-        currents_full, current_upper = get_current_matrix(
-            conductivity_laplacian, voltages)
-
-        if potential_dominated:
-            potential_diff = abs(voltages[i, 0] - voltages[j, 0])
-            print potential_diff
-            current_upper = current_upper / potential_diff
-
-        current_accumulator += sparse_abs(current_upper)
-
-    if cancellation:
-        sinks_no = len(index_list)
-        current_accumulator /= (sinks_no * (sinks_no - 1) / 2)
-
-    return current_accumulator
-
-
-def group_edge_current_memoized(conductivity_laplacian, index_list,
-                                cancellation=True, memory_source=None):
-    """
-    Performs a pairwise computation and summation of the pairwise_flow
-
-    :param conductivity_laplacian: Laplacian representing the conductivity
-    :param index_list: list of the indexes acting as current sources/sinks
-    :param cancellation: if True, conductance would be normalized to number of sinks used
-    :param memory_source: dictionary of memoized tension and current flow through the circuit
-    :return: current matrix for the flow system, current through each node.
-    """
-    up_pair_2_voltage_current = {}
-    current_accumulator = lil_matrix(conductivity_laplacian.shape)
-    solver = cholesky(csc_matrix(conductivity_laplacian), fudge)
-
-    # this is teh main loop repeated elsewhere. It can be folded in to improve code
-    # controllability
-    for counter, (i, j) in enumerate(combinations(set(index_list), 2)):
-        log.debug('getting pairwise flow %s out of %s', counter + 1, len(index_list) ** 2 / 2)
-
-        # TODO: remove memoization of results: the overhead induced by storage does not justify
-        # retrieve from memoization dict if it is present
-        if memory_source:
-            potential_diff, current_upper = memory_source[tuple(sorted((i, j)))]
-
-        else:
-            io_array = build_sink_source_current_array(
-                (i, j), conductivity_laplacian.shape)
-            voltages = get_potentials_from_solver(solver, io_array)
-            _, current_upper = get_current_matrix(
-                conductivity_laplacian, voltages)
-
-            potential_diff = abs(voltages[i, 0] - voltages[j, 0])
-
-            # memoization: adds to the up_pair_2_voltage_current
-            up_pair_2_voltage_current[tuple(sorted((i, j)))] = \
-                (potential_diff, current_upper)  # TODO: normalize order with the reach-limiter
-
-        # normalization to the external tension
-        if potential_diff != 0:
-            current_upper = current_upper / potential_diff
-
-        # warn if potential difference is null or close to it
-        else:
-            log.warning('pairwise flow. On indexes %s %s potential difference is null. %s',
-                        i, j, 'Tension-normalization was aborted')
-
-        current_accumulator += sparse_abs(current_upper)
-
-    if cancellation:
-        ln = len(index_list)
-        current_accumulator /= (ln * (ln - 1) / 2)
-
-    return current_accumulator, up_pair_2_voltage_current
-
-
-def sample_group_edge_current(conductivity_laplacian, index_list, re_samples,
-                              cancellation=False):
-    """
-    Performs sampling of pairwise flow in a conductance system.
-
-    :param conductivity_laplacian: Laplacian representing the conductivity
-    :param index_list: list of the indexes acting as current sources/sinks
-    :param cancellation: if True, conductance would be normalized to number of sinks used
-    :param re_samples: number of times each element in idxlist will be sample.
-    A reasonable minimal is such that len(idxlist)*resamples < 20 000
-    :return: current matrix representing the flows from one node to the other. This
-    flow is absolute and does not respect the Kirchoff's laws. However, it can be used to
-    see the most important connections between the GO terms or Interactome and can be used to
-    compute the flow through the individual nodes.
-    """
-    current_accumulator = lil_matrix(conductivity_laplacian.shape)
-    solver = cholesky(csc_matrix(conductivity_laplacian), fudge)
-    list_of_pairs = []
-
-    for _ in repeat(None, re_samples):
-        idx_list_c = copy(index_list)
-        random.shuffle(idx_list_c)
-        list_of_pairs += zip(idx_list_c[:len(idx_list_c) / 2],
-                             idx_list_c[len(idx_list_c) / 2:])
-
-    for i, j in list_of_pairs:
-        io_array = build_sink_source_current_array(
-            (i, j), conductivity_laplacian.shape)
-        voltages = get_potentials_from_solver(solver, io_array)
-        currents_full, current_upper = get_current_matrix(
-            conductivity_laplacian, voltages)
-        current_accumulator += sparse_abs(current_upper)
-
-    if cancellation:
-        ln = len(index_list)
-        current_accumulator /= (ln / 2 * re_samples)
-
-    return current_accumulator
 
 
 def laplacian_reachable_filter(laplacian, reachable_indexes):
@@ -291,6 +155,193 @@ def laplacian_reachable_filter(laplacian, reachable_indexes):
     return re_laplacian
 
 
+def edge_current_iteration(conductivity_laplacian, index_pair,
+                           solver=None, reach_limiter=None):
+    """
+    Master edge current retriever
+
+    :param conductivity_laplacian:
+    :param solver:
+    :param index_pair:
+    :param reach_limiter:
+    :return: potential_difference, triu_current
+    """
+    if solver is None and reach_limiter is None:
+        log.warning('edge current computation could be accelerated by using a shared solver')
+
+    if reach_limiter:
+        conductivity_laplacian = laplacian_reachable_filter(conductivity_laplacian, reach_limiter)
+        solver = None
+
+    i, j = index_pair
+    io_array = build_sink_source_current_array((i, j), conductivity_laplacian.shape)
+    if solver:
+        voltages = get_potentials_from_solver(solver, io_array)
+    else:
+        voltages = get_potentials(conductivity_laplacian, (i, j))
+    _, current_upper = get_current_matrix(conductivity_laplacian, voltages)
+    potential_diff = abs(voltages[i, 0] - voltages[j, 0])
+
+    return potential_diff, current_upper
+
+
+def master_edge_current(conductivity_laplacian, index_list,
+                        cancellation=True, potential_dominated=True, sampling=False,
+                        sampling_depth=10, memory_source=None, memoization=None):
+    """
+    master method for all the required edge current calculations
+
+    :param conductivity_laplacian:
+    :param index_list:
+    :param cancellation:
+    :param potential_dominated:
+    :param sampling:
+    :param sampling_depth:
+    :param memory_source:
+    :param memoization:
+    :return:
+    """
+    # TODO: remove memoization in order to reduce overhead nad mongo database load
+
+    # generate index list in agreement with the sampling strategy
+    if sampling:
+        list_of_pairs = []
+        for _ in repeat(None, sampling_depth):
+            idx_list_c = copy(index_list)
+            random.shuffle(idx_list_c)
+            list_of_pairs += zip(idx_list_c[:len(idx_list_c) / 2],
+                                 idx_list_c[len(idx_list_c) / 2:])
+    else:
+        list_of_pairs = [(i, j) for i, j in combinations(set(index_list), 2)]
+
+    total_pairs = len(list_of_pairs)
+
+    up_pair_2_voltage_current = {}
+    current_accumulator = lil_matrix(conductivity_laplacian.shape)
+    solver = cholesky(csc_matrix(conductivity_laplacian), fudge)
+
+    # run the main loop on the list of indexes in agreement with the memoization strategy:
+    for counter, (i, j) in enumerate(list_of_pairs):
+        log.debug('getting pairwise flow %s out of %s', counter + 1, total_pairs)
+
+        if memory_source and tuple(sorted((i, j))) in memory_source.keys():
+            potential_diff, current_upper = memory_source[tuple(sorted((i, j)))]
+
+        else:
+            potential_diff, current_upper = \
+                edge_current_iteration(conductivity_laplacian, (i, j),
+                                       solver=solver)
+
+        if memoization:
+            up_pair_2_voltage_current[tuple(sorted((i, j)))] = \
+                (potential_diff, current_upper)
+
+        # normalize to potential, if needed
+        if potential_dominated:
+
+            if potential_diff != 0:
+                current_upper = current_upper / potential_diff
+
+            # warn if potential difference is null or close to it
+            else:
+                log.warning('pairwise flow. On indexes %s %s potential difference is null. %s',
+                            i, j, 'Tension-normalization was aborted')
+
+        current_accumulator += sparse_abs(current_upper)
+
+    if cancellation:
+        current_accumulator /= total_pairs
+
+    return current_accumulator, up_pair_2_voltage_current
+
+
+def group_edge_current(conductivity_laplacian, index_list,
+                       cancellation=False, potential_dominated=True):
+    """
+    Performs a pairwise computation and summation of the
+
+    :param conductivity_laplacian:  Laplacian representing the conductivity
+    :param index_list: list of the indexes acting as current sources/sinks
+    :param cancellation: if True, conductance would be normalized to number of sinks used
+    :param potential_dominated: if set to True, the computation is done by injecting constant
+    potential difference into the system, not a constant current.
+    :return: current matrix for the flow system; current through each node.
+    """
+    current_accumulator, _ = master_edge_current(
+        conductivity_laplacian, index_list,
+        cancellation=cancellation,
+        potential_dominated=potential_dominated)
+
+    return current_accumulator
+
+
+def group_edge_current_memoized(conductivity_laplacian, index_list,
+                                cancellation=True, memory_source=None):
+    """
+    Performs a pairwise computation and summation of the pairwise_flow
+
+    :param conductivity_laplacian: Laplacian representing the conductivity
+    :param index_list: list of the indexes acting as current sources/sinks
+    :param cancellation: if True, conductance would be normalized to number of sinks used
+    :param memory_source: dictionary of memoized tension and current flow through the circuit
+    :return: current matrix for the flow system, current through each node.
+    """
+    return master_edge_current(conductivity_laplacian, index_list,
+                               cancellation=cancellation,
+                               memory_source=memory_source,
+                               memoization=True)
+
+
+# def sample_group_edge_current(conductivity_laplacian, index_list, re_samples,
+#                               cancellation=False):
+#
+#     current_accumulator = lil_matrix(conductivity_laplacian.shape)
+#     solver = cholesky(csc_matrix(conductivity_laplacian), fudge)
+#     list_of_pairs = []
+#
+#     for _ in repeat(None, re_samples):
+#         idx_list_c = copy(index_list)
+#         random.shuffle(idx_list_c)
+#         list_of_pairs += zip(idx_list_c[:len(idx_list_c) / 2],
+#                              idx_list_c[len(idx_list_c) / 2:])
+#
+#     for i, j in list_of_pairs:
+#         io_array = build_sink_source_current_array(
+#             (i, j), conductivity_laplacian.shape)
+#         voltages = get_potentials_from_solver(solver, io_array)
+#         currents_full, current_upper = get_current_matrix(
+#             conductivity_laplacian, voltages)
+#         current_accumulator += sparse_abs(current_upper)
+#
+#     if cancellation:
+#         ln = len(index_list)
+#         current_accumulator /= (ln / 2 * re_samples)
+#
+#     return current_accumulator
+
+
+def sample_group_edge_current(conductivity_laplacian, index_list, re_samples,
+                              cancellation=False):
+    """
+    Performs sampling of pairwise flow in a conductance system.
+
+    :param conductivity_laplacian: Laplacian representing the conductivity
+    :param index_list: list of the indexes acting as current sources/sinks
+    :param cancellation: if True, conductance would be normalized to number of sinks used
+    :param re_samples: number of times each element in idxlist will be sample.
+    A reasonable minimal is such that len(idxlist)*resamples < 20 000
+    :return: current matrix representing the flows from one node to the other. This
+    flow is absolute and does not respect the Kirchoff's laws. However, it can be used to
+    see the most important connections between the GO terms or Interactome and can be used to
+    compute the flow through the individual nodes.
+    """
+
+    current_accumulator, _ = master_edge_current(conductivity_laplacian, index_list,
+                                                 cancellation=cancellation,
+                                                 sampling=True,
+                                                 sampling_depth=re_samples)
+
+
 def group_edge_current_with_limitations(inflated_laplacian, idx_pair, reach_limiter):
     """
     Recovers the current passing through a conduction system while enforcing the limitation
@@ -302,15 +353,10 @@ def group_edge_current_with_limitations(inflated_laplacian, idx_pair, reach_limi
     :param reach_limiter: list of indexes to which we want to limit the reach
     :return:
     """
-    # TODO: move this into a co-factored element with getting current without reach limitations
-    reduced_laplacian = laplacian_reachable_filter(
-        inflated_laplacian, reach_limiter)
-    voltages = get_potentials(reduced_laplacian, (idx_pair[0], idx_pair[1]))
-    _, current_upper = get_current_matrix(reduced_laplacian, voltages)
-    potential_diff = abs(voltages[idx_pair[0], 0] - voltages[idx_pair[1], 0])
-    current_upper = current_upper / potential_diff
+    inverter = edge_current_iteration(inflated_laplacian, idx_pair,
+                                      reach_limiter=reach_limiter)
 
-    return current_upper, potential_diff  # TODO: sort out the order with the other function
+    return inverter[1]/inverter[0], inverter[0]
 
 
 def perform_clustering(inter_node_tension, cluster_number, show=True):
