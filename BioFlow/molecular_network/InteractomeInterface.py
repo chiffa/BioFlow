@@ -2,7 +2,6 @@
 This module contains all the routines that are respojnsible for pulling
 the matrixes out of the neo4j graph and processing them.
 """
-
 import hashlib
 import itertools
 import json
@@ -19,11 +18,13 @@ from scipy.sparse import lil_matrix
 from scipy.sparse.csgraph import connected_components
 from scipy.sparse.linalg import eigsh
 
-from BioFlow.algorithms_bank import conduction_routines as CR
+from BioFlow.algorithms_bank import conduction_routines as cr
 from BioFlow.main_configs import Chromosome_source, Chromosome_file_filter
-from BioFlow.main_configs import edge_type_filters, Adjacency_Martix_Dict, Conductance_Matrix_Dict, Dumps, Outputs, Interactome_rand_samp
+from BioFlow.main_configs import edge_type_filters, Adjacency_Martix_Dict, \
+    Conductance_Matrix_Dict, Dumps, Outputs, Interactome_rand_samp
 from BioFlow.neo4j_db.GraphDeclarator import DatabaseGraph
-from BioFlow.neo4j_db.db_io_routines import expand_from_reaction, expand_from_seed, erase_custom_fields
+from BioFlow.neo4j_db.db_io_routines import expand_from_reaction, expand_from_seed, \
+    erase_custom_fields
 from BioFlow.utils.gdfExportInterface import GdfExportInterface
 from BioFlow.utils.io_Routines import write_to_csv, dump_object, undump_object
 
@@ -747,7 +748,7 @@ class MatrixGetter(object):
                 self.UP2voltage_and_circ = {}
 
         if sparse_samples:
-            current_accumulator = CR.sample_group_edge_current(
+            current_accumulator = cr.sample_group_edge_current(
                 self.Conductance_Matrix,
                 [
                     self.NodeID2MatrixNumber[UP] for UP in self.analytic_Uniprots],
@@ -755,7 +756,7 @@ class MatrixGetter(object):
                 cancellation=cancellation)
         else:
             current_accumulator, UP_pair2voltage_current =\
-                CR.group_edge_current_memoized(self.Conductance_Matrix,
+                cr.group_edge_current_memoized(self.Conductance_Matrix,
                                                [self.NodeID2MatrixNumber[UP] for UP in
                                                       self.analytic_Uniprots],
                                                cancellation=cancellation,
@@ -773,7 +774,7 @@ class MatrixGetter(object):
         if memoized:
             self.dump_memoized()
 
-        index_current = CR.get_current_through_nodes(self.current_accumulator)
+        index_current = cr.get_current_through_nodes(self.current_accumulator)
         print current_accumulator.shape
         self.node_current.update(
             dict(

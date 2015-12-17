@@ -1,14 +1,7 @@
 """
-:created:
-:@author: Andrei Kucharavy
-
 Contains all the tools necessary to map GO ontology and Pathway classification from the database to an Adjacency and
 Laplacian graph.
 """
-
-
-__author__ = 'ank'
-
 import hashlib
 import json
 import pickle
@@ -28,7 +21,7 @@ import numpy as np
 from scipy.sparse import lil_matrix
 from scipy.sparse.csgraph import shortest_path
 
-from BioFlow.algorithms_bank import conduction_routines as CR
+from BioFlow.algorithms_bank import conduction_routines as cr
 from BioFlow.main_configs import Dumps, Outputs, UP_rand_samp, background_set_bulbs_ids
 from BioFlow.molecular_network.InteractomeInterface import MatrixGetter
 from BioFlow.neo4j_db.GraphDeclarator import DatabaseGraph
@@ -695,8 +688,8 @@ class GO_Interface(object):
         for UP1, UP2 in iterator:
 
             if sourced:
-                self.current_accumulator = self.current_accumulator +\
-                    CR.sparse_abs(self.UP2circ_and_voltage[tuple(sorted((UP1, UP2)))][1])
+                self.current_accumulator = self.current_accumulator + \
+                                           cr.sparse_abs(self.UP2circ_and_voltage[tuple(sorted((UP1, UP2)))][1])
                 continue
 
             Idx1, Idx2 = (self.inflated_lbl2idx[
@@ -704,11 +697,11 @@ class GO_Interface(object):
             pre_reach = self.UP2GO_Reachable_nodes[
                 UP1] + self.UP2GO_Reachable_nodes[UP2] + [UP1] + [UP2]
             reach = [self.inflated_lbl2idx[label] for label in pre_reach]
-            current_upper, voltage_diff = CR.group_edge_current_with_limitations(
+            current_upper, voltage_diff = cr.group_edge_current_with_limitations(
                 inflated_laplacian=self.inflated_Laplacian, idx_pair=(
                     Idx1, Idx2), reach_limiter = reach)
             self.current_accumulator = self.current_accumulator + \
-                CR.sparse_abs(current_upper)
+                                       cr.sparse_abs(current_upper)
 
             self.UP2UP_voltages[(UP1, UP2)] = voltage_diff
 
@@ -727,7 +720,7 @@ class GO_Interface(object):
         if memoized:
             self.dump_memoized()
 
-        index_current = CR.get_current_through_nodes(self.current_accumulator)
+        index_current = cr.get_current_through_nodes(self.current_accumulator)
         self.node_current = dict(
             (self.inflated_idx2lbl[idx],
              val) for idx,
