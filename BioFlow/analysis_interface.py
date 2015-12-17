@@ -8,7 +8,7 @@ from BioFlow.molecular_network.interactome_analysis import auto_analyze as inter
 
 
 def analyze_interactome(source, background=None, depth=100, processors=2):
-    local_matrix = InteractomeInterface(Connexity_Aware=True, full_impact=True)
+    local_matrix = InteractomeInterface(main_connex_only=True, full_impact=True)
     local_matrix.full_rebuild()
     if background is not None:
         background = get_background(background)
@@ -18,7 +18,7 @@ def analyze_interactome(source, background=None, depth=100, processors=2):
 
 
 def analyze_annotome(source, background=None, depth=100, processors=2):
-    local_matrix = InteractomeInterface(Connexity_Aware=True, full_impact=True)
+    local_matrix = InteractomeInterface(main_connex_only=True, full_impact=True)
     local_matrix.full_rebuild()
     filtr = ['biological_process']
     if background is None:

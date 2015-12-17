@@ -87,11 +87,11 @@ def loadneo4j():
 @click.option('--annotmap', 'matrixtype', flag_value='annotome')
 def extractmatrix(matrixtype):
     if matrixtype == 'interactome':
-        local_matrix = InteractomeInterface(Connexity_Aware=True, full_impact=True)
+        local_matrix = InteractomeInterface(main_connex_only=True, full_impact=True)
         local_matrix.full_rebuild()
         print local_matrix.laplacian_matrix, local_matrix.matrix_index_2_bulbs_id
     if matrixtype == 'annotome':
-        local_matrix = InteractomeInterface(Connexity_Aware=True, full_impact=True)
+        local_matrix = InteractomeInterface(main_connex_only=True, full_impact=True)
         local_matrix.full_rebuild()
         filtr = ['biological_process']
         annot_matrix = AnnotomeInterface(filtr, local_matrix.all_uniprots_bulbs_id_list, (1, 1), True, 3)
@@ -115,14 +115,14 @@ def mapids(idlist):
 @click.argument('source') ##defaults
 def analyze(matrixtype, background, source, depth, processors,):
     if matrixtype == 'interactome':
-        local_matrix = InteractomeInterface(Connexity_Aware=True, full_impact=True)
+        local_matrix = InteractomeInterface(main_connex_only=True, full_impact=True)
         local_matrix.full_rebuild()
         if background is not None:
             background = get_background(background)
         source_set = get_background(source)  # TODO: rename this function and use only one of it everywhere
         interactome_analysis(source_set, depth, processors, background)
     elif matrixtype == 'annotmap':
-        local_matrix = InteractomeInterface(Connexity_Aware=True, full_impact=True)
+        local_matrix = InteractomeInterface(main_connex_only=True, full_impact=True)
         local_matrix.full_rebuild()
         filtr = ['biological_process']
         if background is None:

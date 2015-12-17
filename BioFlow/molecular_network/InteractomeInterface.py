@@ -64,8 +64,8 @@ class MatrixGetter(object):
     # used as roots to build the interaction network (not all nodes are necessary
     # within the connex part of the graph)
 
-    ReactionsList = ['TemplateReaction', 'Degradation', 'BiochemicalReaction']
-    ReactionsList = [bulbs_names_dict[short_name[0]] for short_name in ReactionsList]
+    reactions_types_list = ['TemplateReaction', 'Degradation', 'BiochemicalReaction']
+    reactions_types_list = [bulbs_names_dict[short_name[0]] for short_name in reactions_types_list]
 
     def __init__(self, main_connex_only, full_impact):
         self.connexity_aware = main_connex_only
@@ -236,6 +236,7 @@ class MatrixGetter(object):
 
     # TODO: we can refactor that element as a separate object, responsible only for
     # laplacian_pulling
+    # in it's current state, the complexity of this is too high (17)
     def full_load_ls(self):
         """
         Performs the loading of all the objects and the relations in the database
@@ -277,7 +278,7 @@ class MatrixGetter(object):
             reagent_clusters = []
             seeds = set()
             total_reaction_participants = 0
-            for ReactionType in self.ReactionsList:
+            for ReactionType in self.reactions_types_list:
                 if not ReactionType.get_all():
                     continue
                 for Reaction in ReactionType.get_all():
@@ -340,7 +341,7 @@ class MatrixGetter(object):
             log.info("%s, %s, %s", len(links), len(group), total_expansion_participants)
             log.info(self.pretty_time())
 
-        def single_expansion(starting_group, edge_type, char_name):
+        def single_expansion(starting_group, edge_type, char_name): # TODO: inline into n-expansion
             """
             performs a single round of expansion/characterization
 

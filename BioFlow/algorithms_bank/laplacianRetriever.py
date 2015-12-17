@@ -84,12 +84,20 @@ class LaplacianRetriever(object):
                     object_to_set = dumped_object
 
     def md_5_hash(self):
+        """
+         Computes md5 hash for the object
+        :return:
+        """
         sorted_initset = sorted(self.main_set.keys(), key=str.lower)
         data = [sorted_initset] + self.md5_hash_variables
         md5 = hashlib.md5(json.dumps(data, sort_keys=True)).hexdigest()
         return str(md5)
 
-    def dump_memoized(self, ):
+    def dump_memoized(self):
+        """
+        Dumps a memoization-compatible file
+        :return:
+        """
         md5 = hashlib.md5(
             json.dumps(
                 sorted(
@@ -101,7 +109,6 @@ class LaplacianRetriever(object):
                 self.analytic_uniprots), 'currents': pickle.dumps(
                 (self.current_accumulator, self.node_current)), 'voltages': pickle.dumps(
                     self.uniprots_2_voltage_and_circulation)}
-        # TODO: revert the names to a correct convention
         dump_object(self.memoization_dump_location, payload)
 
     def undump_memoized(self):
