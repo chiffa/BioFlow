@@ -66,5 +66,3 @@ if __name__ == "__main__":
     run_diagnostics(full_list)
 
     recompute_forbidden_ids(forbidden_verification_list)
-
-    pass

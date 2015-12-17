@@ -198,7 +198,7 @@ class MatrixGetter(object):
                     self.analytic_Uniprots),
                 sort_keys=True)).hexdigest()
         payload = {
-            'UP_hash': md5, 'sys_hash': self._MD5hash(), 'size': len(
+            'UP_hash': md5, 'sys_hash': self.md5_hash(), 'size': len(
                 self.analytic_Uniprots), 'UPs': pickle.dumps(
                 self.analytic_Uniprots), 'currents': pickle.dumps(
                 (self.current_accumulator, self.node_current)), 'voltages': pickle.dumps(
@@ -692,7 +692,7 @@ class MatrixGetter(object):
         print len(self.Uniprot_Mat_idxs)
         self.dump_Maps()
 
-    def _MD5hash(self):
+    def md5_hash(self):
         """
         Return the MD hash of self to ensure that all the defining properties have been correctly defined before dump/retrieval
         """
@@ -929,7 +929,7 @@ class MatrixGetter(object):
                     Interactome_rand_samp.insert(
                         {
                             'UP_hash': md5,
-                            'sys_hash': self._MD5hash(),
+                            'sys_hash': self.md5_hash(),
                             'size': sample_size,
                             'chrom': str(chromosome_specific),
                             'sparse_rounds': sparse_rounds,

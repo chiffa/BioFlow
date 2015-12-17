@@ -302,7 +302,7 @@ def compare_to_blanc(
     else:
         MG = MG_Object
 
-    MD5_hash = MG._MD5hash()
+    MD5_hash = MG.md5_hash()
 
     curr_inf_conf_general = []
     count = 0
@@ -460,4 +460,3 @@ if __name__ == "__main__":
     # print sourc
 
     auto_analyze([sourc], 24)
-    pass

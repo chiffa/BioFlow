@@ -64,7 +64,6 @@ def wipe_dir(path):  # pragma: no cover
                 'failed to delete %s: for path %s, anti rm -rf flag', directory_name, path)
             return False
 
-    else:
-        log.debug('performing a rmtree')
-        rmtree(directory_name)
-        return True
+    log.debug('performing a rmtree')
+    rmtree(directory_name)
+    return True

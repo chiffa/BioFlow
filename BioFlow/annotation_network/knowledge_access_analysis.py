@@ -756,4 +756,3 @@ if __name__ == "__main__":
     print KG.pretty_time()
     auto_analyze(get_source(), KG)
 
-    pass

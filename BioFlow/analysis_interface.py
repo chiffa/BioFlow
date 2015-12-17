@@ -39,5 +39,6 @@ def analyze_annotome(source, background=None, depth=100, processors=2):
     print "analsysis is finished, current results are stored in the $PROJECT_HOME/BioFlow/outputs directory"
 
 if __name__ == "__main__":
-    analyze_interactome()
-    analyze_annotome()
+    # analyze_interactome()
+    # analyze_annotome()
+    pass
