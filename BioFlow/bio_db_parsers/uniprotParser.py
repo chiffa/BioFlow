@@ -19,9 +19,12 @@ Uniprot = { SWISSPROT_ID:{
     'GeneID': [], }}
 """
 import copy
-from BioFlow.utils.log_behavior import logger
+from BioFlow.utils.log_behavior import get_logger
 from BioFlow.internal_configs import interesting_lines, interesting_xrefs,\
     names_to_ignore, starting_dict
+
+
+log = get_logger(__name__)
 
 
 class UniProtParser(object):
@@ -186,7 +189,7 @@ class UniProtParser(object):
             if keyword in self.interesting_lines:
                 self.process_line(line, keyword)
 
-        logger.info("%s lines scanned during UNIPROT import" % line_counter)
+        log.info("%s lines scanned during UNIPROT import", line_counter)
         self.parsed = True
         return self.uniprot
 
@@ -198,7 +201,7 @@ class UniProtParser(object):
         :return: dictionary mapping all teh external database identifiers towards uniprot IDs
         """
         if not self.parsed:
-            logger.warning('Attempting to get access points to a non-parsed uniprot object')
+            log.warning('Attempting to get access points to a non-parsed uniprot object')
         access_dict = {}
         for key in self.uniprot.keys():
             for sub_element in self.uniprot[key]['KEGG']:

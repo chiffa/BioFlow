@@ -3,8 +3,11 @@ Module containing the Reactome Biopax lvl3 .owl file parser
 """
 import xml.etree.ElementTree as ET
 from collections import defaultdict
-from BioFlow.utils.log_behavior import logger
+from BioFlow.utils.log_behavior import get_logger
 from BioFlow import main_configs
+
+
+log = get_logger(__name__)
 
 
 def zip_dicts(dict1, dict2):
@@ -85,7 +88,7 @@ class ReactomeParser(object):
 
         self.tree = ET.parse(path_to_biopax_file)
         self.root = self.tree.getroot()
-        logger.info('Reactome parser parsed the xml tree')
+        log.info('Reactome parser parsed the xml tree')
 
         self.BioSources = {}
         self.CellularLocations = {}
@@ -450,7 +453,7 @@ class ReactomeParser(object):
 
         self.parsed = True
 
-        logger.info('Reactome parser finished parsing xml tree to dict collection')
+        log.info('Reactome parser finished parsing xml tree to dict collection')
 
 if __name__ == "__main__":
     source_file = "/home/andrei/PycharmProjects/BioFlow/unittests/UT_examples/reactome_extract.owl"

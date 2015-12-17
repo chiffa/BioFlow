@@ -3,7 +3,9 @@ Contains a set of wrappers that are useful for debugging and operation profiling
 """
 import matplotlib.pyplot as plt
 from time import time
-from BioFlow.utils.log_behavior import logger
+from BioFlow.utils.log_behavior import get_logger
+
+log = get_logger(__name__)
 
 
 def render_2d_matrix(matrix, name):
@@ -51,9 +53,8 @@ def time_it_wrapper(function_of_interest):
     def time_execution(*args, **kwargs):
         start = time()
         result = function_of_interest(*args, **kwargs)
-        logger.debug(
-            '%s run in %s' %
-            (function_of_interest.__name__, time() - start))
+        log.debug('%s run in %s',
+                  function_of_interest.__name__, time() - start)
         time_execution.__name__ = function_of_interest.__name__
         time_execution.__doc__ = function_of_interest.__doc__
         return result
@@ -79,7 +80,7 @@ def my_timer(message='', previous_time=[]):
 
 def autolog(function):
     """
-    Logs entry and exit of a function every time it is called to the logger.info channel.
+    Logs entry and exit of a function every time it is called to the log.info channel.
 
     It also acts as a point of capture of exceptions and logging them to 'CRITICAL channel'
 

@@ -12,8 +12,10 @@ from sklearn.cluster import spectral_clustering
 import warnings
 
 from BioFlow.utils.general_utils.useful_wrappers import time_it_wrapper
-from BioFlow.utils.log_behavior import logger
+from BioFlow.utils.log_behavior import get_logger
 from BioFlow.utils.dataviz import render_2d_matrix
+
+log = get_logger(__name__)
 
 warnings.filterwarnings("ignore", message="Changing the sparsity structure")
 
@@ -112,14 +114,14 @@ def show_eigenvals_and_eigenvects(eigenvals, eigenvects, biggest_limit,
     :param eigenvect_indexing_names: dict mapping indexes to names
     :return: None, this is a print-representation method only
     """
-    logger.info(annotation)
-    logger.info('########################')
+    log.info(annotation)
+    log.info('########################')
     # if no index characters are supplied, just prints all the the eigenvalues
     # and exits
     if not eigenvect_indexing_names:
         for eigval in eigenvals.tolist():
-            logger.info(eigval)
-        logger.info('<============================>\n')
+            log.info(eigval)
+        log.info('<============================>\n')
         return None
 
     absolute = np.absolute(eigenvects)
@@ -145,7 +147,7 @@ def show_eigenvals_and_eigenvects(eigenvals, eigenvects, biggest_limit,
         # encountered
         if local_set not in super_list:
             super_list.append(local_set)
-            logger.info('\n'.join(string_to_render))
+            log.info('\n'.join(string_to_render))
 
     return None
 
@@ -167,8 +169,9 @@ def analyze_eigenvects(
     :param permutations_limiter: maximal number of permutations
     :return:
     """
-    logger.debug('analyzing the laplacian with %s items and %s non-zero elts' %
-                 (non_normalized_laplacian.shape[0] ** 2, len(non_normalized_laplacian.nonzero()[0])))
+    log.debug('analyzing the laplacian with %s items and %s non-zero elements',
+              non_normalized_laplacian.shape[0] ** 2,
+              len(non_normalized_laplacian.nonzero()[0]))
 
     # normalize the laplacian
     normalized_laplacian = normalize_laplacian(non_normalized_laplacian)
@@ -180,8 +183,9 @@ def analyze_eigenvects(
     triangular_upper.setdiag(0)
     triangular_upper_nonzero_idxs = triangular_upper.nonzero()
 
-    logger.info("reassigning the indexes for %s items, with %s non-zero elements" % (
-        triangular_upper.shape[0] ** 2, len(triangular_upper_nonzero_idxs[0])))
+    log.info("reassigning the indexes for %s items, with %s non-zero elements",
+             triangular_upper.shape[0] ** 2,
+             len(triangular_upper_nonzero_idxs[0]))
 
     # permute the off-diagonal terms
     nonzero_coordinates = zip(triangular_upper_nonzero_idxs[0].tolist(),

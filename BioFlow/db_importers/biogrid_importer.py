@@ -2,10 +2,13 @@
 Responsible for the injection of the BioGRID parse into the main space.
 """
 from BioFlow.bio_db_parsers.proteinRelParsers import parse_bio_grid
-from BioFlow.utils.log_behavior import logger
+from BioFlow.utils.log_behavior import get_logger
 from BioFlow.main_configs import BioGRID
 from BioFlow.neo4j_db.db_io_routines import look_up_annotation_set
 from BioFlow.neo4j_db.GraphDeclarator import DatabaseGraph
+
+
+log = get_logger(__name__)
 
 
 def convert_to_internal_ids(base):
@@ -18,7 +21,7 @@ def convert_to_internal_ids(base):
     warn_list, results_dict, results_list = look_up_annotation_set(set(base))
     return_dict = dict((key, value[0][2])
                        for key, value in results_dict.iteritems() if key not in warn_list)
-    logger.debug('BioGrid ID cast converter length: %s' % len(return_dict))
+    log.debug('BioGrid ID cast converter length: %s', len(return_dict))
     return return_dict
 
 
@@ -50,11 +53,11 @@ def insert_into_the_database(_up_ids_2_inner_ids, _up_ids_2_properties):
 
 def cross_ref_bio_grid():
     """    performs the total BioGRID parse. """
-    logger.info('Starting BioGrid Parsing')
+    log.info('Starting BioGrid Parsing')
     up_ids_2_properties, up_ids = parse_bio_grid(BioGRID)
-    logger.info('BioGrid parsed, starting translation of UP identifiers to internal database ' +
-                'identifiers')
+    log.info('BioGrid parsed, starting translation of UP identifiers to internal database ' +
+             'identifiers')
     up_ids_2_inner_ids = convert_to_internal_ids(up_ids)
-    logger.info('UP identifier conversion finished, starting database insertion')
+    log.info('UP identifier conversion finished, starting database insertion')
     insert_into_the_database(up_ids_2_inner_ids, up_ids_2_properties)
-    logger.info('Database insertion finished. BioGRID import finished')
+    log.info('Database insertion finished. BioGRID import finished')

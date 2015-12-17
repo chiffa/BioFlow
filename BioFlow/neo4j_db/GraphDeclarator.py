@@ -2,10 +2,14 @@
 An interface declaration required by bulbs module
 """
 from bulbs.neo4jserver import Graph as Neo4jGraph, Config
-import neo4j_object_class_declaration as DDL
+import neo4j_object_class_declaration as ddl
 from BioFlow.main_configs import neo4j_server
-from BioFlow.utils.log_behavior import logger
+from BioFlow.utils.log_behavior import get_logger
 import os
+
+
+log = get_logger(__name__)
+
 
 if neo4j_server != 'http://localhost:7474':
     neo4j_server_local = Config(neo4j_server + '/db/data/')
@@ -22,79 +26,79 @@ class Graph(Neo4jGraph):
         super(Graph, self).__init__(config)
 
         # Annotations
-        self.Location = self.build_proxy(DDL.Location)
-        self.AnnotNode = self.build_proxy(DDL.AnnotNode)
-        self.Originating_Organism = self.build_proxy(DDL.Originating_Organism)
-        self.Pathway = self.build_proxy(DDL.Pathway)
-        self.PathwayStep = self.build_proxy(DDL.Pathway_Step)
-        self.GOTerm = self.build_proxy(DDL.GOTerm)
-        self.UNIPORT = self.build_proxy(DDL.UNIPROT)
+        self.Location = self.build_proxy(ddl.Location)
+        self.AnnotNode = self.build_proxy(ddl.AnnotNode)
+        self.Originating_Organism = self.build_proxy(ddl.Originating_Organism)
+        self.Pathway = self.build_proxy(ddl.Pathway)
+        self.PathwayStep = self.build_proxy(ddl.Pathway_Step)
+        self.GOTerm = self.build_proxy(ddl.GOTerm)
+        self.UNIPORT = self.build_proxy(ddl.UNIPROT)
 
         # Simple Compounds
-        self.DNA = self.build_proxy(DDL.DNA)
-        self.RNA = self.build_proxy(DDL.RNA)
-        self.Protein = self.build_proxy(DDL.Protein)
-        self.SmallMolecule = self.build_proxy(DDL.SmallMolecule)
-        self.PhysicalEntity = self.build_proxy(DDL.PhysicalEntity)
+        self.DNA = self.build_proxy(ddl.DNA)
+        self.RNA = self.build_proxy(ddl.RNA)
+        self.Protein = self.build_proxy(ddl.Protein)
+        self.SmallMolecule = self.build_proxy(ddl.SmallMolecule)
+        self.PhysicalEntity = self.build_proxy(ddl.PhysicalEntity)
 
         # And composite ones
-        self.Complex = self.build_proxy(DDL.Complex)
+        self.Complex = self.build_proxy(ddl.Complex)
         # That can be instantiated
-        self.Instance = self.build_proxy(DDL.Instance)
+        self.Instance = self.build_proxy(ddl.Instance)
         # By possible instantiating events
-        self.ModificationFeature = self.build_proxy(DDL.ModificationFeature)
+        self.ModificationFeature = self.build_proxy(ddl.ModificationFeature)
 
         # And that can be grouped as collections
-        self.DNA_Collection = self.build_proxy(DDL.DNA_Collection)
-        self.RNA_Collection = self.build_proxy(DDL.RNA_Collection)
-        self.Protein_Collection = self.build_proxy(DDL.Protein_Collection)
+        self.DNA_Collection = self.build_proxy(ddl.DNA_Collection)
+        self.RNA_Collection = self.build_proxy(ddl.RNA_Collection)
+        self.Protein_Collection = self.build_proxy(ddl.Protein_Collection)
         self.SmallMolecule_Collection = self.build_proxy(
-            DDL.SmallMolecule_Collection)
+            ddl.SmallMolecule_Collection)
         self.PhysicalEntity_Collection = self.build_proxy(
-            DDL.PhysicalEntity_Collection)
-        self.Complex_Collection = self.build_proxy(DDL.Complex_Collection)
+            ddl.PhysicalEntity_Collection)
+        self.Complex_Collection = self.build_proxy(ddl.Complex_Collection)
 
         # And especially participate into reaction sets
-        self.TemplateReaction = self.build_proxy(DDL.TemplateReaction)
-        self.Degradation = self.build_proxy(DDL.Degradation)
-        self.BiochemicalReaction = self.build_proxy(DDL.BiochemicalReaction)
+        self.TemplateReaction = self.build_proxy(ddl.TemplateReaction)
+        self.Degradation = self.build_proxy(ddl.Degradation)
+        self.BiochemicalReaction = self.build_proxy(ddl.BiochemicalReaction)
 
         # Pointers from the Simple Compounds to their annotations
-        self.is_localized = self.build_proxy(DDL.is_localized)
-        self.is_annotated = self.build_proxy(DDL.is_annotated)
+        self.is_localized = self.build_proxy(ddl.is_localized)
+        self.is_annotated = self.build_proxy(ddl.is_annotated)
         self.is_originating_in_organism = self.build_proxy(
-            DDL.is_originating_in_organism)
-        self.is_part_of_pathway = self.build_proxy(DDL.is_part_of_pathway)
-        self.is_next_in_pathway = self.build_proxy(DDL.is_next_in_pathway)
+            ddl.is_originating_in_organism)
+        self.is_part_of_pathway = self.build_proxy(ddl.is_part_of_pathway)
+        self.is_next_in_pathway = self.build_proxy(ddl.is_next_in_pathway)
 
         # And from Complex Compounds to the simple Compounds they are made of
-        self.is_part_of_complex = self.build_proxy(DDL.is_part_of_complex)
+        self.is_part_of_complex = self.build_proxy(ddl.is_part_of_complex)
 
         # That can be instantiated
-        self.is_modified_to = self.build_proxy(DDL.is_modified_to)
+        self.is_modified_to = self.build_proxy(ddl.is_modified_to)
         # With Instantiators
-        self.is_able_to_modify = self.build_proxy(DDL.is_able_to_modify)
+        self.is_able_to_modify = self.build_proxy(ddl.is_able_to_modify)
         # Or belong to collections
         self.is_part_of_collection = self.build_proxy(
-            DDL.is_part_of_collection)
+            ddl.is_part_of_collection)
 
         # And contribute to reactions
-        self.is_catalysant = self.build_proxy(DDL.is_catalysant)
-        self.is_regulant = self.build_proxy(DDL.is_regulant)
+        self.is_catalysant = self.build_proxy(ddl.is_catalysant)
+        self.is_regulant = self.build_proxy(ddl.is_regulant)
         # regulates not a reaction, but a compound activity
         self.is_reaction_participant = self.build_proxy(
-            DDL.is_reaction_participant)
+            ddl.is_reaction_participant)
 
         # GOAnnotationTypes:
-        self.is_go_annotation = self.build_proxy(DDL.is_go_annotation)
-        self.is_a_go = self.build_proxy(DDL.is_a_go)
-        self.is_part_of_go = self.build_proxy(DDL.is_part_of_go)
-        self.is_same = self.build_proxy(DDL.is_same)
+        self.is_go_annotation = self.build_proxy(ddl.is_go_annotation)
+        self.is_a_go = self.build_proxy(ddl.is_a_go)
+        self.is_part_of_go = self.build_proxy(ddl.is_part_of_go)
+        self.is_same = self.build_proxy(ddl.is_same)
 
         # Interacts physically:
-        self.is_interacting = self.build_proxy(DDL.is_interacting)
+        self.is_interacting = self.build_proxy(ddl.is_interacting)
         self.is_weakly_interacting = self.build_proxy(
-            DDL.is_weakly_interacting)
+            ddl.is_weakly_interacting)
 
 
 # Yes, I know what goes below here is ugly and shouldn't be in the
@@ -104,7 +108,7 @@ on_rtd = os.environ.get('READTHEDOCS') == 'True'
 on_unittest = os.environ.get('UNITTESTING') == 'True'
 
 if on_rtd or on_unittest:
-    logger.info(
+    log.info(
         'GraphDeclarator mocks DB connection instead of actually connecting to it')
 
     from mock import Mock as MagicMock
@@ -122,5 +126,5 @@ if on_rtd or on_unittest:
     DatabaseGraph = Mock()
 
 else:
-    logger.info('GraphDeclarator is connecting to a real DB')
+    log.info('GraphDeclarator is connecting to a real DB')
     DatabaseGraph = Graph()

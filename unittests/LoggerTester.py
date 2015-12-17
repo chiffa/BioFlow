@@ -5,18 +5,20 @@ import unittest
 import os
 from BioFlow.main_configs import log_location
 from BioFlow.utils.general_utils.high_level_os_io import wipe_dir
-from BioFlow.utils.log_behavior import logger
+from BioFlow.utils.log_behavior import get_logger
+
+log = get_logger('LoggerTester @ unittests')
 
 
 class TestLogs(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        logger.debug('This is a debug test')
-        logger.info('This is an info logging test')
-        logger.warning('This is a warning test')
-        logger.error('This is an error test')
-        logger.critical('This is a critical test')
+        log.debug('This is a debug test')
+        log.info('This is an info logging test')
+        log.warning('This is a warning test')
+        log.error('This is an error test')
+        log.critical('This is a critical test')
 
     @classmethod
     def tearDownClass(cls):

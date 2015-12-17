@@ -1,7 +1,8 @@
 from mock import Mock as MagicMock
-from BioFlow.utils.log_behavior import logger
+from BioFlow.utils.log_behavior import get_logger
 
-logger.debug('Mocking DB_IO module')
+log = get_logger('DB_IO_Mocks @ unittests')
+log.debug('Mocking DB_IO module')
 
 
 def look_up_annotation_set(supplied_list):

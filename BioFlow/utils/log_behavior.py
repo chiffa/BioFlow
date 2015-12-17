@@ -35,7 +35,7 @@ def mkdir_recursive(my_path):  # pragma: no cover
 
 def add_handler(_logger, level, file_name):
     """
-    Adds a file-writing handler for the logger.
+    Adds a file-writing handler for the log.
 
     :param _logger:
     :param level: logging.DEBUG or other level
@@ -56,7 +56,7 @@ formatter = logging.Formatter(
 mkdir_recursive(log_location)
 
 
-def setup_logger(logger_name):
+def get_logger(logger_name):
     _logger = logging.getLogger(logger_name)
     _logger.setLevel(logging.DEBUG)
 
@@ -77,4 +77,4 @@ def setup_logger(logger_name):
 
     return _logger
 
-logger = setup_logger('this_logger_needs_to_be_renamed')
+logger = get_logger('this_logger_needs_to_be_renamed')

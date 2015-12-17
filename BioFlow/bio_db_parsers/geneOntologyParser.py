@@ -1,7 +1,9 @@
 """
 Contains the functions responsible for the parsing of the GO terms
 """
-from BioFlow.utils.log_behavior import logger
+from BioFlow.utils.log_behavior import get_logger
+
+log = get_logger(__name__)
 
 
 class GOTermsParser(object):
@@ -104,7 +106,7 @@ class GOTermsParser(object):
                         payload = line.split(': ')[1].strip()
                         self.parse_line_in_block(header, payload)
                     except IndexError:
-                        logger.error("Line '%s' violates obo conventions." % line +
-                                     " Please check file integrity")
+                        log.error("Line '%s' violates obo conventions. %s ",
+                                  line, " Please check file integrity")
 
         return self.go_terms, self.go_terms_structure
