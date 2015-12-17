@@ -3,12 +3,14 @@ Created on Jun 15, 2013
 :author: andrei
 """
 import pickle
-from BioFlow.utils.log_behavior import logger as log
+from BioFlow.utils.log_behavior import get_logger
 from BioFlow.main_configs import Dumps, ReactomeBioPax
 from BioFlow.internal_configs import Leg_ID_Filter
 from BioFlow.neo4j_db.GraphDeclarator import DatabaseGraph
 from BioFlow.neo4j_db.db_io_routines import get_bulbs_id
 from BioFlow.bio_db_parsers.reactomeParser import ReactomeParser
+
+log = get_logger(__name__)
 
 # TODO: refactor everything that uses memoization dictionary into a class
 memoization_dict = {}  # accelerated access pointer to the objects
@@ -41,8 +43,8 @@ def insert_minimal_annotations(annotated_node, annot_type_2_annot):
             for annotation in annotation_set:
                 annotation_node = DatabaseGraph.AnnotNode.create(
                     ptype=annotation_type, payload=annotation)
-                log.info('created annotation %s for %s, _id:%s' %
-                         (annotation_node, annotated_node, annotated_node.ID))
+                log.info('created annotation %s for %s, _id:%s',
+                         annotation_node, annotated_node, annotated_node.ID)
                 DatabaseGraph.is_annotated.create(
                     annotated_node,
                     annotation_node,
@@ -61,7 +63,7 @@ def insert_meta_objects(bulbs_graph_class, meta_id_2_property_dict):
     total_properties = len(meta_id_2_property_dict)
 
     for i, (meta_name, property_dict) in enumerate(meta_id_2_property_dict.itervalues()):
-        log.info('meta_insert: property %s out of %s' % (i, total_properties))
+        log.info('meta_insert: property %s out of %s', i, total_properties)
 
         primary = bulbs_graph_class.create(
             ID=meta_name,

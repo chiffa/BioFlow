@@ -13,7 +13,9 @@ from BioFlow.main_configs import IDFilter, Leg_ID_Filter, edge_type_filters, Dum
     background_protein_ids_csv, background_set_bulbs_ids, annotation_nodes_ptypes
 from BioFlow.neo4j_db.GraphDeclarator import DatabaseGraph
 from BioFlow.neo4j_db.graph_content import bulbs_name_shortcuts_translation, full_list, forbidden_verification_list
-from BioFlow.utils.log_behavior import logger as log
+from BioFlow.utils.log_behavior import get_logger
+
+log = get_logger(__name__)
 
 
 def get_bulbs_id(bulbs_node):
@@ -38,7 +40,7 @@ def get_attached_annotations(bulbs_node_id):
     node = DatabaseGraph.vertices.get(bulbs_node_id)
     annotation_node_generator = node.outV("is_annotated")
     if not annotation_node_generator:
-        log.info("node %s has not annotations attached to it" % bulbs_node_id)
+        log.info("node %s has not annotations attached to it", bulbs_node_id)
     for rel_node in annotation_node_generator:
         list_of_annotations.append(get_bulbs_id(rel_node))
     return list_of_annotations
@@ -332,10 +334,10 @@ def memoize_bulbs_type(bulbs_type, dict_to_load_into=None):
     """
     if dict_to_load_into is None:
         dict_to_load_into = {}
-    log.info('starting %s memoization load' % bulbs_type)
+    log.info('starting %s memoization load', bulbs_type)
     for bulbs_node in bulbs_type.get_all():
         dict_to_load_into[bulbs_node.ID] = bulbs_type.get(get_bulbs_id(bulbs_node))
-    log.info('%s Loaded, contains %s elements' % (bulbs_type, len(dict_to_load_into)))
+    log.info('%s Loaded, contains %s elements', bulbs_type, len(dict_to_load_into))
 
     return dict_to_load_into
 

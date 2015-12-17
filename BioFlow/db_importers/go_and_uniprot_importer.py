@@ -2,11 +2,13 @@
 This module is responsible for the import of the data parsed from the UNIPROT text file
 """
 from BioFlow import main_configs
-from BioFlow.utils.log_behavior import logger as log
+from BioFlow.utils.log_behavior import get_logger
 from BioFlow.bio_db_parsers.geneOntologyParser import GOTermsParser
 from BioFlow.bio_db_parsers.uniprotParser import UniProtParser
 from BioFlow.neo4j_db.GraphDeclarator import DatabaseGraph
 from BioFlow.neo4j_db.db_io_routines import memoize_bulbs_type, get_bulbs_id
+
+log = get_logger(__name__)
 
 # TODO: this should be refactored into a class to wrap memoization dicts
 # Stores relations between GO IDs and the objects in the neo4j database
@@ -96,9 +98,9 @@ def pull_up_acc_nums_from_reactome():
                 if vertex is not None:
                     reactome_proteins[acc_num].append(vertex)
         if reactome_proteins[acc_num] != 1:
-            log.debug('Cross-linking reactome v.s. acc_num %s mapped to %s proteins' %
+            log.debug('Cross-linking reactome v.s. acc_num %s mapped to %s proteins',
                       acc_num, len(reactome_proteins))
-    log.info('Cross-linked %s proteins from reactome v.s. Uniprot' % len(reactome_proteins))
+    log.info('Cross-linked %s proteins from reactome v.s. Uniprot', len(reactome_proteins))
     return reactome_proteins
 
 
@@ -194,18 +196,17 @@ def import_uniprots(uniprot, reactome_acnum_bindings):
             ID=swiss_prot_id,
             displayName=data_container['Names']['Full'],
             main_connex=False)
-        log.debug('uniprot %s created @ %s' % (swiss_prot_id, uniprot_node))
+        log.debug('uniprot %s created @ %s', swiss_prot_id, uniprot_node)
 
         if not set1.isdisjoint(set2):
-            log.debug(
-                'Uniprot %s intersects Reactome on the following acnums: %s' %
-                (str(swiss_prot_id), str(set1)))
+            log.debug('Uniprot %s intersects Reactome on the following acnums: %s',
+                      str(swiss_prot_id), str(set1))
             cross_links += len(set1)
             uniprot_node.involved = True
 
         log.debug(
-            'loading UNIPROT: Acnums cross-linked - %.2f %% ; Total loaded: - %.2f %%' %
-            (cross_links / acc_nums_no, sp_id_num / up_no))
+            'loading UNIPROT: Acnums cross-linked - %.2f %% ; Total loaded: - %.2f %%',
+            cross_links / acc_nums_no, sp_id_num / up_no)
 
         # Add the newly created uniprot to the buffer
         Uniprot_memoization_dict[swiss_prot_id] = uniprot_node
