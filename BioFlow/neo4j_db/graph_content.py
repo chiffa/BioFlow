@@ -1,6 +1,6 @@
 from BioFlow.neo4j_db.GraphDeclarator import DatabaseGraph
 
-bulbs_name_shortcuts_translation = {
+bulbs_names_dict = {
     'DNA': (DatabaseGraph.DNA, "DNA"),
     'DNA Collection': (DatabaseGraph.DNA_Collection, "DNA_Collection"),
     'RNA': (DatabaseGraph.RNA, "RNA"),
@@ -32,4 +32,4 @@ forbidden_verification_list = ['Small Molecule',
                                'Physical Entity',
                                'Physical Entity Collection']
 
-full_list = list(bulbs_name_shortcuts_translation.keys())
+full_list = list(bulbs_names_dict.keys())

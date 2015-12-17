@@ -23,7 +23,7 @@ def analyze_annotome(source, background=None, depth=100, processors=2):
     filtr = ['biological_process']
     if background is None:
         annot_matrix = AnnotomeInterface(
-            filtr, local_matrix.Uniprot_complete, (1, 1), True, 3)
+            filtr, local_matrix.all_uniprots_bulbs_id_list, (1, 1), True, 3)
     else:
         background_set = get_background(background)
         annot_matrix = AnnotomeInterface(

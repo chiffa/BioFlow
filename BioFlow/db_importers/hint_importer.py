@@ -25,7 +25,7 @@ def get_uniprots_for_hint():
 
 def cross_ref_hint(flush=True):
     """
-    Pulls Hint relationships and connects Uniprots in the database
+    Pulls Hint relationships and connects reached_uniprots_bulbs_id_list in the database
 
     :param flush: if True, relationships are pushed to the actual graph database
     :return:

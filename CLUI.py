@@ -89,14 +89,14 @@ def extractmatrix(matrixtype):
     if matrixtype == 'interactome':
         local_matrix = InteractomeInterface(Connexity_Aware=True, full_impact=True)
         local_matrix.full_rebuild()
-        print local_matrix.Conductance_Matrix, local_matrix.MatrixNumber2NodeID
+        print local_matrix.laplacian_matrix, local_matrix.matrix_index_2_bulbs_id
     if matrixtype == 'annotome':
         local_matrix = InteractomeInterface(Connexity_Aware=True, full_impact=True)
         local_matrix.full_rebuild()
         filtr = ['biological_process']
-        annot_matrix = AnnotomeInterface(filtr, local_matrix.Uniprot_complete, (1, 1), True, 3)
+        annot_matrix = AnnotomeInterface(filtr, local_matrix.all_uniprots_bulbs_id_list, (1, 1), True, 3)
         annot_matrix.rebuild()
-        print annot_matrix.Laplacian_matrix, annot_matrix.Num2GO
+        print annot_matrix.laplacian_matrix, annot_matrix.Num2GO
 
 
 @click.command()
@@ -126,7 +126,7 @@ def analyze(matrixtype, background, source, depth, processors,):
         local_matrix.full_rebuild()
         filtr = ['biological_process']
         if background is None:
-            annot_matrix = AnnotomeInterface(filtr, local_matrix.Uniprot_complete, (1, 1), True, 3)
+            annot_matrix = AnnotomeInterface(filtr, local_matrix.all_uniprots_bulbs_id_list, (1, 1), True, 3)
         else:
             background_set = get_background(background)
             annot_matrix = AnnotomeInterface(filtr, background_set, (1, 1), True, 3)

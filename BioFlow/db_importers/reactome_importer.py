@@ -281,7 +281,7 @@ def get_all_meta_sets():
     In case the MetaObjects were already inserted, reloads them all to the local dictionary for
     further annotation insertion
     """
-    # TODO: refactor using abbreviations and bulbs_name_shortcuts_translation
+    # TODO: refactor using abbreviations and bulbs_names_dict
     list_of_bulbs_classes = [
         DatabaseGraph.DNA,
         DatabaseGraph.DNA_Collection,
@@ -312,7 +312,7 @@ def insert_reactome(skip_import='N'):
     reactome_parser = ReactomeParser(ReactomeBioPax)
     reactome_parser.parse_all()
 
-    # TODO: refactor using abbreviations and bulbs_name_shortcuts_translation
+    # TODO: refactor using abbreviations and bulbs_names_dict
     if skip_import == 'N':
 
         insert_cell_locations(reactome_parser.CellularLocations)
@@ -363,6 +363,6 @@ def insert_reactome(skip_import='N'):
 
 if __name__ == "__main__":
     # insert_all()
-    # run_diagnostics(bulbs_name_shortcuts_translation)
-    # clear_all(bulbs_name_shortcuts_translation)
+    # run_diagnostics(bulbs_names_dict)
+    # clear_all(bulbs_names_dict)
     pass

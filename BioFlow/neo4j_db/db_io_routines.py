@@ -12,7 +12,7 @@ from BioFlow.main_configs import IDFilter, Leg_ID_Filter, edge_type_filters, Dum
     analysis_protein_ids_csv, analysis_set_display_names, analysis_set_bulbs_ids, \
     background_protein_ids_csv, background_set_bulbs_ids, annotation_nodes_ptypes
 from BioFlow.neo4j_db.GraphDeclarator import DatabaseGraph
-from BioFlow.neo4j_db.graph_content import bulbs_name_shortcuts_translation, full_list, forbidden_verification_list
+from BioFlow.neo4j_db.graph_content import bulbs_names_dict, full_list, forbidden_verification_list
 from BioFlow.utils.log_behavior import get_logger
 
 log = get_logger(__name__)
@@ -222,21 +222,6 @@ def node_extend_once(edge_type_filter, main_connex_only, core_node):
     return node_neighbors, node_neighbor_no
 
 
-def expand_from_reaction(reaction, main_connex_only):
-    """
-    Recovers all the participants of the reaction
-
-    :param reaction: Reaction node for which we are willing to get the participants
-    :param main_connex_only: If set to true, will only pull elements from
-    the reaction that are in the main connex_set
-    :type main_connex_only: bool
-    :return: List of found nodes, number of found nodes
-    :rtype: 2- tuple
-    """
-    edge_type_filter = edge_type_filters["Reaction"]
-    return node_extend_once(edge_type_filter, main_connex_only, reaction)
-
-
 def expand_from_seed(seed_node_id, edge_filter, main_connex_only):
     """
     Recovers all the nodes accessible in one jump from a seed_node with a given database ID by
@@ -355,7 +340,7 @@ def recompute_forbidden_ids(forbidden_entities_list):
     """
     forbidden_ids_list = set()
     for name in forbidden_entities_list:
-        bulbs_class, _ = bulbs_name_shortcuts_translation[name]
+        bulbs_class, _ = bulbs_names_dict[name]
         for forbidden_legacy_id in Leg_ID_Filter:
             generator = bulbs_class.index.lookup(displayName=forbidden_legacy_id)
             # Wait, why isn't it breaking up here? only bub
@@ -373,7 +358,7 @@ def clear_all(instruction_list):
     :param instruction_list:
     """
     for name in instruction_list:
-        bulbs_class, bulbs_alias = bulbs_name_shortcuts_translation[name]
+        bulbs_class, bulbs_alias = bulbs_names_dict[name]
         log.info('processing class: %s, alias %s', bulbs_class, bulbs_alias)
         if bulbs_class.get_all():
             id_list = [get_bulbs_id(bulbs_class_instance)
@@ -397,7 +382,7 @@ def run_diagnostics(instructions_list):
     """
     super_counter = 0
     for name in instructions_list:
-        bulbs_class, bulbs_alias = bulbs_name_shortcuts_translation[name]
+        bulbs_class, bulbs_alias = bulbs_names_dict[name]
         counter = bulbs_class.index.count(element_type=bulbs_alias)
         print name, ':', counter
         super_counter += counter

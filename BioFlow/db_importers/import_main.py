@@ -42,7 +42,7 @@ def destroy_db():
 
 
 if __name__ == "__main__":
-    # clear_all(bulbs_name_shortcuts_translation)
+    # clear_all(bulbs_names_dict)
     run_diagnostics(full_list)
     insert_reactome()
     run_diagnostics(full_list)

@@ -322,7 +322,7 @@ def compare_to_blanc(
             tensions, clusters, show=False)
         meancorr_acccumulator.append(np.array(meancorr))
         eigval_accumulator.append(eigvals)
-        Dic_system = MG.format_Node_props(node_currs)
+        Dic_system = MG.format_node_props(node_currs)
         curr_inf_conf = list(Dic_system.itervalues())
         curr_inf_conf_general.append(np.array(curr_inf_conf).T)
         count = i
@@ -341,7 +341,7 @@ def compare_to_blanc(
     Dic_system = None
     if real_interactome_interface:
         node_currs = real_interactome_interface.node_current
-        Dic_system = MG.format_Node_props(node_currs)
+        Dic_system = MG.format_node_props(node_currs)
         curr_inf_conf_tot = np.array(
             [[int(key)] + list(val) for key, val in Dic_system.iteritems()]).T
         node_ids, curr_inf_conf = (
@@ -378,7 +378,7 @@ def compare_to_blanc(
         dct = dict(
             (nr_node_id,
              Interactome_node_char(
-                 MG.ID2displayName[nr_node_id],
+                 MG.bulbs_id_2_display_name[nr_node_id],
                  *
                  (
                      Dic_system[nr_node_id] +
@@ -402,23 +402,23 @@ def auto_analyze(sourcelist, depth, processors=4, backgroundlist=None):
     for lst in sourcelist:
         print lst, len(lst)
         MG1 = MG_gen()
-        MG1.set_Uniprot_source(list(lst))
+        MG1.set_uniprot_source(list(lst))
         MG1.background = backgroundlist
-        print len(MG1.analytic_Uniprots)
-        if len(MG1.analytic_Uniprots) < 200:
-            spawn_sampler_pool(processors, [len(MG1.analytic_Uniprots)], [
+        print len(MG1.analytic_uniprots)
+        if len(MG1.analytic_uniprots) < 200:
+            spawn_sampler_pool(processors, [len(MG1.analytic_uniprots)], [
                                depth], MG_object=MG1)
             MG1.build_extended_conduction_system()
-            nr_nodes, nr_groups = compare_to_blanc(len(MG1.analytic_Uniprots), [
+            nr_nodes, nr_groups = compare_to_blanc(len(MG1.analytic_uniprots), [
                                                    0.5, 0.6], MG1, p_val=0.9, MG_Object=MG1)
         else:
-            sampling_depth = max(200 ** 2 / len(MG1.analytic_Uniprots), 5)
-            print 'lenght: %s \t sampling depth: %s \t, estimated_time: %s' % (len(MG1.analytic_Uniprots), sampling_depth, len(MG1.analytic_Uniprots) * sampling_depth / 2 / depth / 60)
-            spawn_sampler_pool(processors, [len(MG1.analytic_Uniprots)], [
+            sampling_depth = max(200 ** 2 / len(MG1.analytic_uniprots), 5)
+            print 'lenght: %s \t sampling depth: %s \t, estimated_time: %s' % (len(MG1.analytic_uniprots), sampling_depth, len(MG1.analytic_uniprots) * sampling_depth / 2 / depth / 60)
+            spawn_sampler_pool(processors, [len(MG1.analytic_uniprots)], [
                                depth], sparse_rounds=sampling_depth, MG_object=MG1)
             MG1.build_extended_conduction_system(sparse_samples=sampling_depth)
             MG1.export_conduction_system()
-            nr_nodes, nr_groups = compare_to_blanc(len(MG1.analytic_Uniprots), [
+            nr_nodes, nr_groups = compare_to_blanc(len(MG1.analytic_uniprots), [
                                                    0.5, 0.6], MG1, p_val=0.9, sparse_rounds=sampling_depth, MG_Object=MG1)
 
         MG1.export_conduction_system()

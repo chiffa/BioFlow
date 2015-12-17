@@ -43,7 +43,7 @@ class GO_Interface(object):
     General calss to recover all the informations associated with GO from database and buffer them for further use.
 
     :param Filter:
-    :param Uniprot_Node_IDs: A list of hte Uniprots that will be used for the GO reach and informativity computation. Beyond
+    :param Uniprot_Node_IDs: A list of hte reached_uniprots_bulbs_id_list that will be used for the GO reach and informativity computation. Beyond
                                 database and formalism issues, this allows to adapt method when limited list of UP is of interest
     :param corrfactor:
     :param Ultraspec_clean:
@@ -90,10 +90,10 @@ class GO_Interface(object):
 
         self.UP_Names = {}
 
-        self.Adjacency_matrix = np.zeros((2, 2))
+        self.adjacency_matrix = np.zeros((2, 2))
         self.dir_adj_matrix = np.zeros((2, 2))
-        self.Laplacian_matrix = np.zeros((2, 2))
-        self.Weighted_Laplacian_matrix = np.zeros((2, 2))
+        self.laplacian_matrix = np.zeros((2, 2))
+        self.weighted_laplacian_matrix = np.zeros((2, 2))
 
         self.Sign_retaining_matrix = np.zeros((2, 2))
 
@@ -102,7 +102,7 @@ class GO_Interface(object):
         self.Reverse_Dict = {}
         self.GO_Node_ID2Reach = {}
 
-        # everytghing below should not be dumped, but should be exported to the
+        # everytghing below should not be dumped, but exported to the
         # mongoDB
 
         self.inflated_Laplacian = np.zeros((2, 2))
@@ -110,9 +110,9 @@ class GO_Interface(object):
         self.inflated_lbl2idx = {}
         self.binding_intesity = 0
 
-        self.analytic_Uniprots = []
+        self.analytic_uniprots = []
         self.UP2UP_voltages = {}
-        self.UP2circ_and_voltage = {}
+        self.uniprots_2_voltage_and_circulation = {}  # can be safely renamed
 
         self.current_accumulator = np.zeros((2, 2))
         self.node_current = {}
@@ -123,6 +123,8 @@ class GO_Interface(object):
 
         self.Indep_Lapl = np.zeros((2, 2))
         self.uncomplete_compute = False
+
+        self.main_set = self.InitSet
 
     def pretty_time(self):
         """
@@ -177,12 +179,12 @@ class GO_Interface(object):
     def dump_matrices(self):
         dump_object(
             Dumps.GO_Mats,
-            (self.Adjacency_matrix,
+            (self.adjacency_matrix,
              self.dir_adj_matrix,
-             self.Laplacian_matrix))
+             self.laplacian_matrix))
 
     def undump_matrices(self):
-        self.Adjacency_matrix, self.dir_adj_matrix, self.Laplacian_matrix = undump_object(
+        self.adjacency_matrix, self.dir_adj_matrix, self.laplacian_matrix = undump_object(
             Dumps.GO_Mats)
 
     def dump_informativities(self):
@@ -215,14 +217,14 @@ class GO_Interface(object):
         md5 = hashlib.md5(
             json.dumps(
                 sorted(
-                    self.analytic_Uniprots),
+                    self.analytic_uniprots),
                 sort_keys=True)).hexdigest()
         payload = {
-            'UP_hash': md5, 'sys_hash': self.MD5hash(), 'size': len(
-                self.analytic_Uniprots), 'UPs': pickle.dumps(
-                self.analytic_Uniprots), 'currents': pickle.dumps(
+            'UP_hash': md5, 'sys_hash': self.md5_hash(), 'size': len(
+                self.analytic_uniprots), 'UPs': pickle.dumps(
+                self.analytic_uniprots), 'currents': pickle.dumps(
                 (self.current_accumulator, self.node_current)), 'voltages': pickle.dumps(
-                    self.UP2circ_and_voltage)}
+                    self.uniprots_2_voltage_and_circulation)}
         dump_object(Dumps.GO_Analysis_memoized, payload)
 
     def undump_memoized(self):
@@ -388,7 +390,7 @@ class GO_Interface(object):
                     idx = (idx[1], idx[0])
                     baseMatrix[idx] = 1
 
-            self.Adjacency_matrix = copy(baseMatrix)
+            self.adjacency_matrix = copy(baseMatrix)
 
         def build_dir_adj():
             """
@@ -551,7 +553,7 @@ class GO_Interface(object):
             baseMatrix[idx2, idx2] += minInf
             baseMatrix[idx1, idx1] += minInf
 
-        self.Laplacian_matrix = baseMatrix
+        self.laplacian_matrix = baseMatrix
 
     def compute_UniprotDict(self):
         """
@@ -560,11 +562,11 @@ class GO_Interface(object):
         :return:
         """
         UniprotDict = {}
-        for elt in MG.Uniprots:
+        for elt in MG.reached_uniprots_bulbs_id_list:
             node = DatabaseGraph.UNIPORT.get(elt)
             altID = node.ID
             # TODO: now can be supressed
-            UniprotDict[altID] = (elt, MG.ID2displayName[elt])
+            UniprotDict[altID] = (elt, MG.bulbs_id_2_display_name[elt])
             UniprotDict[elt] = altID
         pickle.dump(UniprotDict, file(Dumps.Up_dict_dump, 'w'))
         return UniprotDict
@@ -581,7 +583,7 @@ class GO_Interface(object):
         for GO in ultraspec_GOs:
             self.GO2_Pure_Inf[GO] = rep_val
 
-    def MD5hash(self):
+    def md5_hash(self):
         """
         Return the MD hash of self to ensure that all the defining properties have been correctly defined before dump/retrieval
         """
@@ -603,20 +605,20 @@ class GO_Interface(object):
         # branching distribution: at least 10x the biggest conductivity of the
         # system, unless ultrasec, in which case ~ ultraspec level
         self.binding_intesity = 10 * self.infcalc(self.ultraspec_lvl)
-        fixed_Index = self.Laplacian_matrix.shape[0]
+        fixed_Index = self.laplacian_matrix.shape[0]
         self_connectable_UPs = list(
             set(self.InitSet) - set(self.UPs_without_GO))
         UP2IDxs = dict((UP, fixed_Index + Idx)
                        for Idx, UP in enumerate(self_connectable_UPs))
         IDx2UPs = dict((Idx, UP) for UP, Idx in UP2IDxs.iteritems())
         self.inflated_Laplacian = lil_matrix(
-            (self.Laplacian_matrix.shape[0] +
+            (self.laplacian_matrix.shape[0] +
              len(self_connectable_UPs),
-                self.Laplacian_matrix.shape[1] +
-                len(self_connectable_UPs)))
+             self.laplacian_matrix.shape[1] +
+             len(self_connectable_UPs)))
         self.inflated_Laplacian[
-            :self.Laplacian_matrix.shape[0],
-            :self.Laplacian_matrix.shape[1]] = self.Laplacian_matrix
+        :self.laplacian_matrix.shape[0],
+        :self.laplacian_matrix.shape[1]] = self.laplacian_matrix
 
         for UP in self_connectable_UPs:
             for GO in self.UP2GO_Dict[UP]:
@@ -636,17 +638,17 @@ class GO_Interface(object):
 
     def set_Uniprot_source(self, Uniprots):
         """
-        Sets the Uniprots on which the circulation computation routines will be performed by the otehr methods.
+        Sets the reached_uniprots_bulbs_id_list on which the circulation computation routines will be performed by the otehr methods.
         Avoids passing as argument large lists of parameters.
 
         :param Uniprots: List of node IDs of the uniprots on which we would like to perform current computations
         :raise Warning: if the uniprots were not present in the set of GOs for which we built the system or had no GO attached to them
         """
         if not set(Uniprots) <= set(self.UP2GO_Dict.keys()):
-            ex_pload = 'Following Uniprots either were not in the construction set or have no GOs attached: \n %s' % (
+            ex_pload = 'Following reached_uniprots_bulbs_id_list either were not in the construction set or have no GOs attached: \n %s' % (
                 set(Uniprots) - set(self.UP2GO_Dict.keys()))
             print Warning(ex_pload)
-        self.analytic_Uniprots = [
+        self.analytic_uniprots = [
             uniprot for uniprot in Uniprots if uniprot in self.UP2GO_Dict.keys()]
 
     def build_extended_conduction_system(
@@ -660,7 +662,7 @@ class GO_Interface(object):
         Builds a conduction matrix that integrates uniprots, in order to allow an easier knowledge flow analysis
 
         :param memoized: if the tensions and individual relation matrices should be stored in the matrix and dumped at the end computation (required for submatrix recomputation)
-        :param sourced: if true, all the raltions will be looked up and not computed. Useful for the retrieval of subcirculation group, but requires the UP2voltage_and_circ to be pre-filled
+        :param sourced: if true, all the raltions will be looked up and not computed. Useful for the retrieval of subcirculation group, but requires the uniprots_2_voltage_and_circulation to be pre-filled
         :param incremental: if True, all the circulation computation will be added to the existing ones. Usefull for the computation of particularly big systems with intermediate dumps
         :param cancellation: divides the final current by #Nodes**2/2, i.e. makes the currents comparable between circulation systems of differnet  sizes.
         :param sparse_samples: if set to an integer the sampling will be sparse and not dense, i.e. instead of compution
@@ -673,23 +675,25 @@ class GO_Interface(object):
                 self.inflated_Laplacian.shape)
             self.UP2UP_voltages = {}
             if not sourced:
-                self.UP2circ_and_voltage = {}
+                self.uniprots_2_voltage_and_circulation = {}
 
         iterator = []
         if sparse_samples:
             for _ in range(0, sparse_samples):
-                L = copy(self.analytic_Uniprots)
+                L = copy(self.analytic_uniprots)
                 random.shuffle(L)
                 iterator += zip(L[:len(L) / 2], L[len(L) / 2:])
                 self.uncomplete_compute = True
         else:
-            iterator = combinations(self.analytic_Uniprots, 2)
+            iterator = combinations(self.analytic_uniprots, 2)
 
         for UP1, UP2 in iterator:
 
             if sourced:
                 self.current_accumulator = self.current_accumulator + \
-                                           cr.sparse_abs(self.UP2circ_and_voltage[tuple(sorted((UP1, UP2)))][1])
+                    cr.sparse_abs(self.uniprots_2_voltage_and_circulation[
+                                  tuple(
+                                      sorted((UP1, UP2)))][1])
                 continue
 
             Idx1, Idx2 = (self.inflated_lbl2idx[
@@ -706,16 +710,15 @@ class GO_Interface(object):
             self.UP2UP_voltages[(UP1, UP2)] = voltage_diff
 
             if memoized:
-                self.UP2circ_and_voltage[
+                self.uniprots_2_voltage_and_circulation[
                     tuple(
                         sorted(
                             (UP1, UP2)))] = (
                     voltage_diff, current_upper)
 
         if cancellation:
-            ln = len(self.analytic_Uniprots)
-            self.current_accumulator = self.current_accumulator / \
-                (ln * (ln - 1) / 2)
+            ln = len(self.analytic_uniprots)
+            self.current_accumulator /= (ln * (ln - 1) / 2)
 
         if memoized:
             self.dump_memoized()
@@ -776,7 +779,7 @@ class GO_Interface(object):
                             str(self.GO2_Pure_Inf[GO]),
                             str(len(self.GO2UP_Reachable_nodes[GO]))]
 
-        for UP in self.analytic_Uniprots:
+        for UP in self.analytic_uniprots:
             charDict[UP] = [str(self.node_current[UP]),
                             'UP', self.UP_Names[UP][0],
                             str(self.UP_Names[UP][1]).replace(',', '-'),
@@ -796,12 +799,12 @@ class GO_Interface(object):
 
     def export_subsystem(self, UP_system, UP_subsystem):
         """
-        Exports the subsystem of Uniprots and circulation between them based on a larger precalculated system.This is
+        Exports the subsystem of reached_uniprots_bulbs_id_list and circulation between them based on a larger precalculated system.This is
         possible only of the memoization parameter was on during the execution of "build_extended_circulation_system()"
         function execution.
 
         :param UP_system: The set of uniprots for which the larger system was calculated
-        :param UP_subsystem: the set of Uniprots we are interested in
+        :param UP_subsystem: the set of reached_uniprots_bulbs_id_list we are interested in
         :raise Exception: if the set of uniprots for which the larger system was calculated doesn't correspond to what
                             is stored in the dumps
         """
@@ -809,7 +812,7 @@ class GO_Interface(object):
         if not set(UP_system) == set(
                 pickle.loads(current_recombinator['UPs'])):
             raise Exception('Wrong UP system re-analyzed')
-        self.UP2circ_and_voltage = pickle.loads(
+        self.uniprots_2_voltage_and_circulation = pickle.loads(
             current_recombinator['voltages'])
         self.set_Uniprot_source(UP_subsystem)
         self.build_extended_conduction_system(memoized=False, sourced=True)
@@ -824,7 +827,7 @@ class GO_Interface(object):
             memoized=False,
             No_add=False):
         """
-        Randomly samples the set of Uniprots used to create the model. This is the null model creation routine
+        Randomly samples the set of reached_uniprots_bulbs_id_list used to create the model. This is the null model creation routine
 
 
         :param samples_size: list of numbers of uniprots we would like to create the model for
@@ -847,7 +850,7 @@ class GO_Interface(object):
 
         if chromosome_specific:
             self_connectable_UPs = list(set(self_connectable_UPs).intersection(
-                set(MG.Chrom2UP[str(chromosome_specific)])))
+                set(MG.chromosomes_2_uniprot[str(chromosome_specific)])))
 
         for sample_size, iterations in zip(samples_size, samples_each_size):
             sample_size = min(sample_size, len(self_connectable_UPs))
@@ -867,7 +870,7 @@ class GO_Interface(object):
                     UP_rand_samp.insert(
                         {
                             'UP_hash': md5,
-                            'sys_hash': self.MD5hash(),
+                            'sys_hash': self.md5_hash(),
                             'size': sample_size,
                             'chrom': str(chromosome_specific),
                             'sparse_rounds': sparse_rounds,
@@ -884,7 +887,7 @@ class GO_Interface(object):
     def get_indep_linear_groups(self):
         """
         Recovers independent linear groups of the GO terms. Independent linear groups are those that share a
-        significant amount of Uniprots in common
+        significant amount of reached_uniprots_bulbs_id_list in common
 
         """
         self.Indep_Lapl = lil_matrix((len(self.All_GOs), len(self.All_GOs)))
@@ -929,7 +932,7 @@ if __name__ == '__main__':
     ################################
 
     # KG = GO_Interface(filtr, get_background(), (1, 1), True, 3)
-    KG = GO_Interface(filtr, MG.Uniprot_complete, (1, 1), True, 3)
+    KG = GO_Interface(filtr, MG.all_uniprots_bulbs_id_list, (1, 1), True, 3)
     KG.rebuild()
     print KG.pretty_time()
     KG.store()

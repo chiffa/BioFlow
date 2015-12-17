@@ -35,7 +35,7 @@ def KG_gen():
     ################################
 
     KG = GO_Interface(filtr, get_background(), corrfactors, True, 3)
-    # KG = GO_Interface(filtr, MG.Uniprot_complete, corrfactors, True, 3)
+    # KG = GO_Interface(filtr, MG.all_uniprots_bulbs_id_list, corrfactors, True, 3)
     KG.load()
     print KG.pretty_time()
     return KG
@@ -355,7 +355,7 @@ def compare_to_blanc(
         KG = KG_gen()
     else:
         KG = KG_object
-    MD5_hash = KG.MD5hash()
+    MD5_hash = KG.md5_hash()
 
     curr_inf_conf_general = []
     count = 0
@@ -446,7 +446,7 @@ def decide_regeneration():
     """
     A script to decide at what point it is better to recompute a new a network rather then go through the time it
     requires to be upickled.
-    The current decision is that for the samples of the size of ~ 100 Uniprots, we are better off unpickling from 4
+    The current decision is that for the samples of the size of ~ 100 reached_uniprots_bulbs_id_list, we are better off unpickling from 4
     and more by factor 2 and by factor 10 from 9
     Previous experimets have shown that memoization with pickling incurred no noticeable delay on samples of up to
     50 UPs, but that the storage limit on mongo DB was rapidly exceeded, leading us to create an allocated dump file.
@@ -631,24 +631,24 @@ def auto_analyze(source=None, KG_object=None, processors=3, desired_depth=24):
             MG1 = KG_object
 
         MG1.set_Uniprot_source(my_list)
-        print len(MG1.analytic_Uniprots)
-        if len(MG1.analytic_Uniprots) < 200:
-            spawn_sampler_pool(processors, [len(MG1.analytic_Uniprots)], [
+        print len(MG1.analytic_uniprots)
+        if len(MG1.analytic_uniprots) < 200:
+            spawn_sampler_pool(processors, [len(MG1.analytic_uniprots)], [
                                desired_depth], KG_object=KG_object)
             MG1.build_extended_conduction_system()
-            nr_nodes, nr_groups = compare_to_blanc(len(MG1.analytic_Uniprots), [
+            nr_nodes, nr_groups = compare_to_blanc(len(MG1.analytic_uniprots), [
                                                    1100, 1300], MG1, p_val=0.9, KG_object=KG_object)
         else:
-            sampling_depth = max(200 ** 2 / len(MG1.analytic_Uniprots), 5)
-            print 'lenght: %s \t sampling depth: %s \t, estimated_time: %s' % (len(MG1.analytic_Uniprots), sampling_depth, len(MG1.analytic_Uniprots) * sampling_depth / 2 / 6 / 60)
+            sampling_depth = max(200 ** 2 / len(MG1.analytic_uniprots), 5)
+            print 'lenght: %s \t sampling depth: %s \t, estimated_time: %s' % (len(MG1.analytic_uniprots), sampling_depth, len(MG1.analytic_uniprots) * sampling_depth / 2 / 6 / 60)
             spawn_sampler_pool(processors,
-                               [len(MG1.analytic_Uniprots)],
+                               [len(MG1.analytic_uniprots)],
                                [desired_depth],
                                sparse_rounds=sampling_depth,
                                KG_object=KG_object)
             MG1.build_extended_conduction_system(sparse_samples=sampling_depth)
             MG1.export_conduction_system()
-            nr_nodes, nr_groups = compare_to_blanc(len(MG1.analytic_Uniprots), [
+            nr_nodes, nr_groups = compare_to_blanc(len(MG1.analytic_uniprots), [
                                                    1100, 1300], MG1, p_val=0.9, sparse_rounds=sampling_depth, KG_object=KG_object)
 
         MG1.export_conduction_system()
@@ -660,7 +660,7 @@ def auto_analyze(source=None, KG_object=None, processors=3, desired_depth=24):
 
 def build_blank(length, depth, sparse_rounds=False):
     KG = KG_gen()
-    MD5_hash = KG.MD5hash()
+    MD5_hash = KG.md5_hash()
     if UP_rand_samp.find({'size': length,
                           'sys_hash': MD5_hash,
                           'sparse_rounds': sparse_rounds}).count() < depth:
@@ -751,7 +751,7 @@ if __name__ == "__main__":
 
     # linindep_GO_groups(50)
 
-    KG = GO_Interface(filtr, MG.Uniprot_complete, (1, 1), True, 3)
+    KG = GO_Interface(filtr, MG.all_uniprots_bulbs_id_list, (1, 1), True, 3)
     KG.load()
     print KG.pretty_time()
     auto_analyze(get_source(), KG)

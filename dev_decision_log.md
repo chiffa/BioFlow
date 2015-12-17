@@ -8,11 +8,7 @@
  
  - render the usage of analytical/background sets uniform throughout the system.
  
- - change main logger to a configuration set run on a logger to be retrieved in every single module
- 
- - change the behavior of methods using instruction dictionaries so that they use key lists instead
- 
- - fold-in 
+ - express the laplacian retriever logic in terms of expansions and n-expansions
 
 
 ## Minor refactoring suggestions:
