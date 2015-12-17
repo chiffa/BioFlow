@@ -157,17 +157,9 @@ def insert_reactions(bulbs_graph_class, property_source_dict):
                         side=property_name,
                         costum_from=memoization_dict[reaction].ID,
                         costum_to=memoization_dict[elt].ID)
-            # # dead branch after modification of reaction parsing
-            # if property_name == 'product':
-            #     DatabaseGraph.is_reaction_participant.create(
-            #         LocalDict[reaction],
-            #         LocalDict[
-            #             reaction_properties[property_name]],
-            #         costum_from=LocalDict[reaction].ID,
-            #         costum_to=LocalDict[
-            #             reaction_properties[property_name]].ID)
 
 
+# TODO: catalysis and modulation are identical in the marked lines
 def insert_catalysis(catalysises_dict):
     """
     Inserts all the catalysis links from one meta-element to an another
@@ -182,12 +174,13 @@ def insert_catalysis(catalysises_dict):
             if catalysis_properties['controlled'] in memoization_dict.keys() \
                     and catalysis_properties['controller'] in memoization_dict.keys():
 
+                # TODO: this can be moved to the parsing
                 if 'ControlType' not in catalysises_dict[catalysis].keys():
                     catalysis_properties['ControlType'] = 'UNKNOWN'
 
-                controller = memoization_dict[catalysis_properties['controller']]
-                controlled = memoization_dict[catalysis_properties['controlled']]
-                memoization_dict[catalysis] = DatabaseGraph.is_catalysant.create(
+                controller = memoization_dict[catalysis_properties['controller']]  #
+                controlled = memoization_dict[catalysis_properties['controlled']]  #
+                memoization_dict[catalysis] = DatabaseGraph.is_catalysant.create(  #
                     controller,
                     controlled,
                     ID=catalysis,
@@ -214,9 +207,9 @@ def insert_modulation(modulations_dict):
     :param modulations_dict:
     """
     for modulation, modulation_property_dict in modulations_dict.iteritems():
-        controller = memoization_dict[modulation_property_dict['controller']]
-        controlled = memoization_dict[modulation_property_dict['controlled']]
-        memoization_dict[modulation] = DatabaseGraph.is_regulant.create(
+        controller = memoization_dict[modulation_property_dict['controller']]  #
+        controlled = memoization_dict[modulation_property_dict['controlled']]  #
+        memoization_dict[modulation] = DatabaseGraph.is_regulant.create(       #
             controller,
             controlled,
             ID=modulation,
@@ -285,6 +278,7 @@ def get_all_meta_sets():
     In case the MetaObjects were already inserted, reloads them all to the local dictionary for
     further annotation insertion
     """
+    # TODO: refactor using abbreviations and bulbs_name_shortcuts_translation
     list_of_bulbs_classes = [
         DatabaseGraph.DNA,
         DatabaseGraph.DNA_Collection,
@@ -315,6 +309,7 @@ def insert_reactome(skip_import='N'):
     reactome_parser = ReactomeParser(ReactomeBioPax)
     reactome_parser.parse_all()
 
+    # TODO: refactor using abbreviations and bulbs_name_shortcuts_translation
     if skip_import == 'N':
 
         insert_cell_locations(reactome_parser.CellularLocations)
@@ -365,6 +360,6 @@ def insert_reactome(skip_import='N'):
 
 if __name__ == "__main__":
     # insert_all()
-    # run_diagnostics(full_dict)
-    # clear_all(full_dict)
+    # run_diagnostics(bulbs_name_shortcuts_translation)
+    # clear_all(bulbs_name_shortcuts_translation)
     pass

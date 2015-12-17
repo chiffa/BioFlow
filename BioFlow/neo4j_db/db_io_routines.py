@@ -9,10 +9,10 @@ from collections import defaultdict
 from csv import reader, writer
 from pprint import PrettyPrinter, pprint
 from BioFlow.main_configs import IDFilter, Leg_ID_Filter, edge_type_filters, Dumps,\
-    analysis_set_protein_ids, analysis_set_display_names, analysis_set_bulbs_ids, \
-    background_set_protein_ids, background_set_bulbs_ids, annotation_nodes_ptypes
+    analysis_protein_ids_csv, analysis_set_display_names, analysis_set_bulbs_ids, \
+    background_protein_ids_csv, background_set_bulbs_ids, annotation_nodes_ptypes
 from BioFlow.neo4j_db.GraphDeclarator import DatabaseGraph
-from BioFlow.neo4j_db.graph_content import forbidden_verification_dict, full_dict, full_list
+from BioFlow.neo4j_db.graph_content import bulbs_name_shortcuts_translation, full_list, forbidden_verification_list
 from BioFlow.utils.log_behavior import logger as log
 
 
@@ -178,9 +178,38 @@ def erase_custom_fields():
             reset_routine(node)
 
 
-# TODO: extract meta-method from the two methods below.
-# TODO: refactor the connex logic in the meta-method
-# to be done, it requires a set of unittests on a meta-interface
+def node_extend_once(edge_type_filter, main_connex_only, core_node):
+    """
+
+    :param edge_type_filter:
+    :param main_connex_only:
+    :param core_node:
+    :return:
+    """
+    node_neighbors = []
+    node_neighbor_no = 0
+    for edge_type in edge_type_filter:
+        if core_node.bothV(edge_type) is not None:  # get the next edge type
+
+            # TODO: refactor connex logic.
+            for node in core_node.bothV(edge_type):  # get all the nodes in core_node
+                connex = True
+
+                if main_connex_only:
+                    connex = False
+
+                    if node.main_connex:
+                        connex = True
+
+                node_bulbs_id = node._id
+
+                if node_bulbs_id not in IDFilter and connex:
+                    node_neighbors.append(node_bulbs_id)
+                    node_neighbor_no += 1
+
+    return node_neighbors, node_neighbor_no
+
+
 def expand_from_reaction(reaction, main_connex_only):
     """
     Recovers all the participants of the reaction
@@ -193,28 +222,7 @@ def expand_from_reaction(reaction, main_connex_only):
     :rtype: 2- tuple
     """
     edge_type_filter = edge_type_filters["Reaction"]
-    reaction_participants = []
-    reaction_participants_no = 0
-    for edge_type in edge_type_filter:
-        if reaction.bothV(edge_type) is None:  # get the next edge type
-            continue
-
-        for node in reaction.bothV(edge_type):  # get all the nodes in reaction
-            connex = True  # TODO: refactor connex logic.
-
-            if main_connex_only:
-                connex = False
-
-                if node.main_connex:
-                    connex = True
-
-            node_bulbs_id = node._id
-
-            if node_bulbs_id not in IDFilter and connex:
-                reaction_participants.append(node_bulbs_id)
-                reaction_participants_no += 1
-
-    return reaction_participants, reaction_participants_no
+    return node_extend_once(edge_type_filter, main_connex_only, reaction)
 
 
 def expand_from_seed(seed_node_id, edge_filter, main_connex_only):
@@ -230,26 +238,7 @@ def expand_from_seed(seed_node_id, edge_filter, main_connex_only):
     :return: List of found nodes database ID, number of found nodes
     """
     seed_node = DatabaseGraph.vertices.get(seed_node_id)
-    reached_from_seed = []
-    reaction_participants_no = 0
-    for edge_type in edge_filter:
-        if seed_node.bothV(edge_type) is not None:
-
-            for node in seed_node.bothV(edge_type):
-                connex = True
-
-                if main_connex_only:
-                    connex = False
-
-                    if node.main_connex:
-                        connex = True
-
-                node_bulbs_id = node._id
-                if node_bulbs_id not in IDFilter and connex:
-                    reached_from_seed.append(node_bulbs_id)
-                    reaction_participants_no += 1
-
-    return reached_from_seed, reaction_participants_no
+    return node_extend_once(edge_filter, main_connex_only, seed_node)
 
 
 def recover_annotation(node_id_set, annotation_type):
@@ -278,18 +267,29 @@ def recover_annotation(node_id_set, annotation_type):
     return dict(ret_dict), ret_list
 
 
+def annotation_ids_from_csv(source_csv):
+    """
+    Recovers the set of annotation ids from a csv document
+
+    :param source_csv:
+    :return:
+    """
+    analysis_bulbs_ids = []
+    with open(source_csv) as src:
+        csv_reader = reader(src)
+        for row in csv_reader:
+            analysis_bulbs_ids = analysis_bulbs_ids + row
+    return analysis_bulbs_ids
+
+
 def cast_analysis_set_to_bulbs_ids():
     """
-    Unwraps the source file specified in the analysis_set_protein_ids, translates its database
+    Unwraps the source file specified in the analysis_protein_ids_csv, translates its database
     internal ids for further use
 
     :return:
     """
-    analysis_bulbs_ids = []
-    with open(analysis_set_protein_ids) as src:
-        csv_reader = reader(src)
-        for row in csv_reader:
-            analysis_bulbs_ids = analysis_bulbs_ids + row
+    analysis_bulbs_ids = annotation_ids_from_csv(analysis_protein_ids_csv)
     analysis_bulbs_ids = [ret for ret in analysis_bulbs_ids]
     source = look_up_annotation_set(analysis_bulbs_ids)
     PrettyPrinter(indent=4, stream=open(analysis_set_display_names, 'w')).pprint(source[1])
@@ -303,16 +303,8 @@ def cast_background_set_to_bulbs_id():
     :return:
     """
     background_bulbs_ids = []
-
-    with open(background_set_protein_ids) as src:
-        csv_reader = reader(src)
-        for row in csv_reader:
-            background_bulbs_ids = background_bulbs_ids + row
-
-    with open(analysis_set_protein_ids) as src:
-        csv_reader = reader(src)
-        for row in csv_reader:
-            background_bulbs_ids = background_bulbs_ids + row
+    background_bulbs_ids += annotation_ids_from_csv(analysis_protein_ids_csv)
+    background_bulbs_ids += annotation_ids_from_csv(background_protein_ids_csv)
 
     background_bulbs_ids = list(set(ret for ret in background_bulbs_ids))
     source = look_up_annotation_set(background_bulbs_ids)
@@ -351,7 +343,7 @@ def recompute_forbidden_ids(forbidden_entities_list):
     """
     forbidden_ids_list = set()
     for name in forbidden_entities_list:
-        bulbs_class, _ = full_dict[name]
+        bulbs_class, _ = bulbs_name_shortcuts_translation[name]
         for forbidden_legacy_id in Leg_ID_Filter:
             generator = bulbs_class.index.lookup(displayName=forbidden_legacy_id)
             # Wait, why isn't it breaking up here? only bub
@@ -369,7 +361,7 @@ def clear_all(instruction_list):
     :param instruction_list:
     """
     for name in instruction_list:
-        bulbs_class, bulbs_alias = full_dict[name]
+        bulbs_class, bulbs_alias = bulbs_name_shortcuts_translation[name]
         log.info('processing class: %s, alias %s', bulbs_class, bulbs_alias)
         if bulbs_class.get_all():
             id_list = [bulbs_class_instance._id
@@ -393,7 +385,7 @@ def run_diagnostics(instructions_list):
     """
     super_counter = 0
     for name in instructions_list:
-        bulbs_class, bulbs_alias = full_dict[name]
+        bulbs_class, bulbs_alias = bulbs_name_shortcuts_translation[name]
         counter = bulbs_class.index.count(element_type=bulbs_alias)
         print name, ':', counter
         super_counter += counter
@@ -416,7 +408,7 @@ if on_unittest:
 
 if __name__ == "__main__":
     # erase_custom_fields()
-    # recompute_forbidden_ids(forbidden_verification_dict)
+    # recompute_forbidden_ids(forbidden_verification_list)
     # print cast_analysis_set_to_bulbs_ids()
     # print look_up_annotation_set('CTR86')
     # print look_up_annotation_set('ENSG00000131981', 'UNIPROT_Ensembl')

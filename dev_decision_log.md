@@ -11,6 +11,8 @@
  - change main logger to a configuration set run on a logger to be retrieved in every single module
  
  - change the behavior of methods using instruction dictionaries so that they use key lists instead
+ 
+ - fold-in 
 
 
 ## Minor refactoring suggestions:
@@ -59,6 +61,8 @@
     - Inner configs that has only anything to do with the project structure and implementation
     
  - remove the memoization of individual pairs during the flow withing the group computation
+ 
+ - Make methods running large systems of procedures to being dictionary-driven
 
 ## Major refactoring suggestions:
 

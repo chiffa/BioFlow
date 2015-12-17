@@ -78,7 +78,8 @@ class ReactomeParser(object):
     # TODO: move the definition of the file to parse from the __inti__ method to the execution tree
     # TODO: add the following post-processing filters: , ['BiochemicalReaction'] on Catalysis
     # when parsing 'Control' object set
-    # TODO:
+    # TODO: convert the system of references to a single tree that has all the different
+    # subcategories already declared
 
     def __init__(self, path_to_biopax_file=main_configs.ReactomeBioPax):
 

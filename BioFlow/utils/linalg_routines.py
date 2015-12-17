@@ -180,8 +180,8 @@ def analyze_eigenvects(
     triangular_upper.setdiag(0)
     triangular_upper_nonzero_idxs = triangular_upper.nonzero()
 
-    print "reassigning the indexes for %s items, with %s non-zero elements" % (
-        triangular_upper.shape[0] ** 2, len(triangular_upper_nonzero_idxs[0]))
+    logger.info("reassigning the indexes for %s items, with %s non-zero elements" % (
+        triangular_upper.shape[0] ** 2, len(triangular_upper_nonzero_idxs[0])))
 
     # permute the off-diagonal terms
     nonzero_coordinates = zip(triangular_upper_nonzero_idxs[0].tolist(),
