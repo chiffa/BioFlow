@@ -3,7 +3,7 @@ Set of tools to work with HiNT database
 """
 from BioFlow.bio_db_parsers.proteinRelParsers import parse_hint
 from BioFlow.main_configs import Hint_csv
-from BioFlow.neo4j_db.db_io_routines import get_meta
+from BioFlow.neo4j_db.db_io_routines import memoize_bulbs_type
 from BioFlow.neo4j_db.GraphDeclarator import DatabaseGraph
 from BioFlow.utils.log_behavior import logger
 
@@ -14,7 +14,7 @@ def get_uniprots_for_hint():
 
     :return:
     """
-    inital_dict = get_meta(DatabaseGraph.UNIPORT)
+    inital_dict = memoize_bulbs_type(DatabaseGraph.UNIPORT)
     for key in inital_dict.keys():
         inital_dict[key.split('_')[0]] = inital_dict.pop(key)
     return inital_dict

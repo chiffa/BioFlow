@@ -1,10 +1,12 @@
 from BioFlow.neo4j_db.GraphDeclarator import DatabaseGraph
 
 forbidden_verification_dict = {
-    'Small Molecule': DatabaseGraph.SmallMolecule,
-    'Small Molecule Collection': DatabaseGraph.SmallMolecule_Collection,
-    'Physical Entity': DatabaseGraph.PhysicalEntity,
-    'Physical Entity Collection': DatabaseGraph.PhysicalEntity_Collection,
+    'Small Molecule': (DatabaseGraph.SmallMolecule, "SmallMolecule"),
+    'Small Molecule Collection': (DatabaseGraph.SmallMolecule_Collection,
+                                  "SmallMolecule_Collection"),
+    'Physical Entity': (DatabaseGraph.PhysicalEntity, "PhysicalEntity"),
+    'Physical Entity Collection': (DatabaseGraph.PhysicalEntity_Collection,
+                                   "PhysicalEntity_Collection")
     }
 
 full_dict = {
@@ -13,13 +15,15 @@ full_dict = {
     'RNA': (DatabaseGraph.RNA, "RNA"),
     'RNA Collection': (DatabaseGraph.RNA_Collection, "RNA_Collection"),
     'Small Molecule': (DatabaseGraph.SmallMolecule, "SmallMolecule"),
-    'Small Molecule Collection': (DatabaseGraph.SmallMolecule_Collection, "SmallMolecule_Collection"),
+    'Small Molecule Collection': (DatabaseGraph.SmallMolecule_Collection,
+                                  "SmallMolecule_Collection"),
     'Protein': (DatabaseGraph.Protein, "Protein"),
     'Protein Collection': (DatabaseGraph.Protein_Collection, "Protein_Collection"),
     'Complex': (DatabaseGraph.Complex, "Complex"),
     'Complex Collection': (DatabaseGraph.Complex_Collection, "Complex_Collection"),
     'Physical Entity': (DatabaseGraph.PhysicalEntity, "PhysicalEntity"),
-    'Physical Entity Collection': (DatabaseGraph.PhysicalEntity_Collection, "PhysicalEntity_Collection"),
+    'Physical Entity Collection': (DatabaseGraph.PhysicalEntity_Collection,
+                                   "PhysicalEntity_Collection"),
     'TemplateReaction': (DatabaseGraph.TemplateReaction, "Template_Reaction"),
     'Degradation': (DatabaseGraph.Degradation, "Degradation"),
     'BiochemicalReaction': (DatabaseGraph.BiochemicalReaction, "BiochemicalReaction"),
@@ -31,3 +35,10 @@ full_dict = {
     'UNIPROT': (DatabaseGraph.UNIPORT, "UNIPROT"),
     'GO Term': (DatabaseGraph.GOTerm, "GOTerm"),
     }
+
+forbidden_verification_list = ['Small Molecule',
+                               'Small Molecule Collection',
+                               'Physical Entity',
+                               'Physical Entity Collection']
+
+full_list = list(full_dict.keys())

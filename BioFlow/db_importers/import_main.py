@@ -13,8 +13,8 @@ from BioFlow.db_importers.reactome_importer import insert_reactome
 from BioFlow.db_importers.biogrid_importer import cross_ref_bio_grid
 from BioFlow.db_importers.go_and_uniprot_importer import memoize_go_terms, import_gene_ontology, \
     import_uniprots, pull_up_acc_nums_from_reactome
-from BioFlow.neo4j_db.db_io_routines import recompute_forbidden_IDs, clear_all, run_diagnostics
-from BioFlow.neo4j_db.graph_content import forbidden_verification_dict, full_dict
+from BioFlow.neo4j_db.db_io_routines import recompute_forbidden_ids, clear_all, run_diagnostics
+from BioFlow.neo4j_db.graph_content import forbidden_verification_dict, full_list
 
 # TODO: add the abundance import
 # TODO: add the derivative importance contribution
@@ -33,20 +33,20 @@ def build_db():
     cross_ref_hint()
     cross_ref_bio_grid()
 
-    run_diagnostics(full_dict)
+    run_diagnostics(full_list)
 
-    recompute_forbidden_IDs(forbidden_verification_dict)
+    recompute_forbidden_ids(forbidden_verification_dict)
 
 
 def destroy_db():
-    clear_all(full_dict)
+    clear_all(full_list)
 
 
 if __name__ == "__main__":
     # clear_all(full_dict)
-    run_diagnostics(full_dict)
+    run_diagnostics(full_list)
     insert_reactome()
-    run_diagnostics(full_dict)
+    run_diagnostics(full_list)
 
     # clear_all({'GO Term': (DatabaseGraph.GOTerm, "GOTerm")})
 
@@ -64,8 +64,8 @@ if __name__ == "__main__":
     cross_ref_hint()
     cross_ref_bio_grid()
 
-    run_diagnostics(full_dict)
+    run_diagnostics(full_list)
 
-    recompute_forbidden_IDs(forbidden_verification_dict)
+    recompute_forbidden_ids(forbidden_verification_dict)
 
     pass

@@ -16,7 +16,7 @@ from matplotlib import pyplot as plt
 
 from BioFlow.algorithms_bank.conduction_routines import perform_clustering
 from BioFlow.annotation_network.BioKnowledgeInterface import GO_Interface
-from BioFlow.main_configs import UP_rand_samp, Dumps, prename2, bgList
+from BioFlow.main_configs import UP_rand_samp, Dumps, analysis_set_bulbs_ids, background_set_bulbs_ids
 from BioFlow.molecular_network.InteractomeInterface import MatrixGetter
 from BioFlow.utils.io_Routines import undump_object
 from BioFlow.utils.linalg_routines import analyze_eigenvects
@@ -682,7 +682,7 @@ def run_analysis(group):
 
 def get_source():
     retlist = []
-    with open(prename2) as src:
+    with open(analysis_set_bulbs_ids) as src:
         csv_reader = reader(src)
         for row in csv_reader:
             retlist = retlist + row
@@ -692,7 +692,7 @@ def get_source():
 
 def get_background():
     retlist = []
-    with open(bgList) as src:
+    with open(background_set_bulbs_ids) as src:
         csv_reader = reader(src)
         for row in csv_reader:
             retlist = retlist + row

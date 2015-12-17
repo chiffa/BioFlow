@@ -116,14 +116,15 @@ if path.isfile(Dumps.Forbidden_IDs):
 # Where the RNA counts source, hits and background deduced from it are to be found  #
 # TODO: these should be input dynamically; or at least from a different source file because of a
 # different modification frequency
-RNA_source = "/home/ank/Documents/External_Predictions/Ben_RNA_seq/counts.tsv"
-Hits_source = "/home/andrei/support/tmp/Chr_10.txt"
-Background_source = "/home/ank/projects_files/2014/Poly_Pharma/HJ-screen/Allgene_R2.csv"
+rna_source = "/home/ank/Documents/External_Predictions/Ben_RNA_seq/counts.tsv"
+analysis_set_protein_ids = "/home/andrei/support/tmp/Chr_10.txt"
+background_set_protein_ids = "/home/ank/projects_files/2014/Poly_Pharma/HJ-screen/Allgene_R2.csv"
 
 # these are re-mappings to the inner master database IDs
-prename1 = Hits_source[:-4] + '_' + 'pPh_name_maps.txt'
-prename2 = Hits_source[:-4] + '_' + 'pPh_id_list.csv'
-bgList = Background_source[:-4] + '_' + 'pPh_id_list.csv'
+# TODO: refactor and move those to dumps
+analysis_set_display_names = analysis_set_protein_ids[:-4] + '_' + 'pPh_name_maps.txt'
+analysis_set_bulbs_ids = analysis_set_protein_ids[:-4] + '_' + 'pPh_id_list.csv'
+background_set_bulbs_ids = background_set_protein_ids[:-4] + '_' + 'pPh_id_list.csv'
 
 dump_location = path.join(path.abspath(
     path.join(path.dirname(__file__), os.pardir)), 'dumps')
@@ -133,7 +134,6 @@ output_location = path.join(path.abspath(
 
 log_location = path.join(path.abspath(
     path.join(path.dirname(__file__), os.pardir)), 'logs')
-
 
 if __name__ == "__main__":
     pp = PrettyPrinter(indent=4)

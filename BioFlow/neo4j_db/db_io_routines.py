@@ -7,121 +7,81 @@ import os
 import pickle
 from collections import defaultdict
 from csv import reader, writer
-from pprint import PrettyPrinter
-
-from BioFlow.main_configs import IDFilter, Leg_ID_Filter, edge_type_filters, Dumps, Hits_source, \
-    prename1, prename2, Background_source, bgList, annotation_nodes_ptypes
+from pprint import PrettyPrinter, pprint
+from BioFlow.main_configs import IDFilter, Leg_ID_Filter, edge_type_filters, Dumps,\
+    analysis_set_protein_ids, analysis_set_display_names, analysis_set_bulbs_ids, \
+    background_set_protein_ids, background_set_bulbs_ids, annotation_nodes_ptypes
 from BioFlow.neo4j_db.GraphDeclarator import DatabaseGraph
+from BioFlow.neo4j_db.graph_content import forbidden_verification_dict, full_dict, full_list
 from BioFlow.utils.log_behavior import logger as log
 
-pp = PrettyPrinter(indent=4)
 
-
-def lookup_by_id(domain, req):
+# TODO: refactor when we are going to offload annotations to ElasticSearch engine
+def get_attached_annotations(bulbs_node_id):
     """
-    Looks up a node by legacy ID and prints it's access url. The lookup is a case-sensitive strict
-    match.
+    Recovers ids of annotation nodes attached the the node with a given bulbs id
 
-    :param domain: Node type of the form of DatabaseGraph.Object
-    :param req: requested legacy ID
-    :return: list of the items found
+    :param bulbs_node_id:
+    :return:
     """
-    accumulator = []
-    retset = domain.index.lookup(ID=req)
-    if not retset:
-        print "nothing found"
-    if retset:
-        for item in retset:
-            print item
-            accumulator.append(item)
-
-    return accumulator
+    list_of_annotations = []
+    node = DatabaseGraph.vertices.get(bulbs_node_id)
+    annotation_node_generator = node.outV("is_annotated")
+    if not annotation_node_generator:
+        log.info("node %s has not annotations attached to it" % bulbs_node_id)
+    for rel_node in annotation_node_generator:
+        list_of_annotations.append(rel_node._id)
+    return list_of_annotations
 
 
-def count_items(domain):
+def annotations_2_node_chars(node_generator):
     """
-    Stupid counter that gets the number of items in a given domain
+    Gets nodes that are referenced by the annot_nodes in provided generator.
 
-    :param domain: Domain of the DatabaseGraph.Object whose objects we are going to count
-    :return: number of objects in the domain
-    """
-    return sum(1 for _ in domain.get_all())
-
-
-def set_look_up_by_id(domain, id_set):
-    """
-    Looks up nodes by legacy IDs from an ID_set list and prints their access url. The lookup is a
-    case-sensitive strict match.
-
-    :param domain: Node type of the form of DatabaseGraph.Object
-    :param Domain: Node type of the form of DatabaseGraph.Object
-    :param id_set: list of requested legacy ID
-    """
-    for ID in id_set:
-        print "scanning for:", ID
-        lookup_by_id(domain, ID)
-        print "=================="
-
-# Looks like the two above nodes are
-
-
-def get_attached_annotations(node_id):
-    retset = []
-    node = DatabaseGraph.vertices.get(node_id)
-    gen_2 = node.outV("is_annotated")
-    if not gen_2:
-        print "node %s has not annotations attached to it" % node_id
-    for rel_node in gen_2:
-        node_db_ID = str(rel_node).split('/')[-1][:-1]
-        retset.append(node_db_ID)
-    return retset
-
-
-def run_through(node_generator):
-    """
-    Supporting function. Gets the nodes that are referenced by the annot_nodes in the generator
+    Returns the characterisation of nodes referenced from the node generator
 
     :param node_generator: iterator over annot_nodes
-    :return: the list of object nodes accessible from this set of annot_nodes
+    :return: the list of object nodes accessible from this set of annot_nodes. [type, name,
+    bulbs_id, legacy_id]
     """
 
     if not node_generator:  # Node generator is empty: return empty list
         return []
 
-    set_of_interest = []
+    referenced_nodes = []
     for node in node_generator:
-        gen_2 = node.inV("is_annotated")
-        # backlink to the node which this node annotates
-        if not gen_2:
-            # if not backlink was found, raise a warning about lonely node
-            print Warning("%s is floating alone in the wild. He feels lonely." % str(node))
-        for rel_node in gen_2:
-            node_db_id = str(rel_node).split('/')[-1][:-1]
-            node_id = rel_node.ID
-            node_type = rel_node.element_type
-            node_display = rel_node.displayName
-            set_of_interest.append(
-                (node_type, node_display, node_db_id, node_id))
-    return set_of_interest
+        annotates_backlink_generator = node.inV("is_annotated")
+
+        if not annotates_backlink_generator:
+            log.warning("%s is floating alone in the wild. He feels lonely. %s",
+                        str(node), 'The database is most likely broken.')
+
+        for object_node in annotates_backlink_generator:
+            node_bulbs_id = object_node._id
+            node_legacy_id = object_node.ID
+            node_type = object_node.element_type
+            node_display_name = object_node.displayName
+            referenced_nodes.append((node_type, node_display_name,
+                                     node_bulbs_id, node_legacy_id))
+
+    return referenced_nodes
 
 
-def unwrap_DB_ID(node_generator):
+def node_generator_2_bulbs_ids(node_generator):
     """
-    Supporting function. Gets the nodes that are referenced by the annot_nodes in the generator
+    Get bulb ids of nodes in the generator
 
     :param node_generator: iterator over annot_nodes
-    :return: the DB_IDs list of object nodes accessible from this set of annot_nodes
-    :raise Warning: if an annotation node is not bound to a real node. This might happen if some object nodes were manually
-                    deleted, but not their annotation nodes. Tu curb this a full database reload is required
+    :return: the bubls ids of nodes in generator
     """
     if not node_generator:
         return []
 
-    retset = []
+    node_set = []
     for node in node_generator:
-        node_db_ID = str(node).split('/')[-1][:-1]
-        retset.append(node_db_ID)
-    return retset
+        node_set.append(node._id)
+
+    return node_set
 
 
 def look_up_annotation_node(p_load, p_type=''):
@@ -147,8 +107,7 @@ def look_up_annotation_node(p_load, p_type=''):
         :return: list of found annotation nodes satisfying both payload content and payload type
          conditions
         """
-        inner_node_generator = DatabaseGraph.AnnotNode.index.lookup(
-            payload=pay_load)
+        inner_node_generator = DatabaseGraph.AnnotNode.index.lookup(payload=pay_load)
         results = []
         if inner_node_generator:  # if there is anything in the inner node generator
             for node in inner_node_generator:
@@ -160,15 +119,15 @@ def look_up_annotation_node(p_load, p_type=''):
 
     if p_type in annotation_nodes_ptypes:
         node_generator = double_index_search(payload, p_type)
-        return run_through(node_generator)
+        return annotations_2_node_chars(node_generator)
 
     if p_type != '':
-        print Exception("%s is an unsupported payload type. Please refer to " +
-                        "annotation_nodes_ptypes in cofigs/internal_configs.py. ignoring p_type " +
-                        "from now on")
+        log.exception("%s is an unsupported payload type. ", p_type)
+        log.info("Please refer authorised annotation_nodes_ptypes in cofigs/internal_configs.py.")
+        log.info("ignoring p_type from now on")
 
     node_generator = DatabaseGraph.AnnotNode.index.lookup(payload=payload)
-    return run_through(node_generator)
+    return annotations_2_node_chars(node_generator)
 
 
 def look_up_annotation_set(p_load_list, p_type=''):
@@ -186,255 +145,259 @@ def look_up_annotation_set(p_load_list, p_type=''):
         else:
             return ''
 
-    tuple_list = [(p_load, look_up_annotation_node(p_load, p_type))
-                  for p_load in p_load_list]
-    db_id_list = [db_id_mapping_helper(value) for key, value in tuple_list]
-    warnings_list = [key for key, value in tuple_list if value == []]
-    for warnId in warnings_list:
-        print Warning('look_up_annotation_set@DB_IO: following ID has no corresponding entry in ' +
-                      'the database: %s' % warnId)
-
-    # TODO:
-    return warnings_list, tuple_list, db_id_list
+    load_2_name_list = [(p_load, look_up_annotation_node(p_load, p_type))
+                        for p_load in p_load_list]
+    db_id_list = [db_id_mapping_helper(value) for key, value in load_2_name_list]
+    not_found_list = [key for key, value in load_2_name_list if value == []]
+    for warnId in not_found_list:
+        log.warning('Following ID has no corresponding entry in the database: %s', warnId)
+    return not_found_list, load_2_name_list, db_id_list
 
 
 def erase_custom_fields():
     """
-        Resets the .costum field of all the Nodes on which we have iterated here. Usefull to perform
-        after node set or node connectivity were modfied.
-        Unlike the method in the Matrix_retrieval cluster, this method is very time-consuming, since it iterates
-        on all the elements of all the classes susceptible to have the costum field.
+    Resets the custom and main_connex fields of all the Nodes on which we have iterated here.
+
+    Required to be run after node set or node connectivity were modified.
+    Unlike the method in the Matrix_retrieval cluster, this method is very time-consuming,
+    since it iterates on all the elements of all the classes susceptible to have the custom field.
     """
-    Node_gen = DatabaseGraph.vertices.index.lookup(costum='Main_Connex')
-    if Node_gen:
-        for Node in Node_gen:
-            Node.custom = ''
-            Node.main_connex = False
-            Node.save()
+    def reset_routine(_node):
+        _node.custom = ''
+        _node.main_connex = False
+        _node.save()
 
-    Node_gen = DatabaseGraph.vertices.index.lookup(main_connex=True)
-    if Node_gen:
-        for Node in Node_gen:
-            Node.custom = ''
-            Node.main_connex = False
-            Node.save()
+    node_gen = DatabaseGraph.vertices.index.lookup(costum='Main_Connex')
+    if node_gen:
+        for node in node_gen:
+            reset_routine(node)
+
+    node_gen = DatabaseGraph.vertices.index.lookup(main_connex=True)
+    if node_gen:
+        for node in node_gen:
+            reset_routine(node)
 
 
-def reaction_participant_getter(Reaction, main_connex_only):
+# TODO: extract meta-method from the two methods below.
+# TODO: refactor the connex logic in the meta-method
+# to be done, it requires a set of unittests on a meta-interface
+def expand_from_reaction(reaction, main_connex_only):
     """
     Recovers all the participants of the reaction
 
-    :param Reaction: Reaction node for which we are willing to get the participants
-    :param main_connex_only: If set to true, will only pull elements from the reaction that are in the main connex_set
+    :param reaction: Reaction node for which we are willing to get the participants
+    :param main_connex_only: If set to true, will only pull elements from
+    the reaction that are in the main connex_set
     :type main_connex_only: bool
     :return: List of found nodes, number of found nodes
     :rtype: 2- tuple
     """
     edge_type_filter = edge_type_filters["Reaction"]
-    LocalList = []
-    count = 0
+    reaction_participants = []
+    reaction_participants_no = 0
     for edge_type in edge_type_filter:
-        if Reaction.bothV(edge_type) is None:
+        if reaction.bothV(edge_type) is None:  # get the next edge type
             continue
-        for elt in Reaction.bothV(edge_type):
-            Connex = True
+
+        for node in reaction.bothV(edge_type):  # get all the nodes in reaction
+            connex = True  # TODO: refactor connex logic.
 
             if main_connex_only:
-                Connex = False
-                if elt.main_connex:
-                    Connex = True
+                connex = False
 
-            ID = str(elt).split('/')[-1][:-1]
-            if ID not in IDFilter and Connex:
-                LocalList.append(ID)
-                count += 1
-    return LocalList, count
+                if node.main_connex:
+                    connex = True
+
+            node_bulbs_id = node._id
+
+            if node_bulbs_id not in IDFilter and connex:
+                reaction_participants.append(node_bulbs_id)
+                reaction_participants_no += 1
+
+    return reaction_participants, reaction_participants_no
 
 
-def expand_from_seed(Seed_Node_ID, edge_filter, main_connex_only):
+def expand_from_seed(seed_node_id, edge_filter, main_connex_only):
     """
-    Recovers all the nodes accessible in one jump from a seed_node with a given database ID by jumping only via the relations
-        of type specified in the edge_filter
+    Recovers all the nodes accessible in one jump from a seed_node with a given database ID by
+    jumping only via the relations of types specified in the edge_filter
 
-    :param Seed_Node_ID: the database ID of the initial node from which we are observing accessibility
+    :param seed_node_id: the database ID of the initial node from which we are observing
+     accessibility
     :param edge_filter: the list of relation types for which the jumps are authorised
+    :param main_connex_only: of true, will expand from seed onto the elements of the main connex
+    only
     :return: List of found nodes database ID, number of found nodes
-    :rtype: 2- tuple
     """
-    Seed_Node = DatabaseGraph.vertices.get(Seed_Node_ID)
-    LocalList = []
-    count = 0
+    seed_node = DatabaseGraph.vertices.get(seed_node_id)
+    reached_from_seed = []
+    reaction_participants_no = 0
     for edge_type in edge_filter:
-        if Seed_Node.bothV(edge_type) is not None:
-            for elt in Seed_Node.bothV(edge_type):
-                Connex = True
+        if seed_node.bothV(edge_type) is not None:
+
+            for node in seed_node.bothV(edge_type):
+                connex = True
 
                 if main_connex_only:
-                    Connex = False
-                    if elt.main_connex:
-                        Connex = True
+                    connex = False
 
-                ID = str(elt).split('/')[-1][:-1]
-                if ID not in IDFilter and Connex:
-                    LocalList.append(ID)
-                    count += 1
-    return LocalList, count
+                    if node.main_connex:
+                        connex = True
+
+                node_bulbs_id = node._id
+                if node_bulbs_id not in IDFilter and connex:
+                    reached_from_seed.append(node_bulbs_id)
+                    reaction_participants_no += 1
+
+    return reached_from_seed, reaction_participants_no
 
 
-def recompute_forbidden_IDs(Node_Type_Dict):
+def recover_annotation(node_id_set, annotation_type):
     """
-    Recomputes the list of nodes that contain overloaded terms that would bring too close together the reactions that are normally not,
-    just because of participation of ultra-aboundant elements, such as H2O, H+ or ATP
+    seems to retrieve annotations attached to a list of nodes in a set.
 
-    :param Node_Type_List: Dictionary mapping the names of entities to their corresponding bulbs classes
-    :type Node_Type_Dict: dict
+    :param node_id_set:
+    :param annotation_type:
+    :return:
     """
-    retlist = set()
-    for bulbs_type in Node_Type_Dict.itervalues():
-        for forbidden_Legacy_ID in Leg_ID_Filter:
-            generator = bulbs_type.index.lookup(
-                displayName=forbidden_Legacy_ID)
-            UNW = unwrap_DB_ID(generator)
-            retlist.update(UNW)
-    print retlist
-    print Dumps.Forbidden_IDs
-    pickle.dump(retlist, file(Dumps.Forbidden_IDs, 'w'))
-
-
-def recover_UP_chars(UP_Nodes, UP_are_IDs):
-    retdict = {}
-
-    if UP_are_IDs:
-        for node_Id in UP_Nodes:
-            node = DatabaseGraph.UNIPORT.get(node_Id)
-            retdict[node] = [node.ID, node.displayName]
-        return retdict
-
-    for node_leg_Id in UP_Nodes:
-        generator = DatabaseGraph.UNIPORT.index.lookup(ID=node_leg_Id)
-        if not generator:
-            continue
-        retlist = []
-        for node in generator:
-            retlist.append(node.displayName)
-        if len(retlist) != 1:
-            raise Exception(
-                'Something went wrong with the UP retrieval for the UP %s, too many display names: %s' %
-                (node_leg_Id, retlist))
-        else:
-            retdict[node_leg_Id] = retlist
-    return retdict
-
-
-def recover_annotation(Node_Id_set, annotation_type):
 
     ret_dict = defaultdict(list)
     ret_list = []
 
-    for node_id in Node_Id_set:
+    for node_id in node_id_set:
         node = DatabaseGraph.vertices.get(node_id)
         if node:
             annotation_generator = node.bothV('is_annotated')
             if annotation_generator:
                 for annot in annotation_generator:
                     if annot.ptype == annotation_type:
-                        if 'G0' in annot.payload:
+                        if 'G0' in annot.payload:  # What? Why?
                             ret_dict[node_id].append(annot.payload)
                             ret_list.append([str(annot.payload), str(node.ID)])
 
     return dict(ret_dict), ret_list
 
 
-def unwrap_source():
-    retlist = []
-    with open(Hits_source) as src:
-        csv_reader = reader(src)
-        for row in csv_reader:
-            retlist = retlist + row
-    retlist = [ret for ret in retlist]
-    source = look_up_annotation_set(retlist)
-    PrettyPrinter(indent=4, stream=open(prename1, 'w')).pprint(source[1])
-    writer(open(prename2, 'w'), delimiter='\n').writerow(source[2])
-
-
-def unwrap_background():
-    retlist = []
-
-    with open(Background_source) as src:
-        csv_reader = reader(src)
-        for row in csv_reader:
-            retlist = retlist + row
-
-    with open(Hits_source) as src:
-        csv_reader = reader(src)
-        for row in csv_reader:
-            retlist = retlist + row
-
-    retlist = list(set(ret for ret in retlist))
-    source = look_up_annotation_set(retlist)
-    writer(open(bgList, 'w'), delimiter='\n').writerow(source[2])
-
-
-def get_meta(bulbs_type, dict_to_load_into=None):
+def cast_analysis_set_to_bulbs_ids():
     """
-    Loads a bulbs type ID_2_object into a supplied dict. If no dict supplied returns the dict as
+    Unwraps the source file specified in the analysis_set_protein_ids, translates its database
+    internal ids for further use
+
+    :return:
+    """
+    analysis_bulbs_ids = []
+    with open(analysis_set_protein_ids) as src:
+        csv_reader = reader(src)
+        for row in csv_reader:
+            analysis_bulbs_ids = analysis_bulbs_ids + row
+    analysis_bulbs_ids = [ret for ret in analysis_bulbs_ids]
+    source = look_up_annotation_set(analysis_bulbs_ids)
+    PrettyPrinter(indent=4, stream=open(analysis_set_display_names, 'w')).pprint(source[1])
+    writer(open(analysis_set_bulbs_ids, 'w'), delimiter='\n').writerow(source[2])
+
+
+def cast_background_set_to_bulbs_id():
+    """
+    Unwraps the source file specified in the background_bulbs_ids, translates it to the database
+    internal ids for further use
+    :return:
+    """
+    background_bulbs_ids = []
+
+    with open(background_set_protein_ids) as src:
+        csv_reader = reader(src)
+        for row in csv_reader:
+            background_bulbs_ids = background_bulbs_ids + row
+
+    with open(analysis_set_protein_ids) as src:
+        csv_reader = reader(src)
+        for row in csv_reader:
+            background_bulbs_ids = background_bulbs_ids + row
+
+    background_bulbs_ids = list(set(ret for ret in background_bulbs_ids))
+    source = look_up_annotation_set(background_bulbs_ids)
+    writer(open(background_set_bulbs_ids, 'w'), delimiter='\n').writerow(source[2])
+
+
+def memoize_bulbs_type(bulbs_type, dict_to_load_into=None):
+    """
+    Loads a bulbs type ID_2_object into a supplied dict. If no dict supplied, returns the dict as
     a result
 
-    :param bulbs_type:
-    :param dict_to_load_into:
+    :param bulbs_type: bulbs class whose contents we want to memoize
+    :param dict_to_load_into: if provided, will be loaded into and then returned
     :return:
     """
     if dict_to_load_into is None:
         dict_to_load_into = {}
-
     log.info('starting %s memoization load' % bulbs_type)
-    for uniprot_node in bulbs_type.get_all():
-        dict_to_load_into[uniprot_node.ID] = bulbs_type.get(uniprot_node._id)
+    for bulbs_node in bulbs_type.get_all():
+        dict_to_load_into[bulbs_node.ID] = bulbs_type.get(bulbs_node._id)
     log.info('%s Loaded, contains %s elements' % (bulbs_type, len(dict_to_load_into)))
 
     return dict_to_load_into
 
 
-# TODO: the following two functions rely on instruction dicts that can and should be simplified,
-# so that a list of keys is sufficient to execute the function.
+def recompute_forbidden_ids(forbidden_entities_list):
+    """
+    Recomputes the list of nodes that contain overloaded terms.
 
-def clear_all(instruction_dict):
+    Without eliminating those terms, they would bring too close together the reactions
+    that are normally not, just because of  participation of ultra-abundant elements,
+    such as H2O, H+ or ATP
+
+    :param forbidden_entities_list: Dictionary mapping the names of entities to
+    their corresponding bulbs classes
+    """
+    forbidden_ids_list = set()
+    for name in forbidden_entities_list:
+        bulbs_class, _ = full_dict[name]
+        for forbidden_legacy_id in Leg_ID_Filter:
+            generator = bulbs_class.index.lookup(displayName=forbidden_legacy_id)
+            # Wait, why isn't it breaking up here? only bub
+            associated_node_ids = node_generator_2_bulbs_ids(generator)
+            forbidden_ids_list.update(associated_node_ids)
+    log.info('recomputed the forbidden IDs %s. \n Dumping them to %s',
+             forbidden_ids_list, Dumps.Forbidden_IDs)
+    pickle.dump(forbidden_ids_list, file(Dumps.Forbidden_IDs, 'w'))
+
+
+def clear_all(instruction_list):
     """
     empties the whole BioPax-bound node set.
 
-    :param instruction_dict:
+    :param instruction_list:
     """
-    for name, bulbs_class in instruction_dict.iteritems():
-        print 'processing class: %s, alias %s' % (name, bulbs_class)
-        if bulbs_class[0].get_all():
-            IDlist = [str(bulbs_class_instance).split('/')[-1][:-1]
-                      for bulbs_class_instance in bulbs_class[0].get_all()]
-            IDL_len = len(IDlist) / 100.
-            for counter, ID in enumerate(IDlist):
+    for name in instruction_list:
+        bulbs_class, bulbs_alias = full_dict[name]
+        log.info('processing class: %s, alias %s', bulbs_class, bulbs_alias)
+        if bulbs_class.get_all():
+            id_list = [bulbs_class_instance._id
+                       for bulbs_class_instance in bulbs_class.get_all()]
+            id_list_length = len(id_list) / 100.
+            for counter, ID in enumerate(id_list):
                 del_set = get_attached_annotations(ID)
-                for annot_node_id in del_set:
-                    DatabaseGraph.AnnotNode.delete(annot_node_id)
-                bulbs_class[0].delete(ID)
+                for annotation_node_id in del_set:
+                    DatabaseGraph.AnnotNode.delete(annotation_node_id)
+                bulbs_class.delete(ID)
                 if counter % 100 == 0:
-                    print 'deleting class %s %.2f %%:' % (name, counter / IDL_len)
-            print 'deleting class %s %.2f %%:' % (name, 100)
+                    log.info('deleting class %s %.2f %%:', name, counter / id_list_length)
+            log.info('deleting class %s %.2f %%:', name, 100)
 
 
-def run_diagnostics(instruction_dict):
+def run_diagnostics(instructions_list):
     """
     Checks the number of nodes of each type.
 
-    :param instruction_dict:
+    :param instructions_list:
     """
     super_counter = 0
-    for name, (bulbs_class, bulbs_alias) in instruction_dict.iteritems():
+    for name in instructions_list:
+        bulbs_class, bulbs_alias = full_dict[name]
         counter = bulbs_class.index.count(element_type=bulbs_alias)
         print name, ':', counter
         super_counter += counter
     print 'Total: ', super_counter
-
-
-# TODO: this dict needs to be moved into the internal configurations section.
 
 
 # Yes, I know what goes below here is ugly and shouldn't be in the
@@ -447,34 +410,20 @@ if on_unittest:
     # Yes, this is dangerous as hell. Can't see a better way of doing it
     # though for now.
     import sys
-    import unittests.Mocks.DB_IO_Mocks as self_mock
-    sys.modules[__name__] = self_mock
-
-# TODO: why are we manipulating the Forbidden_verification dictionary and Reactome import
-# dictionary? Is it because they are used elsewhere and we need to cause a
-# skip in code elsewhere?
+    import unittests.Mocks.DB_IO_Mocks as SelfMock
+    sys.modules[__name__] = SelfMock
 
 
 if __name__ == "__main__":
-
-    # print count_items(DatabaseGraph.UNIPORT)
-    # lookup_by_ID(DatabaseGraph.UNIPORT, "SIR2_YEAST")
-    # Erase_custom_fields()
-    # recompute_forbidden_IDs(Forbidden_verification_dict)
-    # print unwrap_source()
-    # print look_up_Annot_Node('CTR86')
-    # print Look_up_Annot_Node('ENSG00000131981', 'UNIPROT_Ensembl')
-    # unwrap_source()
-    # unwrap_background()
-    # anset = [GBO_1, GBO_2, GBO_3, GBO_4]
-
-    # for subset in anset:
-    #     print look_up_Annot_set(subset)[-1]
-
-    # print len(transcription)
-    # print recover_annotation(transcription, 'UNIPROT_Ensembl')[1]
-    # print recover_UP_chars(UP_Nodes=transcription, UP_are_IDs=None)
-    # _, resdict, reslist = look_up_Annot_set(['MYPN'])
-    # pp.pprint(resdict)
+    # erase_custom_fields()
+    # recompute_forbidden_ids(forbidden_verification_dict)
+    # print cast_analysis_set_to_bulbs_ids()
+    # print look_up_annotation_set('CTR86')
+    # print look_up_annotation_set('ENSG00000131981', 'UNIPROT_Ensembl')
+    # cast_analysis_set_to_bulbs_ids()
+    # cast_background_set_to_bulbs_id()
+    # _, resdict, reslist = look_up_annotation_set(['MYPN'])
+    # pprint(resdict)
     # print reslist
-    unwrap_source()
+    # run_diagnostics(full_list)
+    cast_analysis_set_to_bulbs_ids()

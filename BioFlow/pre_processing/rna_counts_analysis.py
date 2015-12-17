@@ -11,7 +11,7 @@ from scipy.stats import t
 
 from BioFlow.utils.io_Routines import dump_object
 from BioFlow.utils.log_behavior import logger as log
-from BioFlow.main_configs import RNA_source, Dumps
+from BioFlow.main_configs import rna_source, Dumps
 from BioFlow.neo4j_db import db_io_routines
 
 pre_dict = {1: 0.80,
@@ -197,7 +197,7 @@ if __name__ == "__main__":
     test_groups_to_compare = [[0, 1], [0, 2]]
 
     run_analysis_suite(
-        RNA_source,
+        rna_source,
         9,
         exp_groups,
         test_groups_to_compare,

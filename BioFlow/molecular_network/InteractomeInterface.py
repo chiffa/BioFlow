@@ -23,7 +23,7 @@ from BioFlow.algorithms_bank import conduction_routines as CR
 from BioFlow.main_configs import Chromosome_source, Chromosome_file_filter
 from BioFlow.main_configs import edge_type_filters, Adjacency_Martix_Dict, Conductance_Matrix_Dict, Dumps, Outputs, Interactome_rand_samp
 from BioFlow.neo4j_db.GraphDeclarator import DatabaseGraph
-from BioFlow.neo4j_db.db_io_routines import reaction_participant_getter, expand_from_seed, erase_custom_fields
+from BioFlow.neo4j_db.db_io_routines import expand_from_reaction, expand_from_seed, erase_custom_fields
 from BioFlow.utils.gdfExportInterface import GdfExportInterface
 from BioFlow.utils.io_Routines import write_to_csv, dump_object, undump_object
 
@@ -251,7 +251,7 @@ class MatrixGetter(object):
                 for Reaction in ReactionType.get_all():
                     if Reaction is None:
                         continue
-                    LocalList, cnt = reaction_participant_getter(
+                    LocalList, cnt = expand_from_reaction(
                         Reaction, self.Connexity_Aware)
                     count += cnt
 

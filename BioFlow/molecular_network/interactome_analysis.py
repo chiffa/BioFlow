@@ -11,7 +11,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from BioFlow.algorithms_bank.conduction_routines import perform_clustering
-from BioFlow.main_configs import Interactome_rand_samp, prename2
+from BioFlow.main_configs import Interactome_rand_samp, analysis_set_bulbs_ids
 from BioFlow.molecular_network.InteractomeInterface import MatrixGetter
 from BioFlow.utils.dataviz import kde_compute
 
@@ -430,7 +430,7 @@ def auto_analyze(sourcelist, depth, processors=4, backgroundlist=None):
 
 def get_source():
     retlist = []
-    with open(prename2) as src:
+    with open(analysis_set_bulbs_ids) as src:
         csv_reader = reader(src)
         for row in csv_reader:
             retlist = retlist + row

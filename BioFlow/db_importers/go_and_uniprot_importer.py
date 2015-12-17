@@ -6,7 +6,7 @@ from BioFlow.utils.log_behavior import logger as log
 from BioFlow.bio_db_parsers.geneOntologyParser import GOTermsParser
 from BioFlow.bio_db_parsers.uniprotParser import UniProtParser
 from BioFlow.neo4j_db.GraphDeclarator import DatabaseGraph
-from BioFlow.neo4j_db.db_io_routines import get_meta
+from BioFlow.neo4j_db.db_io_routines import memoize_bulbs_type
 
 # TODO: this should be refactored into a class to wrap memoization dicts
 # Stores relations between GO IDs and the objects in the neo4j database
@@ -231,14 +231,14 @@ def memoize_go_terms():
     """
     loads go terms from the
     """
-    get_meta(DatabaseGraph.GOTerm, GO_term_memoization_dict)
+    memoize_bulbs_type(DatabaseGraph.GOTerm, GO_term_memoization_dict)
 
 
 def memoize_uniprots():
     """
     Pre-loads uniprots
     """
-    get_meta(DatabaseGraph.UNIPORT, GO_term_memoization_dict)
+    memoize_bulbs_type(DatabaseGraph.UNIPORT, GO_term_memoization_dict)
 
 
 if __name__ == "__main__":
