@@ -16,6 +16,16 @@ from BioFlow.neo4j_db.graph_content import bulbs_name_shortcuts_translation, ful
 from BioFlow.utils.log_behavior import logger as log
 
 
+def get_bulbs_id(bulbs_node):
+    """
+    gets bulbs_id for a node, since it's a hidden attribute
+
+    :param bulbs_node:
+    :return:
+    """
+    return bulbs_node._id
+
+
 # TODO: refactor when we are going to offload annotations to ElasticSearch engine
 def get_attached_annotations(bulbs_node_id):
     """
@@ -30,7 +40,7 @@ def get_attached_annotations(bulbs_node_id):
     if not annotation_node_generator:
         log.info("node %s has not annotations attached to it" % bulbs_node_id)
     for rel_node in annotation_node_generator:
-        list_of_annotations.append(rel_node._id)
+        list_of_annotations.append(get_bulbs_id(rel_node))
     return list_of_annotations
 
 
@@ -57,7 +67,7 @@ def annotations_2_node_chars(node_generator):
                         str(node), 'The database is most likely broken.')
 
         for object_node in annotates_backlink_generator:
-            node_bulbs_id = object_node._id
+            node_bulbs_id = get_bulbs_id(object_node)
             node_legacy_id = object_node.ID
             node_type = object_node.element_type
             node_display_name = object_node.displayName
@@ -79,7 +89,7 @@ def node_generator_2_bulbs_ids(node_generator):
 
     node_set = []
     for node in node_generator:
-        node_set.append(node._id)
+        node_set.append(get_bulbs_id(node))
 
     return node_set
 
@@ -201,7 +211,7 @@ def node_extend_once(edge_type_filter, main_connex_only, core_node):
                     if node.main_connex:
                         connex = True
 
-                node_bulbs_id = node._id
+                node_bulbs_id = get_bulbs_id(node)
 
                 if node_bulbs_id not in IDFilter and connex:
                     node_neighbors.append(node_bulbs_id)
@@ -324,7 +334,7 @@ def memoize_bulbs_type(bulbs_type, dict_to_load_into=None):
         dict_to_load_into = {}
     log.info('starting %s memoization load' % bulbs_type)
     for bulbs_node in bulbs_type.get_all():
-        dict_to_load_into[bulbs_node.ID] = bulbs_type.get(bulbs_node._id)
+        dict_to_load_into[bulbs_node.ID] = bulbs_type.get(get_bulbs_id(bulbs_node))
     log.info('%s Loaded, contains %s elements' % (bulbs_type, len(dict_to_load_into)))
 
     return dict_to_load_into
@@ -364,7 +374,7 @@ def clear_all(instruction_list):
         bulbs_class, bulbs_alias = bulbs_name_shortcuts_translation[name]
         log.info('processing class: %s, alias %s', bulbs_class, bulbs_alias)
         if bulbs_class.get_all():
-            id_list = [bulbs_class_instance._id
+            id_list = [get_bulbs_id(bulbs_class_instance)
                        for bulbs_class_instance in bulbs_class.get_all()]
             id_list_length = len(id_list) / 100.
             for counter, ID in enumerate(id_list):

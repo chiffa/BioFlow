@@ -76,15 +76,3 @@ def my_timer(message='', previous_time=[]):
     else:
         print '%s timer reset. Time since previous %s' % (message, time() - previous_time[0])
         previous_time[0] = time()
-
-
-def autolog(function):
-    """
-    Logs entry and exit of a function every time it is called to the log.info channel.
-
-    It also acts as a point of capture of exceptions and logging them to 'CRITICAL channel'
-
-    :param function:
-    :return:
-    """
-    pass

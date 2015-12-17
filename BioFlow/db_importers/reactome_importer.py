@@ -7,6 +7,7 @@ from BioFlow.utils.log_behavior import logger as log
 from BioFlow.main_configs import Dumps, ReactomeBioPax
 from BioFlow.internal_configs import Leg_ID_Filter
 from BioFlow.neo4j_db.GraphDeclarator import DatabaseGraph
+from BioFlow.neo4j_db.db_io_routines import get_bulbs_id
 from BioFlow.bio_db_parsers.reactomeParser import ReactomeParser
 
 # TODO: refactor everything that uses memoization dictionary into a class
@@ -69,7 +70,7 @@ def insert_meta_objects(bulbs_graph_class, meta_id_2_property_dict):
             main_connex=False)
 
         if meta_name in Leg_ID_Filter:
-            ForbiddenIDs.append(primary._id)
+            ForbiddenIDs.append(get_bulbs_id(primary))
 
         memoization_dict[meta_name] = primary
 

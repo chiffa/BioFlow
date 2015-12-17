@@ -624,13 +624,13 @@ def auto_analyze(source=None, KG_object=None, processors=3, desired_depth=24):
         desired_depth = desired_depth / processors
 
     # noinspection PyTypeChecker
-    for list in dumplist:
+    for my_list in dumplist:
         if KG_object is None:
             MG1 = KG_gen()
         else:
             MG1 = KG_object
 
-        MG1.set_Uniprot_source(list)
+        MG1.set_Uniprot_source(my_list)
         print len(MG1.analytic_Uniprots)
         if len(MG1.analytic_Uniprots) < 200:
             spawn_sampler_pool(processors, [len(MG1.analytic_Uniprots)], [

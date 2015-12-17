@@ -954,14 +954,14 @@ class MatrixGetter(object):
         for fle in os.listdir(Chromosome_source):
             if Chromosome_file_filter in fle:
                 source_fle = Chromosome_source + '/' + fle
-                id = fle.split('.')[0].split(Chromosome_file_filter)[1]
-                resdict[id] = open(source_fle).read()
+                my_id = fle.split('.')[0].split(Chromosome_file_filter)[1]
+                resdict[my_id] = open(source_fle).read()
 
         for i, (key, val) in enumerate(Mat_gter.ID2LegacyId.iteritems()):
-            for id, textblock in resdict.iteritems():
+            for my_id, textblock in resdict.iteritems():
                 if val in textblock:
-                    self.UP2Chrom[key] = id
-                    self.Chrom2UP[id].append(key)
+                    self.UP2Chrom[key] = my_id
+                    self.Chrom2UP[my_id].append(key)
 
         self.Chrom2UP = dict(self.Chrom2UP)
 

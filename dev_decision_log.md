@@ -63,6 +63,11 @@
  - remove the memoization of individual pairs during the flow withing the group computation
  
  - Make methods running large systems of procedures to being dictionary-driven
+ 
+ - create a set of wrappers that would log, either into INFO or into DEBUG channel, every time 
+ function is called and parameters on the entrance and the exit
+ 
+ - 
 
 ## Major refactoring suggestions:
 
