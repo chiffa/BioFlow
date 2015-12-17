@@ -301,6 +301,8 @@ def sample_group_edge_current(conductivity_laplacian, index_list, re_samples,
                                                  sampling=True,
                                                  sampling_depth=re_samples)
 
+    return current_accumulator
+
 
 def group_edge_current_with_limitations(inflated_laplacian, idx_pair, reach_limiter):
     """
