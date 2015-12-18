@@ -209,10 +209,10 @@ class MatrixGetter(object):
         database entries and matrix columns
         """
         self.bulbs_id_2_matrix_index, self.matrix_index_2_bulbs_id, \
-        self.bulbs_id_2_display_name, self.bulbs_id_2_legacy_id, self.bulbs_id2_node_type, \
-        self.bulbs_id_2_localization, self.reached_uniprots_bulbs_id_list, self.all_uniprots_bulbs_id_list, \
-        self.Uniprot_attachments, self.UP2Chrom, \
-        self.chromosomes_2_uniprot, self.uniprot_matrix_index_list = \
+            self.bulbs_id_2_display_name, self.bulbs_id_2_legacy_id, self.bulbs_id2_node_type, \
+            self.bulbs_id_2_localization, self.reached_uniprots_bulbs_id_list, self.all_uniprots_bulbs_id_list, \
+            self.Uniprot_attachments, self.UP2Chrom, \
+            self.chromosomes_2_uniprot, self.uniprot_matrix_index_list = \
             undump_object(Dumps.matrix_corrs)
 
     def dump_memoized(self):
@@ -341,21 +341,7 @@ class MatrixGetter(object):
             log.info("%s, %s, %s", len(links), len(group), total_expansion_participants)
             log.info(self.pretty_time())
 
-        def single_expansion(starting_group, edge_type, char_name): # TODO: inline into n-expansion
-            """
-            performs a single round of expansion/characterization
-
-            :param starting_group:
-            :param edge_type:
-            :param char_name:
-            :return:
-            """
-            tmp_links, tmp_group, _count = get_expansion(
-                starting_group, edge_type_filters[edge_type])
-            print_characteristics(char_name, tmp_links, tmp_group, _count)
-            return tmp_links, tmp_group
-
-        def n_expansion(starting_group, edge_type, char_name, expansions_n):
+        def n_expansion(starting_group, edge_type, char_name, expansions_n=1):
             """
             performs a single round of expansion/characterization
 
@@ -365,76 +351,40 @@ class MatrixGetter(object):
             :param expansions_n:
             :return:
             """
-            tmp_links, tmp_group = single_expansion(starting_group, edge_type, char_name)
+            tmp_links, tmp_group = ({}, [])
 
-            # TODO: correct to take in account that expansion above is a 0-expansion
             for _i in range(0, expansions_n):
-                round_name = '%s %s' % (char_name, _i)
-                tmp_links, tmp_group = single_expansion(tmp_group, edge_type, round_name)
+                round_name = '%s %s' % (char_name, _i+1)
+                tmp_links, tmp_group, _count = get_expansion(
+                    starting_group, edge_type_filters[edge_type])
+                if expansions_n > 1:
+                    print_characteristics(round_name, tmp_links, tmp_group, _count)
+                else:
+                    print_characteristics(char_name, tmp_links, tmp_group, _count)
 
             return tmp_links, tmp_group
 
-        #######################################################################
-
-        # TODO: refactor the expansion in those methods to work properly
-        # requires a stable roll-back
+        ##################################################################################
 
         self.ReactLinks, self.InitSet, count = get_reaction_blocks()
         print_characteristics('Reactions', self.ReactLinks, self.InitSet, count)
 
-        self.GroupLinks, self.GroupSet, count = get_expansion(
-            self.InitSet, edge_type_filters["Group"])
-        print_characteristics('Groups', self.GroupLinks, self.GroupSet, count)
+        self.GroupLinks, self.GroupSet = n_expansion(self.InitSet, 'Groups', 'Groups')
 
-        # this is a part of the 5-expansion
-        self.sec_links, self.sec_set, count = get_expansion(
-            self.GroupSet, edge_type_filters["Contact_interaction"])
-        print_characteristics('Secondary Links', self.sec_links, self.sec_set, count)
+        self.sec_links, self.sec_set = n_expansion(self.GroupSet, 'Contact_interaction',
+                                                   'Secondary Links', 6)
 
-        for i in range(0, 5):  # very similar routine => Expand x times
-            sec_links_2, sec_set_2, count = get_expansion(
-                self.sec_set, edge_type_filters["Contact_interaction"])
-            self.sec_set = sec_set_2
-            self.sec_links = sec_links_2
-            print_characteristics(
-                'Secondary Links %s ' % str(i),
-                self.sec_links, self.sec_set, count)
+        self.UP_Links, self.UPSet = n_expansion(self.sec_set, 'Same', 'Uniprot Links')
 
-        self.UP_Links, self.UPSet, count = get_expansion(
-            self.sec_set, edge_type_filters["Same"])
-        print_characteristics('Uniprot Links', self.UP_Links, self.UPSet, count)
+        self.hint_links, self.pre_full_set = n_expansion(self.UPSet, 'HiNT_Contact_interaction',
+                                                         'HiNT Links', 6)
 
-        # this is a part of the 5-expansion
-        self.hint_links, self.pre_full_set, count = get_expansion(
-            self.UPSet, edge_type_filters["HiNT_Contact_interaction"])
-        print_characteristics('HiNT Links', self.hint_links, self.pre_full_set, count)
+        self.biogrid_links, self.full_set = n_expansion(self.pre_full_set,
+                                                        'BioGRID_Contact_interaction',
+                                                        'BioGRID Links', 6)
 
-        for i in range(0, 5):  # very similar routine => Expand x times
-            hint_links_2, full_set_2, count = get_expansion(
-                self.pre_full_set, edge_type_filters["HiNT_Contact_interaction"])
-            self.pre_full_set = full_set_2
-            self.hint_links = hint_links_2
-            print_characteristics(
-                'HiNT Links %s ' % str(i),
-                self.hint_links, self.pre_full_set, count)
-
-        # this is a part of the 5-expansion
-        self.biogrid_links, self.full_set, count = get_expansion(
-            self.pre_full_set, edge_type_filters["BioGRID_Contact_interaction"])
-        print_characteristics('BioGRID Links', self.biogrid_links, self.full_set, count)
-
-        for i in range(0, 5):  # very similar routine => Expand x times
-            biogrid_links_2, full_set_2, count = get_expansion(
-                self.full_set, edge_type_filters["BioGRID_Contact_interaction"])
-            self.full_set = full_set_2
-            self.biogrid_links = biogrid_links_2
-            print_characteristics(
-                'BioGRID Links %s ' % str(i),
-                self.biogrid_links, self.full_set, count)
-
-        self.Super_Links, self.ExpSet, count = get_expansion(
-            self.full_set, edge_type_filters["possibly_same"])
-        print_characteristics('Looks_similar Links', self.Super_Links, self.ExpSet, count)
+        self.Super_Links, self.ExpSet = n_expansion(self.biogrid_links, 'possibly_same',
+                                                    'Looks_similar Links')
 
     def map_rows_to_names(self):
         """
@@ -554,9 +504,6 @@ class MatrixGetter(object):
         self.adjacency_Matrix = lil_matrix((load_len, load_len))
         self.laplacian_matrix = lil_matrix((load_len, load_len))
 
-        # TODO: refactor to use the "insert expansion links"
-        # requires a reversible rollback
-
         for group in self.ReactLinks:
             for elt in itertools.combinations(group, 2):
                 link_indexes = (
@@ -564,48 +511,12 @@ class MatrixGetter(object):
                     self.bulbs_id_2_matrix_index[elt[1]])
                 self.fast_row_insert(link_indexes, "Reaction")
 
-        for key in self.GroupLinks.keys():
-            for val in self.GroupLinks[key]:
-                link_indexes = (
-                    self.bulbs_id_2_matrix_index[key],
-                    self.bulbs_id_2_matrix_index[val])
-                self.fast_row_insert(link_indexes, "Group")
-
-        for key in self.sec_links.keys():
-            for val in self.sec_links[key]:
-                link_indexes = (
-                    self.bulbs_id_2_matrix_index[key],
-                    self.bulbs_id_2_matrix_index[val])
-                self.fast_row_insert(link_indexes, "Contact_interaction")
-
-        for key in self.UP_Links.keys():
-            for val in self.UP_Links[key]:
-                link_indexes = (
-                    self.bulbs_id_2_matrix_index[key],
-                    self.bulbs_id_2_matrix_index[val])
-                self.fast_row_insert(link_indexes, "Same")
-
-        for key in self.hint_links.keys():
-            for val in self.hint_links[key]:
-                link_indexes = (
-                    self.bulbs_id_2_matrix_index[key],
-                    self.bulbs_id_2_matrix_index[val])
-                self.fast_row_insert(link_indexes, "Contact_interaction")
-
-        for key in self.biogrid_links.keys():
-            for val in self.biogrid_links[key]:
-                link_indexes = (
-                    self.bulbs_id_2_matrix_index[key],
-                    self.bulbs_id_2_matrix_index[val])
-                self.fast_row_insert(link_indexes, "weak_contact")
-
-        if self.full_impact:
-            for key in self.Super_Links.keys():
-                for val in self.Super_Links[key]:
-                    link_indexes = (
-                        self.bulbs_id_2_matrix_index[key],
-                        self.bulbs_id_2_matrix_index[val])
-                    self.fast_row_insert(link_indexes, "possibly_same")
+        insert_expansion_links(self.GroupLinks, "Group")
+        insert_expansion_links(self.sec_links, "Contact_interaction")
+        insert_expansion_links(self.UP_Links, "Same")
+        insert_expansion_links(self.hint_links, "Contact_interaction")
+        insert_expansion_links(self.biogrid_links, "weak_contact")
+        insert_expansion_links(self.biogrid_links, "possibly_same")
 
     def get_eigen_spectrum(self, biggest_eigvals_to_get):
         """
