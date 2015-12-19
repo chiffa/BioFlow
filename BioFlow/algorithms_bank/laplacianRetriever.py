@@ -132,3 +132,19 @@ class LaplacianRetriever(object):
 
     def build_laplacian(self):
         pass
+
+    def conduction_system_2_gdf(self):
+        pass
+
+# Overall ideas:
+#   - split into three objects.
+#       1). Performing a pull of the system following a list of instructions (that can be
+#        re-implemented in the subclasses
+#       2) Performing a current retrieval operation
+#       3) Rebuilding/storage/IO with Mongo
+#       4) Add in import/export statement that would operate on the build laplacian and node
+#        property mapping system
+#       Remove localization of the uniprot nodes and databases.=> we are not really using it,
+        # and if we were, the mechanism to use it would be of the instantiations, entirely
+        # different from the current one and allowing for same operations on organs or other
+        # elements.

@@ -51,7 +51,7 @@ log = get_logger(__name__)
 # links
 
 
-class MatrixGetter(object):
+class InteractomeLaplacianWrapper(object):
     """
     Interface between interactome in the database and the interactome graph laplacian
 
@@ -116,7 +116,7 @@ class MatrixGetter(object):
         char_set = string.ascii_uppercase + string.digits
         self.r_ID = ''.join(sample(char_set * 6, 6))
 
-        self.analytic_uniprots = []
+        self.entry_point_uniprots_bulbs_ids = []
         self.UP2UP_voltages = {}
         self.uniprots_2_voltage_and_circulation = {}  # does not really seem to be used
         self.current_accumulator = np.zeros((2, 2))
@@ -210,8 +210,8 @@ class MatrixGetter(object):
         """
         self.bulbs_id_2_matrix_index, self.matrix_index_2_bulbs_id, \
             self.bulbs_id_2_display_name, self.bulbs_id_2_legacy_id, self.bulbs_id2_node_type, \
-            self.bulbs_id_2_localization, self.reached_uniprots_bulbs_id_list, self.all_uniprots_bulbs_id_list, \
-            self.Uniprot_attachments, self.UP2Chrom, \
+            self.bulbs_id_2_localization, self.reached_uniprots_bulbs_id_list,\
+            self.all_uniprots_bulbs_id_list, self.Uniprot_attachments, self.UP2Chrom, \
             self.chromosomes_2_uniprot, self.uniprot_matrix_index_list = \
             undump_object(Dumps.matrix_corrs)
 
@@ -219,12 +219,12 @@ class MatrixGetter(object):
         md5 = hashlib.md5(
             json.dumps(
                 sorted(
-                    self.analytic_uniprots),
+                    self.entry_point_uniprots_bulbs_ids),
                 sort_keys=True)).hexdigest()
         payload = {
             'UP_hash': md5, 'sys_hash': self.md5_hash(), 'size': len(
-                self.analytic_uniprots), 'UPs': pickle.dumps(
-                self.analytic_uniprots), 'currents': pickle.dumps(
+                self.entry_point_uniprots_bulbs_ids), 'UPs': pickle.dumps(
+                self.entry_point_uniprots_bulbs_ids), 'currents': pickle.dumps(
                 (self.current_accumulator, self.node_current)), 'voltages': pickle.dumps(
                     self.uniprots_2_voltage_and_circulation)}
         dump_object(Dumps.Interactome_Analysis_memoized, payload)
@@ -386,6 +386,8 @@ class MatrixGetter(object):
         self.Super_Links, self.ExpSet = n_expansion(self.biogrid_links, 'possibly_same',
                                                     'Looks_similar Links')
 
+    # TODO: complexity too high (11); needs to be reduced.
+    #
     def map_rows_to_names(self):
         """
         Maps Node Database IDs, Legacy IDs, display names and types to matrix row/column indexes;
@@ -700,9 +702,18 @@ class MatrixGetter(object):
             log.warn('Following reached uniprots bulbs_ids were not retrieved upon the '
                      'circulation matrix construction: \n %s',
                      (set(uniprots) - set(self.bulbs_id_2_matrix_index.keys())))
-        self.analytic_uniprots = self.analytic_uniprots = [
+
+        self.entry_point_uniprots_bulbs_ids = self.entry_point_uniprots_bulbs_ids = [
             uniprot for uniprot in uniprots if uniprot in self.bulbs_id_2_matrix_index.keys()]
 
+    # TODO: extract as the element performing a computation of the network
+    # critical control parameters:
+    #   - memoized => dismiss
+    #   - sourced => dismiss
+    #   - incremental => to be kept. So taht we can calculate the bacground even better
+    #   - cancellation => to be kept
+    #   - sparse_samples => to be kept
+    #   - factor in the sampling run into this
     def build_extended_conduction_system(
             self,
             memoized=True,
@@ -722,8 +733,7 @@ class MatrixGetter(object):
         uniprots_2_voltage_and_circulation to be pre-filled
         :param incremental: if True, all the circulation computation will be added to the existing
          ones. Useful for the computation of particularly big systems with intermediate dumps
-        :param cancellation: divides the final current by #Nodes**2/2, i.e. makes the currents
-        comparable between circulation systems of different  sizes.
+        :param cancellation: divides the final current by number of source-sink pairs
         :param sparse_samples: if set to an integer the sampling will be sparse and not dense,
          i.e. instead of computation for each node pair, only an estimation will be made, equal to
         computing sparse_samples association with other randomly chosen nodes
@@ -741,20 +751,22 @@ class MatrixGetter(object):
             current_accumulator = cr.sample_group_edge_current(
                 self.laplacian_matrix,
                 [
-                    self.bulbs_id_2_matrix_index[UP] for UP in self.analytic_uniprots],
+                    self.bulbs_id_2_matrix_index[UP] for UP in self.entry_point_uniprots_bulbs_ids],
                 re_samples=sparse_samples,
                 cancellation=cancellation)
         else:
             current_accumulator, up_pair_2_voltage_current =\
                 cr.group_edge_current_memoized(
                     self.laplacian_matrix,
-                    [self.bulbs_id_2_matrix_index[UP] for UP in self.analytic_uniprots],
+                    [self.bulbs_id_2_matrix_index[UP]
+                     for UP in self.entry_point_uniprots_bulbs_ids],
                     cancellation=cancellation,
                     # memoized=memoized,
                     memory_source=self.uniprots_2_voltage_and_circulation)
             # self.uniprots_2_voltage_and_circulation.update(up_pair_2_voltage_current)
             self.UP2UP_voltages.update(
-                dict((key, val1) for key, (val1, val2) in up_pair_2_voltage_current.iteritems()))
+                dict((pair, voltage)
+                     for pair, (voltage, current) in up_pair_2_voltage_current.iteritems()))
 
         if incremental:
             self.current_accumulator = self.current_accumulator + current_accumulator
@@ -828,7 +840,7 @@ class MatrixGetter(object):
                 self.bulbs_id_2_legacy_id[NodeID],
                 self.bulbs_id_2_display_name[NodeID].replace(',', '-'),
                 str(self.laplacian_matrix[matrix_index, matrix_index]),
-                str(float(int(NodeID in self.analytic_uniprots)))]
+                str(float(int(NodeID in self.entry_point_uniprots_bulbs_ids)))]
 
         gdf_exporter = GdfExportInterface(
             target_fname=Outputs.Interactome_GDF_output,
@@ -863,6 +875,10 @@ class MatrixGetter(object):
         self.build_extended_conduction_system(memoized=False, sourced=True)
         self.export_conduction_system()
 
+    # TODO: remove memoization: it is not really used anywhere
+    # parameters to remove:
+    #   chromosome_specific (not now) we might want instead to implement it otherwise later
+    #   memoized => we will never use ti
     def randomly_sample(
             self,
             samples_size,
@@ -918,8 +934,6 @@ class MatrixGetter(object):
                         sorted(analytics_uniprot_list),
                         sort_keys=True)).hexdigest()
 
-                # print 'debug1 \t', self.UP2UP_voltages
-
                 if not no_add:
                     Interactome_rand_samp.insert(
                         {
@@ -940,6 +954,8 @@ class MatrixGetter(object):
                          "{0:.2f}".format(sample_size * (sample_size - 1) / 2 / self._time()),
                          self.pretty_time())
 
+    # TODO: this method needs to be refactored in order to use the new chromosome to up id sources.
+    # it needs to support the fact that chromosome mapping file are not necessarily present
     def map_uniprots_to_chromosomes(self):
         """
         Maps the Uniprot Ids to chromosomes of the organism and reversely.
@@ -950,20 +966,20 @@ class MatrixGetter(object):
         for fle in os.listdir(Chromosome_source):
             if Chromosome_file_filter in fle:
                 source_fle = Chromosome_source + '/' + fle
-                my_id = fle.split('.')[0].split(Chromosome_file_filter)[1]
-                resulting_dict[my_id] = open(source_fle).read()
+                chromosome_id = fle.split('.')[0].split(Chromosome_file_filter)[1]
+                resulting_dict[chromosome_id] = open(source_fle).read()
 
-        for i, (key, val) in enumerate(Mat_gter.bulbs_id_2_legacy_id.iteritems()):
-            for my_id, textblock in resulting_dict.iteritems():
-                if val in textblock:
-                    self.UP2Chrom[key] = my_id
-                    self.chromosomes_2_uniprot[my_id].append(key)
+        for i, (bulbs_id, legacy_id) in enumerate(self.bulbs_id_2_legacy_id.iteritems()):
+            for chromosome_id, chromosome_text_block in resulting_dict.iteritems():
+                if legacy_id in chromosome_text_block:
+                    self.UP2Chrom[bulbs_id] = chromosome_id
+                    self.chromosomes_2_uniprot[chromosome_id].append(bulbs_id)
 
         self.chromosomes_2_uniprot = dict(self.chromosomes_2_uniprot)
 
 
 if __name__ == "__main__":
-    Mat_gter = MatrixGetter(True, True)
+    Mat_gter = InteractomeLaplacianWrapper(True, True)
     # Mat_gter.full_rebuild ()
     # Mat_gter.fast_load()
     print Mat_gter.pretty_time()

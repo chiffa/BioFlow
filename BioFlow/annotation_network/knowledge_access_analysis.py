@@ -17,7 +17,7 @@ from matplotlib import pyplot as plt
 from BioFlow.algorithms_bank.conduction_routines import perform_clustering
 from BioFlow.annotation_network.BioKnowledgeInterface import GO_Interface
 from BioFlow.main_configs import UP_rand_samp, Dumps, analysis_set_bulbs_ids, background_set_bulbs_ids
-from BioFlow.molecular_network.InteractomeInterface import MatrixGetter
+from BioFlow.molecular_network.InteractomeInterface import InteractomeLaplacianWrapper
 from BioFlow.utils.io_Routines import undump_object
 from BioFlow.utils.linalg_routines import analyze_eigenvects
 from BioFlow.utils.dataviz import kde_compute
@@ -705,7 +705,7 @@ if __name__ == "__main__":
     filtr = ['biological_process']
     corrfactors = (1, 1)
     pprinter = PrettyPrinter(indent=4)
-    MG = MatrixGetter(True, False)
+    MG = InteractomeLaplacianWrapper(True, False)
     MG.fast_load()
     #
     # GBO_1 = ['583954', '565151', '625184', '532448', '553020', '547608', '576300', '533299', '540532', '591419']

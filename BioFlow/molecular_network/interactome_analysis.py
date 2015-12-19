@@ -12,7 +12,7 @@ from matplotlib import pyplot as plt
 
 from BioFlow.algorithms_bank.conduction_routines import perform_clustering
 from BioFlow.main_configs import Interactome_rand_samp, analysis_set_bulbs_ids
-from BioFlow.molecular_network.InteractomeInterface import MatrixGetter
+from BioFlow.molecular_network.InteractomeInterface import InteractomeLaplacianWrapper
 from BioFlow.utils.dataviz import kde_compute
 
 
@@ -22,7 +22,7 @@ def MG_gen():
 
     :return:
     """
-    MG = MatrixGetter(True, False)
+    MG = InteractomeLaplacianWrapper(True, False)
     MG.fast_load()
     print MG.pretty_time()
     return MG
@@ -297,7 +297,7 @@ def compare_to_blanc(
     :return: None if no significant nodes, the node and group characterisitc dictionaries otherwise
     """
     if MG_Object is None:
-        MG = MatrixGetter(True, False)
+        MG = InteractomeLaplacianWrapper(True, False)
         MG.fast_load()
     else:
         MG = MG_Object
@@ -404,21 +404,21 @@ def auto_analyze(sourcelist, depth, processors=4, backgroundlist=None):
         MG1 = MG_gen()
         MG1.set_uniprot_source(list(lst))
         MG1.background = backgroundlist
-        print len(MG1.analytic_uniprots)
-        if len(MG1.analytic_uniprots) < 200:
-            spawn_sampler_pool(processors, [len(MG1.analytic_uniprots)], [
+        print len(MG1.entry_point_uniprots_bulbs_ids)
+        if len(MG1.entry_point_uniprots_bulbs_ids) < 200:
+            spawn_sampler_pool(processors, [len(MG1.entry_point_uniprots_bulbs_ids)], [
                                depth], MG_object=MG1)
             MG1.build_extended_conduction_system()
-            nr_nodes, nr_groups = compare_to_blanc(len(MG1.analytic_uniprots), [
+            nr_nodes, nr_groups = compare_to_blanc(len(MG1.entry_point_uniprots_bulbs_ids), [
                                                    0.5, 0.6], MG1, p_val=0.9, MG_Object=MG1)
         else:
-            sampling_depth = max(200 ** 2 / len(MG1.analytic_uniprots), 5)
-            print 'lenght: %s \t sampling depth: %s \t, estimated_time: %s' % (len(MG1.analytic_uniprots), sampling_depth, len(MG1.analytic_uniprots) * sampling_depth / 2 / depth / 60)
-            spawn_sampler_pool(processors, [len(MG1.analytic_uniprots)], [
+            sampling_depth = max(200 ** 2 / len(MG1.entry_point_uniprots_bulbs_ids), 5)
+            print 'lenght: %s \t sampling depth: %s \t, estimated_time: %s' % (len(MG1.entry_point_uniprots_bulbs_ids), sampling_depth, len(MG1.entry_point_uniprots_bulbs_ids) * sampling_depth / 2 / depth / 60)
+            spawn_sampler_pool(processors, [len(MG1.entry_point_uniprots_bulbs_ids)], [
                                depth], sparse_rounds=sampling_depth, MG_object=MG1)
             MG1.build_extended_conduction_system(sparse_samples=sampling_depth)
             MG1.export_conduction_system()
-            nr_nodes, nr_groups = compare_to_blanc(len(MG1.analytic_uniprots), [
+            nr_nodes, nr_groups = compare_to_blanc(len(MG1.entry_point_uniprots_bulbs_ids), [
                                                    0.5, 0.6], MG1, p_val=0.9, sparse_rounds=sampling_depth, MG_Object=MG1)
 
         MG1.export_conduction_system()
