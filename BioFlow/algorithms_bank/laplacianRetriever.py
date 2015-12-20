@@ -131,7 +131,6 @@ class LaplacianRetriever(object):
         pass
 
     def build_laplacian(self):
-        pass
 
     def conduction_system_2_gdf(self):
         pass

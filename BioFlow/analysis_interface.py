@@ -3,7 +3,7 @@ Provides the implementation of routines responsible for the analysis implementat
 """
 from BioFlow.annotation_network.BioKnowledgeInterface import GO_Interface as AnnotomeInterface, get_background
 from BioFlow.annotation_network.knowledge_access_analysis import auto_analyze as knowledge_analysis
-from BioFlow.molecular_network.InteractomeInterface import InteractomeLaplacianWrapper as InteractomeInterface
+from BioFlow.molecular_network.InteractomeInterface import InteractomeInterface as InteractomeInterface
 from BioFlow.molecular_network.interactome_analysis import auto_analyze as interactome_analysis
 
 

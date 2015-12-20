@@ -7,7 +7,7 @@ from BioFlow.annotation_network.BioKnowledgeInterface import GO_Interface as Ann
 from BioFlow.annotation_network.knowledge_access_analysis import auto_analyze as knowledge_analysis
 from BioFlow.db_importers.import_main import build_db, destroy_db
 from BioFlow.main_configs import neo4j_server
-from BioFlow.molecular_network.InteractomeInterface import InteractomeLaplacianWrapper as InteractomeInterface
+from BioFlow.molecular_network.InteractomeInterface import InteractomeInterface as InteractomeInterface
 from BioFlow.molecular_network.interactome_analysis import auto_analyze as interactome_analysis
 from BioFlow.neo4j_db.db_io_routines import look_up_annotation_set
 

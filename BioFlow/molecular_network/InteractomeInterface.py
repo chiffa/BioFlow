@@ -51,7 +51,7 @@ log = get_logger(__name__)
 # links
 
 
-class InteractomeLaplacianWrapper(object):
+class InteractomeInterface(object):
     """
     Interface between interactome in the database and the interactome graph laplacian
 
@@ -979,7 +979,7 @@ class InteractomeLaplacianWrapper(object):
 
 
 if __name__ == "__main__":
-    Mat_gter = InteractomeLaplacianWrapper(True, True)
+    Mat_gter = InteractomeInterface(True, True)
     # Mat_gter.full_rebuild ()
     # Mat_gter.fast_load()
     print Mat_gter.pretty_time()
