@@ -339,7 +339,7 @@ def compare_to_blank(
                  *
                  (dictionary_system[nr_node_id] +
                   r_nodes[node_ids == float(nr_node_id)].tolist())))
-                          for nr_node_id in not_random_nodes)
+            for nr_node_id in not_random_nodes)
 
         return sorted(dct.iteritems(), key=lambda x: x[
                       1][3]), not_random_groups
