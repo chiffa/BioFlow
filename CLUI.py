@@ -3,7 +3,7 @@ __author__ = 'ank'
 import click
 
 from BioFlow.configs_manager import StructureGenerator, set_folders
-from BioFlow.annotation_network.BioKnowledgeInterface import GO_Interface as AnnotomeInterface, get_background
+from BioFlow.annotation_network.BioKnowledgeInterface import GeneOntologyInterface as AnnotomeInterface, get_background
 from BioFlow.annotation_network.knowledge_access_analysis import auto_analyze as knowledge_analysis
 from BioFlow.db_importers.import_main import build_db, destroy_db
 from BioFlow.main_configs import neo4j_server

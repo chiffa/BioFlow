@@ -789,7 +789,7 @@ class InteractomeInterface(object):
         Formats the nodes for the analysis by in the knowledge_access_analysis module
 
         :param node_current: Current through the entity
-        :param limit: hard limit to filter out the GO terms with too little current
+        :param limit: hard limit to go_namespace_filter out the GO terms with too little current
         (compensates the minor currents in the gird)
         :return: {Entity:[node current, node degree]}
         """

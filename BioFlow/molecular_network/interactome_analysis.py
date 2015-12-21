@@ -31,7 +31,7 @@ def get_interactome_interface():
     return interactome_interface_instance
 
 
-# TODO: defined only as an auxilarry to the spawn_sampler_pool => inline that in the sampler pool
+# TODO: defined only as an auxilary to the spawn_sampler_pool => inline that in the sampler pool
 def spawn_sampler(sample_size_list_plus_iteration_list_plus_args):
     """
     Spawns a sampler initialized from the default GO_Interface

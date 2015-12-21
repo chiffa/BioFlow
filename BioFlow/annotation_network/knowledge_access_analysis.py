@@ -15,7 +15,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from BioFlow.algorithms_bank.conduction_routines import perform_clustering
-from BioFlow.annotation_network.BioKnowledgeInterface import GO_Interface
+from BioFlow.annotation_network.BioKnowledgeInterface import GeneOntologyInterface
 from BioFlow.main_configs import UP_rand_samp, Dumps, analysis_set_bulbs_ids, background_set_bulbs_ids
 from BioFlow.molecular_network.InteractomeInterface import InteractomeInterface
 from BioFlow.utils.io_Routines import undump_object
@@ -34,7 +34,7 @@ def KG_gen():
     # Attention, manual switch here:
     ################################
 
-    KG = GO_Interface(filtr, get_background(), corrfactors, True, 3)
+    KG = GeneOntologyInterface(filtr, get_background(), corrfactors, True, 3)
     # KG = GO_Interface(filtr, MG.all_uniprots_bulbs_id_list, corrfactors, True, 3)
     KG.load()
     print KG.pretty_time()
@@ -146,7 +146,7 @@ def show_corrs(
     else:
         KG = KG_object
 
-    inf_sel = (KG.infcalc(selector[0]), KG.infcalc(selector[1]))
+    inf_sel = (KG.calculate_informativity(selector[0]), KG.calculate_informativity(selector[1]))
 
     plt.figure()
 
@@ -372,7 +372,7 @@ def compare_to_blanc(
         _, _, meancorr, eigvals = perform_clustering(tensions, 3, show=False)
         meancorr_acccumulator.append(np.array(meancorr))
         eigval_accumulator.append(eigvals)
-        Dic_system = KG.format_Node_props(node_currs)
+        Dic_system = KG.format_node_props(node_currs)
         curr_inf_conf = list(Dic_system.itervalues())
         curr_inf_conf_general.append(np.array(curr_inf_conf).T)
         count = i
@@ -396,7 +396,7 @@ def compare_to_blanc(
     Dic_system = None
     if real_knowledge_interface:
         node_currs = real_knowledge_interface.node_current
-        Dic_system = KG.format_Node_props(node_currs)
+        Dic_system = KG.format_node_props(node_currs)
         curr_inf_conf_tot = np.array(
             [[int(key)] + list(val) for key, val in Dic_system.iteritems()]).T
         GO_node_ids, curr_inf_conf = (
@@ -555,7 +555,7 @@ def decide_regeneration():
         '657304']
     rooot_copy = copy(sample_root)
     KG = KG_gen()
-    KG.set_Uniprot_source(sample_root)
+    KG.set_uniprot_source(sample_root)
     KG.build_extended_conduction_system()
     KG.export_conduction_system()
     print KG.pretty_time()
@@ -563,7 +563,7 @@ def decide_regeneration():
         shuffle(rooot_copy)
         KG.export_subsystem(sample_root, rooot_copy[:i ** 2])
         print i ** 2, 'retrieve: \t', KG.pretty_time()
-        KG.set_Uniprot_source(rooot_copy[:i ** 2])
+        KG.set_uniprot_source(rooot_copy[:i ** 2])
         KG.build_extended_conduction_system(memoized=False)
         KG.export_conduction_system()
         print i ** 2, '    redo: \t', KG.pretty_time()
@@ -596,7 +596,7 @@ def linindep_GO_groups(size):
     :param size: number of most prominent eigenvectors contributing to an eigenvalue we would want to see
     """
     KG = KG_gen()
-    KG.undump_Indep_Linset()
+    KG.undump_independent_linear_sets()
     char_indexes = dict(
         (key,
          (len(
@@ -630,7 +630,7 @@ def auto_analyze(source=None, KG_object=None, processors=3, desired_depth=24):
         else:
             MG1 = KG_object
 
-        MG1.set_Uniprot_source(my_list)
+        MG1.set_uniprot_source(my_list)
         print len(MG1.analytic_uniprots)
         if len(MG1.analytic_uniprots) < 200:
             spawn_sampler_pool(processors, [len(MG1.analytic_uniprots)], [
@@ -669,7 +669,7 @@ def build_blank(length, depth, sparse_rounds=False):
 
 def run_analysis(group):
     KG = KG_gen()
-    KG.set_Uniprot_source(group)
+    KG.set_uniprot_source(group)
     KG.build_extended_conduction_system()
     KG.export_conduction_system()
     nr_nodes, nr_groups = compare_to_blanc(
@@ -751,7 +751,7 @@ if __name__ == "__main__":
 
     # linindep_GO_groups(50)
 
-    KG = GO_Interface(filtr, MG.all_uniprots_bulbs_id_list, (1, 1), True, 3)
+    KG = GeneOntologyInterface(filtr, MG.all_uniprots_bulbs_id_list, (1, 1), True, 3)
     KG.load()
     print KG.pretty_time()
     auto_analyze(get_source(), KG)

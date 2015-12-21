@@ -8,7 +8,7 @@ from BioFlow.main_configs import Dumps
 from BioFlow.utils.general_utils.high_level_os_io import mkdir_recursive
 
 # TODO: this class needs to be split into the GDF core that does all the work on a matrix rendering
-# and filters that filter out the unwanted variables
+# and filters that go_namespace_filter out the unwanted variables
 
 
 class GdfExportInterface(object):

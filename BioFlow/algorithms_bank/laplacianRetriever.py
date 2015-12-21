@@ -131,10 +131,37 @@ class LaplacianRetriever(object):
         pass
 
     def build_laplacian(self):
+        """
+        Constructs laplacian with the proper matrices
+        """
         pass
 
-    def conduction_system_2_gdf(self):
+    def calculate_current_for_sample(self):
+        """ calculates the current circulation for the sample
+        """
         pass
+
+    def sample_current(self):
+        """
+        performs the current sampling for comparison.
+
+        Conserves random node-pairs resistances and average inter-node tension in case of
+        """
+        pass
+
+    def compare_circulation_to_reference(self):
+        """
+        compares actual sample to a random sample from the background
+
+        Compares the obtained current to the 95% estimation of chance that flow would be observed
+        on a random sample of equal size analyzed with the same approach
+        """
+        pass
+
+    def output_as_gdf(self):
+        """returns the laplacian graph and it's circulation state"""
+        pass
+
 
 # Overall ideas:
 #   - split into three objects.
