@@ -409,6 +409,9 @@ def auto_analyze(source_list, depth, process_no=4, background_list=None):
 
 
 def get_source_bulbs_ids():
+    """
+    Recovers bulbs ids of the uniprot set we are currently analyzing
+    """
     source_bulbs_ids = []
     with open(analysis_set_bulbs_ids) as src:
         csv_reader = reader(src)

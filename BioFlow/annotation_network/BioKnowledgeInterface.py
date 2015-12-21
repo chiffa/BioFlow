@@ -938,7 +938,7 @@ class GeneOntologyInterface(object):
                                 self.UP2UP_voltages)})
                 log.info(
                     'Random ID: %s \t Sample size: %s \t iteration: %s\t compops: %s \t time: %s ',
-                    self.r_ID, sample_size, i, "{0:.2f}".format(sample_size))
+                    self.r_ID, sample_size, i, "{0:.2f}".format(sample_size), self.pretty_time())
 
     def get_independent_linear_groups(self):
         """

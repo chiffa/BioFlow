@@ -1,8 +1,6 @@
 """
-Builds on the knowledge
+Set of methods responsible for knowledge analysis
 """
-__author__ = 'ank'
-
 import pickle
 from collections import namedtuple
 from copy import copy
@@ -21,10 +19,13 @@ from BioFlow.molecular_network.InteractomeInterface import InteractomeInterface
 from BioFlow.utils.io_Routines import undump_object
 from BioFlow.utils.linalg_routines import analyze_eigenvects
 from BioFlow.utils.dataviz import kde_compute
+from BioFlow.utils.log_behavior import get_logger
+
+log = get_logger(__name__)
 
 
 # TODO: refactor, this is currently a wrapper method used in the
-def KG_gen():
+def get_go_interface_instance():
     """
     Generates a Matrix_Knowledge_DB interface for the use in the spawner. If
 
@@ -34,30 +35,29 @@ def KG_gen():
     # Attention, manual switch here:
     ################################
 
-    KG = GeneOntologyInterface(filtr, get_background(), corrfactors, True, 3)
+    go_interface_instance = GeneOntologyInterface(filtr, get_background(), corrfactors, True, 3)
     # KG = GO_Interface(filtr, MG.all_uniprots_bulbs_id_list, corrfactors, True, 3)
-    KG.load()
-    print KG.pretty_time()
-    return KG
+    go_interface_instance.load()
+    log.info(go_interface_instance.pretty_time())
+    return go_interface_instance
 
 
 def spawn_sampler(sample_size_list_plus_iteration_list_plus_args):
     """
-    Spawns a sampler initalized from the default GO_Interface
+    Spawns a sampler initialized from the default GO_Interface
 
-    :param sample_size_list_plus_iteration_list_plus_args: combined list of sample swizes and iterations (requried for Pool.map usage)
+    :param sample_size_list_plus_iteration_list_plus_args: combined list of sample sizes
+     and iterations (required for Pool.map usage)
     """
-    KG_object = sample_size_list_plus_iteration_list_plus_args[4]
-    if KG_object is None:
-        KG = KG_gen()
-    else:
-        KG = KG_object
+    go_interface_instance = sample_size_list_plus_iteration_list_plus_args[4]
+    if go_interface_instance is None:
+        go_interface_instance = get_go_interface_instance()
 
     sample_size_list = sample_size_list_plus_iteration_list_plus_args[0]
     iteration_list = sample_size_list_plus_iteration_list_plus_args[1]
     sparse_rounds = sample_size_list_plus_iteration_list_plus_args[2]
     chromosome_specific = sample_size_list_plus_iteration_list_plus_args[3]
-    KG.randomly_sample(
+    go_interface_instance.randomly_sample(
         sample_size_list,
         iteration_list,
         sparse_rounds,
@@ -142,7 +142,7 @@ def show_corrs(
     :return:
     """
     if KG_object is None:
-        KG = KG_gen()
+        KG = get_go_interface_instance()
     else:
         KG = KG_object
 
@@ -352,7 +352,7 @@ def compare_to_blanc(
     :return: None if no significant nodes, the node and group characterisitc dictionaries otherwise
     """
     if KG_object is None:
-        KG = KG_gen()
+        KG = get_go_interface_instance()
     else:
         KG = KG_object
     MD5_hash = KG.md5_hash()
@@ -554,7 +554,7 @@ def decide_regeneration():
         '841054',
         '657304']
     rooot_copy = copy(sample_root)
-    KG = KG_gen()
+    KG = get_go_interface_instance()
     KG.set_uniprot_source(sample_root)
     KG.build_extended_conduction_system()
     KG.export_conduction_system()
@@ -595,7 +595,7 @@ def linindep_GO_groups(size):
 
     :param size: number of most prominent eigenvectors contributing to an eigenvalue we would want to see
     """
-    KG = KG_gen()
+    KG = get_go_interface_instance()
     KG.undump_independent_linear_sets()
     char_indexes = dict(
         (key,
@@ -626,7 +626,7 @@ def auto_analyze(source=None, KG_object=None, processors=3, desired_depth=24):
     # noinspection PyTypeChecker
     for my_list in dumplist:
         if KG_object is None:
-            MG1 = KG_gen()
+            MG1 = get_go_interface_instance()
         else:
             MG1 = KG_object
 
@@ -659,7 +659,7 @@ def auto_analyze(source=None, KG_object=None, processors=3, desired_depth=24):
 
 
 def build_blank(length, depth, sparse_rounds=False):
-    KG = KG_gen()
+    KG = get_go_interface_instance()
     MD5_hash = KG.md5_hash()
     if UP_rand_samp.find({'size': length,
                           'sys_hash': MD5_hash,
@@ -668,7 +668,7 @@ def build_blank(length, depth, sparse_rounds=False):
 
 
 def run_analysis(group):
-    KG = KG_gen()
+    KG = get_go_interface_instance()
     KG.set_uniprot_source(group)
     KG.build_extended_conduction_system()
     KG.export_conduction_system()

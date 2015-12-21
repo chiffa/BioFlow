@@ -145,6 +145,9 @@ class InteractomeInterface(object):
         return pload
 
     def _time(self):
+        """
+        time since previous partial timer flag was reset.
+        """
         pt = time() - self.partial_time
         return pt
 
