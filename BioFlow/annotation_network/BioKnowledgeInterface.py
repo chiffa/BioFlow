@@ -987,7 +987,7 @@ if __name__ == '__main__':
     # Attention, manual switch here:
     ################################
 
-    # KG = GO_Interface(filtr, get_background(), (1, 1), True, 3)
+    # KG = GO_Interface(_filter, get_background(), (1, 1), True, 3)
     KG = GeneOntologyInterface(filtr, MG.all_uniprots_bulbs_id_list, (1, 1), True, 3)
     KG.rebuild()
     print KG.pretty_time()

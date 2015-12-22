@@ -36,6 +36,9 @@ class LaplacianRetriever(object):
 
         self.full_dump_map = []
 
+        # self.laplacian
+        # self.AdjacenclyMatrix
+
     def pretty_time(self):
         """ Pretty formatted timing since last call message """
         it, pt = (round(time() - self.init_time),
@@ -131,19 +134,16 @@ class LaplacianRetriever(object):
         pass
 
     def build_laplacian(self):
-        """
-        Constructs laplacian with the proper matrices
-        """
+        """ Constructs laplacian with the proper matrices """
         pass
 
     def calculate_current_for_sample(self):
-        """ calculates the current circulation for the sample
-        """
+        """ calculates the current circulation for the sample """
         pass
 
     def sample_current(self):
         """
-        performs the current sampling for comparison.
+        Performs the current sampling for comparison.
 
         Conserves random node-pairs resistances and average inter-node tension in case of
         """
@@ -151,7 +151,7 @@ class LaplacianRetriever(object):
 
     def compare_circulation_to_reference(self):
         """
-        compares actual sample to a random sample from the background
+        Compares actual sample to a random sample from the background
 
         Compares the obtained current to the 95% estimation of chance that flow would be observed
         on a random sample of equal size analyzed with the same approach
@@ -159,8 +159,19 @@ class LaplacianRetriever(object):
         pass
 
     def output_as_gdf(self):
-        """returns the laplacian graph and it's circulation state"""
+        """ Returns the laplacian graph and it's circulation state """
         pass
+
+    def retrieve_groups(self):
+        """ Clusters together the nodes that are more critical than the """
+        pass
+
+
+class laplacianWrapper(object):
+
+    def __init__(self):
+        pass
+
 
 
 # Overall ideas:
