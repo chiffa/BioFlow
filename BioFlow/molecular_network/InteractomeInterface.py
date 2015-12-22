@@ -51,6 +51,8 @@ log = get_logger(__name__)
 # links
 
 
+# TODO: CRITICAL proper forbidden Ids Integration in the reaction set
+
 class InteractomeInterface(object):
     """
     Interface between interactome in the database and the interactome graph laplacian
@@ -380,13 +382,13 @@ class InteractomeInterface(object):
         self.UP_Links, self.UPSet = n_expansion(self.sec_set, 'Same', 'Uniprot Links')
 
         self.hint_links, self.pre_full_set = n_expansion(self.UPSet, 'HiNT_Contact_interaction',
-                                                         'HiNT Links', 6)
+                                                         'HiNT Links', 5)
 
         self.biogrid_links, self.full_set = n_expansion(self.pre_full_set,
                                                         'BioGRID_Contact_interaction',
-                                                        'BioGRID Links', 6)
+                                                        'BioGRID Links', 2)
 
-        self.Super_Links, self.ExpSet = n_expansion(self.biogrid_links, 'possibly_same',
+        self.Super_Links, self.ExpSet = n_expansion(self.full_set, 'possibly_same',
                                                     'Looks_similar Links')
 
     # TODO: complexity too high (11); needs to be reduced.
@@ -423,6 +425,12 @@ class InteractomeInterface(object):
 
         self.bulbs_id_2_matrix_index = {}
         self.matrix_index_2_bulbs_id = {}
+
+        print 'Debug starts here!'
+        print len(self.Highest_Set)
+        print list(self.Highest_Set)[:50]
+        print type(list(self.Highest_Set)[10])
+        print 11149 in self.Highest_Set
 
         for bulbs_node_id in self.Highest_Set:
             self.bulbs_id_2_matrix_index[bulbs_node_id] = counter
@@ -509,11 +517,11 @@ class InteractomeInterface(object):
         self.adjacency_Matrix = lil_matrix((load_len, load_len))
         self.laplacian_matrix = lil_matrix((load_len, load_len))
 
-        for group in self.ReactLinks:
-            for elt in itertools.combinations(group, 2):
+        for reaction_participant_set in self.ReactLinks:
+            for reaction_participant in itertools.combinations(reaction_participant_set, 2):
                 link_indexes = (
-                    self.bulbs_id_2_matrix_index[elt[0]],
-                    self.bulbs_id_2_matrix_index[elt[1]])
+                    self.bulbs_id_2_matrix_index[reaction_participant[0]],
+                    self.bulbs_id_2_matrix_index[reaction_participant[1]])
                 self.fast_row_insert(link_indexes, "Reaction")
 
         insert_expansion_links(self.GroupLinks, "Group")

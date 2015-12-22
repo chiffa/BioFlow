@@ -584,6 +584,7 @@ def run_analysis(group):
         print 'run analysis 2: %s' % node
 
 
+# TODO: the two methods below are actually clones one of another
 def get_source():
     """ retrieves bulbs ids for the elements for the analyzed group """
     source_bulbs_ids = []

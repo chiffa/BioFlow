@@ -86,6 +86,17 @@ class LaplacianRetriever(object):
                 for object_to_set, dumped_object in izip(objects_to_set, undump_list):
                     object_to_set = dumped_object
 
+    def dynamic_dump(self):
+        """
+        dumps incrementally all the changed properties
+        """
+        pass
+
+    def dynamic_undump(self):
+        """
+        Undumps incrementally all the changed properties
+        """
+
     def md_5_hash(self):
         """
          Computes md5 hash for the object

@@ -199,6 +199,8 @@ def node_extend_once(edge_type_filter, main_connex_only, core_node):
     :param core_node:
     :return:
     """
+
+    # TODO: CRITICAL: add the forbidden IDs prevention of spread
     node_neighbors = []
     node_neighbor_no = 0
     for edge_type in edge_type_filter:
