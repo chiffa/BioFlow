@@ -96,31 +96,6 @@ class LaplacianRetriever(object):
         md5 = hashlib.md5(json.dumps(data, sort_keys=True)).hexdigest()
         return str(md5)
 
-    def dump_memoized(self):
-        """
-        Dumps a memoization-compatible file
-        :return:
-        """
-        md5 = hashlib.md5(
-            json.dumps(
-                sorted(
-                    self.analytic_uniprots),
-                sort_keys=True)).hexdigest()
-        payload = {
-            'UP_hash': md5, 'sys_hash': self.md5_hash(), 'size': len(
-                self.analytic_uniprots), 'UPs': pickle.dumps(
-                self.analytic_uniprots), 'currents': pickle.dumps(
-                (self.current_accumulator, self.node_current)), 'voltages': pickle.dumps(
-                    self.uniprots_2_voltage_and_circulation)}
-        dump_object(self.memoization_dump_location, payload)
-
-    def undump_memoized(self):
-        """
-        :return: undumped memoized analysis
-        :rtype: dict
-        """
-        return undump_object(self.memoization_dump_location)
-
     def rebuild(self):
         """ Rebuilds the laplacian and names_mappings """
         pass
@@ -137,40 +112,15 @@ class LaplacianRetriever(object):
         """ Constructs laplacian with the proper matrices """
         pass
 
-    def calculate_current_for_sample(self):
-        """ calculates the current circulation for the sample """
-        pass
-
-    def sample_current(self):
+    def signature(self):
         """
-        Performs the current sampling for comparison.
+        Something that uniquely identifies that laplacian
 
-        Conserves random node-pairs resistances and average inter-node tension in case of
+        Such as initial set of retrieval IDs and retrieval rules
         """
         pass
 
-    def compare_circulation_to_reference(self):
-        """
-        Compares actual sample to a random sample from the background
 
-        Compares the obtained current to the 95% estimation of chance that flow would be observed
-        on a random sample of equal size analyzed with the same approach
-        """
-        pass
-
-    def output_as_gdf(self):
-        """ Returns the laplacian graph and it's circulation state """
-        pass
-
-    def retrieve_groups(self):
-        """ Clusters together the nodes that are more critical than the """
-        pass
-
-
-class laplacianWrapper(object):
-
-    def __init__(self):
-        pass
 
 
 
