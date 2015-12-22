@@ -6,7 +6,6 @@ import pickle
 from os import path, makedirs
 from pprint import PrettyPrinter
 from pymongo import MongoClient
-from BioFlow.internal_configs import *
 from BioFlow.configs_manager import parse_configs, conf_file_path_flattener
 from BioFlow.utils.general_utils import high_level_os_io as hl_os_io
 

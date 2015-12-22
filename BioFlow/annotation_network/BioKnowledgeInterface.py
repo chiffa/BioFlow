@@ -600,11 +600,11 @@ class GeneOntologyInterface(object):
         :return:
         """
         uniprot_dict = {}
-        for elt in MG.reached_uniprots_bulbs_id_list:
+        for elt in interactome_interface_instance.reached_uniprots_bulbs_id_list:
             node = DatabaseGraph.UNIPORT.get(elt)
             alt_id = node.ID
             # TODO: now can be suppressed
-            uniprot_dict[alt_id] = (elt, MG.bulbs_id_2_display_name[elt])
+            uniprot_dict[alt_id] = (elt, interactome_interface_instance.bulbs_id_2_display_name[elt])
             uniprot_dict[elt] = alt_id
         pickle.dump(uniprot_dict, file(Dumps.Up_dict_dump, 'w'))
         return uniprot_dict
@@ -906,7 +906,7 @@ class GeneOntologyInterface(object):
 
         if chromosome_specific:
             self_connectable_uniprots = list(set(self_connectable_uniprots).intersection(
-                set(MG.chromosomes_2_uniprot[str(chromosome_specific)])))
+                set(interactome_interface_instance.chromosomes_2_uniprot[str(chromosome_specific)])))
 
         for sample_size, iterations in zip(samples_size, samples_each_size):
             sample_size = min(sample_size, len(self_connectable_uniprots))
@@ -967,12 +967,12 @@ def get_background(sourcefile=background_set_bulbs_ids):
 
 if __name__ == '__main__':
     # Creates an instance of MatrixGetter and loads pre-computed values
-    MG = InteractomeInterface(True, False)
-    MG.fast_load()
+    interactome_interface_instance = InteractomeInterface(True, False)
+    interactome_interface_instance.fast_load()
 
     # TODO: switch to the usage of Uniprot set that is independent from the Matrix_Getter,
     #  but instead is supplide by the user
-    # MG.Uniprot is just an option, even though a very importatn one
+    # interactome_interface_instance.Uniprot is just an option, even though a very importatn one
 
     # specify the relations that lead to a more general or to an equally
     # regulated node.
@@ -987,12 +987,14 @@ if __name__ == '__main__':
     # Attention, manual switch here:
     ################################
 
-    # KG = GO_Interface(_filter, get_background(), (1, 1), True, 3)
-    KG = GeneOntologyInterface(filtr, MG.all_uniprots_bulbs_id_list, (1, 1), True, 3)
-    KG.rebuild()
-    print KG.pretty_time()
-    KG.store()
-    print KG.pretty_time()
+    # go_interface_instance = GO_Interface(_filter, get_background(), (1, 1), True, 3)
+    go_interface_instance = GeneOntologyInterface(filtr,
+                                                  interactome_interface_instance.all_uniprots_bulbs_id_list,
+                                                  (1, 1), True, 3)
+    go_interface_instance.rebuild()
+    print go_interface_instance.pretty_time()
+    go_interface_instance.store()
+    print go_interface_instance.pretty_time()
 
     # loading takes 1-6 seconds.
     # fill for reach only is done in 2 seconds,
@@ -1003,20 +1005,20 @@ if __name__ == '__main__':
     # full computation - 3 minutes 18 seconds; save 7 seconds, retrieval - 3
     # seconds
 
-    # KG.load()
-    # print KG.pretty_time()
+    # go_interface_instance.load()
+    # print go_interface_instance.pretty_time()
 
-    # KG.get_indep_linear_groups()
-    # KG.dump_Indep_Linset()
+    # go_interface_instance.get_indep_linear_groups()
+    # go_interface_instance.dump_Indep_Linset()
 
-    # KG.randomly_sample([10, 25], [5]*2, chromosome_specific=15)
+    # go_interface_instance.randomly_sample([10, 25], [5]*2, chromosome_specific=15)
 
-    # KG.set_Uniprot_source(experimental)
-    # KG.build_extended_conduction_system(sparse_samples=10)
-    # KG.export_conduction_system()
+    # go_interface_instance.set_Uniprot_source(experimental)
+    # go_interface_instance.build_extended_conduction_system(sparse_samples=10)
+    # go_interface_instance.export_conduction_system()
 
-    # KG.export_subsystem(experimental, ['186958', '142401', '147798', '164077'])
+    # go_interface_instance.export_subsystem(experimental, ['186958', '142401', '147798', '164077'])
 
-    # data_array = np.array([log(val) for val in KG.GO2_Pure_Inf.itervalues()])
+    # data_array = np.array([log(val) for val in go_interface_instance.GO2_Pure_Inf.itervalues()])
     # hist(data_array, 100, log=True)
     # show()

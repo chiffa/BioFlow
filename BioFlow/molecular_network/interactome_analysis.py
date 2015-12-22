@@ -424,8 +424,8 @@ def get_source_bulbs_ids():
 if __name__ == "__main__":
 
     # pprinter = PrettyPrinter(indent=4)
-    # MG = MatrixGetter(True, False)
-    # MG.fast_load()
+    # interactome_interface_instance = MatrixGetter(True, False)
+    # interactome_interface_instance.fast_load()
 
     # dumplist = undump_object(Dumps.RNA_seq_counts_compare)
 

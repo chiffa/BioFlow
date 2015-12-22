@@ -8,9 +8,10 @@ import pickle
 from collections import defaultdict
 from csv import reader, writer
 from pprint import PrettyPrinter, pprint
-from BioFlow.main_configs import IDFilter, Leg_ID_Filter, edge_type_filters, Dumps,\
-    analysis_protein_ids_csv, analysis_set_display_names, analysis_set_bulbs_ids, \
-    background_protein_ids_csv, background_set_bulbs_ids, annotation_nodes_ptypes
+from BioFlow.main_configs import IDFilter, Dumps, analysis_protein_ids_csv, \
+    analysis_set_display_names, analysis_set_bulbs_ids, \
+    background_protein_ids_csv, background_set_bulbs_ids
+from BioFlow.internal_configs import edge_type_filters, Leg_ID_Filter, annotation_nodes_ptypes
 from BioFlow.neo4j_db.GraphDeclarator import DatabaseGraph
 from BioFlow.neo4j_db.graph_content import bulbs_names_dict, full_list, forbidden_verification_list
 from BioFlow.utils.log_behavior import get_logger

@@ -65,7 +65,7 @@ class InteractomeInterface(object):
     # within the connex part of the graph)
 
     reactions_types_list = ['TemplateReaction', 'Degradation', 'BiochemicalReaction']
-    reactions_types_list = [bulbs_names_dict[short_name[0]] for short_name in reactions_types_list]
+    reactions_types_list = [bulbs_names_dict[short_name][0] for short_name in reactions_types_list]
 
     def __init__(self, main_connex_only, full_impact):
         self.connexity_aware = main_connex_only
@@ -354,12 +354,12 @@ class InteractomeInterface(object):
             :param expansions_n:
             :return:
             """
-            tmp_links, tmp_group = ({}, [])
+            tmp_links, tmp_group = ({}, starting_group.copy())
 
             for _i in range(0, expansions_n):
                 round_name = '%s %s' % (char_name, _i+1)
                 tmp_links, tmp_group, _count = get_expansion(
-                    starting_group, edge_type_filters[edge_type])
+                    tmp_group, edge_type_filters[edge_type])
                 if expansions_n > 1:
                     print_characteristics(round_name, tmp_links, tmp_group, _count)
                 else:
@@ -372,7 +372,7 @@ class InteractomeInterface(object):
         self.ReactLinks, self.InitSet, count = get_reaction_blocks()
         print_characteristics('Reactions', self.ReactLinks, self.InitSet, count)
 
-        self.GroupLinks, self.GroupSet = n_expansion(self.InitSet, 'Groups', 'Groups')
+        self.GroupLinks, self.GroupSet = n_expansion(self.InitSet, 'Group', 'Groups')
 
         self.sec_links, self.sec_set = n_expansion(self.GroupSet, 'Contact_interaction',
                                                    'Secondary Links', 6)
@@ -982,13 +982,13 @@ class InteractomeInterface(object):
 
 
 if __name__ == "__main__":
-    Mat_gter = InteractomeInterface(True, True)
-    # Mat_gter.full_rebuild ()
-    # Mat_gter.fast_load()
-    print Mat_gter.pretty_time()
+    interactome_interface_instance = InteractomeInterface(True, True)
+    interactome_interface_instance.full_rebuild()
+    # interactome_interface_instance.fast_load()
+    print interactome_interface_instance.pretty_time()
 
-    # Mat_gter.set_Uniprot_source(test_set)
-    # Mat_gter.export_subsystem(test_set, test2)
-    # Mat_gter.build_extended_conduction_system()
-    # Mat_gter.export_conduction_system()
-    # Mat_gter.randomly_sample([100,250],[5,5], sparse_rounds=10)
+    # interactome_interface_instance.set_Uniprot_source(test_set)
+    # interactome_interface_instance.export_subsystem(test_set, test2)
+    # interactome_interface_instance.build_extended_conduction_system()
+    # interactome_interface_instance.export_conduction_system()
+    # interactome_interface_instance.randomly_sample([100,250],[5,5], sparse_rounds=10)

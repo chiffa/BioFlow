@@ -247,7 +247,7 @@ def set_folders(file_directory, neo4jserver='http://localhost:7474',
 
 if __name__ == "__main__":
     set_folders('~/support/')
-    StructureGenerator.build_source_config('human')
+    StructureGenerator.build_source_config('yeast')
     # pp = PrettyPrinter(indent=4)
     # pp.pprint(parse_configs())
     # StructureGenerator.pull_online_dbs()

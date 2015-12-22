@@ -109,7 +109,7 @@ on_unittest = os.environ.get('UNITTESTING') == 'True'
 
 if on_rtd or on_unittest:
     log.info(
-        'GraphDeclarator mocks DB connection instead of actually connecting to it')
+        'graph database interface mocks DB connection instead of actually connecting to it')
 
     from mock import Mock as MagicMock
 
@@ -126,5 +126,5 @@ if on_rtd or on_unittest:
     DatabaseGraph = Mock()
 
 else:
-    log.info('GraphDeclarator is connecting to a real DB')
+    log.info('graph database interface is connecting to a real DB')
     DatabaseGraph = Graph()

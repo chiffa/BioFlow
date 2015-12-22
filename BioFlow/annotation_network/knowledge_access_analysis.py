@@ -39,7 +39,7 @@ def get_go_interface_instance():
                                                   get_background(),
                                                   _correlation_factors,
                                                   True, 3)
-    # KG = GO_Interface(_filter, MG.all_uniprots_bulbs_id_list, _correlation_factors, True, 3)
+    # go_interface_instance = GO_Interface(_filter, interactome_interface_instance.all_uniprots_bulbs_id_list, _correlation_factors, True, 3)
     go_interface_instance.load()
     log.info(go_interface_instance.pretty_time())
     return go_interface_instance
@@ -610,10 +610,12 @@ if __name__ == "__main__":
 
     _filter = ['biological_process']
     _correlation_factors = (1, 1)
-    MG = InteractomeInterface(True, False)
-    MG.fast_load()
+    interactome_interface_instance = InteractomeInterface(True, False)
+    interactome_interface_instance.fast_load()
 
-    KG = GeneOntologyInterface(_filter, MG.all_uniprots_bulbs_id_list, (1, 1), True, 3)
+    KG = GeneOntologyInterface(_filter,
+                               interactome_interface_instance.all_uniprots_bulbs_id_list,
+                               (1, 1), True, 3)
     KG.load()
     print KG.pretty_time()
     auto_analyze(get_source(), KG)
