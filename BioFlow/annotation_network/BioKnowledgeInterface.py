@@ -988,9 +988,10 @@ if __name__ == '__main__':
     ################################
 
     # go_interface_instance = GO_Interface(_filter, get_background(), (1, 1), True, 3)
-    go_interface_instance = GeneOntologyInterface(filtr,
-                                                  interactome_interface_instance.all_uniprots_bulbs_id_list,
-                                                  (1, 1), True, 3)
+    go_interface_instance = GeneOntologyInterface(
+        filtr,
+        interactome_interface_instance.all_uniprots_bulbs_id_list,
+        (1, 1), True, 3)
     go_interface_instance.rebuild()
     print go_interface_instance.pretty_time()
     go_interface_instance.store()

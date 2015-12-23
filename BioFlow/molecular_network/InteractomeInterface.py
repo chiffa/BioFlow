@@ -426,11 +426,6 @@ class InteractomeInterface(object):
         self.bulbs_id_2_matrix_index = {}
         self.matrix_index_2_bulbs_id = {}
 
-        print 'Debug starts here!'
-        print len(self.Highest_Set)
-        print list(self.Highest_Set)[:50]
-        print type(list(self.Highest_Set)[10])
-        print 11149 in self.Highest_Set
 
         for bulbs_node_id in self.Highest_Set:
             self.bulbs_id_2_matrix_index[bulbs_node_id] = counter
@@ -682,7 +677,7 @@ class InteractomeInterface(object):
             bulbs_node = DatabaseGraph.UNIPORT.get(SP_Id)
             if bulbs_node.main_connex:
                 self.uniprot_matrix_index_list.append(self.bulbs_id_2_matrix_index[SP_Id])
-        print len(self.uniprot_matrix_index_list)
+        log.info('number of indexed uniprots: %s', len(self.uniprot_matrix_index_list))
         self.dump_maps()
 
     def md5_hash(self):
@@ -788,7 +783,7 @@ class InteractomeInterface(object):
             self.dump_memoized()
 
         index_current = cr.get_current_through_nodes(self.current_accumulator)
-        print current_accumulator.shape
+        log.info('current accumulator shape %s', current_accumulator.shape)
         self.node_current.update(
             dict(
                 (self.matrix_index_2_bulbs_id[idx],
