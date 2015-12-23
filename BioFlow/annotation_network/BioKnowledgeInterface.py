@@ -629,7 +629,7 @@ class GeneOntologyInterface(object):
         Return the MD hash of self to ensure that all the defining properties have been
         correctly defined before dump/retrieval
         """
-        sorted_initset = sorted(self.InitSet, key=str.lower)
+        sorted_initset = sorted(self.InitSet)
         data = [
             self.go_namespace_filter,
             sorted_initset,

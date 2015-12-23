@@ -344,7 +344,10 @@ def perform_clustering(inter_node_tension, cluster_number, show=True):
         relations_matrix[local_index[UP1], local_index[UP1]] += 1.0 / tension
 
     # underlying method is spectral clustering: do we really lie in a good zone for that?
+    print relations_matrix.shape
+    print cluster_number
     groups = cluster_nodes(relations_matrix, cluster_number)
+
 
     relations_matrix = normalize_laplacian(relations_matrix)
     eigenvals, _ = eigsh(relations_matrix)

@@ -81,6 +81,7 @@ def spawn_sampler_pool(
          sparse_rounds,
          chromosome_specific,
          interactome_interface_instance)]
+    print payload
     process_pool.map(spawn_sampler, payload * pool_size)
 
 
@@ -359,7 +360,7 @@ def auto_analyze(source_list, depth, process_no=4, background_list=None):
     """
     # noinspection PyTypeChecker
     for _list in source_list:
-        log.info('auto analyze 1: %s %s', _list, len(_list))
+        log.info('Auto analyzing list of interest: %s %s', len(_list), _list)
         interactome_interface = get_interactome_interface()
         interactome_interface.set_uniprot_source(list(_list))
         interactome_interface.background = background_list
@@ -440,6 +441,6 @@ if __name__ == "__main__":
     # TODO: add loading method for the analysis of the interactome
 
     source = get_source_bulbs_ids()
-    # print source
+    print len(source)
 
     auto_analyze([source], 24)

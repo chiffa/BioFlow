@@ -206,7 +206,8 @@ class InteractomeInterface(object):
              self.Uniprot_attachments,
              self.UP2Chrom,
              self.chromosomes_2_uniprot,
-             self.uniprot_matrix_index_list))
+             self.uniprot_matrix_index_list,
+             self.entry_point_uniprots_bulbs_ids))
 
     def undump_maps(self):
         """
@@ -217,7 +218,8 @@ class InteractomeInterface(object):
             self.bulbs_id_2_display_name, self.bulbs_id_2_legacy_id, self.bulbs_id2_node_type, \
             self.bulbs_id_2_localization, self.reached_uniprots_bulbs_id_list,\
             self.all_uniprots_bulbs_id_list, self.Uniprot_attachments, self.UP2Chrom, \
-            self.chromosomes_2_uniprot, self.uniprot_matrix_index_list = \
+            self.chromosomes_2_uniprot, self.uniprot_matrix_index_list,\
+            self.entry_point_uniprots_bulbs_ids = \
             undump_object(Dumps.matrix_corrs)
 
     def dump_memoized(self):
@@ -226,12 +228,13 @@ class InteractomeInterface(object):
                 sorted(
                     self.entry_point_uniprots_bulbs_ids),
                 sort_keys=True)).hexdigest()
+
         payload = {
-            'UP_hash': md5, 'sys_hash': self.md5_hash(), 'size': len(
-                self.entry_point_uniprots_bulbs_ids), 'UPs': pickle.dumps(
-                self.entry_point_uniprots_bulbs_ids), 'currents': pickle.dumps(
-                (self.current_accumulator, self.node_current)), 'voltages': pickle.dumps(
-                    self.uniprots_2_voltage_and_circulation)}
+            'UP_hash': md5, 'sys_hash': self.md5_hash(),
+            'size': len(self.entry_point_uniprots_bulbs_ids),
+            'UPs': pickle.dumps(self.entry_point_uniprots_bulbs_ids),
+            'currents': pickle.dumps((self.current_accumulator, self.node_current)),
+            'voltages': pickle.dumps(self.uniprots_2_voltage_and_circulation)}
         dump_object(Dumps.Interactome_Analysis_memoized, payload)
 
     @staticmethod
@@ -425,7 +428,6 @@ class InteractomeInterface(object):
 
         self.bulbs_id_2_matrix_index = {}
         self.matrix_index_2_bulbs_id = {}
-
 
         for bulbs_node_id in self.Highest_Set:
             self.bulbs_id_2_matrix_index[bulbs_node_id] = counter
@@ -685,7 +687,7 @@ class InteractomeInterface(object):
         Return the MD hash of self to ensure that all the defining properties have been correctly
         defined before dump/retrieval
         """
-        sorted_initial_set = sorted(self.bulbs_id_2_matrix_index.keys(), key=str.lower)
+        sorted_initial_set = sorted(self.bulbs_id_2_matrix_index.keys())
         data = [
             self.connexity_aware,
             sorted_initial_set,
