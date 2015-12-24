@@ -5,6 +5,8 @@ import os
 from os import path
 import logging
 import sys
+from shutil import rmtree
+
 
 log_location = path.join(path.abspath(
     path.join(
@@ -13,6 +15,9 @@ log_location = path.join(path.abspath(
 
 on_unittest = os.environ.get('UNITTESTING') == 'True'  # if we are unittesting
 on_remote_unittest = os.environ.get('REMOTE_UNITTEST') == 'True'  # if we are testing on CI tools
+
+on_dev = False
+# on_dev = True
 
 
 def mkdir_recursive(my_path):  # pragma: no cover
@@ -31,6 +36,28 @@ def mkdir_recursive(my_path):  # pragma: no cover
         if '.' not in my_path.split(
                 '/')[-1][-5:]:  # should be able to suppress specific file creation
             os.mkdir(my_path)
+
+
+def wipe_dir(_path):  # pragma: no cover
+    """
+    wipes the indicated directory
+    :param _path:
+    :return: True on success
+    """
+    _path = os.path.abspath(_path)
+    if not os.path.exists(_path):
+        return True  # Nothing to do: destruction already done
+    if os.path.isdir(_path):
+        directory_name = _path
+    else:
+        directory_name = os.path.dirname(_path)
+    if not os.path.isdir(directory_name):
+        return False
+    for sub_path in os.listdir(directory_name):
+        if os.path.isdir(sub_path):
+            return False
+    rmtree(directory_name)
+    return True
 
 
 def add_handler(_logger, level, file_name):
@@ -52,6 +79,9 @@ def add_handler(_logger, level, file_name):
 formatter = logging.Formatter(
         '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
+if on_dev:
+    wipe_dir(log_location)
+
 # create location where the code will be stored
 mkdir_recursive(log_location)
 
@@ -68,7 +98,7 @@ def get_logger(logger_name):
 
     if not on_remote_unittest:  # pragma: no cover
         ch = logging.StreamHandler(sys.stdout)
-        if on_unittest:
+        if on_unittest or on_dev:
             ch.setLevel(logging.DEBUG)
         else:
             ch.setLevel(logging.INFO)
