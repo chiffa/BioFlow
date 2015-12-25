@@ -25,7 +25,7 @@ edge_type_filters = {
 Leg_ID_Filter = ['H+', 'ATP', 'GTP', 'Pi', 'H2O', 'ADP', 'PPi', 'GDP', 'O2', 'CO2', 'NTP', ]
 
 
-#  Fundge for matrix diagolizations of matrixes and other solver functions
+#  Fudge for matrix diagonalization and other solver functions
 fudge = 1e-10
 
 # Coefficients values for the value_Matrix
