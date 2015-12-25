@@ -25,8 +25,11 @@ def get_interactome_interface():
 
     :return:
     """
-    interactome_interface_instance = InteractomeInterface(True, False)
+    interactome_interface_instance = InteractomeInterface(main_connex_only=True,
+                                                          full_impact=False)
     interactome_interface_instance.fast_load()
+    log.debug("get_interactome state e_p_u_b_i length: %s",
+              len(interactome_interface_instance.entry_point_uniprots_bulbs_ids))
     log.info("interactome interface loaded in %s" % interactome_interface_instance.pretty_time())
     return interactome_interface_instance
 
@@ -53,7 +56,8 @@ def spawn_sampler(sample_size_list_plus_iteration_list_plus_args):
         sample_size_list,
         iteration_list,
         sparse_rounds,
-        chromosome_specific)  # TODO: remove that
+        chromosome_specific)
+    # TODO: remove chromosome-specificity. We are performing this analysis otherwise.
 
 
 def spawn_sampler_pool(
@@ -359,10 +363,15 @@ def auto_analyze(source_list, depth, process_no=4, background_list=None):
     :param background_list
     """
     # noinspection PyTypeChecker
+
     for _list in source_list:
         log.info('Auto analyzing list of interest: %s %s', len(_list), _list)
         interactome_interface = get_interactome_interface()
+        log.debug("retrieved interactome_interface instance e_p_u_b_i length: %s",
+                  len(interactome_interface.entry_point_uniprots_bulbs_ids))
         interactome_interface.set_uniprot_source(list(_list))
+        log.debug(" e_p_u_b_i length after UP_source was set: %s",
+                  len(interactome_interface.entry_point_uniprots_bulbs_ids))
         interactome_interface.background = background_list
 
         log.info('auto analyze 2: %s',
@@ -418,7 +427,7 @@ def get_source_bulbs_ids():
         csv_reader = reader(src)
         for row in csv_reader:
             source_bulbs_ids = source_bulbs_ids + row
-    source_bulbs_ids = [ret for ret in source_bulbs_ids]
+    source_bulbs_ids = [int(ret) for ret in source_bulbs_ids]
     return source_bulbs_ids
 
 

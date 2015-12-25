@@ -108,7 +108,7 @@ on_rtd = os.environ.get('READTHEDOCS') == 'True'
 on_unittest = os.environ.get('UNITTESTING') == 'True'
 
 if on_rtd or on_unittest:
-    log.info(
+    log.debug(
         'graph database interface mocks DB connection instead of actually connecting to it')
 
     from mock import Mock as MagicMock
@@ -126,5 +126,5 @@ if on_rtd or on_unittest:
     DatabaseGraph = Mock()
 
 else:
-    log.info('graph database interface is connecting to a real DB')
+    log.debug('graph database interface is connecting to a real DB')
     DatabaseGraph = Graph()

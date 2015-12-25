@@ -304,6 +304,7 @@ class GeneOntologyInterface(object):
 
         """
         uniprots_without_gene_ontology_terms = 0
+        log.info('Starting GO matrix mapping starting from %s uniprots', len(self.InitSet))
         for uniprot_bulbs_id in self.InitSet:
             uniprot_specific_gos = []
             up_node = DatabaseGraph.UNIPORT.get(uniprot_bulbs_id)
@@ -318,7 +319,7 @@ class GeneOntologyInterface(object):
                         self.SeedSet.add(go_node_bulbs_id)
             if not uniprot_specific_gos:
                 uniprots_without_gene_ontology_terms += 1
-                log.warning("UP without GO was found. UP bulbs_id: %s, \t name: %s",
+                log.debug("UP without GO was found. UP bulbs_id: %s, \t name: %s",
                             uniprot_bulbs_id, self.UP_Names[uniprot_bulbs_id])
                 self.UPs_without_GO.add(uniprot_bulbs_id)
             else:
@@ -336,6 +337,9 @@ class GeneOntologyInterface(object):
         """
         visited_set = set()
         seeds_list = copy(list(self.SeedSet))
+        log.info('Starting gene ontology structure retrieval from the set of %s seeds',
+                 self.SeedSet)
+
         while seeds_list:
             node_id = seeds_list.pop()
             visited_set.add(node_id)
@@ -353,20 +357,14 @@ class GeneOntologyInterface(object):
 
                 if not related_go_nodes:
                     continue  # skip in case GO Node has no outgoing relations to other GO nodes
-
                 for go_node in related_go_nodes:
-
                     if go_node.Namespace not in self.go_namespace_filter:
                         continue
-
                     node_bulbs_id = get_bulbs_id(go_node)
-
                     if node_bulbs_id not in visited_set:
                         seeds_list.append(node_bulbs_id)
-
                     if relation_type in GOUpTypes:
                         local_uniprot_list.append(node_bulbs_id)
-
                     else:
                         local_regulation_list.append(node_bulbs_id)
 
@@ -374,17 +372,12 @@ class GeneOntologyInterface(object):
 
                 if not rev_generator:
                     continue
-
                 for go_node in rev_generator:
-
                     if go_node.Namespace not in self.go_namespace_filter:
                         continue
-
                     node_bulbs_id = get_bulbs_id(go_node)
-
                     if relation_type in GOUpTypes:
                         local_down_regulation_list.append(node_bulbs_id)
-
                     else:
                         local_up_regulation_list.append(node_bulbs_id)
 

@@ -113,7 +113,9 @@ class InteractomeInterface(object):
         self.ExpSet = []
         self.Highest_Set = []
 
-        self.Matrix_reality = Dumps.matrix_corrs
+        self.maps_dumps_location = Dumps.interactome_maps
+        self.adjacency_dumps_location = Dumps.interactome_adjacency_matrix
+        self.laplacian_dumps_location = Dumps.interactome_laplacian_matrix
 
         char_set = string.ascii_uppercase + string.digits
         self.r_ID = ''.join(sample(char_set * 6, 6))
@@ -157,15 +159,15 @@ class InteractomeInterface(object):
         """
         dumps self.adjacency_Matrix and self.laplacian_matrix
         """
-        dump_object(Dumps.ValMat, self.adjacency_Matrix)
-        dump_object(Dumps.ConMat, self.laplacian_matrix)
+        dump_object(Dumps.interactome_adjacency_matrix, self.adjacency_Matrix)
+        dump_object(Dumps.interactome_laplacian_matrix, self.laplacian_matrix)
 
     def undump_matrices(self):
         """
         undumps self.adjacency_Matrix and self.laplacian_matrix
         """
-        self.adjacency_Matrix = undump_object(Dumps.ValMat)
-        self.laplacian_matrix = undump_object(Dumps.ConMat)
+        self.adjacency_Matrix = undump_object(Dumps.interactome_adjacency_matrix)
+        self.laplacian_matrix = undump_object(Dumps.interactome_laplacian_matrix)
 
     def dump_eigen(self):
         """
@@ -193,8 +195,10 @@ class InteractomeInterface(object):
         dumps all the elements required for the mapping between the types and ids
          of database entries and matrix columns
         """
+        log.debug("pre-dump e_p_u_b_i length: %s", len(self.entry_point_uniprots_bulbs_ids))
+        log.debug("dumping into: %s", Dumps.interactome_maps)
         dump_object(
-            Dumps.matrix_corrs,
+            Dumps.interactome_maps,
             (self.bulbs_id_2_matrix_index,
              self.matrix_index_2_bulbs_id,
              self.bulbs_id_2_display_name,
@@ -207,20 +211,22 @@ class InteractomeInterface(object):
              self.UP2Chrom,
              self.chromosomes_2_uniprot,
              self.uniprot_matrix_index_list,
-             self.entry_point_uniprots_bulbs_ids))
+             self.entry_point_uniprots_bulbs_ids)) # TODO: delete here and below entry point u_b_i
 
     def undump_maps(self):
         """
         undumps all the elements required for the mapping between the types and ids of
         database entries and matrix columns
         """
+        log.debug("undumping from %s", Dumps.interactome_maps)
         self.bulbs_id_2_matrix_index, self.matrix_index_2_bulbs_id, \
             self.bulbs_id_2_display_name, self.bulbs_id_2_legacy_id, self.bulbs_id2_node_type, \
             self.bulbs_id_2_localization, self.reached_uniprots_bulbs_id_list,\
             self.all_uniprots_bulbs_id_list, self.Uniprot_attachments, self.UP2Chrom, \
             self.chromosomes_2_uniprot, self.uniprot_matrix_index_list,\
             self.entry_point_uniprots_bulbs_ids = \
-            undump_object(Dumps.matrix_corrs)
+            undump_object(Dumps.interactome_maps)
+        log.debug("post-undump e_p_u_b_i length: %s", len(self.entry_point_uniprots_bulbs_ids))
 
     def dump_memoized(self):
         md5 = hashlib.md5(
@@ -346,7 +352,8 @@ class InteractomeInterface(object):
             (total_expansion_participants)
             """
             log.info('===========> %s <===========', name)
-            log.info("%s, %s, %s", len(links), len(group), total_expansion_participants)
+            log.info("links: %s, group: %s, nodes reached in expansion: %s",
+                     len(links), len(group), total_expansion_participants)
             log.info(self.pretty_time())
 
         def n_expansion(starting_group, edge_type, char_name, expansions_n=1):
@@ -374,6 +381,8 @@ class InteractomeInterface(object):
 
         ##################################################################################
 
+        log.info('Entering retrieval of the connection system of physical entities')
+
         self.ReactLinks, self.InitSet, count = get_reaction_blocks()
         print_characteristics('Reactions', self.ReactLinks, self.InitSet, count)
 
@@ -395,6 +404,9 @@ class InteractomeInterface(object):
                                                     'Looks_similar Links')
 
     # TODO: complexity too high (11); needs to be reduced.
+    # Easy: this method actually contains two methods.
+    #   1) One that pulls the uniprots reachable within the reactome routes
+    #   2) Second one that pulls all the uniprots from
     #
     def map_rows_to_names(self):
         """
@@ -429,6 +441,7 @@ class InteractomeInterface(object):
         self.bulbs_id_2_matrix_index = {}
         self.matrix_index_2_bulbs_id = {}
 
+        log.info('nodes in Highest Set: %s', len(self.Highest_Set))
         for bulbs_node_id in self.Highest_Set:
             self.bulbs_id_2_matrix_index[bulbs_node_id] = counter
             self.matrix_index_2_bulbs_id[counter] = bulbs_node_id
@@ -437,6 +450,7 @@ class InteractomeInterface(object):
             self.bulbs_id2_node_type[bulbs_node_id] = node.element_type
             self.bulbs_id_2_legacy_id[bulbs_node_id] = node.ID
             if node.element_type == "UNIPROT":
+                # TODO: there is a problem: there is no UNIPROT nodes reached during the expansion.
                 self.reached_uniprots_bulbs_id_list.append(bulbs_node_id)
                 self.uniprot_matrix_index_list.append(counter)
             if node.localization is not None:
@@ -445,6 +459,9 @@ class InteractomeInterface(object):
             counter += 1
 
         self.all_uniprots_bulbs_id_list += self.reached_uniprots_bulbs_id_list
+        self.reached_uniprots_bulbs_id_list = list(set(self.reached_uniprots_bulbs_id_list))
+        log.info("reached uniprots: %s", len(self.reached_uniprots_bulbs_id_list))
+
         up_generator = DatabaseGraph.UNIPORT.get_all()
         if up_generator:
             for up_node in up_generator:
@@ -456,6 +473,7 @@ class InteractomeInterface(object):
                     self.bulbs_id_2_legacy_id[bulbs_node_id] = up_node.ID
 
         self.all_uniprots_bulbs_id_list = list(set(self.all_uniprots_bulbs_id_list))
+        log.info("analyzable uniprots: %s", len(self.all_uniprots_bulbs_id_list))
 
     def fast_row_insert(self, element, index_type):
         """
@@ -504,9 +522,9 @@ class InteractomeInterface(object):
         if self.full_impact:
             self.Highest_Set = self.ExpSet
 
-        log.info("building correspondances %s", self.pretty_time())
-
         self.map_rows_to_names()
+
+        log.info("mapped bulbs_ids_to_ %s", self.pretty_time())
 
         log.info("building the ValMatrix %s ", self.pretty_time())
 
@@ -549,12 +567,14 @@ class InteractomeInterface(object):
         self.cond_eigenvals, self.cond_eigenvects = eigsh(
             self.laplacian_matrix, biggest_eigvals_to_get)
 
-        log.info(self.adj_eigenvals)
-        log.info('<======================>')
-        log.info(self.cond_eigenvals)
-        log.info('<======================>')
-        log.info(np.all(eigsh(self.laplacian_matrix)[0] > 0))
-        log.info(self.pretty_time())
+        log.debug("Adjacency matrix eigenvalues:")
+        log.debug(self.adj_eigenvals)
+        log.debug('<======================>')
+        log.debug("Laplacian matrix eigenvalues:")
+        log.debug(self.cond_eigenvals)
+        log.debug('<======================>')
+        log.debug("all laplacian eigenvalues above%s", np.all(eigsh(self.laplacian_matrix)[0] > 0))
+        log.info("Finished eigenvalues computation, starting the dump %s", self.pretty_time())
 
     def get_normalized_laplacian(self, fudge=1E-18):
         """
@@ -585,21 +605,23 @@ class InteractomeInterface(object):
         for elt in range(0, len(adjacency_graph_connected_components[1])):
             counters[adjacency_graph_connected_components[1][elt], 0] += 1
 
-        major_index = np.argmax(counters)
-        ln = len(adjacency_graph_connected_components[1])
+        giant_connex_component_index = np.argmax(counters)
+        markings_to_do = len(adjacency_graph_connected_components[1])/10.
 
-        for i in range(0, len(adjacency_graph_connected_components[1])):
-            log.info('Marking graph main connex elements: %s done',
-                     str("{0:.2f}".format(float(i) / float(ln) * 100)))
+        for i, connex_component_index in enumerate(adjacency_graph_connected_components[1]):
 
-            if adjacency_graph_connected_components[1][i] == major_index:
+            if i % int(markings_to_do) == 0:
+                log.info('Marking graph main connex elements: %s done',
+                         str("{0:.2f}".format(i / markings_to_do * 10.)))
+
+            if connex_component_index == giant_connex_component_index:
                 bulbs_node = DatabaseGraph.vertices.get(self.matrix_index_2_bulbs_id[i])
                 bulbs_node.custom = 'Main_Connex'
                 bulbs_node.main_connex = True
                 bulbs_node.save()
 
         log.info("Marking of %s nodes for connexity was done in %s",
-                 str(ln), str(self.pretty_time()))
+                 str(markings_to_do), str(self.pretty_time()))
 
     def full_rebuild(self):
         """
@@ -616,6 +638,7 @@ class InteractomeInterface(object):
 
         self.compute_uniprot_attachments()
         self.connexity_aware = connexity_aware
+
         self.create_val_matrix()
         self.get_eigen_spectrum(100)
 
@@ -655,17 +678,27 @@ class InteractomeInterface(object):
         Computes the dictionary of attachments between the reached_uniprots_bulbs_id_list and
         Reactome proteins
         """
-        for SP_Node_ID in self.reached_uniprots_bulbs_id_list:
-            bulbs_node = DatabaseGraph.UNIPORT.get(SP_Node_ID)
-            uniprot_alias_generator = bulbs_node.bothV("is_same")
-            if uniprot_alias_generator is not None:
-                self.Uniprot_attachments[SP_Node_ID] = []
-                for uniprot_alias in uniprot_alias_generator:
-                    self.Uniprot_attachments[SP_Node_ID].append(get_bulbs_id(uniprot_alias))
-                log.info('attached %s Reactome proteins to the node %s',
-                         len(self.Uniprot_attachments[SP_Node_ID]), SP_Node_ID)
+        log.info('attaching reactome proteins to uniprot nodes')
+        uniprot_attachments_counter = 0
+        reactome_attachments_counter = 0
+
+        for uniprot_bulbs_id in self.reached_uniprots_bulbs_id_list:
+            bulbs_node = DatabaseGraph.UNIPORT.get(uniprot_bulbs_id)
+            reactome_bulbs_id_generator = bulbs_node.bothV("is_same")
+            if reactome_bulbs_id_generator is not None:
+                self.Uniprot_attachments[uniprot_bulbs_id] = []
+                for uniprot_alias in reactome_bulbs_id_generator:
+                    self.Uniprot_attachments[uniprot_bulbs_id].append(get_bulbs_id(uniprot_alias))
+                uniprot_attachments_counter += 1
+                reactome_attachments_counter += len(self.Uniprot_attachments[uniprot_bulbs_id])
+                log.debug('attached %s Reactome proteins to the node %s',
+                          len(self.Uniprot_attachments[uniprot_bulbs_id]), uniprot_bulbs_id)
             else:
-                log.info('No attachement for the node %s', SP_Node_ID)
+                log.debug('No attachment for the node %s', uniprot_bulbs_id)
+
+        log.info('Attached %s reactome protein nodes to %s / %s uniprot nodes',
+                 reactome_attachments_counter,
+                 uniprot_attachments_counter, len(self.reached_uniprots_bulbs_id_list))
 
     def hacky_corr(self):
         """
@@ -711,8 +744,8 @@ class InteractomeInterface(object):
                      'circulation matrix construction: \n %s',
                      (set(uniprots) - set(self.bulbs_id_2_matrix_index.keys())))
 
-        self.entry_point_uniprots_bulbs_ids = self.entry_point_uniprots_bulbs_ids = [
-            uniprot for uniprot in uniprots if uniprot in self.bulbs_id_2_matrix_index.keys()]
+        self.entry_point_uniprots_bulbs_ids = \
+            [uniprot for uniprot in uniprots if uniprot in self.bulbs_id_2_matrix_index.keys()]
 
     # TODO: extract as the element performing a computation of the network
     # critical control parameters:
@@ -809,10 +842,12 @@ class InteractomeInterface(object):
                                                  self.laplacian_matrix[i, i]]
         return characterization_dict
 
-    def export_conduction_system(self):
+    def export_conduction_system(self, output_location=Outputs.Interactome_GDF_output):
         """
         Computes the conduction system of the GO terms and exports it to the GDF format and
          flushes it into a file that can be viewed with Gephi
+
+         :param output_location:
         """
 
         if self.incomplete_compute:
@@ -851,7 +886,7 @@ class InteractomeInterface(object):
                 str(float(int(NodeID in self.entry_point_uniprots_bulbs_ids)))]
 
         gdf_exporter = GdfExportInterface(
-            target_fname=Outputs.Interactome_GDF_output,
+            target_fname=output_location,
             field_names=node_char_names,
             field_types=node_char_types,
             node_properties_dict=characterization_dict,
@@ -987,7 +1022,8 @@ class InteractomeInterface(object):
 
 
 if __name__ == "__main__":
-    interactome_interface_instance = InteractomeInterface(True, True)
+    interactome_interface_instance = InteractomeInterface(main_connex_only=True,
+                                                          full_impact=False)
     interactome_interface_instance.full_rebuild()
     # interactome_interface_instance.fast_load()
     print interactome_interface_instance.pretty_time()
