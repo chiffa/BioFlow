@@ -63,13 +63,13 @@ class Dumps(object):
 
     ###################################
     matrix_LS = prefix + prefix_2 + '/dump5' + postfix
-    matrix_corrs = prefix + prefix_2 + '/dump2' + postfix
+    interactome_maps = prefix + prefix_2 + '/dump2' + postfix
     eigen_VaMat = prefix + prefix_2 + '/eigen_valmat.csv'
     eigen_ConMat = prefix + prefix_2 + '/eigen_conmat.csv'
     val_eigen = prefix + prefix_2 + '/pickleDump' + postfix
     cond_eigen = prefix + prefix_2 + '/pickleDump_0_5' + postfix
-    ValMat = prefix + prefix_2 + '/pickleDump3' + postfix
-    ConMat = prefix + prefix_2 + '/pickleDump4' + postfix
+    interactome_adjacency_matrix = prefix + prefix_2 + '/pickleDump3' + postfix
+    interactome_laplacian_matrix = prefix + prefix_2 + '/pickleDump4' + postfix
     UniP_att = prefix + prefix_2 + '/UP_Attach' + postfix
     Main_Connex_group = prefix + prefix_2 + '/Connex_group' + postfix
     Forbidden_IDs = prefix + prefix_2 + '/ForbiddenIDs' + postfix

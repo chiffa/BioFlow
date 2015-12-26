@@ -592,7 +592,7 @@ def get_source():
         csv_reader = reader(src)
         for row in csv_reader:
             source_bulbs_ids = source_bulbs_ids + row
-    source_bulbs_ids = [ret for ret in source_bulbs_ids]
+    source_bulbs_ids = [int(ret) for ret in source_bulbs_ids]
     return source_bulbs_ids
 
 
@@ -603,7 +603,7 @@ def get_background():
         csv_reader = reader(src)
         for row in csv_reader:
             background_bulbs_ids = background_bulbs_ids + row
-    background_bulbs_ids = [ret for ret in background_bulbs_ids]
+    background_bulbs_ids = [int(ret) for ret in background_bulbs_ids]
     return background_bulbs_ids
 
 
