@@ -118,7 +118,7 @@ class InteractomeInterface(object):
         self.laplacian_dumps_location = Dumps.interactome_laplacian_matrix
 
         char_set = string.ascii_uppercase + string.digits
-        self.r_ID = ''.join(sample(char_set * 6, 6))
+        self.random_tag = ''.join(sample(char_set * 6, 6))
 
         self.entry_point_uniprots_bulbs_ids = []
         self.UP2UP_voltages = {}
@@ -993,7 +993,7 @@ class InteractomeInterface(object):
                                 self.UP2UP_voltages)})
 
                 log.info('Random ID: %s \t Sample size: %s \t iteration: %s\t compops: %s \t '
-                         'time: %s ', self.r_ID, sample_size, i,
+                         'time: %s ', self.random_tag, sample_size, i,
                          "{0:.2f}".format(sample_size * (sample_size - 1) / 2 / self._time()),
                          self.pretty_time())
 

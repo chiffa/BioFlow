@@ -31,6 +31,7 @@ def get_interactome_interface():
     log.debug("get_interactome state e_p_u_b_i length: %s",
               len(interactome_interface_instance.entry_point_uniprots_bulbs_ids))
     log.info("interactome interface loaded in %s" % interactome_interface_instance.pretty_time())
+    # is the case now
     return interactome_interface_instance
 
 
@@ -78,6 +79,7 @@ def spawn_sampler_pool(
     :param chromosome_specific:
     :param interactome_interface_instance:
     """
+    # TODO: a better estimation of execution time
     process_pool = Pool(pool_size)
     payload = [
         (sample_size_list,
@@ -353,16 +355,26 @@ def compare_to_blank(
 
 
 # TODO: stabilize the background behavior with regard to the buffering
-def auto_analyze(source_list, depth, process_no=4, background_list=None):
+def auto_analyze(source_list, desired_depth=24, processors=4, background_list=None,
+                 skip_sampling=False):
     """
     Automatically analyzes the itneractome synergetic action of the RNA_seq results
 
     :param source_list::
-    :param depth:
-    :param process_no:
+    :param desired_depth:
+    :param processors:
     :param background_list
+    :param skip_sampling: if true, will skip background sampling step
     """
     # noinspection PyTypeChecker
+    # TODO: add desired_depth division by process number
+
+    estimated_comp_ops = 5
+
+    if desired_depth % processors != 0:
+        desired_depth = desired_depth / processors + 1
+    else:
+        desired_depth = desired_depth / processors
 
     for _list in source_list:
         log.info('Auto analyzing list of interest: %s %s', len(_list), _list)
@@ -374,13 +386,28 @@ def auto_analyze(source_list, depth, process_no=4, background_list=None):
                   len(interactome_interface.entry_point_uniprots_bulbs_ids))
         interactome_interface.background = background_list
 
+        # TODO: restructure to spawn a sampler pool that does not share an object in the Threading
         log.info('auto analyze 2: %s',
                  len(interactome_interface.entry_point_uniprots_bulbs_ids))
+
+        if not skip_sampling:
+            log.info("spawning a sampler for %s proteins @ %s compops/sec",
+                     len(interactome_interface.entry_point_uniprots_bulbs_ids), estimated_comp_ops)
+
         if len(interactome_interface.entry_point_uniprots_bulbs_ids) < 200:
-            spawn_sampler_pool(
-                process_no, [len(interactome_interface.entry_point_uniprots_bulbs_ids)],
-                [depth],
-                interactome_interface_instance=interactome_interface)
+
+            if not skip_sampling:
+                log.info('length: %s \t sampling depth: %s \t, estimated round time: %s min',
+                         len(interactome_interface.entry_point_uniprots_bulbs_ids),
+                         'full',
+                         len(interactome_interface.entry_point_uniprots_bulbs_ids)**2 /
+                         estimated_comp_ops / 60)
+
+                spawn_sampler_pool(
+                    processors, [len(interactome_interface.entry_point_uniprots_bulbs_ids)],
+                    [desired_depth],
+                    interactome_interface_instance=None)
+
             interactome_interface.build_extended_conduction_system()
             nr_nodes, nr_groups = compare_to_blank(
                 len(interactome_interface.entry_point_uniprots_bulbs_ids),
@@ -388,22 +415,26 @@ def auto_analyze(source_list, depth, process_no=4, background_list=None):
                 interactome_interface,
                 p_val=0.9, interactome_interface_instance=interactome_interface)
         else:
+
             sampling_depth = max(200 ** 2 /
                                  len(interactome_interface.entry_point_uniprots_bulbs_ids),
                                  5)
-            log.info('length: %s \t sampling depth: %s \t, estimated_time: %s',
-                     len(interactome_interface.entry_point_uniprots_bulbs_ids),
-                     sampling_depth,
-                     len(interactome_interface.entry_point_uniprots_bulbs_ids) *
-                     sampling_depth / 2 / depth / 60)
 
-            spawn_sampler_pool(process_no,
-                               [len(interactome_interface.entry_point_uniprots_bulbs_ids)],
-                               [depth],
-                               sparse_rounds=sampling_depth,
-                               interactome_interface_instance=interactome_interface)
+            if not skip_sampling:
+                log.info('length: %s \t sampling depth: %s \t, estimated round time: %s min',
+                         len(interactome_interface.entry_point_uniprots_bulbs_ids),
+                         sampling_depth,
+                         len(interactome_interface.entry_point_uniprots_bulbs_ids) *
+                         sampling_depth / 2 / desired_depth / 60)
+
+                spawn_sampler_pool(processors,
+                                   [len(interactome_interface.entry_point_uniprots_bulbs_ids)],
+                                   [desired_depth],
+                                   sparse_rounds=sampling_depth,
+                                   interactome_interface_instance=None)
+
             interactome_interface.build_extended_conduction_system(sparse_samples=sampling_depth)
-            interactome_interface.export_conduction_system()
+            # interactome_interface.export_conduction_system()
             nr_nodes, nr_groups = compare_to_blank(
                 len(interactome_interface.entry_point_uniprots_bulbs_ids),
                 [0.5, 0.6],

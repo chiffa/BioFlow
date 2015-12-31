@@ -120,7 +120,7 @@ class GeneOntologyInterface(object):
         self.call_coutner = 0
 
         char_set = string.ascii_uppercase + string.digits
-        self.r_ID = ''.join(random.sample(char_set * 6, 6))
+        self.random_tag = ''.join(random.sample(char_set * 6, 6))
 
         self.Indep_Lapl = np.zeros((2, 2))
         self.uncomplete_compute = False
@@ -679,9 +679,10 @@ class GeneOntologyInterface(object):
         built the system or had no GO attached to them
         """
         if not set(uniprots) <= set(self.UP2GO_Dict.keys()):
-            ex_pload = 'Following reached uniprots either were not in the construction set or ' \
-                       'have no GOs attached: \n %s' % (set(uniprots) - set(self.UP2GO_Dict.keys()))
-            log.warning(ex_pload)
+            na_set = set(uniprots) - set(self.UP2GO_Dict.keys())
+            log.warning('%s uniprots out of %s either were not present in the constructions set '
+                        'or have no GO terms attached to them.', len(na_set), len(set(uniprots)))
+            log.debug('full list of uniprots that cannot be analyzed: \n%s', na_set)
         self.analytic_uniprots = [
             uniprot for uniprot in uniprots if uniprot in self.UP2GO_Dict.keys()]
 
@@ -931,7 +932,9 @@ class GeneOntologyInterface(object):
                                 self.UP2UP_voltages)})
                 log.info(
                     'Random ID: %s \t Sample size: %s \t iteration: %s\t compops: %s \t time: %s ',
-                    self.r_ID, sample_size, i, "{0:.2f}".format(sample_size), self.pretty_time())
+                    self.random_tag, sample_size, i,
+                    "{0:.2f}".format(sample_size * (sample_size - 1) / 2 / self._time()),
+                    self.pretty_time())
 
     def get_independent_linear_groups(self):
         """

@@ -86,6 +86,8 @@
  
  - Add protein abundance level
 
+ - Add a coarseness feature on the interactome analysis affecting sampling behavior, so that 
+ precision is sacrificed in favor of computation speed.
 
 ## Required documentation:
 

@@ -95,10 +95,10 @@ class GdfExportInterface(object):
         for nodename, nodeprops in self.node_properties.iteritems():
             if self.mincurrent and float(nodeprops[0]) > self.mincurrent:
                 self.target_file.write(
-                    nodename + ', ' + ', '.join(nodeprops) + '\n')
+                    str(nodename) + ', ' + ', '.join(nodeprops) + '\n')
             else:
                 self.target_file.write(
-                    nodename + ', ' + ', '.join(nodeprops) + '\n')
+                    str(nodename) + ', ' + ', '.join(nodeprops) + '\n')
 
     def write_edgedefs(self):
         """

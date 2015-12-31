@@ -35,11 +35,9 @@ def get_go_interface_instance():
     # Attention, manual switch here:
     ################################
 
-    go_interface_instance = GeneOntologyInterface(_filter,
-                                                  get_background(),
-                                                  _correlation_factors,
-                                                  True, 3)
-    # go_interface_instance = GO_Interface(_filter, interactome_interface_instance.all_uniprots_bulbs_id_list, _correlation_factors, True, 3)
+    go_interface_instance = GeneOntologyInterface(*ref_param_set)
+    # go_interface_instance = GO_Interface(_filter, interactome_interface_instance.
+    # all_uniprots_bulbs_id_list, _correlation_factors, True, 3)
     go_interface_instance.load()
     log.info(go_interface_instance.pretty_time())
     return go_interface_instance
@@ -479,7 +477,8 @@ def linearly_independent_go_groups(size):
     analyze_eigenvects(go_interface_instace.Indep_Lapl, size, char_indexes)
 
 
-def auto_analyze(source=None, go_interface_instance=None, processors=3, desired_depth=24):
+def auto_analyze(source=None, go_interface_instance=None, processors=3, desired_depth=24,
+                 skip_sampling=False):
     """
     Automatically analyzes the GO annotation of the RNA_seq results.
 
@@ -487,11 +486,15 @@ def auto_analyze(source=None, go_interface_instance=None, processors=3, desired_
     :param go_interface_instance:
     :param processors:
     :param desired_depth:
+    :param skip_sampling: uses existing mongoDB content without spawning a sampler
     """
     if source is None:
         dumplist = undump_object(Dumps.RNA_seq_counts_compare)
     else:
         dumplist = [source]
+
+    # comp_ops are computation of pair-flow
+    estimated_comp_ops = 5
 
     if desired_depth % processors != 0:
         desired_depth = desired_depth / processors + 1
@@ -504,35 +507,51 @@ def auto_analyze(source=None, go_interface_instance=None, processors=3, desired_
             go_interface_instance = get_go_interface_instance()
 
         go_interface_instance.set_uniprot_source(my_list)
-        log.info("auto_analyze_1: %s", len(go_interface_instance.analytic_uniprots))
 
+        if not skip_sampling:
+            log.info("spawning a sampler for %s proteins @ %s compops/sec",
+                     len(go_interface_instance.analytic_uniprots), estimated_comp_ops)
+
+        # TODO: restructure to spawn a sampler pool that does not share an object in the Threading
         if len(go_interface_instance.analytic_uniprots) < 200:
-            spawn_sampler_pool(processors,
-                               [len(go_interface_instance.analytic_uniprots)],
-                               [desired_depth],
-                               go_interface_instance=go_interface_instance)
+
+            if not skip_sampling:
+
+                log.info('length: %s \t sampling depth: %s \t, estimated round time: %s min',
+                         len(go_interface_instance.analytic_uniprots),
+                         'full',
+                         len(go_interface_instance.analytic_uniprots)**2 / estimated_comp_ops / 60)
+
+                spawn_sampler_pool(processors,
+                                   [len(go_interface_instance.analytic_uniprots)],
+                                   [desired_depth],
+                                   go_interface_instance=None)
+
             go_interface_instance.build_extended_conduction_system()
             nr_nodes, nr_groups = compare_to_blank(
                 len(go_interface_instance.analytic_uniprots),
                 [1100, 1300],
                 go_interface_instance,
                 p_val=0.9, go_interface_instance=go_interface_instance)
+
         else:
             sampling_depth = max(200 ** 2 / len(go_interface_instance.analytic_uniprots), 5)
 
-            log.info('lenght: %s \t sampling depth: %s \t, estimated_time: %s',
-                     len(go_interface_instance.analytic_uniprots),
-                     sampling_depth,
-                     len(go_interface_instance.analytic_uniprots) * sampling_depth / 2 / 6 / 60)
+            if not skip_sampling:
 
-            spawn_sampler_pool(processors,
-                               [len(go_interface_instance.analytic_uniprots)],
-                               [desired_depth],
-                               sparse_rounds=sampling_depth,
-                               go_interface_instance=go_interface_instance)
+                log.info('length: %s \t sampling depth: %s \t, estimated round time: %s min',
+                         len(go_interface_instance.analytic_uniprots),
+                         sampling_depth,
+                         len(go_interface_instance.analytic_uniprots) * sampling_depth / 2 / 6 / 60)
+
+                spawn_sampler_pool(processors,
+                                   [len(go_interface_instance.analytic_uniprots)],
+                                   [desired_depth],
+                                   sparse_rounds=sampling_depth,
+                                   go_interface_instance=None)
 
             go_interface_instance.build_extended_conduction_system(sparse_samples=sampling_depth)
-            go_interface_instance.export_conduction_system()
+            # go_interface_instance.export_conduction_system()
             nr_nodes, nr_groups = compare_to_blank(
                 len(go_interface_instance.analytic_uniprots),
                 [1100, 1300],
@@ -614,9 +633,10 @@ if __name__ == "__main__":
     interactome_interface_instance = InteractomeInterface(True, False)
     interactome_interface_instance.fast_load()
 
-    KG = GeneOntologyInterface(_filter,
-                               interactome_interface_instance.all_uniprots_bulbs_id_list,
-                               (1, 1), True, 3)
+    ref_param_set = [_filter, interactome_interface_instance.all_uniprots_bulbs_id_list,
+                     (1, 1), True, 3]
+
+    KG = GeneOntologyInterface(*ref_param_set)
     KG.load()
     print KG.pretty_time()
-    auto_analyze(get_source(), KG)
+    auto_analyze(get_source(), skip_sampling=True)
