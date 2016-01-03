@@ -62,7 +62,7 @@ def insert_meta_objects(bulbs_graph_class, meta_id_2_property_dict):
     """
     total_properties = len(meta_id_2_property_dict)
 
-    for i, (meta_name, property_dict) in enumerate(meta_id_2_property_dict.itervalues()):
+    for i, (meta_name, property_dict) in enumerate(meta_id_2_property_dict.iteritems()):
         log.info('meta_insert: property %s out of %s', i, total_properties)
 
         primary = bulbs_graph_class.create(
