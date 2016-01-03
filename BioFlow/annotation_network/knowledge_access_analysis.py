@@ -14,7 +14,7 @@ from matplotlib import pyplot as plt
 from BioFlow.algorithms_bank.conduction_routines import perform_clustering
 from BioFlow.annotation_network.BioKnowledgeInterface import GeneOntologyInterface
 from BioFlow.main_configs import UP_rand_samp, Dumps, analysis_set_bulbs_ids,\
-    background_set_bulbs_ids
+    background_set_bulbs_ids, Outputs
 from BioFlow.molecular_network.InteractomeInterface import InteractomeInterface
 from BioFlow.utils.io_Routines import undump_object
 from BioFlow.utils.linalg_routines import analyze_eigenvects
@@ -275,7 +275,8 @@ def show_correlations(
         plt.hist(test_tri_corr_array[2, :],
                  bins=bins, histtype='step', log=True, color='r')
 
-    plt.show()
+    # plt.show()
+    plt.savefig(Outputs.knowledge_network_stats)
 
     # pull the groups corresponding to non-random associations.
     return current_info_rel, cluster_props

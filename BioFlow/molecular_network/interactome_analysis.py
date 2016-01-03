@@ -10,7 +10,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from BioFlow.algorithms_bank.conduction_routines import perform_clustering
-from BioFlow.main_configs import Interactome_rand_samp, analysis_set_bulbs_ids
+from BioFlow.main_configs import Interactome_rand_samp, analysis_set_bulbs_ids, Outputs
 from BioFlow.molecular_network.InteractomeInterface import InteractomeInterface
 from BioFlow.utils.dataviz import kde_compute
 from BioFlow.utils.log_behavior import get_logger
@@ -238,6 +238,7 @@ def show_test_statistics(
     plt.title('Currently empty')
 
     plt.show()
+    plt.savefig(Outputs.interactome_network_stats)
 
     # pull the groups corresponding to non-random associations.
     return current_info_rel, cluster_props

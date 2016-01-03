@@ -3,15 +3,12 @@
 
 ## Confirmed minor refactoring requiring a sane rollback:
 
- - replace all the print Warning() with logging behavior at the level of a warning or a critical 
- error
- 
  - render the usage of analytical/background sets uniform throughout the system.
- 
- - express the laplacian retriever logic in terms of expansions and n-expansions
 
  - save analysis files and statistically significant analysis elements into the output folder 
  instead of showing them to the user
+ 
+ - split the computation of the blank from the performing of the analysis round
 
 ## Minor refactoring suggestions:
 
@@ -77,7 +74,7 @@
      upon enumeration. In practice, this is not critical, because DB Ids from different databases
       have low intersection
 
-    - approximate matching capacities for gene names mistypes
+    - approximate matching capacities for gene names mistypings
  
  - in all the DB calls, add a mock-able wrapper that would read the state of a project-wide 
  variable and if it is set to True (in unittests) will switch it to
@@ -90,6 +87,11 @@
 
  - Add a coarseness feature on the interactome analysis affecting sampling behavior, so that 
  precision is sacrificed in favor of computation speed.
+
+ - separate the envelopes for the GO and Reactome graphs retrieval from the envelope used to 
+ recover and compute over the graph.
+ 
+ - 
 
 ## Required documentation:
 

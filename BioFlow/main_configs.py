@@ -105,6 +105,9 @@ class Outputs(object):
     RNA_pre_filter_output = prefix + '/RNA_pre_filter_output.tsv'
     cross_refs = prefix + '/cross_refs.tsv'
 
+    knowledge_network_stats = prefix + '/knowledge_network_stats.png'
+    interactome_network_stats = prefix + '/interactome_network_stats.png'
+
 
 #  Declares overloaded IDs, pickles from the dumps of already computed
 IDFilter = []
