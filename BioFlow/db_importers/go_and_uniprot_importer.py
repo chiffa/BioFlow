@@ -188,7 +188,7 @@ def import_uniprots(uniprot, reactome_acnum_bindings):
     acc_nums_no = len(reactome_acnum_bindings.keys()) / 100.
     up_no = len(uniprot.keys()) / 100.
 
-    for sp_id_num, swiss_prot_id, data_container in enumerate(uniprot.iteritems()):
+    for sp_id_num, (swiss_prot_id, data_container) in enumerate(uniprot.iteritems()):
         set1 = set(data_container['Acnum'])
         set2 = set(reactome_acnum_bindings.keys())
         # Create uniprot terms
