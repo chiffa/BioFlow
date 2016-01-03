@@ -10,6 +10,8 @@
  
  - express the laplacian retriever logic in terms of expansions and n-expansions
 
+ - save analysis files and statistically significant analysis elements into the output folder 
+ instead of showing them to the user
 
 ## Minor refactoring suggestions:
 

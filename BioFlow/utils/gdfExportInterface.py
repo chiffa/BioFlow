@@ -119,10 +119,10 @@ class GdfExportInterface(object):
         for i, j in zip(nz[0], nz[1]):
             if abs(self.current_Matrix[i, j]) > self.mincurrent:
                 if self.directed:
-                    write_line = ', '.join([self.Idx2Label[i], self.Idx2Label[j],
+                    write_line = ', '.join([str(self.Idx2Label[i]), str(self.Idx2Label[j]),
                                             str(self.current_Matrix[i, j]), 'true']) + '\n'
                 else:
-                    write_line = ', '.join([self.Idx2Label[i], self.Idx2Label[j],
+                    write_line = ', '.join([str(self.Idx2Label[i]), str(self.Idx2Label[j]),
                                             str(self.current_Matrix[i, j]), 'false']) + '\n'
                 self.target_file.write(write_line)
 

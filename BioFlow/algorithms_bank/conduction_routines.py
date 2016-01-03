@@ -11,11 +11,13 @@ from scipy.sparse.linalg import eigsh
 # noinspection PyUnresolvedReferences
 from scikits.sparse.cholmod import cholesky
 import warnings
-from BioFlow.utils.log_behavior import logger as log
+from BioFlow.utils.log_behavior import get_logger
 from BioFlow.utils.dataviz import render_2d_matrix
 from BioFlow.internal_configs import fudge
 from BioFlow.utils.linalg_routines import cluster_nodes, average_off_diag_in_sub_matrix, \
     average_interset_linkage, normalize_laplacian
+
+log = get_logger(__name__)
 
 # TODO: we have to problems here: wrong solver and wrong laplacian
 #   1) we are using a Cholesky solver on a system that by definition has at least one nul eigval
@@ -210,7 +212,9 @@ def master_edge_current(conductivity_laplacian, index_list,
 
     # run the main loop on the list of indexes in agreement with the memoization strategy:
     for counter, (i, j) in enumerate(list_of_pairs):
-        log.debug('getting pairwise flow %s out of %s', counter + 1, total_pairs)
+
+        if counter % total_pairs/100 == 0:
+            log.debug('getting pairwise flow %s out of %s', counter + 1, total_pairs)
 
         if memory_source and tuple(sorted((i, j))) in memory_source.keys():
             potential_diff, current_upper = memory_source[tuple(sorted((i, j)))]

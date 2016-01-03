@@ -243,7 +243,7 @@ def compare_to_blank(
         real_interactome_interface=None,
         p_val=0.05,
         sparse_rounds=False,
-        clusters=3,
+        cluster_no=3,
         interactome_interface_instance=None):
     """
     Recovers the statistics on the circulation nodes and shows the visual of a circulation system
@@ -256,7 +256,7 @@ def compare_to_blank(
     :param p_val: desired p_value for the returned terms
     :param sparse_rounds: if set to a number, sparse computation technique would be used
      with the number of rounds equal the integer value of that argument
-    :param clusters: specifies the number of clusters we want to have
+    :param cluster_no: specifies the number of cluster_no we want to have
     :param interactome_interface_instance:
     :return: None if no significant nodes, the node and group characteristic
      dictionaries otherwise
@@ -280,12 +280,16 @@ def compare_to_blank(
     for i, sample in enumerate(Interactome_rand_samp.find(
             {'size': blank_model_size, 'sys_hash': md5_hash, 'sparse_rounds': sparse_rounds})):
         if sparse_rounds:
-            log.exception('Blank done on sparse rounds. Clustering likely to be hazardos. %s',
+            log.warning('Blank done on sparse rounds. Clustering likely to be hazardos. %s',
                           'Ignore hazardous clustering rounds')
         _, node_currents = pickle.loads(sample['currents'])
         tensions = pickle.loads(sample['voltages'])
-        _, _, mean_correlations, eigvals = perform_clustering(
-            tensions, clusters, show=False)
+        if not sparse_rounds:
+            _, _, mean_correlations, eigvals = perform_clustering(
+                tensions, cluster_no, show=False)
+        else:
+            mean_correlations = [0]*cluster_no
+            eigvals = np.array([-1]*cluster_no)
         mean_correlation_accumulator.append(np.array(mean_correlations))
         eigenvalues_accumulator.append(eigvals)
         dictionary_system = interactome_interface_instance.format_node_props(node_currents)
@@ -313,7 +317,7 @@ def compare_to_blank(
         node_ids, curr_inf_conf = (curr_inf_conf_tot[0, :],
                                    curr_inf_conf_tot[(1, 2), :])
         group2avg_offdiag, _, mean_correlations, eigenvalue = perform_clustering(
-            real_interactome_interface.UP2UP_voltages, clusters)
+            real_interactome_interface.UP2UP_voltages, cluster_no)
 
     log.info("stats on  %s samples" % count)
 
@@ -483,4 +487,4 @@ if __name__ == "__main__":
     source = get_source_bulbs_ids()
     print len(source)
 
-    auto_analyze([source], 24)
+    auto_analyze([source], 24, skip_sampling=True)

@@ -1,6 +1,7 @@
 from BioFlow.neo4j_db.GraphDeclarator import DatabaseGraph
-from BioFlow.utils.log_behavior import logger as log
+from BioFlow.utils.log_behavior import get_logger
 
+log = get_logger(__name__)
 
 def print_node_look_up_by_id(domain, search_legacy_id):
     """

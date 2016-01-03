@@ -10,9 +10,11 @@ import numpy as np
 from scipy.stats import t
 
 from BioFlow.utils.io_Routines import dump_object
-from BioFlow.utils.log_behavior import logger as log
+from BioFlow.utils.log_behavior import get_logger
 from BioFlow.main_configs import rna_source, Dumps
 from BioFlow.neo4j_db import db_io_routines
+
+log = get_logger(__name__)
 
 pre_dict = {1: 0.80,
             2: 0.89,

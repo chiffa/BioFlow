@@ -287,7 +287,7 @@ def compare_to_blank(
         real_knowledge_interface=None,
         p_val=0.05,
         sparse_rounds=False,
-        clusters=3,
+        cluster_no=3,
         go_interface_instance=None):
     """
     Recovers the statistics on the circulation nodes and shows the visual of a circulation system
@@ -299,7 +299,7 @@ def compare_to_blank(
     :param p_val: desired p_value for the returned terms
     :param sparse_rounds: if set to a number, sparse computation technique would be used with
      the number of rounds equal to the number
-    :param clusters: specifies the number of clusters we want to have
+    :param cluster_no: specifies the number of cluster_no we want to have
     :param go_interface_instance:
     :return: None if no significant nodes, the node and group characterisitc dictionaries
      otherwise
@@ -326,9 +326,17 @@ def compare_to_blank(
             {'size': blank_model_size, 'sys_hash': md5_hash, 'sparse_rounds': sparse_rounds})
 
     for i, sample in enumerate(background_sample):
+        if sparse_rounds:
+            log.warning('Blank done on sparse rounds. Clustering likely to be hazardos. %s',
+                          'Ignore hazardous clustering rounds')
         _, node_currents = pickle.loads(sample['currents'])
         tensions = pickle.loads(sample['voltages'])
-        _, _, mean_correlations, eigenvalues = perform_clustering(tensions, 3, show=False)
+        if not sparse_rounds:
+            _, _, mean_correlations, eigenvalues = perform_clustering(
+                tensions, cluster_no, show=False)
+        else:
+            mean_correlations = [0]*cluster_no
+            eigenvalues = np.array([-1]*cluster_no)
         mean_correlation_accumulator.append(np.array(mean_correlations))
         eigenvalues_accumulator.append(eigenvalues)
         dict_system = go_interface_instance.format_node_props(node_currents)
@@ -364,7 +372,7 @@ def compare_to_blank(
                 (1, 2, 3), :])
         log.info('blank comparison: %s', curr_inf_conf.shape)
         group2avg_off_diag, _, mean_correlations, eigenvalue = perform_clustering(
-            real_knowledge_interface.UP2UP_voltages, clusters)
+            real_knowledge_interface.UP2UP_voltages, cluster_no)
 
     log.info('stats on %s samples', count)
 
