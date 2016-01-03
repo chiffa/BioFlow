@@ -114,13 +114,14 @@ def local_indexed_select(bi_array, array_column, selection_span):
 # scatter plot and histogram with two sets that should go into the dataviz module
 def show_test_statistics(
         bi_corr_array,
-        mean_correlations,
-        eigenvalues,
+        mean_correlations,  # shutdown if sparse
+        eigenvalues,        # shutdown if sparse
         selector,
         test_bi_corr_array,
-        test_mean_corr,
-        eigenvalue,
-        re_samples):
+        test_mean_corr,     # shutdown if sparse
+        eigenvalue,         # shutdown fi sparse
+        re_samples,
+        sparse=False):
     """
     A general function that performs demonstration of an example of random samples of
      the same size as our sample and of our sample and conducts the statistical tests
@@ -138,6 +139,7 @@ def show_test_statistics(
     characteristics of clustering the true sample
     :param eigenvalue: eigenvalues associated to the interconnection matrix of the true sample
     :param re_samples: how many random samples we analyzed for the default model
+    :param sparse: True if we are showing test statistics of a sparse kernel run
     :return:
     """
     plt.figure()
@@ -206,26 +208,31 @@ def show_test_statistics(
 
     # this property is better off viewed as a scatterplot of true points and
     # default points
+
+    cluster_props = None
+
     plt.subplot(337)
     plt.title('Clustering correlation')
-    # plt.scatter(mean_correlations[0, :], mean_correlations[1, :], color = 'b')
-    estimator_function = kde_compute(mean_correlations[(0, 1), :], 50, re_samples)
-    cluster_props = None
-    if test_mean_corr is not None:
-        plt.scatter(test_mean_corr[0, :], test_mean_corr[1, :],
-                    color='k', alpha=0.8)
-        cluster_props = estimator_function(test_mean_corr[(0, 1), :])
+    if not sparse:
+        # plt.scatter(mean_correlations[0, :], mean_correlations[1, :], color = 'b')
+        estimator_function = kde_compute(mean_correlations[(0, 1), :], 50, re_samples)
+        cluster_props = None
+        if test_mean_corr is not None:
+            plt.scatter(test_mean_corr[0, :], test_mean_corr[1, :],
+                        color='k', alpha=0.8)
+            cluster_props = estimator_function(test_mean_corr[(0, 1), :])
 
     plt.subplot(338)
     plt.title('Eigvals_hist')
-    bins = np.linspace(eigenvalues.min(), eigenvalues.max(), 100)
-    if test_bi_corr_array is not None:
-        bins = np.linspace(min(eigenvalues.min(), eigenvalue.min()),
-                           max(eigenvalues.max(), eigenvalue.max()),
-                           100)
-    plt.hist(eigenvalues, bins=bins, histtype='step', color='b')
-    if eigenvalue is not None:
-        plt.hist(eigenvalue.tolist() * 3, bins=bins, histtype='step', color='r')
+    if not sparse:
+        bins = np.linspace(eigenvalues.min(), eigenvalues.max(), 100)
+        if test_bi_corr_array is not None:
+            bins = np.linspace(min(eigenvalues.min(), eigenvalue.min()),
+                               max(eigenvalues.max(), eigenvalue.max()),
+                               100)
+        plt.hist(eigenvalues, bins=bins, histtype='step', color='b')
+        if eigenvalue is not None:
+            plt.hist(eigenvalue.tolist() * 3, bins=bins, histtype='step', color='r')
 
     plt.subplot(339)
     plt.title('Currently empty')
@@ -280,15 +287,14 @@ def compare_to_blank(
     for i, sample in enumerate(Interactome_rand_samp.find(
             {'size': blank_model_size, 'sys_hash': md5_hash, 'sparse_rounds': sparse_rounds})):
         if sparse_rounds:
-            log.warning('Blank done on sparse rounds. Clustering likely to be hazardos. %s',
-                          'Ignore hazardous clustering rounds')
+            log.warning('Blank done on sparse rounds. Clustering will not be performed')
         _, node_currents = pickle.loads(sample['currents'])
         tensions = pickle.loads(sample['voltages'])
         if not sparse_rounds:
             _, _, mean_correlations, eigvals = perform_clustering(
                 tensions, cluster_no, show=False)
         else:
-            mean_correlations = [0]*cluster_no
+            mean_correlations = np.array([[(0, ), 0, 0]]*cluster_no)
             eigvals = np.array([-1]*cluster_no)
         mean_correlation_accumulator.append(np.array(mean_correlations))
         eigenvalues_accumulator.append(eigvals)
@@ -316,8 +322,15 @@ def compare_to_blank(
             [[int(key)] + list(val) for key, val in dictionary_system.iteritems()]).T
         node_ids, curr_inf_conf = (curr_inf_conf_tot[0, :],
                                    curr_inf_conf_tot[(1, 2), :])
-        group2avg_offdiag, _, mean_correlations, eigenvalue = perform_clustering(
-            real_interactome_interface.UP2UP_voltages, cluster_no)
+
+        if not sparse_rounds:
+            group2avg_offdiag, _, mean_correlations, eigenvalue = perform_clustering(
+                real_interactome_interface.UP2UP_voltages, cluster_no)
+
+        else:
+            group2avg_offdiag = np.array([[(0, ), 0, 0]]*cluster_no)
+            mean_correlations = np.array([[0, 0]]*cluster_no)
+            eigenvalue = np.array([-1]*cluster_no)
 
     log.info("stats on  %s samples" % count)
 
@@ -325,7 +338,8 @@ def compare_to_blank(
     # estimators computation
     r_nodes, r_groups = show_test_statistics(
         final, final_mean_correlations, final_eigenvalues,
-        zoom_range_selector, curr_inf_conf, mean_correlations.T, eigenvalue.T, count)
+        zoom_range_selector, curr_inf_conf, mean_correlations.T,
+        eigenvalue.T, count, sparse_rounds)
 
     interactome_node_char = namedtuple(
         'Node_Char', ['name', 'current', 'degree', 'p_value'])

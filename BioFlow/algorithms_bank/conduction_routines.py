@@ -364,12 +364,9 @@ def perform_clustering(inter_node_tension, cluster_number, show=True):
         group_selector = groups == i
         group_indexes = group_selector.nonzero()[0].tolist()
         group_2_mean_off_diag.append(
-            (tuple(
-                rev_idx[idx] for idx in group_indexes),
+            (tuple(rev_idx[idx] for idx in group_indexes),
                 len(group_indexes),
-                average_off_diag_in_sub_matrix(
-                relations_matrix,
-                group_indexes)))
+                average_off_diag_in_sub_matrix(relations_matrix, group_indexes)))
         group_sets.append(group_indexes)
 
     remainder = average_interset_linkage(relations_matrix, group_sets)

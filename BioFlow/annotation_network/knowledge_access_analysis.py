@@ -327,16 +327,12 @@ def compare_to_blank(
 
     for i, sample in enumerate(background_sample):
         if sparse_rounds:
-            log.warning('Blank done on sparse rounds. Clustering likely to be hazardos. %s',
-                          'Ignore hazardous clustering rounds')
+            log.warning('Blank done on sparse rounds. Clustering will not be performed')
         _, node_currents = pickle.loads(sample['currents'])
         tensions = pickle.loads(sample['voltages'])
         if not sparse_rounds:
             _, _, mean_correlations, eigenvalues = perform_clustering(
                 tensions, cluster_no, show=False)
-        else:
-            mean_correlations = [0]*cluster_no
-            eigenvalues = np.array([-1]*cluster_no)
         mean_correlation_accumulator.append(np.array(mean_correlations))
         eigenvalues_accumulator.append(eigenvalues)
         dict_system = go_interface_instance.format_node_props(node_currents)
@@ -347,7 +343,7 @@ def compare_to_blank(
             del mean_correlation_accumulator[-1]
             del curr_inf_conf_general[-1]
             del eigenvalues_accumulator[-1]
-            print "exceptional state: nothing in dict_system."
+            log.critical("exceptional state: nothing in dict_system.")
 
     # This part declares the pre-operators required for the verification of a
     # real sample
