@@ -237,7 +237,7 @@ def show_test_statistics(
     plt.subplot(339)
     plt.title('Currently empty')
 
-    plt.show()
+    # plt.show()
     plt.savefig(Outputs.interactome_network_stats)
 
     # pull the groups corresponding to non-random associations.
@@ -351,13 +351,24 @@ def compare_to_blank(
     if r_nodes is not None:
         not_random_nodes = [str(int(node_id))
                             for node_id in node_ids[r_nodes < p_val].tolist()]
-        not_random_groups = np.concatenate(
-            (group2avg_offdiag,
-             np.reshape(r_groups, (3, 1))), axis=1)[r_groups < p_val].tolist()
-        not_random_groups = [group_char(*nr_group)
-                             for nr_group in not_random_groups]
+
+        if not sparse_rounds:
+            not_random_groups = np.concatenate(
+                (group2avg_offdiag,
+                 np.reshape(r_groups, (3, 1))), axis=1)[r_groups < p_val].tolist()
+            not_random_groups = [group_char(*nr_group)
+                                 for nr_group in not_random_groups]
+
+        else:
+            not_random_groups = []
+
         # basically the second element below are the nodes that contribute to the
         #  information flow through the node that is considered as non-random
+
+        print 'debug, not random nodes', not_random_nodes
+        print 'debug bulbs_id_disp_name',  \
+            interactome_interface_instance.bulbs_id_2_display_name.iteritems()[:10]
+
         dct = dict(
             (nr_node_id,
              interactome_node_char(
@@ -367,10 +378,10 @@ def compare_to_blank(
                   r_nodes[node_ids == float(nr_node_id)].tolist())))
             for nr_node_id in not_random_nodes)
 
-        return sorted(dct.iteritems(), key=lambda x: x[
-                      1][3]), not_random_groups
+        return sorted(dct.iteritems(), key=lambda x: x[1][3]),\
+            not_random_groups
 
-    return None, None, None
+    return None, None
 
 
 # TODO: stabilize the background behavior with regard to the buffering
