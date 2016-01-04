@@ -349,8 +349,7 @@ def compare_to_blank(
             'UPs', 'num_UPs', 'average_connection', 'p_value'])
 
     if r_nodes is not None:
-        not_random_nodes = [str(int(node_id))
-                            for node_id in node_ids[r_nodes < p_val].tolist()]
+        not_random_nodes = [node_id for node_id in node_ids[r_nodes < p_val].tolist()]
 
         if not sparse_rounds:
             not_random_groups = np.concatenate(
@@ -367,7 +366,7 @@ def compare_to_blank(
 
         print 'debug, not random nodes', not_random_nodes
         print 'debug bulbs_id_disp_name',  \
-            interactome_interface_instance.bulbs_id_2_display_name.iteritems()[:10]
+            interactome_interface_instance.bulbs_id_2_display_name.items()[:10]
 
         dct = dict(
             (nr_node_id,
