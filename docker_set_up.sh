@@ -53,11 +53,12 @@ source activate test-environement
 conda install python="2.7" cython scikit-learn
 
 # clone the project into the test environement:
-mkdir datastore
+mkdir /home/ank/datastore
+cd /home/ank
 git clone https://github.com/chiffa/BioFlow.git
 
 # install project requirements:
-cd BioFlow/
+cd /home/ank/BioFlow/
 pip install requirements -r requirements.txt
 
 # start-up the databases:
