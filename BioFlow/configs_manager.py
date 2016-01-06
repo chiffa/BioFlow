@@ -33,10 +33,7 @@ class StructureGenerator(object):
             r'http://hint.yulab.org/MouseBinaryHQ.txt'],
         'GO': [r'http://purl.obolibrary.org/obo/go/go-basic.obo'],
         'BIOGRID': [r'http://thebiogrid.org/downloads/archives/Release%20Archive/BIOGRID-3.3.122/BIOGRID-ORGANISM-3.3.122.tab2.zip'],
-        'ABOUNDANCES': [
-            '',
-            'http://pax-db.org/export/dataset/H.sapiens%20-%20Whole%20organism%20(Integrated)-sort_by--abundance-[0-20].txt?id=29&species=9606&start=0&end=20&sort=-abundance',
-            '']}
+        'ABOUNDANCES': []}
 
     # paths to be appended to the user-provided installation directory
     _local_file_tree = {
