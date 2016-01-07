@@ -13,7 +13,7 @@ from BioFlow.neo4j_db.db_io_routines import look_up_annotation_set
 
 
 @click.group()
-def truegird():
+def truegrid():
     pass
 
 
@@ -139,14 +139,14 @@ def analyze(matrixtype, background, source, depth, processors,):
 
 #TODO: add purge mongodb operation
 
-truegird.add_command(initialize)
-truegird.add_command(setorgconfs)
-truegird.add_command(downloaddbs)
-truegird.add_command(purgeneo4j)
-truegird.add_command(loadneo4j)
-truegird.add_command(extractmatrix)
-truegird.add_command(mapids)
-truegird.add_command(analyze)
+truegrid.add_command(initialize)
+truegrid.add_command(setorgconfs)
+truegrid.add_command(downloaddbs)
+truegrid.add_command(purgeneo4j)
+truegrid.add_command(loadneo4j)
+truegrid.add_command(extractmatrix)
+truegrid.add_command(mapids)
+truegrid.add_command(analyze)
 
 if __name__ == '__main__':
-    truegird()
+    truegrid()

@@ -122,7 +122,8 @@ def show_correlations(
         test_mean_correlation,
         eigenvalue,
         re_samples,
-        go_interface_instance=None):
+        go_interface_instance=None,
+        sparse=False):
 
     # TODO: there is a lot of repetition depending on which values are the biggest,
     # test-setted or real setted. In all, we should be able to reduce it to two functions:
@@ -146,6 +147,7 @@ def show_correlations(
     :param eigenvalue: eigenvalues associated to the interconnection matrix of the true sample
     :param re_samples: how many random samples we analyzed for the default model
     :param go_interface_instance:
+    :param sparse:
     :return:
     """
     if go_interface_instance is None:
@@ -236,27 +238,32 @@ def show_correlations(
 
     # this property is better off viewed as a scatterplot of true points and
     # default points
+
+    cluster_props = None
+
     plt.subplot(337)
     plt.title('Clustering correlation')
-    # plt.scatter(mean_correlations[0, :], mean_correlations[1, :], color = 'b')
-    estimator_function = kde_compute(mean_correlations[(0, 1), :], 50, re_samples)
-    cluster_props = None
-    if test_mean_correlation is not None:
-        plt.scatter(test_mean_correlation[0, :],
-                    test_mean_correlation[1, :],
-                    color='k', alpha=0.8)
-        cluster_props = estimator_function(test_mean_correlation[(0, 1), :])
+    if not sparse:
+        # plt.scatter(mean_correlations[0, :], mean_correlations[1, :], color = 'b')
+        estimator_function = kde_compute(mean_correlations[(0, 1), :], 50, re_samples)
+        cluster_props = None
+        if test_mean_correlation is not None:
+            plt.scatter(test_mean_correlation[0, :],
+                        test_mean_correlation[1, :],
+                        color='k', alpha=0.8)
+            cluster_props = estimator_function(test_mean_correlation[(0, 1), :])
 
     plt.subplot(338)
     plt.title('Eigvals_hist')
-    bins = np.linspace(eigenvalues.min(), eigenvalues.max(), 100)
-    if test_tri_corr_array is not None:
-        bins = np.linspace(min(eigenvalues.min(), eigenvalue.min()),
-                           max(eigenvalues.max(), eigenvalue.max()),
-                           100)
-    plt.hist(eigenvalues, bins=bins, histtype='step', color='b')
-    if eigenvalue is not None:
-        plt.hist(eigenvalue.tolist() * 3, bins=bins, histtype='step', color='r')
+    if not sparse:
+        bins = np.linspace(eigenvalues.min(), eigenvalues.max(), 100)
+        if test_tri_corr_array is not None:
+            bins = np.linspace(min(eigenvalues.min(), eigenvalue.min()),
+                               max(eigenvalues.max(), eigenvalue.max()),
+                               100)
+        plt.hist(eigenvalues, bins=bins, histtype='step', color='b')
+        if eigenvalue is not None:
+            plt.hist(eigenvalue.tolist() * 3, bins=bins, histtype='step', color='r')
 
     plt.subplot(339)
     plt.title('confusion potential')
@@ -334,6 +341,9 @@ def compare_to_blank(
         if not sparse_rounds:
             _, _, mean_correlations, eigenvalues = perform_clustering(
                 tensions, cluster_no, show=False)
+        else:
+            mean_correlations = np.array([[(0, ), 0, 0]]*cluster_no)
+            eigenvalues = np.array([-1]*cluster_no)
         mean_correlation_accumulator.append(np.array(mean_correlations))
         eigenvalues_accumulator.append(eigenvalues)
         dict_system = go_interface_instance.format_node_props(node_currents)
@@ -368,8 +378,13 @@ def compare_to_blank(
                 0, :], curr_inf_conf_tot[
                 (1, 2, 3), :])
         log.info('blank comparison: %s', curr_inf_conf.shape)
-        group2avg_off_diag, _, mean_correlations, eigenvalue = perform_clustering(
-            real_knowledge_interface.UP2UP_voltages, cluster_no)
+        if not sparse_rounds:
+            group2avg_off_diag, _, mean_correlations, eigenvalue = perform_clustering(
+                real_knowledge_interface.UP2UP_voltages, cluster_no)
+        else:
+            group2avg_off_diag = np.array([[(0, ), 0, 0]]*cluster_no)
+            mean_correlations = np.array([[0, 0]]*cluster_no)
+            eigenvalue = np.array([-1]*cluster_no)
 
     log.info('stats on %s samples', count)
 
@@ -377,7 +392,8 @@ def compare_to_blank(
     # estimators computation
     r_nodes, r_groups = show_correlations(
         final, final_mean_correlations, final_eigenvalues,
-        zoom_range_selector, curr_inf_conf, mean_correlations.T, eigenvalue.T, count)
+        zoom_range_selector, curr_inf_conf, mean_correlations.T, eigenvalue.T, count,
+        sparse=sparse_rounds)
 
     go_node_char = namedtuple(
         'Node_Char', [
@@ -385,29 +401,38 @@ def compare_to_blank(
     group_char = namedtuple(
         'Group_Char', [
             'UPs', 'num_UPs', 'average_connection', 'p_value'])
+
     if r_nodes is not None:
         not_random_nodes = [str(int(GO_id))
                             for GO_id in go_node_ids[r_nodes < p_val].tolist()]
-        not_random_groups = np.concatenate(
-            (group2avg_off_diag,
-             np.reshape(r_groups, (3, 1))),
-            axis=1)[r_groups < p_val].tolist()
-        not_random_groups = [group_char(*nr_group)
-                             for nr_group in not_random_groups]
+
+        if not sparse_rounds:
+            not_random_groups = np.concatenate(
+                (group2avg_off_diag,
+                 np.reshape(r_groups, (3, 1))),
+                axis=1)[r_groups < p_val].tolist()
+            not_random_groups = [group_char(*nr_group)
+                                 for nr_group in not_random_groups]
+        else:
+            not_random_groups = []
+
+        print 'debug, not random nodes', not_random_nodes
+        print 'debug bulbs_id_disp_name',  \
+            go_interface_instance.GO2UP_Reachable_nodes.items()[:10]
+
         # basically the second element below are the nodes that contribute to the information
         #  flow through the node that is considered as non-random
         dct = dict((GO_id,
-                    tuple([go_node_char(*(dict_system[GO_id] + r_nodes[go_node_ids ==
-                                                                       float(GO_id)].tolist())),
+                    tuple([go_node_char(*(dict_system[GO_id] +
+                                          r_nodes[go_node_ids == float(GO_id)].tolist())),
                            list(set(go_interface_instance.GO2UP_Reachable_nodes[GO_id]
                                     ).intersection(set(real_knowledge_interface.analytic_Uniprots
                                                        )))]))
                    for GO_id in not_random_nodes)
 
-        return sorted(dct.iteritems(), key=lambda x: x[
-                      1][0][3]), not_random_groups
+        return sorted(dct.iteritems(), key=lambda x: x[1][0][3]), not_random_groups
 
-    return None, None, None
+    return None, None
 
 
 def decide_regeneration():

@@ -164,6 +164,7 @@ def look_up_annotation_set(p_load_list, p_type=''):
     not_found_list = [key for key, value in load_2_name_list if value == []]
     for warnId in not_found_list:
         log.warning('Following ID has no corresponding entry in the database: %s', warnId)
+    log.info('%s IDs out of %s have not been found', len(not_found_list), len(p_load_list))
     return not_found_list, load_2_name_list, db_id_list
 
 

@@ -18,9 +18,9 @@ def convert_to_internal_ids(base):
     :param base:
     :return:
     """
-    warn_list, results_dict, results_list = look_up_annotation_set(set(base))
+    warn_list, results_tuple_list, results_list = look_up_annotation_set(set(base))
     return_dict = dict((key, value[0][2])
-                       for key, value in results_dict.iteritems() if key not in warn_list)
+                       for key, value in results_tuple_list if key not in warn_list)
     log.debug('BioGrid ID cast converter length: %s', len(return_dict))
     return return_dict
 

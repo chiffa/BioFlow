@@ -15,9 +15,17 @@ log_location = path.join(path.abspath(
 
 on_unittest = os.environ.get('UNITTESTING') == 'True'  # if we are unittesting
 on_remote_unittest = os.environ.get('REMOTE_UNITTEST') == 'True'  # if we are testing on CI tools
+on_remote = os.environ.get('REMOTE') == 'True'
 
 on_dev = False
 # on_dev = True
+
+# #################################
+# redirecting all to a log file
+# if on_remote = True:
+#   f = open('../logs/Commander_logs.log','w')
+#   sys.stdout = f
+# ################################
 
 
 def mkdir_recursive(my_path):  # pragma: no cover
