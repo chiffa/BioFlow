@@ -42,8 +42,8 @@ script:
 
 after_success:
     - coveralls
-    - flake8 --ignore=E501,N806,E12 --statistics --show-source BioFlow
-    - flake8 --select=C --max-complexity 10 BioFlow
+    - flake8 --ignore=E501,N806,E12 --statistics --show-src src
+    - flake8 --select=C --max-complexity 10 source
 
 notifications:
     email: false

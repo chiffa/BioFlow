@@ -14,7 +14,7 @@ class HooksConfigTest(unittest.TestCase):
         self.assertTrue(True)
 
     def test_actual_code(self):
-        from BioFlow.internal_configs import edge_type_filters
+        from src.internal_configs import edge_type_filters
         self.assertEqual(edge_type_filters["Group"][0], "is_part_of_collection")
 
 

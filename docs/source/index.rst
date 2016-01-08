@@ -177,9 +177,9 @@ Contents:
 =========
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 4
 
-   PolyPharma
+   src
 
 
 Indices and tables

@@ -3,7 +3,7 @@
 *.dump
 *.csv
 # for the moment the python config file
-#BioFlow/configs.py
+#source/configs.py
 
 *.py[cod]
 

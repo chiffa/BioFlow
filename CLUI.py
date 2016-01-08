@@ -2,14 +2,14 @@ __author__ = 'ank'
 
 import click
 
-from BioFlow.configs_manager import StructureGenerator, set_folders
-from BioFlow.annotation_network.BioKnowledgeInterface import GeneOntologyInterface as AnnotomeInterface, get_background
-from BioFlow.annotation_network.knowledge_access_analysis import auto_analyze as knowledge_analysis
-from BioFlow.db_importers.import_main import build_db, destroy_db
-from BioFlow.main_configs import neo4j_server
-from BioFlow.molecular_network.InteractomeInterface import InteractomeInterface as InteractomeInterface
-from BioFlow.molecular_network.interactome_analysis import auto_analyze as interactome_analysis
-from BioFlow.neo4j_db.db_io_routines import look_up_annotation_set
+from src.configs_manager import StructureGenerator, set_folders
+from src.annotation_network.BioKnowledgeInterface import GeneOntologyInterface as AnnotomeInterface, get_background
+from src.annotation_network.knowledge_access_analysis import auto_analyze as knowledge_analysis
+from src.db_importers.import_main import build_db, destroy_db
+from src.main_configs import neo4j_server
+from src.molecular_network.InteractomeInterface import InteractomeInterface as InteractomeInterface
+from src.molecular_network.interactome_analysis import auto_analyze as interactome_analysis
+from src.neo4j_db.db_io_routines import look_up_annotation_set
 
 
 @click.group()
@@ -112,7 +112,7 @@ def mapids(idlist):
 @click.option('--background', default=None) ##defaults
 @click.option('--depth', default=100) ##defaults
 @click.option('--processors', default=2) ##defaults
-@click.argument('source') ##defaults
+@click.argument('src') ##defaults
 def analyze(matrixtype, background, source, depth, processors,):
     if matrixtype == 'interactome':
         local_matrix = InteractomeInterface(main_connex_only=True, full_impact=True)
@@ -134,7 +134,7 @@ def analyze(matrixtype, background, source, depth, processors,):
         annot_matrix.store()
         source_set = get_background(source)  # TODO: rename this function and use only one of it everywhere
         knowledge_analysis(source=source_set, KG_object=annot_matrix, desired_depth=depth, processors=processors)
-    print "analsysis is finished, current results are stored in the $PROJECT_HOME/BioFlow/outputs directory"
+    print "analsysis is finished, current results are stored in the $PROJECT_HOME/src/outputs directory"
 
 
 #TODO: add purge mongodb operation

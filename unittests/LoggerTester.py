@@ -3,9 +3,9 @@ Tests the logger behavior
 """
 import unittest
 import os
-from BioFlow.main_configs import log_location
-from BioFlow.utils.general_utils.high_level_os_io import wipe_dir
-from BioFlow.utils.log_behavior import get_logger
+from src.main_configs import log_location
+from src.utils.general_utils.high_level_os_io import wipe_dir
+from src.utils.log_behavior import get_logger
 
 log = get_logger('LoggerTester @ unittests')
 

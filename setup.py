@@ -12,7 +12,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name='BioFlow',
+    name='src',
 
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
@@ -23,7 +23,7 @@ setup(
     long_description=long_description,
 
     # The project's main homepage.
-    url='https://github.com/ciffa/BioFlow',
+    url='https://github.com/chiffa/BioFlow',
 
     # Author details
     author='Andrei Kucharavy',
@@ -58,12 +58,12 @@ setup(
     ],
 
     # What does your project relate to?
-    keywords='network analysis, systems biology, interactome, annotome',
+    keywords='network analysis, systems biology, interactome, annotation network',
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
-    packages=['BioFlow'] + find_packages(exclude=['contrib', 'docs', 'tests*']),
-    package_dir={'BioFlow': 'BioFlow'},
+    packages=['src'] + find_packages(exclude=['contrib', 'docs', 'tests*']),
+    package_dir={'src': 'src'},
     # List run-time dependencies here.  These will be installed by pip when your
     # project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:

@@ -1,5 +1,5 @@
 from mock import Mock as MagicMock
-from BioFlow.utils.log_behavior import get_logger
+from src.utils.log_behavior import get_logger
 
 log = get_logger('DB_IO_Mocks @ unittests')
 log.debug('Mocking DB_IO module')
