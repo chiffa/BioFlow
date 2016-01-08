@@ -1,7 +1,7 @@
 ccopy_reg
 _reconstructor
 p0
-(cBioFlow.bio_db_parsers.reactomeParser
+(csrc.bio_db_parsers.reactomeParser
 ReactomeParser
 p1
 c__builtin__

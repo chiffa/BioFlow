@@ -48,6 +48,7 @@ class UniprotParserTester(unittest.TestCase):
         parser_object = UniProtParser(['199310', '405955'])
         cls.uniprot_dict = parser_object.parse_uniprot(cls.up_to_parse)
         cls.acces_dict = parser_object.get_access_dicts()
+        # dump_object(cls.ref_parses, (cls.uniprot_dict, cls.acces_dict))
         cls.ref_uniprot_dict, cls.ref_acces_dict = undump_object(cls.ref_parses)
 
     def test_total(self):  # TODO: in future, expand into a more granular set of tests
