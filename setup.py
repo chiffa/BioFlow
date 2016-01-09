@@ -62,7 +62,7 @@ setup(
         'Programming Language :: Python :: Implementation :: CPython',
     ],
     keywords='network analysis, systems biology, interactome, computational biology',
-    packages=['bioflow']+find_packages('bioflow'),
+    packages=['bioflow'],
     # package_dir={'': 'bioflow'},
     install_requires=requirements,
     extras_require={
