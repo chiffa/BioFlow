@@ -12,8 +12,6 @@ Branch v.0.03 - Unstable
 Description:
 ------------
 
-This code is currently under development/
-
 This project's goal is to predict systemic effect of multiple gene
 perturbation, wherther trigered by a drug or by a disease (such as
 cancer or disease with complex genetic background). It's main intended
@@ -26,15 +24,11 @@ predictions with prior biological knowledge and ability to integrate
 such diverse source of knowledge as databases, simulation, publication
 data (currently in dev) and expert knowledge.
 
-This application is provided as-is, without any warranties or support.
-Use it at your onw risk.
+The application is currently under development and in alpha stage. However, if you desire to use
+it, you are welcome to do so and fill in the tickets if you encounter any issues
 
-However, if you are willing to test it and encounter problems or are
-willing to provide feedback, please fill in an issue ticket on GitHub
-and I will be glad to assist you in the measure of my possibilities.
-
-The license is BSD, but in case of academic usage, please cite the *url*
-(publication is in preparation). The full documentation is available at
+The license is BSD, but in case of academic usage, please cite this *url*
+(I am currently writing a publication). The full API documentation is available at
 `readthedocs.org <http://bioflow.readthedocs.org/en/latest/>`__.
 
 Installation:
@@ -43,10 +37,19 @@ Installation:
 Before you start using the project, you will need to install several
 dependencies on which the project relies in order to function properly.
 
-Currently, only deployment on Linux Debian/RHCP/CentOS/Fedora is
+Quick:
+``````
+If you are using Ubuntu 14.04, you can just run
+::
+
+    > sh docker_set_up.sh
+
+Detailed:
+`````````
+Only deployment on Linux Debian/RHCP/CentOS/Fedora is
 supported because of dependencies on scientific computation packages
 
-**System-level packages:**
+You will need the following **system-level packages:**
 
 -  Python 2.7.x (x86\_64 )
 -  Java JDK 1.6/1.7
@@ -66,14 +69,22 @@ supported because of dependencies on scientific computation packages
 
 This last step is best done via package manager:
 
-On *Debian*: ``$ sudo apt-get install suitesparse suitesparse-dev``
+On *Debian*:
+
+::
+
+    $ sudo apt-get install suitesparse suitesparse-dev``
 
 On *Fedora* / *RHCP* / *CentOS*:
-``$ sudo yum install suitesparse suitesparse_devel``
 
-**Packages installed via Pip:**
+::
 
-All the Python packages are better off stored in a, so they don't
+    $ sudo yum install suitesparse suitesparse_devel``
+
+
+You will also need the following **Python packages:**
+
+All the Python packages are better off stored in a virtual environment, so they don't
 interfere with other versions of Python present on the machine. For a
 more simple installation, you can install `Anaconda Python
 Distribution <https://www.continuum.io/downloads>`__, which will install
@@ -85,7 +96,7 @@ the following packages:
 -  matplotlib
 -  Sphinx (documentation build)
 
-After which, you can ``pip install`` the remaining packages
+After which, you can run ``pip install`` the remaining packages
 
 -  bulbs
 -  python-Levenshtein
@@ -96,47 +107,49 @@ After which, you can ``pip install`` the remaining packages
 
 Finally, I would recommend using
 `Gephi <http://gephi.github.io/users/download/>`__ to analyse the output
-.gdf graphs. It is very easy to use, well-supported and possess a large
-library of plug-ins.
+.gdf graphs. It is fairly intuitive and easy to use. I am preparing x-networks integration, but
+it is still quite far on the desired features list
 
 Datasets used as backbone:
 --------------------------
+The method relies on a neo4j database hypergraph where it dumps and cross-references several
+biological repositories. normally the files will be downloaded and parsed automatically, but if
+for some reason the download breaks, you will need to download them manually and add their paths
+in ``configs/sources.ini``
 
--  OBO 1.2 file of GO terms and relations, available at:
-   http://www.geneontology.org/GO.downloads.ontology.shtml
--  UNIUPROT-SWISSPROT .txt text database file available at:
-   http://www.uniprot.org/downloads
--  Reactome.org "Events in the BioPax level 3" file, available at:
-   http://www.reactome.org/download/index.html
--  HiNT binary interaction files for the organisms of interest, availble
-   at: http://hint.yulab.org/batch.html
--  BioGRID ALL\_ORGANISMS file in the tab2 format, available at
-   http://thebiogrid.org/download.php
--  Gene-chromosome mapping files from the Uniprot documentation:
-   ftp://ftp.uniprot.org/pub/databases/uniprot/current\_release/knowledgebase/complete/docs/
-   (needed only for working on aneuploidy)
--  Organism-specific protein aboundance files, available at:
-   http://pax-db.org/#!downloads
-
-You have a choice of either donwloading and these databases and
-installing them manually with respect to
+-  `OBO 1.2 file of GO terms and relations
+    <http://www.geneontology.org/GO.downloads.ontology.html>`__
+-  `UNIUPROT-SWISSPROT swissprot.txt text database file
+   <http://www.uniprot.org/downloads>`__
+-  `Reactome.org "Events in the BioPax level 3" file
+   <http://www.reactome.org/download/index.html>`__
+-  `HiNT binary interaction files for the organisms of interest
+   <http://hint.yulab.org/batch.html>`__
+-  `BioGRID ALL\_ORGANISMS file in the tab2 format
+   <http://thebiogrid.org/download.php>`__
 
 Basic usage:
 ------------
 
+Neo4j and mongodb startup:
+``````````````````````````
+
 Start up the neo4j database and the MonogoDB on their default ports. If
 those ports are not available for some reason, please modify the
 ``servers.ini`` file in the ``/PolyPharma/configs`` directory. If you
-are loading a particularly large dataset into neo4j, you might need to
-adjust the configurations with which neo4j is launched
+are loading a particularly large dataset into neo4j, you will need to adjust the java heap space
+used to launch the jvm. You can do it by editing the ``$NEO4J_HOME/conf/neo4j-wrapper.conf``
+file, and uncommenting + editing the ``wrapper.java.initmemory`` and ``wrapper.java.maxmemory``
 
+Command line usage:
+```````````````````
 You have a choice of using either Python binding of methods or a command
 line interface. If you installed this package with pip, your will be
 able to call the command line interfaces with
 
 ::
 
-    > truegrid command args
+    > bioflow command args
 
 Otherwise, you can access them with
 
@@ -144,6 +157,8 @@ Otherwise, you can access them with
 
     > python CLUI.py command args
 
+Execution of a module:
+``````````````````````
 when you are executing the command lines by using Python bindings, don't
 forget to add the ``-m`` argument between ``Python`` and the location of
 the command you are issuing.
@@ -151,6 +166,13 @@ the command you are issuing.
 ::
 
     > Python -m PolyPharma.module.command
+
+Usage of library:
+`````````````````
+Most of the modules contain the data
+
+step-by-step command line usage:
+````````````````````````````````
 
 Downloading the datasets:
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -161,28 +183,22 @@ Create the configuration files containing the data:
 
 ::
 
-    > python CLUI.py initialize --path myfolder --neo4jserver http://localhost:7474 --mongoserver mongodb://localhost:27017/
-
-    > python -m PolyPharma.Utils.ConfigsIO.set_folders()
+    > bioflow initialize --path myfolder --neo4jserver http://localhost:7474 --mongoserver
+    mongodb://localhost:27017/
 
 Download the databases:
 
 ::
 
-    > python CLUI.py downloaddbs
+    > biogrid downloaddbs
 
-    > python -m PolyPharma.Utils.ConfigsIO.StructureGenerator.pull_online_DBs()
-
-For now, the syustem will download all the required files, then fail
-when trying to download 'ABOUNDANCE' file class.
+For now, the syustem will download all the required files.
 
 Create the proper configuration file for the desired organism
 
 ::
 
-    > python CLUI.py setorgconfs --organism [mouse, human, yeast]
-
-    > python - m PolyPharma.Utils.ConfigsIO.build_source_config('yeast')
+    > biogrid setorgconfs --organism [mouse, human, yeast]
 
 Alternatively all of the above can be executed (for yeast),
 
@@ -197,15 +213,13 @@ is a correct size
 Building the database:
 ~~~~~~~~~~~~~~~~~~~~~~
 
-If you are using the application for the first time on your computer,
+If you are using the application for the first for an organism,
 you will need to load all the data that is contained in the datastore
 files you've donwloaded previously and cross-reference them
 
 ::
 
-    > Python -m PolyPharma.neo4j_Importers.Import_commander
-
-    > python CLUI.py loadneo4j
+    > biogrid loadneo4j
 
 Accessing low-level structure of the interactome:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -215,17 +229,14 @@ as a Python-Scipy sparse matrix object:
 
 ::
 
-    > python CLUI.py extractmatrix --interactome/--annotmap > path to a picke dump of the sparse matrix and name map
-
-    > python -m 
+    > biogrid CLUI.py extractmatrix --interactome/--annotmap > path to a picke dump of the sparse
+    matrix and name map
 
 Map a list of heterogeneous identifiers to the database-specific ids:
 
 ::
 
-    > python CLUI.py mapids /path/to/my.input.file.tsv > path/to/my.output.file
-
-    > python -m
+    > biogrid mapids /path/to/my.input.file.tsv > path/to/my.output.file
 
 High-level analysis:
 ~~~~~~~~~~~~~~~~~~~~
@@ -252,10 +263,12 @@ Analyze a list of genes with an optional background:
 
 ::
 
-    > python CLUI.py analyze --interactome/--annotmap --background /path/to/background.input.file --depth 20 --processors 2 path/to/hits.input.file
+    > biogrid analyze --interactome/--annotmap --background /path/to/background.input.file --depth
+     20 --processors 2 path/to/hits.input.file
 
 The resulting significance data can be seen as the output and the
-related analyzis .gdf files can be found in the /outputs folder.
+related analyzis .gdf files can be found in the /outputs folder. statistic analysis will be
+printed to the stdout.
 
 Full API documentation of underlying libraries is available at
 `readthedocs.org <http://bioflow.readthedocs.org/en/latest/>`__
