@@ -2,25 +2,27 @@ __author__ = 'ank'
 
 import click
 
-from src.configs_manager import StructureGenerator, set_folders
-from src.annotation_network.BioKnowledgeInterface import GeneOntologyInterface as AnnotomeInterface, get_background
-from src.annotation_network.knowledge_access_analysis import auto_analyze as knowledge_analysis
-from src.db_importers.import_main import build_db, destroy_db
-from src.main_configs import neo4j_server
-from src.molecular_network.InteractomeInterface import InteractomeInterface as InteractomeInterface
-from src.molecular_network.interactome_analysis import auto_analyze as interactome_analysis
-from src.neo4j_db.db_io_routines import look_up_annotation_set
+from bioflow.configs_manager import StructureGenerator, set_folders
+from bioflow.annotation_network.BioKnowledgeInterface import GeneOntologyInterface as AnnotomeInterface, get_background
+from bioflow.annotation_network.knowledge_access_analysis import auto_analyze as knowledge_analysis
+from bioflow.db_importers.import_main import build_db, destroy_db
+from bioflow.main_configs import neo4j_server
+from bioflow.molecular_network.InteractomeInterface import InteractomeInterface as InteractomeInterface
+from bioflow.molecular_network.interactome_analysis import auto_analyze as interactome_analysis
+from bioflow.neo4j_db.db_io_routines import look_up_annotation_set
 
 
 @click.group()
-def truegrid():
+def main():
     pass
 
 
 @click.command()
 @click.option('--path', prompt='Please provide the path where the data will be stored')
-@click.option('--neo4jserver', default='http://localhost:7474', prompt='Please provide the address and port on which neo4j is currently serving')
-@click.option('--mongoserver', default='mongodb://localhost:27017/', prompt='Please provide the address and port on which mongodb is currently serving')
+@click.option('--neo4jserver', default='http://localhost:7474',
+              prompt='Please provide the address and port on which neo4j is currently serving')
+@click.option('--mongoserver', default='mongodb://localhost:27017/',
+              prompt='Please provide the address and port on which mongodb is currently serving')
 def initialize(path, neo4jserver, mongoserver):
     """
     Initialized the working environement
@@ -59,25 +61,31 @@ def setorgconfs(organism):
 
 
 @click.command()
-@click.confirmation_option(help='Are you sure you want to purge this neo4j database instance? You will have to re-import all the data for this to work properly')
+@click.confirmation_option(help='Are you sure you want to purge this neo4j database instance?'
+                                ' You will have to re-import all the data for this to work properly')
 def purgeneo4j():
     """
     Wipes the neo4j organism-specific database
 
     :return:
     """
-    print 'neo4j will start purging the master database. It will take some time to finish. Please do not close the shell. You can supervise the progress through %s/webadmin interface' % neo4j_server
+    print 'neo4j will start purging the master database. It will take some time to finish.' \
+          ' Please do not close the shell. You can supervise the progress through' \
+          ' %s/webadmin interface' % neo4j_server
     destroy_db()
 
 @click.command()
-@click.confirmation_option(help='Are you sure you want to start loading the neo4j database? The process might take several hours or days')
+@click.confirmation_option(help='Are you sure you want to start loading the neo4j '
+                                'database? The process might take several hours or days')
 def loadneo4j():
     """
     Loads the information from external database into the master repositry inside neo4j
 
     :return:
     """
-    print 'neo4j will start loading data into the master database. It will take a couple of hours to finish. Please do not close the shell. You can supervise the progress through %s/webadmin interface' % neo4j_server
+    print 'neo4j will start loading data into the master database. It will take a couple ' \
+          'of hours to finish. Please do not close the shell. You can supervise the progress' \
+          ' through %s/webadmin interface' % neo4j_server
     build_db()
 
 
@@ -112,14 +120,15 @@ def mapids(idlist):
 @click.option('--background', default=None) ##defaults
 @click.option('--depth', default=100) ##defaults
 @click.option('--processors', default=2) ##defaults
-@click.argument('src') ##defaults
+@click.argument('bioflow') ##defaults
 def analyze(matrixtype, background, source, depth, processors,):
     if matrixtype == 'interactome':
         local_matrix = InteractomeInterface(main_connex_only=True, full_impact=True)
         local_matrix.full_rebuild()
         if background is not None:
             background = get_background(background)
-        source_set = get_background(source)  # TODO: rename this function and use only one of it everywhere
+        # TODO: rename this function and use only one of it everywhere
+        source_set = get_background(source)
         interactome_analysis(source_set, depth, processors, background)
     elif matrixtype == 'annotmap':
         local_matrix = InteractomeInterface(main_connex_only=True, full_impact=True)
@@ -132,21 +141,24 @@ def analyze(matrixtype, background, source, depth, processors,):
             annot_matrix = AnnotomeInterface(filtr, background_set, (1, 1), True, 3)
         annot_matrix.rebuild()
         annot_matrix.store()
-        source_set = get_background(source)  # TODO: rename this function and use only one of it everywhere
-        knowledge_analysis(source=source_set, KG_object=annot_matrix, desired_depth=depth, processors=processors)
-    print "analsysis is finished, current results are stored in the $PROJECT_HOME/src/outputs directory"
+        # TODO: rename this function and use only one of it everywhere
+        source_set = get_background(source)
+        knowledge_analysis(source=source_set, KG_object=annot_matrix,
+                           desired_depth=depth, processors=processors)
+    print "analsysis is finished, current results are stored " \
+          "in the $PROJECT_HOME/bioflow/outputs directory"
 
 
 #TODO: add purge mongodb operation
 
-truegrid.add_command(initialize)
-truegrid.add_command(setorgconfs)
-truegrid.add_command(downloaddbs)
-truegrid.add_command(purgeneo4j)
-truegrid.add_command(loadneo4j)
-truegrid.add_command(extractmatrix)
-truegrid.add_command(mapids)
-truegrid.add_command(analyze)
+main.add_command(initialize)
+main.add_command(setorgconfs)
+main.add_command(downloaddbs)
+main.add_command(purgeneo4j)
+main.add_command(loadneo4j)
+main.add_command(extractmatrix)
+main.add_command(mapids)
+main.add_command(analyze)
 
 if __name__ == '__main__':
-    truegrid()
+    main()

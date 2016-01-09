@@ -1,7 +1,7 @@
-src
-===
+bioflow
+=======
 
 .. toctree::
    :maxdepth: 4
 
-   src
+   bioflow

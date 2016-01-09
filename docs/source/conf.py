@@ -94,10 +94,10 @@ extensions = [
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
-# The suffix of src filenames.
+# The suffix of bioflow filenames.
 source_suffix = '.rst'
 
-# The encoding of src files.
+# The encoding of bioflow files.
 #source_encoding = 'utf-8-sig'
 
 # The master toctree document.
@@ -126,8 +126,8 @@ release = '0.0.3'
 # Else, today_fmt is used as the format for a strftime call.
 #today_fmt = '%B %d, %Y'
 
-# List of patterns, relative to src directory, that match files and
-# directories to ignore when looking for src files.
+# List of patterns, relative to bioflow directory, that match files and
+# directories to ignore when looking for bioflow files.
 exclude_patterns = ['unittests\*']
 
 # The reST default role (used for this markup: `text`) to use for all
@@ -254,10 +254,10 @@ html_static_path = ['_static']
 # }
 
 # Grouping the document tree into LaTeX files. List of tuples
-# (src start file, target name, title,
+# (bioflow start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 # latex_documents = [
-#   ('index', 'BioFlow_BioNetworkAnalyzer.tex', u'src\\_BioNetworkAnalyzer Documentation',
+#   ('index', 'BioFlow_BioNetworkAnalyzer.tex', u'bioflow\\_BioNetworkAnalyzer Documentation',
 #    u'Andrei Kucharavy', 'manual'),
 # ]
 
@@ -285,7 +285,7 @@ html_static_path = ['_static']
 # -- Options for manual page output ---------------------------------------
 
 # One entry per manual page. List of tuples
-# (src start file, name, description, authors, manual section).
+# (bioflow start file, name, description, authors, manual section).
 # man_pages = [
 #     ('index', 'polypharma_bionetworkanalyzer', u'PolyPharma_BioNetworkAnalyzer Documentation',
 #      [u'Andrei Kucharavy'], 1)
@@ -298,7 +298,7 @@ html_static_path = ['_static']
 # -- Options for Texinfo output -------------------------------------------
 
 # Grouping the document tree into Texinfo files. List of tuples
-# (src start file, target name, title, author,
+# (bioflow start file, target name, title, author,
 #  dir menu entry, description, category)
 # texinfo_documents = [
 #   ('index', 'BioFlow_BioNetworkAnalyzer', u'BioFlow_BioNetworkAnalyzer Documentation',

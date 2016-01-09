@@ -6,11 +6,11 @@ import unittest
 import numpy as np
 from itertools import izip
 import warnings
-from src.utils import linalg_routines
-from src.utils import gdfExportInterface
-from src.utils.general_utils import high_level_os_io
+from bioflow.utils import linalg_routines
+from bioflow.utils import gdfExportInterface
+from bioflow.utils.general_utils import high_level_os_io
 
-from src.utils.general_utils.high_level_os_io import wipe_dir, mkdir_recursive
+from bioflow.utils.general_utils.high_level_os_io import wipe_dir, mkdir_recursive
 
 
 class SanerFilesystemTester(unittest.TestCase):

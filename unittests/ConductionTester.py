@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 from scipy.sparse import lil_matrix, csc_matrix
 import warnings
-from src.algorithms_bank import conduction_routines as cr
+from bioflow.algorithms_bank import conduction_routines as cr
 
 
 class ConductionRoutinesTester(unittest.TestCase):

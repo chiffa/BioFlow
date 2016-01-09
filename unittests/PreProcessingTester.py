@@ -6,7 +6,7 @@ os.environ['UNITTESTING'] = 'True'
 import unittest
 import numpy as np
 
-from src.pre_processing import rna_counts_analysis as RCP
+from bioflow.pre_processing import rna_counts_analysis as RCP
 
 
 class TestRnaCountsProcessor(unittest.TestCase):

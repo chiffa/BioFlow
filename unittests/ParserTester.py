@@ -1,10 +1,10 @@
 import os
 import unittest
 from pprint import pprint
-from src.utils.io_Routines import dump_object, undump_object
-from src.bio_db_parsers.geneOntologyParser import GOTermsParser
-from src.bio_db_parsers.uniprotParser import UniProtParser
-from src.bio_db_parsers.reactomeParser import ReactomeParser
+from bioflow.utils.io_Routines import dump_object, undump_object
+from bioflow.bio_db_parsers.geneOntologyParser import GOTermsParser
+from bioflow.bio_db_parsers.uniprotParser import UniProtParser
+from bioflow.bio_db_parsers.reactomeParser import ReactomeParser
 
 
 class GoParserTester(unittest.TestCase):
