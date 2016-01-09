@@ -288,5 +288,5 @@ Please see the developper log below!
    :target: https://github.com/chiffa/BioFlow/blob/master/README.md
 .. |Code Issues| image:: https://www.quantifiedcode.com/api/v1/project/1c3f8cd001a44319abddab249101b646/badge.svg
    :target: https://www.quantifiedcode.com/app/project/1c3f8cd001a44319abddab249101b646
-.. |Duplicate Lines| image:: https://img.shields.io/badge/duplicate%20lines-17.66%25-yellow.svg
+.. |Duplicate Lines| image:: https://img.shields.io/badge/duplicate%20lines-17.66%25-yellowgreen.svg
    :target: http://clonedigger.sourceforge.net/
