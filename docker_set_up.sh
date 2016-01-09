@@ -14,6 +14,7 @@ apt-get -y install git
 apt-get -y install curl
 apt-get -y install nohup
 apt-get -y install lsof
+apt-get -y install libsm6 libxrender1 libfontconfig1 libglib2.0-0
 
 # install and activate Oracle Java 7:
 apt-get -y install software-properties-common
