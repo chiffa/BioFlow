@@ -24,7 +24,7 @@ API documentation:
 .. toctree::
    :maxdepth: 4
 
-   src
+   bioflow
 
 
 Indices and tables:

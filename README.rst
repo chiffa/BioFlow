@@ -35,8 +35,7 @@ and I will be glad to assist you in the measure of my possibilities.
 
 The license is BSD, but in case of academic usage, please cite the *url*
 (publication is in preparation). The full documentation is available at
-`readthedocs.org <http://bioflow.readthedocs.org/RTFD>`__ or on `github
-pages <http://>`__
+`readthedocs.org <http://bioflow.readthedocs.org/en/latest/>`__.
 
 Installation:
 -------------
@@ -259,7 +258,7 @@ The resulting significance data can be seen as the output and the
 related analyzis .gdf files can be found in the /outputs folder.
 
 Full API documentation of underlying libraries is available at
-`readthedocs.org <http://polypharma.readthedocs.org/%20RTFD>`__
+`readthedocs.org <http://bioflow.readthedocs.org/en/latest/>`__
 
 Future developments:
 --------------------
