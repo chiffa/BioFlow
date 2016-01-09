@@ -4,12 +4,41 @@ Generic Setup configured for the project
 from setuptools import setup, find_packages  # Always prefer setuptools over distutils
 from codecs import open  # To use a consistent encoding
 from os import path
+import os
 
 here = path.abspath(path.dirname(__file__))
 
 # Get the long description from the relevant file
 with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
     long_description = f.read()
+
+on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+
+if not on_rtd:
+    requirements = [
+        'numpy',
+        'scipy',
+        'matplotlib',
+        'scikit-learn',
+        'python-Levenshtein',
+        'cython',
+        'bulbs',
+        'pymongo',
+        'requests',
+        'click',
+        'scikits.sparse',
+        'mock',
+        'requests-ftp']
+
+else:
+    requirements = [
+        'bulbs',
+        'pymongo',
+        'click',
+        'requests',
+        'click',
+        'mock',
+        'requests-ftp']
 
 setup(
     name='BioFlow',
@@ -35,21 +64,7 @@ setup(
     keywords='network analysis, systems biology, interactome, computational biology',
     packages=['bioflow' + find_packages('bioflow')],
     package_dir={'': 'bioflow'},
-    install_requires=[
-        'numpy',
-        'scipy',
-        'matplotlib',
-        'scikit-learn',
-        'python-Levenshtein',
-        'cython',
-        'bulbs',
-        'pymongo',
-        'requests',
-        'click',
-        'scikits.sparse',
-        'mock',
-        'requests-ftp'],
-
+    install_requires=requirements,
     extras_require={
         'dev': [],
         'test': [],

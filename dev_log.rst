@@ -131,6 +131,10 @@ methods were doing:
 
 - show how to install on a docker and provide the script to perform installation in Ubuntu
 
+- write a quickstart guide
+
+- add pictures of what netowrk analysis looks in
+
 Improvements to different modules:
 ----------------------------------
 
