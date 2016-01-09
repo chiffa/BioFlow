@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 
-sphinx-apidoc -fo docs/source src
-sphinx-build -b html docs/source docs/build
+sphinx-apidoc -fo docs/source bioflow
+sphinx-build -b html docs/source docs/build >> doc_build.log 2>>doc_build_err.log

@@ -1,5 +1,6 @@
+
 |License Type| |Build Status| |Coverage Status| |Branch status| |Code
-Issues|
+Issues| |Duplicate Lines|
 
 BioFlow Project
 ===============
