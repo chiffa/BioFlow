@@ -129,6 +129,8 @@ methods were doing:
 -  Print out the twist ration into the GDF: observed to expected ratio/
    P\_value
 
+- show how to install on a docker and provide the script to perform installation in Ubuntu
+
 Improvements to different modules:
 ----------------------------------
 
