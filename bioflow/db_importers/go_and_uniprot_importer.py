@@ -25,10 +25,14 @@ def import_gene_ontology(go_terms, go_terms_structure):
     :param go_terms_structure:
     """
     # Create Terms
+    log.info('Starting to importing GO terms')
     go_terms_number = len(go_terms.keys())
     for i, GO_Term in enumerate(go_terms.keys()):
         log.debug('creating GO terms: %s %%',
                   str("{0:.2f}".format(float(i) / float(go_terms_number) * 100)))
+        if i*20 % go_terms_number < 20:
+            log.info('GO terms import: %s %%',
+                     "{0:.2f}".format(float(i) / float(go_terms_number) * 100))
         GO_term_memoization_dict[GO_Term] = DatabaseGraph.GOTerm.create(
             ID=go_terms[GO_Term]['id'],
             Name=go_terms[GO_Term]['name'],
@@ -37,10 +41,14 @@ def import_gene_ontology(go_terms, go_terms_structure):
             Definition=go_terms[GO_Term]['def'])
 
     # Create the structure between them:
+    log.info('Starting to import GO terms links')
     go_links_number = len(go_terms_structure)
     for i, relation in enumerate(go_terms_structure):
         log.debug('creating GO terms relations %s %%',
                   str("{0:.2f}".format(float(i) / float(go_links_number) * 100)))
+        if i*20 % go_links_number < 20:
+            log.info('GO terms import: %s %%',
+                     "{0:.2f}".format(float(i) / float(go_links_number) * 100))
         go_term_1 = GO_term_memoization_dict[relation[0]]
         go_term_2 = GO_term_memoization_dict[relation[2]]
         go_relation_type = relation[1]
@@ -186,8 +194,9 @@ def import_uniprots(uniprot, reactome_acnum_bindings):
     cross_links = 0
     is_same_links_no = 0
     acc_nums_no = len(reactome_acnum_bindings.keys()) / 100.
-    up_no = len(uniprot.keys()) / 100.
+    up_no = float(len(uniprot.keys()))
 
+    log.info('Starting to import uniprot nodes')
     for sp_id_num, (swiss_prot_id, data_container) in enumerate(uniprot.iteritems()):
         set1 = set(data_container['Acnum'])
         set2 = set(reactome_acnum_bindings.keys())
@@ -196,6 +205,7 @@ def import_uniprots(uniprot, reactome_acnum_bindings):
             ID=swiss_prot_id,
             displayName=data_container['Names']['Full'],
             main_connex=False)
+
         log.debug('uniprot %s created @ %s', swiss_prot_id, uniprot_node)
 
         if not set1.isdisjoint(set2):
@@ -206,7 +216,10 @@ def import_uniprots(uniprot, reactome_acnum_bindings):
 
         log.debug(
             'loading UNIPROT: Acnums cross-linked - %.2f %% ; Total loaded: - %.2f %%',
-            cross_links / acc_nums_no, sp_id_num / up_no)
+            cross_links / acc_nums_no, sp_id_num / up_no *100)
+
+        if sp_id_num*20 % up_no < 20:
+            log.info('Uniprots nodes load: %s %%', sp_id_num / up_no * 100 )
 
         # Add the newly created uniprot to the buffer
         Uniprot_memoization_dict[swiss_prot_id] = uniprot_node

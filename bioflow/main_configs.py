@@ -110,9 +110,9 @@ class Outputs(object):
 
 
 #  Declares overloaded IDs, pickles from the dumps of already computed
-IDFilter = []
+forbidden_bulbs_ids = []
 if path.isfile(Dumps.Forbidden_IDs):
-    IDFilter = pickle.load(file(Dumps.Forbidden_IDs, 'r'))
+    forbidden_bulbs_ids = pickle.load(file(Dumps.Forbidden_IDs, 'r'))
 
 
 # Where the RNA counts bioflow, hits and background deduced from it are to be found  #

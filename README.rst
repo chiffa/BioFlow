@@ -171,11 +171,11 @@ Usage of library:
 `````````````````
 Most of the modules contain the data
 
-step-by-step command line usage:
-````````````````````````````````
+Step-by-step command line usage:
+================================
 
 Downloading the datasets:
-~~~~~~~~~~~~~~~~~~~~~~~~~
+`````````````````````````
 
 *Database creation*
 
@@ -211,7 +211,7 @@ it might get broken on the download and you might want to check that it
 is a correct size
 
 Building the database:
-~~~~~~~~~~~~~~~~~~~~~~
+``````````````````````
 
 If you are using the application for the first for an organism,
 you will need to load all the data that is contained in the datastore
@@ -222,7 +222,7 @@ files you've donwloaded previously and cross-reference them
     > biogrid loadneo4j
 
 Accessing low-level structure of the interactome:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+`````````````````````````````````````````````````
 
 Export the organism-specific interactome or concept-entity relationships
 as a Python-Scipy sparse matrix object:
@@ -239,7 +239,7 @@ Map a list of heterogeneous identifiers to the database-specific ids:
     > biogrid mapids /path/to/my.input.file.tsv > path/to/my.output.file
 
 High-level analysis:
-~~~~~~~~~~~~~~~~~~~~
+````````````````````
 
 Indicate the file to use in the ``PolyPharma/configs.py`` folder as the
 RNA\_source variable Configure the expected counts groups and desired
@@ -273,10 +273,6 @@ printed to the stdout.
 Full API documentation of underlying libraries is available at
 `readthedocs.org <http://bioflow.readthedocs.org/en/latest/>`__
 
-Future developments:
---------------------
-
-Please see the developper log below!
 
 .. |License Type| image:: https://img.shields.io/badge/license-BSD3-blue.svg
    :target: https://github.com/chiffa/BioFlow/blob/master/License-new_BSD.txt

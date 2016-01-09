@@ -8,7 +8,7 @@ import pickle
 from collections import defaultdict
 from csv import reader, writer
 from pprint import PrettyPrinter, pprint
-from bioflow.main_configs import IDFilter, Dumps, analysis_protein_ids_csv, \
+from bioflow.main_configs import forbidden_bulbs_ids, Dumps, analysis_protein_ids_csv, \
     analysis_set_display_names, analysis_set_bulbs_ids, \
     background_protein_ids_csv, background_set_bulbs_ids
 from bioflow.internal_configs import edge_type_filters, Leg_ID_Filter, annotation_nodes_ptypes
@@ -200,8 +200,6 @@ def node_extend_once(edge_type_filter, main_connex_only, core_node):
     :param core_node:
     :return:
     """
-
-    # TODO: CRITICAL: add the forbidden IDs prevention of spread
     node_neighbors = []
     node_neighbor_no = 0
     for edge_type in edge_type_filter:
@@ -219,7 +217,7 @@ def node_extend_once(edge_type_filter, main_connex_only, core_node):
 
                 node_bulbs_id = get_bulbs_id(node)
 
-                if node_bulbs_id not in IDFilter and connex:
+                if node_bulbs_id not in forbidden_bulbs_ids and connex:
                     node_neighbors.append(node_bulbs_id)
                     node_neighbor_no += 1
 
