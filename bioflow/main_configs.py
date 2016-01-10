@@ -38,9 +38,9 @@ pymongo_suffix = Sources['INTERNAL']['mongosuffix']
 
 # Builds static entry points for mongodatabase access
 client = MongoClient(mongo_db_url)
-db = client.PolyPharma_database
-UP_rand_samp = db[pymongo_prefix + "UP_r_samples" + pymongo_suffix]
-Interactome_rand_samp = db[
+db = client.BioFlow_database
+annotome_rand_samp = db[pymongo_prefix + "UP_r_samples" + pymongo_suffix]
+interactome_rand_samp = db[
     pymongo_prefix +
     "Interactome_samples" +
     pymongo_suffix]

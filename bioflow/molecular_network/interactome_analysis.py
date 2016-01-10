@@ -10,7 +10,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from bioflow.algorithms_bank.conduction_routines import perform_clustering
-from bioflow.main_configs import Interactome_rand_samp, analysis_set_bulbs_ids, Outputs
+from bioflow.main_configs import interactome_rand_samp, analysis_set_bulbs_ids, Outputs
 from bioflow.molecular_network.InteractomeInterface import InteractomeInterface
 from bioflow.utils.dataviz import kde_compute
 from bioflow.utils.log_behavior import get_logger
@@ -281,11 +281,11 @@ def compare_to_blank(
     eigenvalues_accumulator = []
 
     log.info("samples found to test against:\t %s" %
-             Interactome_rand_samp.find({'size': blank_model_size, 'sys_hash': md5_hash,
+             interactome_rand_samp.find({'size': blank_model_size, 'sys_hash': md5_hash,
                                         'sparse_rounds': sparse_rounds}).count())
 
     # this part computes the items required for the creation of a blank model
-    for i, sample in enumerate(Interactome_rand_samp.find(
+    for i, sample in enumerate(interactome_rand_samp.find(
             {'size': blank_model_size, 'sys_hash': md5_hash, 'sparse_rounds': sparse_rounds})):
         if sparse_rounds:
             log.warning('Blank done on sparse rounds. Clustering will not be performed')

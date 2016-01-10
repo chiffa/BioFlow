@@ -13,7 +13,7 @@ from matplotlib import pyplot as plt
 
 from bioflow.algorithms_bank.conduction_routines import perform_clustering
 from bioflow.annotation_network.BioKnowledgeInterface import GeneOntologyInterface
-from bioflow.main_configs import UP_rand_samp, Dumps, analysis_set_bulbs_ids,\
+from bioflow.main_configs import annotome_rand_samp, Dumps, analysis_set_bulbs_ids,\
     background_set_bulbs_ids, Outputs
 from bioflow.molecular_network.InteractomeInterface import InteractomeInterface
 from bioflow.utils.io_Routines import undump_object
@@ -326,11 +326,11 @@ def compare_to_blank(
              blank_model_size, md5_hash,  sparse_rounds)
 
     log.info("samples found to test against: \t %s",
-             UP_rand_samp.find({'size': blank_model_size,
+             annotome_rand_samp.find({'size': blank_model_size,
                                 'sys_hash': md5_hash,
                                 'sparse_rounds': sparse_rounds}).count())
 
-    background_sample = UP_rand_samp.find(
+    background_sample = annotome_rand_samp.find(
             {'size': blank_model_size, 'sys_hash': md5_hash, 'sparse_rounds': sparse_rounds})
 
     for i, sample in enumerate(background_sample):
@@ -608,7 +608,7 @@ def build_blank(length, depth, sparse_rounds=False):
     """
     go_interface_instace = get_go_interface_instance()
     md5_hash = go_interface_instace.md5_hash()
-    if UP_rand_samp.find({'size': length,
+    if annotome_rand_samp.find({'size': length,
                           'sys_hash': md5_hash,
                           'sparse_rounds': sparse_rounds}).count() < depth:
         spawn_sampler_pool(4, [length], [depth])

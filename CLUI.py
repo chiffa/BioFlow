@@ -6,7 +6,7 @@ from bioflow.configs_manager import StructureGenerator, set_folders
 from bioflow.annotation_network.BioKnowledgeInterface import GeneOntologyInterface as AnnotomeInterface, get_background
 from bioflow.annotation_network.knowledge_access_analysis import auto_analyze as knowledge_analysis
 from bioflow.db_importers.import_main import build_db, destroy_db
-from bioflow.main_configs import neo4j_server
+from bioflow.main_configs import neo4j_server, annotome_rand_samp, interactome_rand_samp
 from bioflow.molecular_network.InteractomeInterface import InteractomeInterface as InteractomeInterface
 from bioflow.molecular_network.interactome_analysis import auto_analyze as interactome_analysis
 from bioflow.neo4j_db.db_io_routines import look_up_annotation_set
@@ -149,7 +149,17 @@ def analyze(matrixtype, background, source, depth, processors,):
           "in the $PROJECT_HOME/bioflow/outputs directory"
 
 
-#TODO: add purge mongodb operation
+@click.command()
+@click.option('--drop_type', type=click.Choice(['all', 'interactome', 'annotome']))
+def purgemongo(drop_type):
+    if drop_type == 'all':
+        annotome_rand_samp.drop()
+        interactome_rand_samp.drop()
+    elif drop_type == 'interactome':
+        interactome_rand_samp.drop()
+    elif drop_type == 'annotome':
+        annotome_rand_samp.drop()
+
 
 main.add_command(initialize)
 main.add_command(setorgconfs)
@@ -159,6 +169,7 @@ main.add_command(loadneo4j)
 main.add_command(extractmatrix)
 main.add_command(mapids)
 main.add_command(analyze)
+main.add_command(purgemongo)
 
 if __name__ == '__main__':
     main()

@@ -26,7 +26,7 @@ from bioflow.utils.log_behavior import get_logger
 
 from bioflow.main_configs import Chromosome_source, Chromosome_file_filter
 
-from bioflow.main_configs import Dumps, Outputs, Interactome_rand_samp
+from bioflow.main_configs import Dumps, Outputs, interactome_rand_samp
 
 from bioflow.internal_configs import edge_type_filters, Adjacency_Martix_Dict, \
     Conductance_Matrix_Dict
@@ -978,7 +978,7 @@ class InteractomeInterface(object):
                         sort_keys=True)).hexdigest()
 
                 if not no_add:
-                    Interactome_rand_samp.insert(
+                    interactome_rand_samp.insert(
                         {
                             'UP_hash': md5,
                             'sys_hash': self.md5_hash(),
