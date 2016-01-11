@@ -12,6 +12,14 @@ bioflow.annotation_network.BioKnowledgeInterface module
     :undoc-members:
     :show-inheritance:
 
+bioflow.annotation_network.additional module
+--------------------------------------------
+
+.. automodule:: bioflow.annotation_network.additional
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 bioflow.annotation_network.knowledge_access_analysis module
 -----------------------------------------------------------
 

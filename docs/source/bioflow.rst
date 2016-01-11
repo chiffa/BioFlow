@@ -19,10 +19,18 @@ Subpackages
 Submodules
 ----------
 
-bioflow.analysis_interface module
----------------------------------
+bioflow.CLI module
+------------------
 
-.. automodule:: bioflow.analysis_interface
+.. automodule:: bioflow.CLI
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+bioflow.analysis_pipeline_example module
+----------------------------------------
+
+.. automodule:: bioflow.analysis_pipeline_example
     :members:
     :undoc-members:
     :show-inheritance:
