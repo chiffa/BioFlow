@@ -300,6 +300,10 @@ From the mathematical point of view
    2: we cannot necessary normalise all the vectors, since some proteins
    are affecting several proteins at the same time
 
+-  TODO: Add the 95% confidence interval for a given percision rate for the depth of sampling.
+   For instance if we want 95% confidence into the p_value with 95% confidence, we need to run not
+   25 samples, but rather 30 or something in that range.
+
 Utils module
 ------------
 

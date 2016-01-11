@@ -190,7 +190,7 @@ Download the databases:
 
 ::
 
-    > biogrid downloaddbs
+    > bioflow downloaddbs
 
 For now, the syustem will download all the required files.
 
@@ -198,13 +198,8 @@ Create the proper configuration file for the desired organism
 
 ::
 
-    > biogrid setorgconfs --organism [mouse, human, yeast]
+    > bioflow setorgconfs --organism [mouse, human, yeast]
 
-Alternatively all of the above can be executed (for yeast),
-
-::
-
-    > python- m PolyPharma.Utils.ConfigsIO 
 
 Provided that Uniprot.dat is a rather big file (~3 Gb as of late 2015),
 it might get broken on the download and you might want to check that it
@@ -219,7 +214,7 @@ files you've donwloaded previously and cross-reference them
 
 ::
 
-    > biogrid loadneo4j
+    > bioflow loadneo4j
 
 Accessing low-level structure of the interactome:
 `````````````````````````````````````````````````
@@ -229,14 +224,14 @@ as a Python-Scipy sparse matrix object:
 
 ::
 
-    > biogrid CLUI.py extractmatrix --interactome/--annotmap > path to a picke dump of the sparse
+    > bioflow extractmatrix --interactome/--annotmap > path to a picke dump of the sparse
     matrix and name map
 
 Map a list of heterogeneous identifiers to the database-specific ids:
 
 ::
 
-    > biogrid mapids /path/to/my.input.file.tsv > path/to/my.output.file
+    > bioflow mapids /path/to/my.input.file.tsv > path/to/my.output.file
 
 High-level analysis:
 ````````````````````
@@ -263,7 +258,7 @@ Analyze a list of genes with an optional background:
 
 ::
 
-    > biogrid analyze --interactome/--annotmap --background /path/to/background.input.file --depth
+    > bioflow analyze --interactome/--annotmap --background /path/to/background.input.file --depth
      20 --processors 2 path/to/hits.input.file
 
 The resulting significance data can be seen as the output and the

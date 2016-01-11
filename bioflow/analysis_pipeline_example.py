@@ -43,6 +43,7 @@ ref_param_set = [_filter, local_matrix.all_uniprots_bulbs_id_list,
 
 annot_matrix = AnnotomeInterface(*ref_param_set)
 annot_matrix.rebuild()
+annot_matrix.store()
 
 # set the source file of the ids of perturbed proteins
 # TODO: a new function setting the analysis and background protein sets static location

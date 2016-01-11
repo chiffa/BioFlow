@@ -114,9 +114,130 @@ This allows to switch rapidly between different investigated organism.
 
 Please don't forget to switch or purge neo4j databases between organisms, because each organism needs it's own neo4j instance.
 
-Database manipulation:
-======================
+Neo4j out of memory error:
+==========================
 
+In case you are going to work with organisms with large proteomes (mouse, human), neo4j might run
+ out of memory and prompt to be restarted with a larger allocation of RAM. In order to correct
+ this error, please umncomment and modify the following lines in the ``neo4j-wrapper.conf`` file in
+ your neo4j installation instance to  increase the initial and maximum memory for java process
+ running neo4j: ::
 
-In case you are going to work with organisms with large proteomes (mouse, human), neo4j might run out of memory and prompt to be restarted with
-a larger allocation of RAM. Please, follow the instructions, then empty the database and start the import again
+    #wrapper.java.initmemory=16
+    #wrapper.java.maxmemory=64
+
+Basic command line usage:
+=========================
+
+An example of usage of the command line interface is given in the Readme, however we will
+implement it again here:
+
+Provide local datastore location ::
+
+    > bioflow initialize --/home/ank/data_store
+
+Donwload data repositories to the local datastore ::
+
+    > bioflow downloaddbs
+
+Set organism we want to analyse to yeast ::
+
+    > bioflow setorg yeast
+
+Load the data from the local datastore into the neo4j instance ::
+
+    > bioflow loadneo4j
+
+Set the set of perturbed proteins on which we would want to base our analysis ::
+
+    > bioflow setsource /home/ank/source_data/perturbed_proteins_ids.csv
+
+Buid interactome interface ::
+
+    > bioflow extractmatrix --interactome
+
+Build annotome interface ::
+
+    > bioflow extractmatrix --annotome
+
+Peform the analysis of the set of interest against the matched random sample of size 24, sampled
+on 4 processors with respect to the interactome structure ::
+
+    > bioflow analyze --matrix interactome --depth 24 --processors 4
+
+Perform the analysis of the set of interest against the matched random sample of size 24, sampled
+ on 4 processors with respect to the annotation structure ::
+
+    > bioflow analyze --matrix annotome --depth 24 --processors 4
+
+The resulst of analysis will be available in the output folder, and printed out to the standard
+output.
+
+Basic usage as a library:
+=========================
+
+An example of usage of the library is given in the file called "analysis_pipeline_example.py". To
+ rapidly get over it, here is the minimal analysis pipeline:
+
+Setting static folders and urls for the databases ::
+
+    bioflow.configs_manager.set_folders('/home/ank/data_repository',
+                                        'http://localhost:7474',
+                                        'mongodb://localhost:27017/')
+
+Pulling the online databases ::
+
+    bioflow.configs_manager.StructureGenerator.pull_online_dbs()
+
+Setting the organism to yeast ::
+
+    bioflow.configs_manager.StructureGenerator.build_source_config('yeast')
+
+Clearing the database, if required ::
+
+    bioflow.db_importers.import_main.destroy_db()
+
+Building the neo4j database for a new organism ::
+
+    bioflow.db_importers.import_main.build_db()
+
+Building the interactome interface object ::
+
+    from bioflow.molecular_network.InteractomeInterface import InteractomeInterface
+    local_matrix = InteractomeInterface(main_connex_only=True, full_impact=False)
+    local_matrix.full_rebuild()
+
+Setting up the reference parameter set for the analysis of annotome ::
+
+    annotation_type = ['biological_process']
+    background_set = local_matrix.all_uniprots_bulbs_id_list
+    ref_param_set = [['biological_process'], background_set, (1, 1), True, 3]
+
+Building the annotome interface object ::
+
+    from bioflow.annotation_network.BioKnowledgeInterface import GeneOntologyInterface
+    annot_matrix = GeneOntologyInterface(*ref_param_set)
+    annot_matrix.rebuild()
+    annot_matrix.store()
+
+Set the source file of the ids of perturbed proteins ::
+
+    bioflow.neo4j_db.db_io_routines.cast_analysis_set_to_bulbs_ids(
+        "/path/to/perturbed/prots_ids.csv")
+
+Get the bulbs ids oif the nodes we would like to analyze ::
+
+    from bioflow.molecular_network.interactome_analysis \
+        import auto_analyze as interactome_analysis, get_source_bulbs_ids
+    source_bulbs_ids = get_source_bulbs_ids()
+
+Perform the interactome analysis::
+
+    interactome_analysis([source_bulbs_ids], desired_depth=24, processors=6)
+
+Perform the knowledge analysis ::
+
+    from bioflow.annotation_network.knowledge_access_analysis \
+        import auto_analyze as knowledge_analysis
+    knowledge_analysis([source_bulbs_ids], desired_depth=24, processors=6)
+
