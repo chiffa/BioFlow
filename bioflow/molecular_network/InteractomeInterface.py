@@ -211,7 +211,7 @@ class InteractomeInterface(object):
              self.UP2Chrom,
              self.chromosomes_2_uniprot,
              self.uniprot_matrix_index_list,
-             self.entry_point_uniprots_bulbs_ids)) # TODO: delete here and below entry point u_b_i
+             self.entry_point_uniprots_bulbs_ids))  # TODO: delete here and below entry point u_b_i
 
     def undump_maps(self):
         """

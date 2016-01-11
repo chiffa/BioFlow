@@ -340,8 +340,8 @@ def compare_to_blank(
 
     log.info("samples found to test against: \t %s",
              annotome_rand_samp.find({'size': blank_model_size,
-                                'sys_hash': md5_hash,
-                                'sparse_rounds': sparse_rounds}).count())
+                                      'sys_hash': md5_hash,
+                                      'sparse_rounds': sparse_rounds}).count())
 
     background_sample = annotome_rand_samp.find(
             {'size': blank_model_size, 'sys_hash': md5_hash, 'sparse_rounds': sparse_rounds})
@@ -563,8 +563,13 @@ def auto_analyze(source=None, go_interface_instance=None, processors=3, desired_
             print node
 
 
-def get_bulbs_set(location):
-    """ retrieves bulbs ids for the elements for the analyzed group """
+def get_bulbs_ids_set(location):
+    """
+    Retrieves bulbs ids for the elements for the analyzed group
+
+    :param location: where the bulbs ids are loaded
+
+    """
     bulbs_ids = []
     with open(location) as src:
         csv_reader = reader(src)
@@ -577,12 +582,12 @@ def get_bulbs_set(location):
 # TODO: the two methods below are actually clones one of another
 def get_source():
     """ retrieves bulbs ids for the elements for the analyzed group """
-    return get_bulbs_set(Dumps.analysis_set_bulbs_ids)
+    return get_bulbs_ids_set(Dumps.analysis_set_bulbs_ids)
 
 
 def get_background():
     """ retrieves bulbs ids for the elements in the background group """
-    return get_bulbs_set(Dumps.background_set_bulbs_ids)
+    return get_bulbs_ids_set(Dumps.background_set_bulbs_ids)
 
 
 if __name__ == "__main__":

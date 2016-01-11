@@ -11,8 +11,10 @@ from bioflow.db_importers.import_main import build_db, destroy_db
 from bioflow.main_configs import neo4j_server, annotome_rand_samp, interactome_rand_samp
 from bioflow.molecular_network.InteractomeInterface \
     import InteractomeInterface as InteractomeInterface
-from bioflow.molecular_network.interactome_analysis import auto_analyze as interactome_analysis
-from bioflow.neo4j_db.db_io_routines import look_up_annotation_set
+from bioflow.molecular_network.interactome_analysis import auto_analyze as interactome_analysis,\
+    get_source_bulbs_ids
+from bioflow.neo4j_db.db_io_routines import look_up_annotation_set, \
+    cast_analysis_set_to_bulbs_ids, cast_background_set_to_bulbs_id
 
 
 @click.group()
@@ -98,6 +100,28 @@ def loadneo4j():
 
 
 @click.command()
+@click.argument('source')
+def setsource(source):
+    """
+    Sets the source to analyze
+    :param source:
+    :return:
+    """
+    cast_analysis_set_to_bulbs_ids(source)
+
+
+@click.command()
+@click.argument('background')
+def setbackground(background):
+    """
+    Sets the background that would be later used in the analysis
+    :param background:
+    :return:
+    """
+    cast_background_set_to_bulbs_id(background)
+
+
+@click.command()
 @click.option('--interactome', 'matrixtype', flag_value='interactome',
               default=True)
 @click.option('--annotome', 'matrixtype', flag_value='annotome')
@@ -108,18 +132,17 @@ def extractmatrix(matrixtype):
     :return:
     """
     if matrixtype == 'interactome':
-        local_matrix = InteractomeInterface(main_connex_only=True, full_impact=True)
+        local_matrix = InteractomeInterface(main_connex_only=True, full_impact=False)
         local_matrix.full_rebuild()
-        print local_matrix.laplacian_matrix, local_matrix.matrix_index_2_bulbs_id
 
     if matrixtype == 'annotome':
-        local_matrix = InteractomeInterface(main_connex_only=True, full_impact=True)
-        local_matrix.full_rebuild()
+        local_matrix = InteractomeInterface(main_connex_only=True, full_impact=False)
+        local_matrix.fast_load()
         filtr = ['biological_process']
         annot_matrix = AnnotomeInterface(filtr, local_matrix.all_uniprots_bulbs_id_list,
                                          (1, 1), True, 3)
         annot_matrix.rebuild()
-        print annot_matrix.laplacian_matrix, annot_matrix.Num2GO
+        annot_matrix.store()
 
 
 @click.command()
@@ -135,64 +158,49 @@ def mapids(idlist):
 
 
 @click.command()
-@click.option('--interactome', 'matrixtype', flag_value='interactome',
-              default=True)
-@click.option('--annotmap', 'matrixtype', flag_value='annotmap')
-@click.option('--background', default=None)  # defaults
-@click.option('--depth', default=100)  # defaults
-@click.option('--processors', default=2)  # defaults
-@click.argument('source')  # defaults
-def analyze(matrixtype, background, source, depth, processors,):
+@click.option('--matrixtype', type=click.Choice(['interactome', 'annotome']))
+@click.option('--depth', default=24)  # defaults
+@click.option('--processors', default=3)  # defaults
+def analyze(matrixtype, depth, processors,):
     """
     Performs an analysis of the type given by matrixtype with the given background set and
 
     :param matrixtype:
-    :param background:
-    :param source:
     :param depth:
     :param processors:
     :return:
     """
-    # TODO: CRITICAL: correct this for a proper translation and io load behavior.
+    source_bulbs_ids = get_source_bulbs_ids()
+
+    # TODO: CRICIAL: inject background usage when background switch is available.
+    interactome_interface_instance = InteractomeInterface(main_connex_only=True, full_impact=False)
+    interactome_interface_instance.fast_load()
+    ref_param_set = [['biological_process'],
+                     interactome_interface_instance.all_uniprots_bulbs_id_list,
+                     (1, 1), True, 3]
+
     if matrixtype == 'interactome':
-        local_matrix = InteractomeInterface(main_connex_only=True, full_impact=True)
-        local_matrix.full_rebuild()
-        if background is not None:
-            background = get_background(background)
-        source_set = get_background(source)
-        interactome_analysis(source_set, depth, processors, background)
-    elif matrixtype == 'annotmap':
-        local_matrix = InteractomeInterface(main_connex_only=True, full_impact=True)
-        local_matrix.full_rebuild()
-        filtr = ['biological_process']
-        if background is None:
-            annot_matrix = AnnotomeInterface(filtr,
-                                             local_matrix.all_uniprots_bulbs_id_list,
-                                             (1, 1), True, 3)
-        else:
-            background_set = get_background(background)
-            annot_matrix = AnnotomeInterface(filtr, background_set, (1, 1), True, 3)
-        annot_matrix.rebuild()
-        annot_matrix.store()
-        source_set = get_background(source)
-        knowledge_analysis(source=source_set,
-                           go_interface_instance=annot_matrix,
+        interactome_analysis(source_bulbs_ids, depth, processors)
+
+    elif matrixtype == 'annotome':
+        knowledge_analysis(source=source_bulbs_ids,
                            desired_depth=depth,
-                           processors=processors)
+                           processors=processors,
+                           param_set=ref_param_set)
 
     print "analsysis is finished, current results are stored " \
           "in the outputs directory"
 
 
 @click.command()
-@click.option('--drop_type', type=click.Choice(['all', 'interactome', 'annotome']))
-def purgemongo(drop_type):
-    if drop_type == 'all':
+@click.option('--collection', type=click.Choice(['all', 'interactome', 'annotome']))
+def purgemongo(collection):
+    if collection == 'all':
         annotome_rand_samp.drop()
         interactome_rand_samp.drop()
-    elif drop_type == 'interactome':
+    elif collection == 'interactome':
         interactome_rand_samp.drop()
-    elif drop_type == 'annotome':
+    elif collection == 'annotome':
         annotome_rand_samp.drop()
 
 
@@ -205,6 +213,8 @@ main.add_command(extractmatrix)
 main.add_command(mapids)
 main.add_command(analyze)
 main.add_command(purgemongo)
+main.add_command(setsource)
+main.add_command(setbackground)
 
 if __name__ == '__main__':
     main()

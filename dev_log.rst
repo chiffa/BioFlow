@@ -10,6 +10,8 @@ Confirmed minor refactoring requiring a sane rollback:
 -  split the computation of the blank from the performing of the
    analysis round
 
+- rebuild the background selection switch in a proper manner.
+
 Minor refactoring suggestions:
 ------------------------------
 
