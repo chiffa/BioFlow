@@ -9,8 +9,7 @@ from collections import defaultdict
 from csv import reader, writer
 from pprint import PrettyPrinter, pprint
 from bioflow.main_configs import forbidden_bulbs_ids, Dumps, analysis_protein_ids_csv, \
-    analysis_set_display_names, analysis_set_bulbs_ids, \
-    background_protein_ids_csv, background_set_bulbs_ids
+    background_protein_ids_csv
 from bioflow.internal_configs import edge_type_filters, Leg_ID_Filter, annotation_nodes_ptypes
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from bioflow.neo4j_db.graph_content import bulbs_names_dict, full_list, forbidden_verification_list
@@ -281,33 +280,38 @@ def annotation_ids_from_csv(source_csv):
     return analysis_bulbs_ids
 
 
-def cast_analysis_set_to_bulbs_ids():
+def cast_analysis_set_to_bulbs_ids(analysis_set_csv_location=analysis_protein_ids_csv):
     """
     Unwraps the bioflow file specified in the analysis_protein_ids_csv, translates its database
     internal ids for further use
 
+    :param analysis_set_csv_location:
     :return:
     """
-    analysis_bulbs_ids = annotation_ids_from_csv(analysis_protein_ids_csv)
+    analysis_bulbs_ids = annotation_ids_from_csv(analysis_set_csv_location)
     analysis_bulbs_ids = [ret for ret in analysis_bulbs_ids]
     source = look_up_annotation_set(analysis_bulbs_ids)
-    PrettyPrinter(indent=4, stream=open(analysis_set_display_names, 'w')).pprint(source[1])
-    writer(open(analysis_set_bulbs_ids, 'w'), delimiter='\n').writerow(source[2])
+    PrettyPrinter(indent=4, stream=open(Dumps.analysis_set_display_names, 'w')).pprint(source[1])
+    writer(open(Dumps.analysis_set_bulbs_ids, 'w'), delimiter='\n').writerow(source[2])
 
 
-def cast_background_set_to_bulbs_id():
+def cast_background_set_to_bulbs_id(background_set_csv_location=background_protein_ids_csv,
+                                    analysis_set_csv_location=analysis_protein_ids_csv):
     """
     Unwraps the bioflow file specified in the background_bulbs_ids, translates it to the database
     internal ids for further use
+
+    :param analysis_set_csv_location:
+    :param background_set_csv_location:
     :return:
     """
     background_bulbs_ids = []
-    background_bulbs_ids += annotation_ids_from_csv(analysis_protein_ids_csv)
-    background_bulbs_ids += annotation_ids_from_csv(background_protein_ids_csv)
+    background_bulbs_ids += annotation_ids_from_csv(analysis_set_csv_location)
+    background_bulbs_ids += annotation_ids_from_csv(background_set_csv_location)
 
     background_bulbs_ids = list(set(ret for ret in background_bulbs_ids))
     source = look_up_annotation_set(background_bulbs_ids)
-    writer(open(background_set_bulbs_ids, 'w'), delimiter='\n').writerow(source[2])
+    writer(open(Dumps.background_set_bulbs_ids, 'w'), delimiter='\n').writerow(source[2])
 
 
 def memoize_bulbs_type(bulbs_type, dict_to_load_into=None):

@@ -10,7 +10,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from bioflow.algorithms_bank.conduction_routines import perform_clustering
-from bioflow.main_configs import interactome_rand_samp, analysis_set_bulbs_ids, Outputs
+from bioflow.main_configs import interactome_rand_samp, Outputs, Dumps
 from bioflow.molecular_network.InteractomeInterface import InteractomeInterface
 from bioflow.utils.dataviz import kde_compute
 from bioflow.utils.log_behavior import get_logger
@@ -483,7 +483,7 @@ def get_source_bulbs_ids():
     Recovers bulbs ids of the uniprot set we are currently analyzing
     """
     source_bulbs_ids = []
-    with open(analysis_set_bulbs_ids) as src:
+    with open(Dumps.analysis_set_bulbs_ids) as src:
         csv_reader = reader(src)
         for row in csv_reader:
             source_bulbs_ids = source_bulbs_ids + row

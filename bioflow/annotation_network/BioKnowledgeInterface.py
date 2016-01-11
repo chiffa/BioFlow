@@ -21,7 +21,7 @@ from scipy.sparse import lil_matrix
 from scipy.sparse.csgraph import shortest_path
 
 from bioflow.algorithms_bank import conduction_routines as cr
-from bioflow.main_configs import Dumps, Outputs, annotome_rand_samp, background_set_bulbs_ids
+from bioflow.main_configs import Dumps, Outputs, annotome_rand_samp
 from bioflow.molecular_network.InteractomeInterface import InteractomeInterface
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from bioflow.neo4j_db.db_io_routines import get_bulbs_id
@@ -951,7 +951,7 @@ class GeneOntologyInterface(object):
                 self.Indep_Lapl[idx1, idx1] += 1
 
 
-def get_background(sourcefile=background_set_bulbs_ids):
+def get_background(sourcefile=Dumps.background_set_bulbs_ids):
     ret_list = []
     with open(sourcefile) as src:
         csv_reader = reader(src)

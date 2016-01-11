@@ -7,9 +7,6 @@ Confirmed minor refactoring requiring a sane rollback:
 -  render the usage of analytical/background sets uniform throughout the
    system.
 
--  save analysis files and statistically significant analysis elements
-   into the output folder instead of showing them to the user
-
 -  split the computation of the blank from the performing of the
    analysis round
 

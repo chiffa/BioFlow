@@ -13,8 +13,7 @@ from matplotlib import pyplot as plt
 
 from bioflow.algorithms_bank.conduction_routines import perform_clustering
 from bioflow.annotation_network.BioKnowledgeInterface import GeneOntologyInterface
-from bioflow.main_configs import annotome_rand_samp, Dumps, analysis_set_bulbs_ids,\
-    background_set_bulbs_ids, Outputs
+from bioflow.main_configs import annotome_rand_samp, Dumps, Outputs
 from bioflow.molecular_network.InteractomeInterface import InteractomeInterface
 from bioflow.utils.io_Routines import undump_object
 from bioflow.utils.linalg_routines import analyze_eigenvects
@@ -22,6 +21,15 @@ from bioflow.utils.dataviz import kde_compute
 from bioflow.utils.log_behavior import get_logger
 
 log = get_logger(__name__)
+
+
+_filter = ['biological_process']
+_correlation_factors = (1, 1)
+interactome_interface_instance = InteractomeInterface(True, False)
+interactome_interface_instance.fast_load()
+
+ref_param_set = [_filter, interactome_interface_instance.all_uniprots_bulbs_id_list,
+                 (1, 1), True, 3]
 
 
 # TODO: refactor, this is currently a wrapper method used in the
@@ -637,7 +645,7 @@ def run_analysis(group):
 def get_source():
     """ retrieves bulbs ids for the elements for the analyzed group """
     source_bulbs_ids = []
-    with open(analysis_set_bulbs_ids) as src:
+    with open(Dumps.analysis_set_bulbs_ids) as src:
         csv_reader = reader(src)
         for row in csv_reader:
             source_bulbs_ids = source_bulbs_ids + row
@@ -648,7 +656,7 @@ def get_source():
 def get_background():
     """ retrieves bulbs ids for the elements in the background group """
     background_bulbs_ids = []
-    with open(background_set_bulbs_ids) as src:
+    with open(Dumps.background_set_bulbs_ids) as src:
         csv_reader = reader(src)
         for row in csv_reader:
             background_bulbs_ids = background_bulbs_ids + row
@@ -657,16 +665,4 @@ def get_background():
 
 
 if __name__ == "__main__":
-
-    _filter = ['biological_process']
-    _correlation_factors = (1, 1)
-    interactome_interface_instance = InteractomeInterface(True, False)
-    interactome_interface_instance.fast_load()
-
-    ref_param_set = [_filter, interactome_interface_instance.all_uniprots_bulbs_id_list,
-                     (1, 1), True, 3]
-
-    KG = GeneOntologyInterface(*ref_param_set)
-    KG.load()
-    print KG.pretty_time()
     auto_analyze(get_source(), skip_sampling=True)
