@@ -3,10 +3,8 @@ Set of methods responsible for knowledge analysis
 """
 import pickle
 from collections import namedtuple
-from copy import copy
 from csv import reader
 from multiprocessing import Pool
-from random import shuffle
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -15,9 +13,8 @@ from bioflow.algorithms_bank.conduction_routines import perform_clustering
 from bioflow.annotation_network.BioKnowledgeInterface import GeneOntologyInterface
 from bioflow.main_configs import annotome_rand_samp, Dumps, Outputs
 from bioflow.molecular_network.InteractomeInterface import InteractomeInterface
-from bioflow.utils.io_Routines import undump_object
-from bioflow.utils.linalg_routines import analyze_eigenvects
 from bioflow.utils.dataviz import kde_compute
+from bioflow.utils.io_Routines import undump_object
 from bioflow.utils.log_behavior import get_logger
 
 log = get_logger(__name__)
@@ -135,7 +132,8 @@ def show_correlations(
         eigenvalue,
         re_samples,
         go_interface_instance=None,
-        sparse=False):
+        sparse=False,
+        param_set=ref_param_set):
 
     # TODO: there is a lot of repetition depending on which values are the biggest,
     # test-setted or real setted. In all, we should be able to reduce it to two functions:
@@ -160,10 +158,11 @@ def show_correlations(
     :param re_samples: how many random samples we analyzed for the default model
     :param go_interface_instance:
     :param sparse:
+    :param param_set:
     :return:
     """
     if go_interface_instance is None:
-        go_interface_instance = get_go_interface_instance()
+        go_interface_instance = get_go_interface_instance(param_set)
 
     inf_sel = (go_interface_instance.calculate_informativity(selector[0]),
                go_interface_instance.calculate_informativity(selector[1]))
@@ -308,7 +307,8 @@ def compare_to_blank(
         p_val=0.05,
         sparse_rounds=False,
         cluster_no=3,
-        go_interface_instance=None):
+        go_interface_instance=None,
+        param_set=ref_param_set):
     """
     Recovers the statistics on the circulation nodes and shows the visual of a circulation system
 
@@ -321,11 +321,12 @@ def compare_to_blank(
      the number of rounds equal to the number
     :param cluster_no: specifies the number of cluster_no we want to have
     :param go_interface_instance:
+    :param param_set:
     :return: None if no significant nodes, the node and group characterisitc dictionaries
      otherwise
     """
     if go_interface_instance is None:
-        go_interface_instance = get_go_interface_instance()
+        go_interface_instance = get_go_interface_instance(param_set)
 
     md5_hash = go_interface_instance.md5_hash()
 
@@ -447,37 +448,6 @@ def compare_to_blank(
     return None, None
 
 
-def decide_regeneration():
-    """
-    A script to decide at what point it is better to recompute a new a network rather
-    then go through the time it requires to be upickled.
-    The current decision is that for the samples of the size of ~ 100
-    reached_uniprots_bulbs_id_list, we are better off unpickling from 4
-    and more by factor 2 and by factor 10 from 9
-    Previous experiments have shown that memoization with pickling incurred no noticeable
-    delay on samples of up to
-    50 UPs, but that the storage limit on mongo DB was rapidly exceeded, leading us to
-    create an allocated dump file.
-    """
-    sample_root = []
-    rooot_copy = copy(sample_root)
-    go_interface_instance = get_go_interface_instance()
-    go_interface_instance.set_uniprot_source(sample_root)
-    go_interface_instance.build_extended_conduction_system()
-    go_interface_instance.export_conduction_system()
-    log.info('decide_regeneration 1: %s', go_interface_instance.pretty_time())
-    for i in range(2, 9):
-        shuffle(rooot_copy)
-        go_interface_instance.export_subsystem(sample_root, rooot_copy[:i ** 2])
-        log.info('decide_regeneration 2: %s, retrieve \t %s',
-                 i ** 2, go_interface_instance.pretty_time())
-        go_interface_instance.set_uniprot_source(rooot_copy[:i ** 2])
-        go_interface_instance.build_extended_conduction_system(memoized=False)
-        go_interface_instance.export_conduction_system()
-        log.info('decide_regeneration 3: %s, redo: \t %s',
-                 i ** 2, go_interface_instance.pretty_time())
-
-
 def get_estimated_time(samples, sample_sizes, operations_per_sec=2.2):
     """
     Short time to estimate the time required for the generation of random saples
@@ -497,26 +467,6 @@ def get_estimated_time(samples, sample_sizes, operations_per_sec=2.2):
                  "{0:.2f}".format(sample_size * sample ** 2 / operations_per_sec / 3600),
                  "{0:.2f}".format(counter / 3600))
     return counter
-
-
-def linearly_independent_go_groups(size):
-    """
-    Performs the analysis of linearly independent GO groups
-
-    :param size: number of most prominent eigenvectors contributing to an eigenvalue
-    we would want to see
-    """
-    go_interface_instace = get_go_interface_instance()
-    go_interface_instace.undump_independent_linear_sets()
-    char_indexes = dict(
-        (key,
-         (len(
-             go_interface_instace.GO2UP_Reachable_nodes[value]),
-             go_interface_instace.GO_Legacy_IDs[value],
-             go_interface_instace.GO_Names[value])) for key,
-        value in go_interface_instace.Num2GO.iteritems())
-    print go_interface_instace.pretty_time()
-    analyze_eigenvects(go_interface_instace.Indep_Lapl, size, char_indexes)
 
 
 def auto_analyze(source=None, go_interface_instance=None, processors=3, desired_depth=24,
@@ -547,7 +497,7 @@ def auto_analyze(source=None, go_interface_instance=None, processors=3, desired_
     # noinspection PyTypeChecker
     for my_list in dumplist:
         if go_interface_instance is None:
-            go_interface_instance = get_go_interface_instance()
+            go_interface_instance = get_go_interface_instance(param_set)
 
         go_interface_instance.set_uniprot_source(my_list)
 
@@ -575,7 +525,9 @@ def auto_analyze(source=None, go_interface_instance=None, processors=3, desired_
                 len(go_interface_instance.analytic_uniprots),
                 [1100, 1300],
                 go_interface_instance,
-                p_val=0.9, go_interface_instance=go_interface_instance)
+                p_val=0.9,
+                go_interface_instance=go_interface_instance,
+                param_set=param_set)
 
         else:
             sampling_depth = max(200 ** 2 / len(go_interface_instance.analytic_uniprots), 5)
@@ -600,7 +552,8 @@ def auto_analyze(source=None, go_interface_instance=None, processors=3, desired_
                 [1100, 1300],
                 go_interface_instance,
                 p_val=0.9, sparse_rounds=sampling_depth,
-                go_interface_instance=go_interface_instance)
+                go_interface_instance=go_interface_instance,
+                param_set=param_set)
 
         go_interface_instance.export_conduction_system()
 
@@ -610,64 +563,26 @@ def auto_analyze(source=None, go_interface_instance=None, processors=3, desired_
             print node
 
 
-# def build_blank(length, depth, sparse_rounds=False):
-#     # TODO: remove: is no more executed => Not tested
-#     """
-#     Builds a blank set for the current analysis system
-#
-#     :param length:
-#     :param depth:
-#     :param sparse_rounds:
-#     :return:
-#     """
-#     go_interface_instace = get_go_interface_instance()
-#     md5_hash = go_interface_instace.md5_hash()
-#     if annotome_rand_samp.find({'size': length,
-#                           'sys_hash': md5_hash,
-#                           'sparse_rounds': sparse_rounds}).count() < depth:
-#         spawn_sampler_pool(4, [length], [depth])
-
-
-def run_analysis(group):
-    """
-    Performs the whole analysis round retrieving
-
-    :param group:
-    :return:
-    """
-    go_interface_instance = get_go_interface_instance()
-    go_interface_instance.set_uniprot_source(group)
-    go_interface_instance.build_extended_conduction_system()
-    go_interface_instance.export_conduction_system()
-    nr_nodes, nr_groups = compare_to_blank(
-        len(group), [1000, 1200], go_interface_instance, p_val=0.9)
-    for group in nr_groups:
-        print 'run analysis 1: %s' % group
-    for node in nr_nodes:
-        print 'run analysis 2: %s' % node
+def get_bulbs_set(location):
+    """ retrieves bulbs ids for the elements for the analyzed group """
+    bulbs_ids = []
+    with open(location) as src:
+        csv_reader = reader(src)
+        for row in csv_reader:
+            bulbs_ids = bulbs_ids + row
+    bulbs_ids = [int(ret) for ret in bulbs_ids]
+    return bulbs_ids
 
 
 # TODO: the two methods below are actually clones one of another
 def get_source():
     """ retrieves bulbs ids for the elements for the analyzed group """
-    source_bulbs_ids = []
-    with open(Dumps.analysis_set_bulbs_ids) as src:
-        csv_reader = reader(src)
-        for row in csv_reader:
-            source_bulbs_ids = source_bulbs_ids + row
-    source_bulbs_ids = [int(ret) for ret in source_bulbs_ids]
-    return source_bulbs_ids
+    return get_bulbs_set(Dumps.analysis_set_bulbs_ids)
 
 
 def get_background():
     """ retrieves bulbs ids for the elements in the background group """
-    background_bulbs_ids = []
-    with open(Dumps.background_set_bulbs_ids) as src:
-        csv_reader = reader(src)
-        for row in csv_reader:
-            background_bulbs_ids = background_bulbs_ids + row
-    background_bulbs_ids = [int(ret) for ret in background_bulbs_ids]
-    return background_bulbs_ids
+    return get_bulbs_set(Dumps.background_set_bulbs_ids)
 
 
 if __name__ == "__main__":
