@@ -35,9 +35,13 @@ local_matrix = InteractomeInterface(main_connex_only=True, full_impact=False)
 local_matrix.full_rebuild()
 
 # building the annotome interface object for GO "biological process" type terms
-filtr = ['biological_process']
-annot_matrix = AnnotomeInterface(filtr, local_matrix.all_uniprots_bulbs_id_list,
-                                 (1, 1), True, 3)
+_filter = ['biological_process']
+_correlation_factors = (1, 1)
+
+ref_param_set = [_filter, local_matrix.all_uniprots_bulbs_id_list,
+                 _correlation_factors, True, 3]
+
+annot_matrix = AnnotomeInterface(*ref_param_set)
 annot_matrix.rebuild()
 
 # set the source file of the ids of perturbed proteins
@@ -47,17 +51,13 @@ cast_analysis_set_to_bulbs_ids("/home/andrei/support/tmp/Chr_10.txt")
 # cast_background_set_to_bulbs_id(
 #   "/home/ank/projects_files/2014/Poly_Pharma/HJ-screen/Allgene_R2.csv")
 
-source_bulbs_ids = get_source_bulbs_ids()
-interactome_analysis([source_bulbs_ids], desired_depth=24, processors=2)
-
-# TODO: modify knowledge access analysis so that the parameters can be reset from the scripting
-# interface, not the insides of the module.
-
-# TODO: => requse ref_param_set from annot_matrix construction
-
-knowledge_analysis(source_bulbs_ids, desired_depth=24, processors=4)
-
 # TODO: CRITICAL: add background switch when a proper background switch implementation is done
 
-# TODO: CRITICAL: resolve the issue with the proper parameters and interactome to be used in
-# Knowledge_access module
+# get the bulbs ids oif the nodes we would like to analyze
+source_bulbs_ids = get_source_bulbs_ids()
+
+# perform the interactome analysis
+interactome_analysis([source_bulbs_ids], desired_depth=24, processors=6)
+
+# perform the knowledge analysis
+knowledge_analysis([source_bulbs_ids], desired_depth=24, processors=6)

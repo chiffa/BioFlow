@@ -75,7 +75,7 @@ Minor refactoring suggestions:
    DEBUG channel, every time function is called and parameters on the
    entrance and the exit
 
--  
+-  add @jit() wrapper in order to compile the elements within the current calculation routines.
 
 Major refactoring suggestions:
 ------------------------------
@@ -111,7 +111,7 @@ Major refactoring suggestions:
 -  separate the envelopes for the GO and Reactome graphs retrieval from
    the envelope used to recover and compute over the graph.
 
--  
+-  Bulk-insertion into the neo4j. => Requires taking over the bulbs engine
 
 Required documentation:
 -----------------------

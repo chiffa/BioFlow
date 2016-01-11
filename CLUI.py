@@ -1,13 +1,16 @@
-__author__ = 'ank'
-
+"""
+Contains the access to the command line interface of the application.
+"""
 import click
-
 from bioflow.configs_manager import StructureGenerator, set_folders
-from bioflow.annotation_network.BioKnowledgeInterface import GeneOntologyInterface as AnnotomeInterface, get_background
-from bioflow.annotation_network.knowledge_access_analysis import auto_analyze as knowledge_analysis
+from bioflow.annotation_network.BioKnowledgeInterface \
+    import GeneOntologyInterface as AnnotomeInterface, get_background
+from bioflow.annotation_network.knowledge_access_analysis \
+    import auto_analyze as knowledge_analysis
 from bioflow.db_importers.import_main import build_db, destroy_db
 from bioflow.main_configs import neo4j_server, annotome_rand_samp, interactome_rand_samp
-from bioflow.molecular_network.InteractomeInterface import InteractomeInterface as InteractomeInterface
+from bioflow.molecular_network.InteractomeInterface \
+    import InteractomeInterface as InteractomeInterface
 from bioflow.molecular_network.interactome_analysis import auto_analyze as interactome_analysis
 from bioflow.neo4j_db.db_io_routines import look_up_annotation_set
 
@@ -36,9 +39,12 @@ def initialize(path, neo4jserver, mongoserver):
 
 
 @click.command()
-@click.confirmation_option(help='Pulling online databases. Please make sure you initialized the project and you are ready\n'+
-                                'to wait for a while for hte download to complete. Some files are large (up to 3 Gb).\n'+
-                                'You can perform this step manually (cf documentation). Are you sure you want to continue?')
+@click.confirmation_option(help='Pulling online databases. '
+                                'Please make sure you initialized the project and you are ready'
+                                'to wait for a while for hte download to complete. '
+                                'Some files are large (up to 3 Gb).'
+                                'You can perform this step manually (cf documentation).'
+                                'Are you sure you want to continue?')
 def downloaddbs():
     """
     Downloads the databases automatically
@@ -50,7 +56,7 @@ def downloaddbs():
 
 @click.command()
 @click.option('--organism', type=click.Choice(['mouse', 'human', 'yeast']))
-def setorgconfs(organism):
+def setorg(organism):
     """
     Sets organism-specific configurations
 
@@ -62,7 +68,8 @@ def setorgconfs(organism):
 
 @click.command()
 @click.confirmation_option(help='Are you sure you want to purge this neo4j database instance?'
-                                ' You will have to re-import all the data for this to work properly')
+                                ' You will have to re-import all the data'
+                                'for this to work properly')
 def purgeneo4j():
     """
     Wipes the neo4j organism-specific database
@@ -73,6 +80,7 @@ def purgeneo4j():
           ' Please do not close the shell. You can supervise the progress through' \
           ' %s/webadmin interface' % neo4j_server
     destroy_db()
+
 
 @click.command()
 @click.confirmation_option(help='Are you sure you want to start loading the neo4j '
@@ -92,17 +100,24 @@ def loadneo4j():
 @click.command()
 @click.option('--interactome', 'matrixtype', flag_value='interactome',
               default=True)
-@click.option('--annotmap', 'matrixtype', flag_value='annotome')
+@click.option('--annotome', 'matrixtype', flag_value='annotome')
 def extractmatrix(matrixtype):
+    """
+    Extracts the matrix interface object for the computation routine.
+    :param matrixtype:
+    :return:
+    """
     if matrixtype == 'interactome':
         local_matrix = InteractomeInterface(main_connex_only=True, full_impact=True)
         local_matrix.full_rebuild()
         print local_matrix.laplacian_matrix, local_matrix.matrix_index_2_bulbs_id
+
     if matrixtype == 'annotome':
         local_matrix = InteractomeInterface(main_connex_only=True, full_impact=True)
         local_matrix.full_rebuild()
         filtr = ['biological_process']
-        annot_matrix = AnnotomeInterface(filtr, local_matrix.all_uniprots_bulbs_id_list, (1, 1), True, 3)
+        annot_matrix = AnnotomeInterface(filtr, local_matrix.all_uniprots_bulbs_id_list,
+                                         (1, 1), True, 3)
         annot_matrix.rebuild()
         print annot_matrix.laplacian_matrix, annot_matrix.Num2GO
 
@@ -110,6 +125,12 @@ def extractmatrix(matrixtype):
 @click.command()
 @click.argument('idlist')
 def mapids(idlist):
+    """
+    Maps the identifiers from the list to the bulbs node numbers in the database
+
+    :param idlist:
+    :return:
+    """
     print look_up_annotation_set(idlist)
 
 
@@ -117,17 +138,27 @@ def mapids(idlist):
 @click.option('--interactome', 'matrixtype', flag_value='interactome',
               default=True)
 @click.option('--annotmap', 'matrixtype', flag_value='annotmap')
-@click.option('--background', default=None) ##defaults
-@click.option('--depth', default=100) ##defaults
-@click.option('--processors', default=2) ##defaults
-@click.argument('bioflow') ##defaults
+@click.option('--background', default=None)  # defaults
+@click.option('--depth', default=100)  # defaults
+@click.option('--processors', default=2)  # defaults
+@click.argument('source')  # defaults
 def analyze(matrixtype, background, source, depth, processors,):
+    """
+    Performs an analysis of the type given by matrixtype with the given background set and
+
+    :param matrixtype:
+    :param background:
+    :param source:
+    :param depth:
+    :param processors:
+    :return:
+    """
+    # TODO: CRITICAL: correct this for a proper translation and io load behavior.
     if matrixtype == 'interactome':
         local_matrix = InteractomeInterface(main_connex_only=True, full_impact=True)
         local_matrix.full_rebuild()
         if background is not None:
             background = get_background(background)
-        # TODO: rename this function and use only one of it everywhere
         source_set = get_background(source)
         interactome_analysis(source_set, depth, processors, background)
     elif matrixtype == 'annotmap':
@@ -135,18 +166,22 @@ def analyze(matrixtype, background, source, depth, processors,):
         local_matrix.full_rebuild()
         filtr = ['biological_process']
         if background is None:
-            annot_matrix = AnnotomeInterface(filtr, local_matrix.all_uniprots_bulbs_id_list, (1, 1), True, 3)
+            annot_matrix = AnnotomeInterface(filtr,
+                                             local_matrix.all_uniprots_bulbs_id_list,
+                                             (1, 1), True, 3)
         else:
             background_set = get_background(background)
             annot_matrix = AnnotomeInterface(filtr, background_set, (1, 1), True, 3)
         annot_matrix.rebuild()
         annot_matrix.store()
-        # TODO: rename this function and use only one of it everywhere
         source_set = get_background(source)
-        knowledge_analysis(source=source_set, KG_object=annot_matrix,
-                           desired_depth=depth, processors=processors)
+        knowledge_analysis(source=source_set,
+                           go_interface_instance=annot_matrix,
+                           desired_depth=depth,
+                           processors=processors)
+
     print "analsysis is finished, current results are stored " \
-          "in the $PROJECT_HOME/bioflow/outputs directory"
+          "in the outputs directory"
 
 
 @click.command()
@@ -162,7 +197,7 @@ def purgemongo(drop_type):
 
 
 main.add_command(initialize)
-main.add_command(setorgconfs)
+main.add_command(setorg)
 main.add_command(downloaddbs)
 main.add_command(purgeneo4j)
 main.add_command(loadneo4j)

@@ -33,7 +33,7 @@ ref_param_set = [_filter, interactome_interface_instance.all_uniprots_bulbs_id_l
 
 
 # TODO: refactor, this is currently a wrapper method used in the
-def get_go_interface_instance():
+def get_go_interface_instance(param_set=ref_param_set):
     """
     Generates a Matrix_Knowledge_DB interface for the use in the spawner. If
 
@@ -43,7 +43,7 @@ def get_go_interface_instance():
     # Attention, manual switch here:
     ################################
 
-    go_interface_instance = GeneOntologyInterface(*ref_param_set)
+    go_interface_instance = GeneOntologyInterface(*param_set)
     # go_interface_instance = GO_Interface(_filter, interactome_interface_instance.
     # all_uniprots_bulbs_id_list, _correlation_factors, True, 3)
     go_interface_instance.load()
@@ -59,8 +59,9 @@ def spawn_sampler(sample_size_list_plus_iteration_list_plus_args):
      and iterations (required for Pool.map usage)
     """
     go_interface_instance = sample_size_list_plus_iteration_list_plus_args[4]
+    param_set = sample_size_list_plus_iteration_list_plus_args[5]
     if go_interface_instance is None:
-        go_interface_instance = get_go_interface_instance()
+        go_interface_instance = get_go_interface_instance(param_set)
 
     sample_size_list = sample_size_list_plus_iteration_list_plus_args[0]
     iteration_list = sample_size_list_plus_iteration_list_plus_args[1]
@@ -79,7 +80,8 @@ def spawn_sampler_pool(
         iterations_list_per_pool,
         sparse_rounds=False,
         chromosome_specific=False,
-        go_interface_instance=None):
+        go_interface_instance=None,
+        param_set=ref_param_set):
     """
     Spawns a pool of samplers of the information flow within the GO system
 
@@ -90,6 +92,7 @@ def spawn_sampler_pool(
     :param sparse_rounds:
     :param chromosome_specific:
     :param go_interface_instance:
+    :param param_set: set of parameters configuring the knowledge interface object
     """
     p = Pool(pool_size)
     payload = [
@@ -97,7 +100,8 @@ def spawn_sampler_pool(
          iterations_list_per_pool,
          sparse_rounds,
          chromosome_specific,
-         go_interface_instance)]
+         go_interface_instance,
+         param_set)]
     p.map(spawn_sampler, payload * pool_size)
 
 
@@ -516,7 +520,7 @@ def linearly_independent_go_groups(size):
 
 
 def auto_analyze(source=None, go_interface_instance=None, processors=3, desired_depth=24,
-                 skip_sampling=False):
+                 skip_sampling=False, param_set=ref_param_set):
     """
     Automatically analyzes the GO annotation of the RNA_seq results.
 
@@ -525,11 +529,12 @@ def auto_analyze(source=None, go_interface_instance=None, processors=3, desired_
     :param processors:
     :param desired_depth:
     :param skip_sampling: uses existing mongoDB content without spawning a sampler
+    :param param_set:
     """
     if source is None:
         dumplist = undump_object(Dumps.RNA_seq_counts_compare)
     else:
-        dumplist = [source]
+        dumplist = source
 
     # comp_ops are computation of pair-flow
     estimated_comp_ops = 5
@@ -605,21 +610,22 @@ def auto_analyze(source=None, go_interface_instance=None, processors=3, desired_
             print node
 
 
-def build_blank(length, depth, sparse_rounds=False):
-    """
-    Builds a blank set for the current analysis system
-
-    :param length:
-    :param depth:
-    :param sparse_rounds:
-    :return:
-    """
-    go_interface_instace = get_go_interface_instance()
-    md5_hash = go_interface_instace.md5_hash()
-    if annotome_rand_samp.find({'size': length,
-                          'sys_hash': md5_hash,
-                          'sparse_rounds': sparse_rounds}).count() < depth:
-        spawn_sampler_pool(4, [length], [depth])
+# def build_blank(length, depth, sparse_rounds=False):
+#     # TODO: remove: is no more executed => Not tested
+#     """
+#     Builds a blank set for the current analysis system
+#
+#     :param length:
+#     :param depth:
+#     :param sparse_rounds:
+#     :return:
+#     """
+#     go_interface_instace = get_go_interface_instance()
+#     md5_hash = go_interface_instace.md5_hash()
+#     if annotome_rand_samp.find({'size': length,
+#                           'sys_hash': md5_hash,
+#                           'sparse_rounds': sparse_rounds}).count() < depth:
+#         spawn_sampler_pool(4, [length], [depth])
 
 
 def run_analysis(group):
@@ -665,4 +671,4 @@ def get_background():
 
 
 if __name__ == "__main__":
-    auto_analyze(get_source(), skip_sampling=True)
+    auto_analyze([get_source()], skip_sampling=True)
