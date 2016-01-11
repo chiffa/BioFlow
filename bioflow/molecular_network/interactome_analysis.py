@@ -14,6 +14,7 @@ from bioflow.main_configs import interactome_rand_samp, Outputs, Dumps
 from bioflow.molecular_network.InteractomeInterface import InteractomeInterface
 from bioflow.utils.dataviz import kde_compute
 from bioflow.utils.log_behavior import get_logger
+from bioflow.utils.io_routines import get_source_bulbs_ids, get_background_bulbs_ids
 
 log = get_logger(__name__)
 
@@ -476,19 +477,6 @@ def auto_analyze(source_list, desired_depth=24, processors=4, background_list=No
             print group
         for node in nr_nodes:
             print node
-
-
-def get_source_bulbs_ids():
-    """
-    Recovers bulbs ids of the uniprot set we are currently analyzing
-    """
-    source_bulbs_ids = []
-    with open(Dumps.analysis_set_bulbs_ids) as src:
-        csv_reader = reader(src)
-        for row in csv_reader:
-            source_bulbs_ids = source_bulbs_ids + row
-    source_bulbs_ids = [int(ret) for ret in source_bulbs_ids]
-    return source_bulbs_ids
 
 
 if __name__ == "__main__":

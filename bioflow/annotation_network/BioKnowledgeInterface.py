@@ -26,7 +26,7 @@ from bioflow.molecular_network.InteractomeInterface import InteractomeInterface
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from bioflow.neo4j_db.db_io_routines import get_bulbs_id
 from bioflow.utils.gdfExportInterface import GdfExportInterface
-from bioflow.utils.io_Routines import dump_object, undump_object
+from bioflow.utils.io_routines import dump_object, undump_object
 from bioflow.utils.log_behavior import get_logger
 
 log = get_logger(__name__)
@@ -949,16 +949,6 @@ class GeneOntologyInterface(object):
                 self.Indep_Lapl[idx2, idx1] += -1
                 self.Indep_Lapl[idx2, idx2] += 1
                 self.Indep_Lapl[idx1, idx1] += 1
-
-
-def get_background(sourcefile=Dumps.background_set_bulbs_ids):
-    ret_list = []
-    with open(sourcefile) as src:
-        csv_reader = reader(src)
-        for row in csv_reader:
-            ret_list = ret_list + row
-    ret_list = [ret for ret in ret_list]
-    return ret_list
 
 
 if __name__ == '__main__':

@@ -78,6 +78,6 @@ setup(
     },
     entry_points="""
     [console_scripts]
-    bioflow = CLI:main
+    bioflow = cli:main
     """,
 )

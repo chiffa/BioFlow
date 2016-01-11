@@ -1,7 +1,7 @@
 import os
 import unittest
 from pprint import pprint
-from bioflow.utils.io_Routines import dump_object, undump_object
+from bioflow.utils.io_routines import dump_object, undump_object
 from bioflow.bio_db_parsers.geneOntologyParser import GOTermsParser
 from bioflow.bio_db_parsers.uniprotParser import UniProtParser
 from bioflow.bio_db_parsers.reactomeParser import ReactomeParser

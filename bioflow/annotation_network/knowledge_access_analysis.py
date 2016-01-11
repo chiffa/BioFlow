@@ -14,7 +14,7 @@ from bioflow.annotation_network.BioKnowledgeInterface import GeneOntologyInterfa
 from bioflow.main_configs import annotome_rand_samp, Dumps, Outputs
 from bioflow.molecular_network.InteractomeInterface import InteractomeInterface
 from bioflow.utils.dataviz import kde_compute
-from bioflow.utils.io_Routines import undump_object
+from bioflow.utils.io_routines import undump_object, get_source_bulbs_ids, get_background_bulbs_ids
 from bioflow.utils.log_behavior import get_logger
 
 log = get_logger(__name__)
@@ -563,32 +563,5 @@ def auto_analyze(source=None, go_interface_instance=None, processors=3, desired_
             print node
 
 
-def get_bulbs_ids_set(location):
-    """
-    Retrieves bulbs ids for the elements for the analyzed group
-
-    :param location: where the bulbs ids are loaded
-
-    """
-    bulbs_ids = []
-    with open(location) as src:
-        csv_reader = reader(src)
-        for row in csv_reader:
-            bulbs_ids = bulbs_ids + row
-    bulbs_ids = [int(ret) for ret in bulbs_ids]
-    return bulbs_ids
-
-
-# TODO: the two methods below are actually clones one of another
-def get_source():
-    """ retrieves bulbs ids for the elements for the analyzed group """
-    return get_bulbs_ids_set(Dumps.analysis_set_bulbs_ids)
-
-
-def get_background():
-    """ retrieves bulbs ids for the elements in the background group """
-    return get_bulbs_ids_set(Dumps.background_set_bulbs_ids)
-
-
 if __name__ == "__main__":
-    auto_analyze([get_source()], skip_sampling=True)
+    auto_analyze([get_source_bulbs_ids()], skip_sampling=True)

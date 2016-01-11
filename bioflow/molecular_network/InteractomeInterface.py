@@ -20,7 +20,7 @@ from scipy.sparse.linalg import eigsh
 
 from bioflow.utils.gdfExportInterface import GdfExportInterface
 
-from bioflow.utils.io_Routines import write_to_csv, dump_object, undump_object
+from bioflow.utils.io_routines import write_to_csv, dump_object, undump_object
 
 from bioflow.utils.log_behavior import get_logger
 

@@ -3,7 +3,7 @@ Top-Level scripts, examples of analysis pipelines.
 """
 from bioflow.configs_manager import StructureGenerator, set_folders
 from bioflow.annotation_network.BioKnowledgeInterface \
-    import GeneOntologyInterface as AnnotomeInterface, get_background
+    import GeneOntologyInterface as AnnotomeInterface
 from bioflow.annotation_network.knowledge_access_analysis \
     import auto_analyze as knowledge_analysis
 from bioflow.db_importers.import_main import build_db, destroy_db
@@ -15,6 +15,7 @@ from bioflow.molecular_network.interactome_analysis import auto_analyze as inter
     get_source_bulbs_ids
 from bioflow.neo4j_db.db_io_routines import look_up_annotation_set, \
     cast_analysis_set_to_bulbs_ids, cast_background_set_to_bulbs_id
+from bioflow.utils.io_routines import get_source_bulbs_ids, get_background_bulbs_ids
 
 
 # setting static folders and urls for the databases

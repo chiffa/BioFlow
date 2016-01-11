@@ -4,15 +4,15 @@ Contains the access to the command line interface of the application.
 import click
 from bioflow.configs_manager import StructureGenerator, set_folders
 from bioflow.annotation_network.BioKnowledgeInterface \
-    import GeneOntologyInterface as AnnotomeInterface, get_background
+    import GeneOntologyInterface as AnnotomeInterface
+from bioflow.utils.io_routines import get_background_bulbs_ids, get_source_bulbs_ids
 from bioflow.annotation_network.knowledge_access_analysis \
     import auto_analyze as knowledge_analysis
 from bioflow.db_importers.import_main import build_db, destroy_db
 from bioflow.main_configs import neo4j_server, annotome_rand_samp, interactome_rand_samp
 from bioflow.molecular_network.InteractomeInterface \
     import InteractomeInterface as InteractomeInterface
-from bioflow.molecular_network.interactome_analysis import auto_analyze as interactome_analysis,\
-    get_source_bulbs_ids
+from bioflow.molecular_network.interactome_analysis import auto_analyze as interactome_analysis
 from bioflow.neo4j_db.db_io_routines import look_up_annotation_set, \
     cast_analysis_set_to_bulbs_ids, cast_background_set_to_bulbs_id
 

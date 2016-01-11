@@ -2,7 +2,8 @@
 Defines a couple of useful method to perform IO on dumping files
 """
 from pickle import load, dump
-
+from csv import reader
+from bioflow.main_configs import Dumps
 
 def write_to_csv(filename, array):
     """
@@ -44,6 +45,33 @@ def undump_object(dump_filename):
     """
     dump_file = file(dump_filename, 'r')
     return load(dump_file)
+
+
+def get_bulbs_ids_set(location):
+    """
+    Retrieves bulbs ids for the elements for the analyzed group
+
+    :param location: where the bulbs ids are loaded
+
+    """
+    bulbs_ids = []
+    with open(location) as src:
+        csv_reader = reader(src)
+        for row in csv_reader:
+            bulbs_ids = bulbs_ids + row
+    bulbs_ids = [int(ret) for ret in bulbs_ids]
+    return bulbs_ids
+
+
+def get_source_bulbs_ids():
+    """ retrieves bulbs ids for the elements for the analyzed group """
+    return get_bulbs_ids_set(Dumps.analysis_set_bulbs_ids)
+
+
+def get_background_bulbs_ids():
+    """ retrieves bulbs ids for the elements in the background group """
+    return get_bulbs_ids_set(Dumps.background_set_bulbs_ids)
+
 
 if __name__ == "__main":
     pass

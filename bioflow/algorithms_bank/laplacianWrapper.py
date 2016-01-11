@@ -9,7 +9,7 @@ import numpy as np
 from time import time
 from itertools import izip
 
-from bioflow.utils.io_Routines import write_to_csv, dump_object, undump_object
+from bioflow.utils.io_routines import write_to_csv, dump_object, undump_object
 from bioflow.utils.log_behavior import get_logger
 
 log = get_logger(__name__)
