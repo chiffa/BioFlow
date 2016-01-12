@@ -77,6 +77,6 @@ setup(
     },
     entry_points="""
     [console_scripts]
-    bioflow = cli:main
+    bioflow = bioflow.cli:main
     """,
 )
