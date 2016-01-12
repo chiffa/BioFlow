@@ -112,13 +112,15 @@ def setsource(source):
 
 @click.command()
 @click.argument('background')
-def setbackground(background):
+@click.argument('source')
+def setbackground(background, source):
     """
     Sets the background that would be later used in the analysis
     :param background:
+    :param source:
     :return:
     """
-    cast_background_set_to_bulbs_id(background)
+    cast_background_set_to_bulbs_id(background, source)
 
 
 @click.command()
@@ -138,11 +140,9 @@ def extractmatrix(matrixtype):
     if matrixtype == 'annotome':
         local_matrix = InteractomeInterface(main_connex_only=True, full_impact=False)
         local_matrix.fast_load()
-        filtr = ['biological_process']
-        annot_matrix = AnnotomeInterface(filtr, local_matrix.all_uniprots_bulbs_id_list,
-                                         (1, 1), True, 3)
-        annot_matrix.rebuild()
-        annot_matrix.store()
+        ref_param_set = [['biological_process'], get_background_bulbs_ids(), (1, 1), True, 3]
+        annot_matrix = AnnotomeInterface(*ref_param_set)
+        annot_matrix.full_rebuild()
 
 
 @click.command()
@@ -155,6 +155,18 @@ def mapids(idlist):
     :return:
     """
     print look_up_annotation_set(idlist)
+
+
+@click.command()
+@click.option('--collection', type=click.Choice(['all', 'interactome', 'annotome']))
+def purgemongo(collection):
+    if collection == 'all':
+        annotome_rand_samp.drop()
+        interactome_rand_samp.drop()
+    elif collection == 'interactome':
+        interactome_rand_samp.drop()
+    elif collection == 'annotome':
+        annotome_rand_samp.drop()
 
 
 @click.command()
@@ -171,16 +183,15 @@ def analyze(matrixtype, depth, processors,):
     :return:
     """
     source_bulbs_ids = get_source_bulbs_ids()
+    background_bulbs_ids = get_background_bulbs_ids()
 
     # TODO: CRICIAL: inject background usage when background switch is available.
     interactome_interface_instance = InteractomeInterface(main_connex_only=True, full_impact=False)
     interactome_interface_instance.fast_load()
-    ref_param_set = [['biological_process'],
-                     interactome_interface_instance.all_uniprots_bulbs_id_list,
-                     (1, 1), True, 3]
+    ref_param_set = [['biological_process'], background_bulbs_ids, (1, 1), True, 3]
 
     if matrixtype == 'interactome':
-        interactome_analysis(source_bulbs_ids, depth, processors)
+        interactome_analysis(source_bulbs_ids, depth, processors, background_bulbs_ids)
 
     elif matrixtype == 'annotome':
         knowledge_analysis(source=source_bulbs_ids,
@@ -190,18 +201,6 @@ def analyze(matrixtype, depth, processors,):
 
     print "analsysis is finished, current results are stored " \
           "in the outputs directory"
-
-
-@click.command()
-@click.option('--collection', type=click.Choice(['all', 'interactome', 'annotome']))
-def purgemongo(collection):
-    if collection == 'all':
-        annotome_rand_samp.drop()
-        interactome_rand_samp.drop()
-    elif collection == 'interactome':
-        interactome_rand_samp.drop()
-    elif collection == 'annotome':
-        annotome_rand_samp.drop()
 
 
 main.add_command(initialize)
@@ -215,6 +214,7 @@ main.add_command(analyze)
 main.add_command(purgemongo)
 main.add_command(setsource)
 main.add_command(setbackground)
+
 
 if __name__ == '__main__':
     main()

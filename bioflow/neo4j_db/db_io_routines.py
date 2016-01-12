@@ -306,10 +306,11 @@ def cast_background_set_to_bulbs_id(background_set_csv_location=background_prote
     :return:
     """
     background_bulbs_ids = []
-    background_bulbs_ids += annotation_ids_from_csv(analysis_set_csv_location)
-    background_bulbs_ids += annotation_ids_from_csv(background_set_csv_location)
+    if background_set_csv_location:
+        background_bulbs_ids += annotation_ids_from_csv(analysis_set_csv_location)
+        background_bulbs_ids += annotation_ids_from_csv(background_set_csv_location)
+        background_bulbs_ids = list(set(ret for ret in background_bulbs_ids))
 
-    background_bulbs_ids = list(set(ret for ret in background_bulbs_ids))
     source = look_up_annotation_set(background_bulbs_ids)
     writer(open(Dumps.background_set_bulbs_ids, 'w'), delimiter='\n').writerow(source[2])
 
@@ -422,3 +423,5 @@ if __name__ == "__main__":
     # print reslist
     # run_diagnostics(full_list)
     cast_analysis_set_to_bulbs_ids()
+    # TODO: critical: check if it works
+    cast_background_set_to_bulbs_id(background_set_csv_location=None)

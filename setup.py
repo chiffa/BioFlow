@@ -63,7 +63,6 @@ setup(
     ],
     keywords='network analysis, systems biology, interactome, computational biology',
     packages=['bioflow']+find_packages(),
-    # package_dir={'': 'bioflow'},
     install_requires=requirements,
     extras_require={
         'dev': [],

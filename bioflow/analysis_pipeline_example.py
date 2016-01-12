@@ -31,35 +31,31 @@ StructureGenerator.build_source_config('yeast')
 # building the neo4j database
 build_db()
 
+# set the source file of the ids of perturbed proteins and background set:
+cast_analysis_set_to_bulbs_ids("/home/andrei/support/tmp/Chr_10.txt")
+cast_background_set_to_bulbs_id(background_set_csv_location=None,
+                                analysis_set_csv_location="/home/andrei/support/tmp/Chr_10.txt")
+
+# get the bulbs ids oif the nodes we would like to analyze
+source_bulbs_ids = get_source_bulbs_ids()
+background_bulbs_ids = get_background_bulbs_ids()
+
 # building the interactome interface object
 local_matrix = InteractomeInterface(main_connex_only=True, full_impact=False)
 local_matrix.full_rebuild()
 
+# perform the interactome analysis
+interactome_analysis([source_bulbs_ids], desired_depth=24, processors=6,
+                     background_list=background_bulbs_ids)
+# TODO: make sure interactome analysis works as expected with background list
+
 # building the annotome interface object for GO "biological process" type terms
 _filter = ['biological_process']
-_correlation_factors = (1, 1)
+ref_param_set = [_filter, background_bulbs_ids, (1, 1), True, 3]
 
-ref_param_set = [_filter, local_matrix.all_uniprots_bulbs_id_list,
-                 _correlation_factors, True, 3]
-
+# build the annotome interface
 annot_matrix = AnnotomeInterface(*ref_param_set)
-annot_matrix.rebuild()
-annot_matrix.store()
-
-# set the source file of the ids of perturbed proteins
-# TODO: a new function setting the analysis and background protein sets static location
-cast_analysis_set_to_bulbs_ids("/home/andrei/support/tmp/Chr_10.txt")
-# # line above currently does nothing, requires proper background implementation
-# cast_background_set_to_bulbs_id(
-#   "/home/ank/projects_files/2014/Poly_Pharma/HJ-screen/Allgene_R2.csv")
-
-# TODO: CRITICAL: add background switch when a proper background switch implementation is done
-
-# get the bulbs ids oif the nodes we would like to analyze
-source_bulbs_ids = get_source_bulbs_ids()
-
-# perform the interactome analysis
-interactome_analysis([source_bulbs_ids], desired_depth=24, processors=6)
+annot_matrix.full_rebuild()
 
 # perform the knowledge analysis
-knowledge_analysis([source_bulbs_ids], desired_depth=24, processors=6)
+knowledge_analysis([source_bulbs_ids], desired_depth=24, processors=6, param_set=ref_param_set)

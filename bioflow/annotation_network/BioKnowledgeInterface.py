@@ -26,7 +26,7 @@ from bioflow.molecular_network.InteractomeInterface import InteractomeInterface
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from bioflow.neo4j_db.db_io_routines import get_bulbs_id
 from bioflow.utils.gdfExportInterface import GdfExportInterface
-from bioflow.utils.io_routines import dump_object, undump_object
+from bioflow.utils.io_routines import dump_object, undump_object, get_background_bulbs_ids
 from bioflow.utils.log_behavior import get_logger
 
 log = get_logger(__name__)
@@ -50,18 +50,30 @@ class GeneOntologyInterface(object):
     :param Uniprot_Node_IDs: A list of hte reached_uniprots_bulbs_id_list that will be used
      for the GO reach and informativity computation. Beyond database and formalism issues,
      this allows to adapt method when limited list of UP is of interest
-    :param corrction_factor:
+    :param correction_factor:
     :param Ultraspec_clean:
     :param Ultraspec_lvl: parameter how much uniprots have to point to a GO term for it not
      to be considered ultra-specific anymore
     """
 
-    def __init__(self, namespace_filter, uniprot_node_ids, correction_factor,
-                 ultraspec_clean=False, ultraspec_lvl=3):
+    _GOUpTypes = ["is_a_go", "is_part_of_go"]
+    _GORegTypes = ["is_Regulant"]
 
-        self.go_namespace_filter = namespace_filter
-        self.InitSet = uniprot_node_ids
-        self.corrction_factor = correction_factor
+    def __init__(self, namespace_filter=('biological_process'),
+                 uniprot_node_ids=None,
+                 correction_factor=(1, 1),
+                 ultraspec_clean=True, ultraspec_lvl=3):
+
+        self.interactome_interface_instance = InteractomeInterface(True, False)
+        self.interactome_interface_instance.fast_load()
+        init_set = self.interactome_interface_instance.all_uniprots_bulbs_id_list
+
+        if uniprot_node_ids:
+            init_set = list(set(init_set).intersection(set(uniprot_node_ids)))
+
+        self.go_namespace_filter = list(namespace_filter)
+        self.InitSet = init_set
+        self.correction_factor = correction_factor
         self.ultraspec_cleaned = ultraspec_clean
         self.ultraspec_lvl = ultraspec_lvl
         self.init_time = time()
@@ -151,7 +163,7 @@ class GeneOntologyInterface(object):
             Dumps.GO_builder_stat,
             (self.go_namespace_filter,
              self.InitSet,
-             self.corrction_factor,
+             self.correction_factor,
              self.ultraspec_cleaned,
              self.ultraspec_lvl))
 
@@ -247,14 +259,7 @@ class GeneOntologyInterface(object):
     def undump_independent_linear_sets(self):
         self.Indep_Lapl = undump_object(Dumps.GO_Indep_Linset)
 
-    def store(self):
-        self.dump_statics()
-        self.dump_core()
-        self.dump_matrices()
-        self.dump_informativities()
-        self.dump_inflated_elements()
-
-    def rebuild(self):
+    def full_rebuild(self):
         self.get_gene_ontology_access()
         self.get_gene_ontology_structure()
         self.get_go_adjacency_and_laplacian()
@@ -263,6 +268,12 @@ class GeneOntologyInterface(object):
             self.filter_out_too_specific()
         self.get_laplacians()
         self.inflate_matrix_and_indexes()
+
+        self.dump_statics()
+        self.dump_core()
+        self.dump_matrices()
+        self.dump_informativities()
+        self.dump_inflated_elements()
 
     def load(self):
         """
@@ -279,7 +290,7 @@ class GeneOntologyInterface(object):
             log.critical("Wrong initial_set attempted to be recovered from storage")
             raise Exception(
                 "Wrong initial_set attempted to be recovered from storage")
-        if self.corrction_factor != correction_factor:
+        if self.correction_factor != correction_factor:
             log.critical("Wrong correction factor attempted to be recovered from storage")
             raise Exception(
                 "Wrong correction factor attempted to be recovered from storage")
@@ -308,6 +319,7 @@ class GeneOntologyInterface(object):
         for uniprot_bulbs_id in self.InitSet:
             uniprot_specific_gos = []
             up_node = DatabaseGraph.UNIPORT.get(uniprot_bulbs_id)
+            # Yeah, this is a dangerous one, we need to avoid failure on that one
             self.UP_Names[uniprot_bulbs_id] = [up_node.ID, up_node.displayName]
             attached_go_nodes = up_node.bothV("is_go_annotation")
             if attached_go_nodes:
@@ -320,7 +332,7 @@ class GeneOntologyInterface(object):
             if not uniprot_specific_gos:
                 uniprots_without_gene_ontology_terms += 1
                 log.debug("UP without GO was found. UP bulbs_id: %s, \t name: %s",
-                            uniprot_bulbs_id, self.UP_Names[uniprot_bulbs_id])
+                          uniprot_bulbs_id, self.UP_Names[uniprot_bulbs_id])
                 self.UPs_without_GO.add(uniprot_bulbs_id)
             else:
                 self.UP2GO_Dict[uniprot_bulbs_id] = copy(uniprot_specific_gos)
@@ -352,7 +364,7 @@ class GeneOntologyInterface(object):
             self.GO_Legacy_IDs[node_id] = str(gene_ontology_node.ID)
             self.rev_GO_IDs[str(gene_ontology_node.ID)] = node_id
 
-            for relation_type in chain(GOUpTypes, GORegTypes):
+            for relation_type in chain(self._GOUpTypes, self._GORegTypes):
                 related_go_nodes = gene_ontology_node.outV(relation_type)
 
                 if not related_go_nodes:
@@ -363,7 +375,7 @@ class GeneOntologyInterface(object):
                     node_bulbs_id = get_bulbs_id(go_node)
                     if node_bulbs_id not in visited_set:
                         seeds_list.append(node_bulbs_id)
-                    if relation_type in GOUpTypes:
+                    if relation_type in self._GOUpTypes:
                         local_uniprot_list.append(node_bulbs_id)
                     else:
                         local_regulation_list.append(node_bulbs_id)
@@ -376,7 +388,7 @@ class GeneOntologyInterface(object):
                     if go_node.Namespace not in self.go_namespace_filter:
                         continue
                     node_bulbs_id = get_bulbs_id(go_node)
-                    if relation_type in GOUpTypes:
+                    if relation_type in self._GOUpTypes:
                         local_down_regulation_list.append(node_bulbs_id)
                     else:
                         local_up_regulation_list.append(node_bulbs_id)
@@ -451,8 +463,8 @@ class GeneOntologyInterface(object):
                 math.log(1 / float(len(self.UP2GO_Dict.keys())), 2)
         if number == 1.0:
             return 2 * self.total_Entropy
-        return pow(-self.corrction_factor[0] * self.total_Entropy /
-                   math.log(1 / float(number), 2), self.corrction_factor[1])
+        return pow(-self.correction_factor[0] * self.total_Entropy /
+                   math.log(1 / float(number), 2), self.correction_factor[1])
 
     # TODO: refactor. Method is excessively complex.
     def get_go_reach(self):
@@ -585,19 +597,19 @@ class GeneOntologyInterface(object):
 
         self.laplacian_matrix = base_matrix
 
-    @staticmethod
-    def compute_uniprot_dict():
+    def compute_uniprot_dict(self):
         """
         Computes the uniprot method required by some other dictionary
 
         :return:
         """
         uniprot_dict = {}
-        for elt in interactome_interface_instance.reached_uniprots_bulbs_id_list:
+        for elt in self.interactome_interface_instance.reached_uniprots_bulbs_id_list:
             node = DatabaseGraph.UNIPORT.get(elt)
             alt_id = node.ID
             # TODO: now can be suppressed
-            uniprot_dict[alt_id] = (elt, interactome_interface_instance.bulbs_id_2_display_name[elt])
+            uniprot_dict[alt_id] = (
+                elt, self.interactome_interface_instance.bulbs_id_2_display_name[elt])
             uniprot_dict[elt] = alt_id
         pickle.dump(uniprot_dict, file(Dumps.Up_dict_dump, 'w'))
         return uniprot_dict
@@ -626,7 +638,7 @@ class GeneOntologyInterface(object):
         data = [
             self.go_namespace_filter,
             sorted_initset,
-            self.corrction_factor,
+            self.correction_factor,
             self.ultraspec_cleaned,
             self.ultraspec_lvl]
         md5 = hashlib.md5(json.dumps(data, sort_keys=True)).hexdigest()
@@ -900,7 +912,8 @@ class GeneOntologyInterface(object):
 
         if chromosome_specific:
             self_connectable_uniprots = list(set(self_connectable_uniprots).intersection(
-                set(interactome_interface_instance.chromosomes_2_uniprot[str(chromosome_specific)])))
+                set(self.interactome_interface_instance.chromosomes_2_uniprot[str(
+                    chromosome_specific)])))
 
         for sample_size, iterations in zip(samples_size, samples_each_size):
             sample_size = min(sample_size, len(self_connectable_uniprots))
@@ -953,34 +966,9 @@ class GeneOntologyInterface(object):
 
 if __name__ == '__main__':
     # Creates an instance of MatrixGetter and loads pre-computed values
-    interactome_interface_instance = InteractomeInterface(True, False)
-    interactome_interface_instance.fast_load()
 
-    # TODO: switch to the usage of Uniprot set that is independent from the Matrix_Getter,
-    #  but instead is supplide by the user
-    # interactome_interface_instance.Uniprot is just an option, even though a very importatn one
-
-    # specify the relations that lead to a more general or to an equally
-    # regulated node.
-    GOUpTypes = ["is_a_go", "is_part_of_go"]
-    GORegTypes = ["is_Regulant"]
-
-    ppritner = PrettyPrinter(indent=4)
-
-    filtr = ['biological_process']
-
-    ################################
-    # Attention, manual switch here:
-    ################################
-
-    # go_interface_instance = GO_Interface(_filter, get_background(), (1, 1), True, 3)
-    go_interface_instance = GeneOntologyInterface(
-        filtr,
-        interactome_interface_instance.all_uniprots_bulbs_id_list,
-        (1, 1), True, 3)
-    go_interface_instance.rebuild()
-    print go_interface_instance.pretty_time()
-    go_interface_instance.store()
+    go_interface_instance = GeneOntologyInterface(uniprot_node_ids=get_background_bulbs_ids())
+    go_interface_instance.full_rebuild()
     print go_interface_instance.pretty_time()
 
     # loading takes 1-6 seconds.

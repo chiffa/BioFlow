@@ -25,11 +25,9 @@ _correlation_factors = (1, 1)
 interactome_interface_instance = InteractomeInterface(True, False)
 interactome_interface_instance.fast_load()
 
-ref_param_set = [_filter, interactome_interface_instance.all_uniprots_bulbs_id_list,
+ref_param_set = [_filter, get_background_bulbs_ids(),
                  (1, 1), True, 3]
 
-
-# TODO: refactor, this is currently a wrapper method used in the
 def get_go_interface_instance(param_set=ref_param_set):
     """
     Generates a Matrix_Knowledge_DB interface for the use in the spawner. If

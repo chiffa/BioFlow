@@ -384,7 +384,7 @@ def compare_to_blank(
     return None, None
 
 
-# TODO: stabilize the background behavior with regard to the buffering
+# TODO: check if background list works as expected
 def auto_analyze(source_list, desired_depth=24, processors=4, background_list=None,
                  skip_sampling=False):
     """

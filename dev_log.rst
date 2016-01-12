@@ -79,6 +79,12 @@ Minor refactoring suggestions:
 
 -  add @jit() wrapper in order to compile the elements within the current calculation routines.
 
+- explicit mention of the rebuild dataset is not set in the BioKnowledge Interface
+
+- We always need to first build Interactome Interface before BioKnowledge Interface and in the
+end we need to have both of them build before we can run automated analysis. A nice fix would be
+to raise flags when they are loaded, instead of relying on the loading behaviors.
+
 Major refactoring suggestions:
 ------------------------------
 
