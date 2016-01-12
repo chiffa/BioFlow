@@ -286,6 +286,12 @@ def compare_to_blank(
                                         'sparse_rounds': sparse_rounds}).count())
 
     # this part computes the items required for the creation of a blank model
+
+    print 'dev debug: mongod search parameters:'
+    print 'size: ', blank_model_size
+    print 'sys_hash: ', md5_hash
+    print 'sparse_rounds: ', sparse_rounds
+
     for i, sample in enumerate(interactome_rand_samp.find(
             {'size': blank_model_size, 'sys_hash': md5_hash, 'sparse_rounds': sparse_rounds})):
         if sparse_rounds:
@@ -304,6 +310,12 @@ def compare_to_blank(
         curr_inf_conf = list(dictionary_system.itervalues())
         curr_inf_conf_general.append(np.array(curr_inf_conf).T)
         count = i
+
+        print 'dev debug @compare_to_blank: round %s curr_inf_conf' % i
+        print curr_inf_conf_general
+
+    print 'dev debug: curr_inf_conf_general'
+    print curr_inf_conf_general
 
     # This part declares the pre-operators required for the verification of a
     # real sample
@@ -414,6 +426,7 @@ def auto_analyze(source_list, desired_depth=24, processors=4, background_list=No
         interactome_interface.set_uniprot_source(list(_list))
         log.debug(" e_p_u_b_i length after UP_source was set: %s",
                   len(interactome_interface.entry_point_uniprots_bulbs_ids))
+
         interactome_interface.background = background_list
 
         # TODO: restructure to spawn a sampler pool that does not share an object in the Threading
@@ -495,9 +508,6 @@ if __name__ == "__main__":
     # for node in nr_nodes:
     #     print node
 
-    # TODO: add loading method for the analysis of the interactome
-
     source = get_source_bulbs_ids()
-    print len(source)
-
-    auto_analyze([source], 24, skip_sampling=True)
+    background_list = get_background_bulbs_ids()
+    auto_analyze([source], 6, 3, background_list)

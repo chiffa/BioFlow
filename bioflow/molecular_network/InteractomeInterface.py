@@ -130,7 +130,7 @@ class InteractomeInterface(object):
         self.chromosomes_2_uniprot = defaultdict(list)
 
         self.incomplete_compute = False  # used in case of sparse sampling
-        self.background = None
+        self.background = []
 
         self.main_set = self.bulbs_id_2_matrix_index
 
@@ -725,7 +725,7 @@ class InteractomeInterface(object):
             self.connexity_aware,
             sorted_initial_set,
             self.full_impact,
-            self.background]
+            self.entry_point_uniprots_bulbs_ids]
         md5 = hashlib.md5(json.dumps(data, sort_keys=True)).hexdigest()
         return str(md5)
 
@@ -956,7 +956,7 @@ class InteractomeInterface(object):
             idx in self.bulbs_id_2_matrix_index.iteritems() if idx < (
                 self.laplacian_matrix.shape[0] - 1)]
 
-        if self.background is not None:
+        if self.background:
             self_connected_uniprots = list(
                 set(self_connected_uniprots).intersection(set(self.background)))
 

@@ -280,6 +280,9 @@ class GeneOntologyInterface(object):
         self.dump_informativities()
         self.dump_inflated_elements()
 
+        log.info('Finished rebuilding the GO Interface object %s', self.pretty_time())
+
+
     def load(self):
         """
         loads itself from the saved dumps, in case the Filtering system is the same
@@ -355,7 +358,7 @@ class GeneOntologyInterface(object):
         visited_set = set()
         seeds_list = copy(list(self.SeedSet))
         log.info('Starting gene ontology structure retrieval from the set of %s seeds',
-                 self.SeedSet)
+                 len(self.SeedSet))
 
         while seeds_list:
             node_id = seeds_list.pop()
@@ -971,8 +974,6 @@ class GeneOntologyInterface(object):
 
 if __name__ == '__main__':
     # Creates an instance of MatrixGetter and loads pre-computed values
-
-    print 'debug', get_background_bulbs_ids()
 
     go_interface_instance = GeneOntologyInterface(uniprot_node_ids=get_background_bulbs_ids())
     go_interface_instance.full_rebuild()

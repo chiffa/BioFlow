@@ -562,4 +562,4 @@ def auto_analyze(source=None, go_interface_instance=None, processors=3, desired_
 
 
 if __name__ == "__main__":
-    auto_analyze([get_source_bulbs_ids()], skip_sampling=True)
+    auto_analyze([get_source_bulbs_ids()], processors=3, desired_depth=6, param_set=ref_param_set)
