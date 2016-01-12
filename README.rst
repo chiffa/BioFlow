@@ -39,8 +39,8 @@ If you are on Ubuntu 14.04: ::
     > sh ubuntu_14_04_setup.sh
     > pip install git+https://github.com/chiffa/BioFlow.git
 
-For more information, refer to the `installation guide <http://bioflow.readthedocs
-.org/en/latest/guide.html#installation-and-requirements>`__
+For more information, refer to the `installation guide
+<http://bioflow.readthedocs.org/en/latest/guide.html#installation-and-requirements>`__
 
 Usage walk-through:
 -------------------
@@ -58,7 +58,7 @@ Setup environement ::
     > bioflow loadneo4j
 
 For more information about data and config files, refer to the `data and database guide
-<http://bioflow.readthedocs.org/en/latest/guide.html#data-and-database-setup>`__
+<http://bioflow.readthedocs.org/en/latest/guide.html#data-and-databases-setup>`__
 
 Set the set of perturbed proteins on which we would want to base our analysis ::
 
