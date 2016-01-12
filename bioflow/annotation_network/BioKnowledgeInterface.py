@@ -59,7 +59,7 @@ class GeneOntologyInterface(object):
     _GOUpTypes = ["is_a_go", "is_part_of_go"]
     _GORegTypes = ["is_Regulant"]
 
-    def __init__(self, namespace_filter=('biological_process'),
+    def __init__(self, namespace_filter=('biological_process',),
                  uniprot_node_ids=None,
                  correction_factor=(1, 1),
                  ultraspec_clean=True, ultraspec_lvl=3):
@@ -71,6 +71,8 @@ class GeneOntologyInterface(object):
         if uniprot_node_ids:
             init_set = list(set(init_set).intersection(set(uniprot_node_ids)))
 
+        log.info('Setting up GO Interface with namespace %s and %s root UPs',
+                 )
         self.go_namespace_filter = list(namespace_filter)
         self.InitSet = init_set
         self.correction_factor = correction_factor
@@ -138,6 +140,9 @@ class GeneOntologyInterface(object):
         self.uncomplete_compute = False
 
         self.main_set = self.InitSet
+
+        log.info('Setting up GO Interface with namespace %s and %s root UPs',
+                 self.go_namespace_filter, len(self.InitSet))
 
     def pretty_time(self):
         """
@@ -967,9 +972,10 @@ class GeneOntologyInterface(object):
 if __name__ == '__main__':
     # Creates an instance of MatrixGetter and loads pre-computed values
 
+    print 'debug', get_background_bulbs_ids()
+
     go_interface_instance = GeneOntologyInterface(uniprot_node_ids=get_background_bulbs_ids())
     go_interface_instance.full_rebuild()
-    print go_interface_instance.pretty_time()
 
     # loading takes 1-6 seconds.
     # fill for reach only is done in 2 seconds,
