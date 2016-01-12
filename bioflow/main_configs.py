@@ -9,6 +9,14 @@ from pymongo import MongoClient
 from bioflow.configs_manager import parse_configs, conf_file_path_flattener
 from bioflow.utils.general_utils import high_level_os_io as hl_os_io
 
+
+dump_location = path.join(path.abspath(path.dirname(__file__)), 'dumps')
+
+output_location = path.join(path.abspath(os.path.expanduser('~')), 'outputs')
+
+log_location = path.join(path.abspath(path.dirname(__file__)), 'logs')
+
+
 Servers, Options, Sources, Predictions = parse_configs()
 
 # SERVERS CONFIGURATIONS
@@ -51,8 +59,7 @@ class Dumps(object):
     A class that contains and controls all the dumps related to accelerated loading of mappings
     between the graph DB and the mapping matrix holders
     """
-    prefix = path.join(path.abspath(
-        path.join(path.dirname(__file__), os.pardir)), 'dumps')
+    prefix = dump_location
     hl_os_io.mkdir_recursive(prefix)
 
     prefix_2 = Sources['INTERNAL']['dumpprefix']
@@ -127,14 +134,7 @@ analysis_protein_ids_csv = "/home/andrei/support/tmp/Chr_10.txt"
 background_protein_ids_csv = "/home/ank/projects_files/2014/Poly_Pharma/HJ-screen/Allgene_R2.csv"
 
 
-dump_location = path.join(path.abspath(
-    path.join(path.dirname(__file__), os.pardir)), 'dumps')
 
-output_location = path.join(path.abspath(
-    path.join(path.dirname(__file__), os.pardir)), 'outputs')
-
-log_location = path.join(path.abspath(
-    path.join(path.dirname(__file__), os.pardir)), 'logs')
 
 if __name__ == "__main__":
     pp = PrettyPrinter(indent=4)

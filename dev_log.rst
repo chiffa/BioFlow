@@ -4,13 +4,9 @@ This file regroups the TODOs for the project in the future.
 Confirmed minor refactoring requiring a sane rollback:
 ------------------------------------------------------
 
--  render the usage of analytical/background sets uniform throughout the
-   system.
-
--  split the computation of the blank from the performing of the
+-  Split the computation of the blank from the performing of the
    analysis round
 
-- rebuild the background selection switch in a proper manner.
 
 Minor refactoring suggestions:
 ------------------------------

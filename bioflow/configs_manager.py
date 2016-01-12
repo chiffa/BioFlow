@@ -15,7 +15,7 @@ from collections import defaultdict
 configs_rootdir = os.path.abspath(
     os.path.join(
         os.path.dirname(__file__),
-        '../configs/'))
+        'configs/'))
 
 shortnames = ['servers', 'options', 'sources', 'predictions']
 configsfiles = dict([(name, join(configs_rootdir, name + '.ini'))

@@ -47,7 +47,7 @@ nosetests.xml
 
 All the specific analysis outputs, such as GDF files:
 outputs/
-dumps/
+bioflow/dumps/
 
 #Pycharm Idea files:
 .idea/*
@@ -56,6 +56,6 @@ dumps/
 # the builds of the documentation (they should be processed by ReadTheDocs)
 docs/build/*
 # logs
-logs/*
+bioflow/logs/*
 # outputs
 outputs/*

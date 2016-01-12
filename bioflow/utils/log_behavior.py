@@ -9,9 +9,7 @@ from shutil import rmtree
 
 
 log_location = path.join(path.abspath(
-    path.join(
-        path.join(path.dirname(__file__), os.pardir),
-        os.pardir)), 'logs')
+        path.join(path.dirname(__file__), os.pardir)), 'logs')
 
 on_unittest = os.environ.get('UNITTESTING') == 'True'  # if we are unittesting
 on_remote_unittest = os.environ.get('REMOTE_UNITTEST') == 'True'  # if we are testing on CI tools
