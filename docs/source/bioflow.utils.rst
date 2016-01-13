@@ -27,10 +27,10 @@ bioflow.utils.gdfExportInterface module
     :undoc-members:
     :show-inheritance:
 
-bioflow.utils.io_Routines module
+bioflow.utils.io_routines module
 --------------------------------
 
-.. automodule:: bioflow.utils.io_Routines
+.. automodule:: bioflow.utils.io_routines
     :members:
     :undoc-members:
     :show-inheritance:

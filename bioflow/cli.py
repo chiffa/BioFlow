@@ -158,8 +158,14 @@ def mapids(idlist):
 
 
 @click.command()
-@click.option('--collection', type=click.Choice(['all', 'interactome', 'annotome']))
+@click.option('--collection', type=click.Choice(['all', 'interactome', 'annotome']), default='all')
 def purgemongo(collection):
+    """
+    purges the mongodb collection currently used to store all the information.
+
+    :param collection:
+    :return:
+    """
     if collection == 'all':
         annotome_rand_samp.drop()
         interactome_rand_samp.drop()
