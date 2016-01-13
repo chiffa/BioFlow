@@ -721,12 +721,20 @@ class InteractomeInterface(object):
         defined before dump/retrieval
         """
         sorted_initial_set = sorted(self.bulbs_id_2_matrix_index.keys())
+        sorted_entry_point_up_bulbs_ids = sorted(self.entry_point_uniprots_bulbs_ids)
         data = [
             self.connexity_aware,
             sorted_initial_set,
             self.full_impact,
-            self.entry_point_uniprots_bulbs_ids]
+            sorted_entry_point_up_bulbs_ids]
         md5 = hashlib.md5(json.dumps(data, sort_keys=True)).hexdigest()
+
+        #TODO: CRITICAL: downgrade to DEBUG later on
+        log.info('computed md5 hash: %s for init set of %s and entry points %s',
+                 md5,
+                 len(sorted_initial_set),
+                 len(sorted_entry_point_up_bulbs_ids))
+
         return str(md5)
 
     def set_uniprot_source(self, uniprots):
