@@ -510,4 +510,4 @@ if __name__ == "__main__":
 
     source = get_source_bulbs_ids()
     background_list = get_background_bulbs_ids()
-    auto_analyze([source], 6, 3, background_list, skip_sampling=True)
+    auto_analyze([source], 6, 3, background_list)

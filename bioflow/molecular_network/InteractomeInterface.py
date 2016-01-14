@@ -131,6 +131,7 @@ class InteractomeInterface(object):
 
         self.incomplete_compute = False  # used in case of sparse sampling
         self.background = []
+        self.connected_uniprots = []
 
         self.main_set = self.bulbs_id_2_matrix_index
 
@@ -721,19 +722,13 @@ class InteractomeInterface(object):
         defined before dump/retrieval
         """
         sorted_initial_set = sorted(self.bulbs_id_2_matrix_index.keys())
-        sorted_entry_point_up_bulbs_ids = sorted(self.entry_point_uniprots_bulbs_ids)
+        connected_ups = sorted(self.connected_uniprots)
         data = [
             self.connexity_aware,
             sorted_initial_set,
             self.full_impact,
-            sorted_entry_point_up_bulbs_ids]
+            connected_ups]
         md5 = hashlib.md5(json.dumps(data, sort_keys=True)).hexdigest()
-
-        #TODO: CRITICAL: downgrade to DEBUG later on
-        log.info('computed md5 hash: %s for init set of %s and entry points %s',
-                 md5,
-                 len(sorted_initial_set),
-                 len(sorted_entry_point_up_bulbs_ids))
 
         return str(md5)
 
@@ -774,19 +769,19 @@ class InteractomeInterface(object):
         Builds a conduction matrix that integrates uniprots, in order to allow an easier
         knowledge flow analysis
 
-        :param memoized: if the tensions and individual relation matrices should be
-        stored in the matrix and dumped at the end computation (required for submatrix
-        re-computation)
-        :param sourced: if true, all the relations will be looked up and not computed.
-        Useful for the retrieval of sub-circulation group, but requires the
-        uniprots_2_voltage_and_circulation to be pre-filled
-        :param incremental: if True, all the circulation computation will be added to the existing
-         ones. Useful for the computation of particularly big systems with intermediate dumps
-        :param cancellation: divides the final current by number of bioflow-sink pairs
-        :param sparse_samples: if set to an integer the sampling will be sparse and not dense,
-         i.e. instead of computation for each node pair, only an estimation will be made, equal to
-        computing sparse_samples association with other randomly chosen nodes
-        :type sparse_samples: int
+        :param bool memoized: if the tensions and individual relation matrices should be
+            stored in the matrix and dumped at the end computation (required for submatrix
+            re-computation)
+        :param bool sourced: if true, all the relations will be looked up and not computed.
+            Useful for the retrieval of sub-circulation group, but requires the
+            uniprots_2_voltage_and_circulation to be pre-filled
+        :param bool incremental: if True, all the circulation computation will be added to the
+            existing ones. Useful for the computation of particularly big systems with
+            intermediate dumps
+        :param bool cancellation: divides the final current by number of bioflow-sink pairs
+        :param int sparse_samples: if set to an integer the sampling will be sparse and not dense,
+            i.e. instead of computation for each node pair, only an estimation will be made, equal to
+            computing sparse_samples association with other randomly chosen nodes
         :return: adjusted conduction system
         """
         if not incremental or self.current_accumulator == np.zeros((2, 2)):
@@ -959,23 +954,23 @@ class InteractomeInterface(object):
         if not len(samples_size) == len(samples_each_size):
             raise Exception('Not the same list sizes!')
 
-        self_connected_uniprots = [
+        self.connected_uniprots = [
             NodeID for NodeID,
             idx in self.bulbs_id_2_matrix_index.iteritems() if idx < (
                 self.laplacian_matrix.shape[0] - 1)]
 
         if self.background:
-            self_connected_uniprots = list(
-                set(self_connected_uniprots).intersection(set(self.background)))
+            self.connected_uniprots = list(
+                set(self.connected_uniprots).intersection(set(self.background)))
 
         if chromosome_specific:
-            self_connected_uniprots = list(set(self_connected_uniprots).intersection(
+            self.connected_uniprots = list(set(self.connected_uniprots).intersection(
                 set(self.chromosomes_2_uniprot[str(chromosome_specific)])))
 
         for sample_size, iterations in zip(samples_size, samples_each_size):
             for i in range(0, iterations):
-                shuffle(self_connected_uniprots)
-                analytics_uniprot_list = self_connected_uniprots[:sample_size]
+                shuffle(self.connected_uniprots)
+                analytics_uniprot_list = self.connected_uniprots[:sample_size]
                 self.set_uniprot_source(analytics_uniprot_list)
                 self.build_extended_conduction_system(
                     memoized=memoized, sourced=False, sparse_samples=sparse_rounds)
@@ -1032,9 +1027,10 @@ class InteractomeInterface(object):
 if __name__ == "__main__":
     interactome_interface_instance = InteractomeInterface(main_connex_only=True,
                                                           full_impact=False)
-    interactome_interface_instance.full_rebuild()
-    # interactome_interface_instance.fast_load()
-    print interactome_interface_instance.pretty_time()
+    # interactome_interface_instance.full_rebuild()
+    interactome_interface_instance.fast_load()
+    # print interactome_interface_instance.pretty_time()
+    # print interactome_interface_instance.md5_hash()
 
     # interactome_interface_instance.set_Uniprot_source(test_set)
     # interactome_interface_instance.export_subsystem(test_set, test2)
