@@ -658,6 +658,11 @@ class InteractomeInterface(object):
         self.undump_matrices()
         self.undump_eigen()
 
+        self.connected_uniprots = [
+            NodeID for NodeID,
+            idx in self.bulbs_id_2_matrix_index.iteritems() if idx < (
+                self.laplacian_matrix.shape[0] - 1)]
+
     def get_descriptor_for_index(self, index):
         """
         Recovers a descriptor set for a given index in the current matrix mapping
@@ -953,11 +958,6 @@ class InteractomeInterface(object):
         """
         if not len(samples_size) == len(samples_each_size):
             raise Exception('Not the same list sizes!')
-
-        self.connected_uniprots = [
-            NodeID for NodeID,
-            idx in self.bulbs_id_2_matrix_index.iteritems() if idx < (
-                self.laplacian_matrix.shape[0] - 1)]
 
         if self.background:
             self.connected_uniprots = list(

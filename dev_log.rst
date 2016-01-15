@@ -9,6 +9,10 @@ Confirmed minor refactoring requiring a sane rollback:
 
 -  Properly indent multi-line :param type paramname: descriptors
 
+-  Inline the background for the InteractomeInstance into the __init__
+
+-  Inline the undumping and dependent variables calculation into the __init__ of
+InteractomeInstance and BioKnowledgeInterface
 
 Minor refactoring suggestions:
 ------------------------------

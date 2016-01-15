@@ -287,11 +287,6 @@ def compare_to_blank(
 
     # this part computes the items required for the creation of a blank model
 
-    print 'dev debug: mongod search parameters:'
-    print 'size: ', blank_model_size
-    print 'sys_hash: ', md5_hash
-    print 'sparse_rounds: ', sparse_rounds
-
     for i, sample in enumerate(interactome_rand_samp.find(
             {'size': blank_model_size, 'sys_hash': md5_hash, 'sparse_rounds': sparse_rounds})):
         if sparse_rounds:
@@ -310,12 +305,6 @@ def compare_to_blank(
         curr_inf_conf = list(dictionary_system.itervalues())
         curr_inf_conf_general.append(np.array(curr_inf_conf).T)
         count = i
-
-        print 'dev debug @compare_to_blank: round %s curr_inf_conf' % i
-        print curr_inf_conf_general
-
-    print 'dev debug: curr_inf_conf_general'
-    print curr_inf_conf_general
 
     # This part declares the pre-operators required for the verification of a
     # real sample
@@ -510,4 +499,4 @@ if __name__ == "__main__":
 
     source = get_source_bulbs_ids()
     background_list = get_background_bulbs_ids()
-    auto_analyze([source], 6, 3, background_list)
+    auto_analyze([source], 6, 3, background_list, skip_sampling=True)
