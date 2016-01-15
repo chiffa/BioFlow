@@ -148,6 +148,17 @@ methods were doing:
 - Validation of results with retrieval of Pamela Silver's paper and John's Overington 300
 essential targets: high average information flow and low abundance.
 
+- Generate figures showing the highy-connected nodes in the laplacian matrix corresponding to the
+ common chemical molecules (ADP, ATP, Pi, ...). Explain that mechanisms related to such molecules
+  would better be described in terms of propositions on actual biological knowledge and that we
+  would need to run the two analyses in parallel: both on the concepts and the molecular entities.
+
+- Generate the figures showing that taking in account background that is efficiently reachable by
+ a given experimental technique is critical for the proper annotation retrieval, especially for
+ the low-informativity terms. Give an example of techniques relying on the aboundance change for
+ detection, how they would behave if we randomly sample from back-ground without first setting
+ the background.
+
 Internals high-level doc:
 -------------------------
 
