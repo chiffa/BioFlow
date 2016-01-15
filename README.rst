@@ -7,8 +7,6 @@ BioFlow Project
 
 Information Flow Analysis in biological networks
 
-Branch v.0.03 - Release candidate for v0.4.0
-
 Description:
 ------------
 
@@ -86,7 +84,8 @@ For more details or usage as a library, refer to the `usage guide
    :target: https://travis-ci.org/chiffa/BioFlow
 .. |Coverage Status| image:: https://coveralls.io/repos/chiffa/BioFlow/badge.svg?branch=master&service=github
    :target: https://coveralls.io/github/chiffa/BioFlow?branch=master
-.. |Branch status| image:: https://img.shields.io/badge/branch_status-refactoring-red.svg
+.. |Branch status| image:: https://img.shields.io/badge/branch_status-0.1.0_release_candidate-yellow
+.svg
    :target: https://github.com/chiffa/BioFlow/blob/master/README.md
 .. |Code Issues| image:: https://www.quantifiedcode.com/api/v1/project/1c3f8cd001a44319abddab249101b646/badge.svg
    :target: https://www.quantifiedcode.com/app/project/1c3f8cd001a44319abddab249101b646
