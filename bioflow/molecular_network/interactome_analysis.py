@@ -18,8 +18,6 @@ from bioflow.utils.io_routines import get_source_bulbs_ids, get_background_bulbs
 
 log = get_logger(__name__)
 
-plt.gcf().set_size_inches(20, 15)
-
 
 # TODO: factor that into the "retrieve" routine of the laplacian wrapper
 def get_interactome_interface():
@@ -145,7 +143,8 @@ def show_test_statistics(
     :param sparse: True if we are showing test statistics of a sparse kernel run
     :return:
     """
-    plt.figure()
+    fig = plt.figure()
+    fig.set_size_inches(30, 20)
 
     plt.subplot(331)
     plt.title('current through nodes')
@@ -321,7 +320,7 @@ def compare_to_blank(
 
     if not sparse_rounds:
         group2avg_offdiag, _, mean_correlations, eigenvalue = perform_clustering(
-            interactome_interface_instance.UP2UP_voltages, cluster_no)
+            interactome_interface_instance.UP2UP_voltages, cluster_no, 'Interactome clustering')
 
     else:
         group2avg_offdiag = np.array([[(0, ), 0, 0]]*cluster_no)

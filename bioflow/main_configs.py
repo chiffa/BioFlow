@@ -10,12 +10,14 @@ from bioflow.configs_manager import parse_configs, conf_file_path_flattener
 from bioflow.utils.general_utils import high_level_os_io as hl_os_io
 
 
+
 dump_location = path.join(path.abspath(path.dirname(__file__)), 'dumps')
-
 output_location = path.join(path.abspath(os.path.expanduser('~')), 'outputs')
-
 log_location = path.join(path.abspath(path.dirname(__file__)), 'logs')
 
+hl_os_io.mkdir_recursive(dump_location)
+hl_os_io.mkdir_recursive(output_location)
+hl_os_io.mkdir_recursive(log_location)
 
 Servers, Options, Sources, Predictions = parse_configs()
 
@@ -60,7 +62,6 @@ class Dumps(object):
     between the graph DB and the mapping matrix holders
     """
     prefix = dump_location
-    hl_os_io.mkdir_recursive(prefix)
 
     prefix_2 = Sources['INTERNAL']['dumpprefix']
     postfix = '.dump'
@@ -107,9 +108,7 @@ class Outputs(object):
     """
     Defines the locations to output actual results
     """
-    prefix = path.join(path.abspath(
-        path.join(path.dirname(__file__), os.pardir)), 'outputs')
-    hl_os_io.mkdir_recursive(prefix)
+    prefix = output_location
 
     GO_GDF_output = prefix + '/GO_Analysis_output.gdf'
     Interactome_GDF_output = prefix + '/Interactome_Analysis_output.gdf'

@@ -325,7 +325,7 @@ def group_edge_current_with_limitations(inflated_laplacian, idx_pair, reach_limi
     return inverter[1]/inverter[0], inverter[0]
 
 
-def perform_clustering(inter_node_tension, cluster_number, show=True):
+def perform_clustering(inter_node_tension, cluster_number, show='undefined clustering'):
     """
     Performs a clustering on the voltages of the nodes,
 
@@ -377,7 +377,7 @@ def perform_clustering(inter_node_tension, cluster_number, show=True):
                                 for _, items, mean_corr in group_2_mean_off_diag])
 
     if show:
-        render_2d_matrix(relations_matrix.toarray(), 'Relationships matrix')
+        render_2d_matrix(relations_matrix.toarray(), show)
 
     return np.array(group_2_mean_off_diag), \
         remainder, \

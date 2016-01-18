@@ -19,11 +19,10 @@ from bioflow.utils.log_behavior import get_logger
 
 log = get_logger(__name__)
 
-plt.gcf().set_size_inches(20, 15)
-
 _filter = ['biological_process']
 _correlation_factors = (1, 1)
 ref_param_set = [_filter, [], (1, 1), True, 3]
+
 
 def get_go_interface_instance(param_set=ref_param_set):
     """
@@ -162,7 +161,8 @@ def show_correlations(
     inf_sel = (go_interface_instance.calculate_informativity(selector[0]),
                go_interface_instance.calculate_informativity(selector[1]))
 
-    plt.figure()
+    fig = plt.figure()
+    fig.set_size_inches(30, 20)
 
     plt.subplot(331)
     plt.title('current through nodes')
@@ -380,7 +380,7 @@ def compare_to_blank(
     log.info('blank comparison: %s', curr_inf_conf.shape)
     if not sparse_rounds:
         group2avg_off_diag, _, mean_correlations, eigenvalue = perform_clustering(
-            go_interface_instance.UP2UP_voltages, cluster_no)
+            go_interface_instance.UP2UP_voltages, cluster_no, 'GO terms clustering')
     else:
         group2avg_off_diag = np.array([[(0, ), 0, 0]]*cluster_no)
         mean_correlations = np.array([[0, 0]]*cluster_no)
@@ -417,11 +417,14 @@ def compare_to_blank(
                   go_interface_instance.GO2UP_Reachable_nodes.items()[:10])
         # basically the second element below are the nodes that contribute to the information
         #  flow through the node that is considered as non-random
+
         node_char_list = [
             [int(GO_id), go_interface_instance.GO_Names[GO_id]] +
             dict_system[GO_id] + r_nodes[go_node_ids == float(GO_id)].tolist() +
-            [list(set(go_interface_instance.GO2UP_Reachable_nodes[GO_id]).
-                  intersection(set(go_interface_instance.analytic_uniprots)))]
+            [go_interface_instance.interactome_interface_instance.
+                bulbs_id_2_display_name[up_bulbs_id]
+             for up_bulbs_id in list(set(go_interface_instance.GO2UP_Reachable_nodes[GO_id]).
+                intersection(set(go_interface_instance.analytic_uniprots)))]
             for GO_id in not_random_nodes]
 
         return sorted(node_char_list, key=lambda x: x[5]), not_random_groups

@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy import histogram2d
 from scipy.stats import gaussian_kde
-from sys import path
+import os
 from bioflow.main_configs import output_location
 
 
@@ -138,11 +138,11 @@ def render_2d_matrix(matrix, name):
     :param name:
     :return:
     """
+    print name
     plt.title(name)
     plt.imshow(matrix, interpolation='nearest')
     plt.colorbar()
-    plt.savefig(path.join(output_location, name+'.png'))
-    plt.show()
+    plt.savefig(os.path.join(output_location, name+'.png'))
 
 
 if __name__ == "__main__":
