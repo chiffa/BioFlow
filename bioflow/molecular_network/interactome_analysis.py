@@ -398,8 +398,6 @@ def auto_analyze(source_list, desired_depth=24, processors=4, background_list=No
     :param skip_sampling: if true, will skip background sampling step
     """
     # noinspection PyTypeChecker
-    # TODO: add desired_depth division by process number
-
     estimated_comp_ops = 5
 
     if desired_depth % processors != 0:
@@ -417,11 +415,6 @@ def auto_analyze(source_list, desired_depth=24, processors=4, background_list=No
                   len(interactome_interface.entry_point_uniprots_bulbs_ids))
 
         interactome_interface.background = background_list
-
-        # TODO: restructure to spawn a sampler pool that does not share an object in the Threading
-        log.info('auto analyze 2: %s',
-                 len(interactome_interface.entry_point_uniprots_bulbs_ids))
-
         if not skip_sampling:
             log.info("spawning a sampler for %s proteins @ %s compops/sec",
                      len(interactome_interface.entry_point_uniprots_bulbs_ids), estimated_comp_ops)

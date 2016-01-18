@@ -71,8 +71,6 @@ class GeneOntologyInterface(object):
         if uniprot_node_ids:
             init_set = list(set(init_set).intersection(set(uniprot_node_ids)))
 
-        log.info('Setting up GO Interface with namespace %s and %s root UPs',
-                 )
         self.go_namespace_filter = list(namespace_filter)
         self.InitSet = init_set
         self.correction_factor = correction_factor
@@ -141,7 +139,7 @@ class GeneOntologyInterface(object):
 
         self.main_set = self.InitSet
 
-        log.info('Setting up GO Interface with namespace %s and %s root UPs',
+        log.info('Setting up GO Interface with namespaces %s and %s root UPs',
                  self.go_namespace_filter, len(self.InitSet))
 
     def pretty_time(self):
