@@ -93,6 +93,10 @@ mkdir_recursive(log_location)
 
 
 def get_logger(logger_name):
+    """
+    Returns a properly configured logger object
+    :param logger_name: name of the logger object
+    """
     _logger = logging.getLogger(logger_name)
     _logger.setLevel(logging.DEBUG)
 
@@ -114,3 +118,10 @@ def get_logger(logger_name):
     return _logger
 
 logger = get_logger('this_logger_needs_to_be_renamed')
+
+
+def clear_logs():
+    """
+    Wipes the logs
+    """
+    wipe_dir(log_location)

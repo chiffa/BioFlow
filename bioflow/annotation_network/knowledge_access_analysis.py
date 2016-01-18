@@ -19,6 +19,7 @@ from bioflow.utils.log_behavior import get_logger
 
 log = get_logger(__name__)
 
+plt.gcf().set_size_inches(20, 15)
 
 _filter = ['biological_process']
 _correlation_factors = (1, 1)
@@ -297,7 +298,6 @@ def show_correlations(
 def compare_to_blank(
         blank_model_size,
         zoom_range_selector,
-        real_knowledge_interface=None,
         p_val=0.05,
         sparse_rounds=False,
         cluster_no=3,
@@ -309,7 +309,6 @@ def compare_to_blank(
     :param blank_model_size: the number of uniprots in the blanc model
     :param zoom_range_selector: tuple representing the coverage range for which we would want
      to see the histogram of current distributions
-    :param real_knowledge_interface: The GO_Interface that has run the current computation
     :param p_val: desired p_value for the returned terms
     :param sparse_rounds: if set to a number, sparse computation technique would be used with
      the number of rounds equal to the number
@@ -369,29 +368,23 @@ def compare_to_blank(
     final = np.concatenate(tuple(curr_inf_conf_general), axis=1)
     final_mean_correlations = np.concatenate(tuple(mean_correlation_accumulator), axis=0).T
     final_eigenvalues = np.concatenate(tuple(eigenvalues_accumulator), axis=0).T
-    curr_inf_conf = None
-    mean_correlations = None
-    eigenvalue = None
-    group2avg_off_diag = None
-    go_node_ids = None
-    dict_system = None
-    if real_knowledge_interface:
-        node_currents = real_knowledge_interface.node_current
-        dict_system = go_interface_instance.format_node_props(node_currents)
-        curr_inf_conf_tot = np.array(
-            [[int(key)] + list(val) for key, val in dict_system.iteritems()]).T
-        go_node_ids, curr_inf_conf = (
-            curr_inf_conf_tot[
-                0, :], curr_inf_conf_tot[
-                (1, 2, 3), :])
-        log.info('blank comparison: %s', curr_inf_conf.shape)
-        if not sparse_rounds:
-            group2avg_off_diag, _, mean_correlations, eigenvalue = perform_clustering(
-                real_knowledge_interface.UP2UP_voltages, cluster_no)
-        else:
-            group2avg_off_diag = np.array([[(0, ), 0, 0]]*cluster_no)
-            mean_correlations = np.array([[0, 0]]*cluster_no)
-            eigenvalue = np.array([-1]*cluster_no)
+
+    node_currents = go_interface_instance.node_current
+    dict_system = go_interface_instance.format_node_props(node_currents)
+    curr_inf_conf_tot = np.array(
+        [[int(key)] + list(val) for key, val in dict_system.iteritems()]).T
+    go_node_ids, curr_inf_conf = (
+        curr_inf_conf_tot[
+            0, :], curr_inf_conf_tot[
+            (1, 2, 3), :])
+    log.info('blank comparison: %s', curr_inf_conf.shape)
+    if not sparse_rounds:
+        group2avg_off_diag, _, mean_correlations, eigenvalue = perform_clustering(
+            go_interface_instance.UP2UP_voltages, cluster_no)
+    else:
+        group2avg_off_diag = np.array([[(0, ), 0, 0]]*cluster_no)
+        mean_correlations = np.array([[0, 0]]*cluster_no)
+        eigenvalue = np.array([-1]*cluster_no)
 
     log.info('stats on %s samples', count)
 
@@ -402,16 +395,12 @@ def compare_to_blank(
         zoom_range_selector, curr_inf_conf, mean_correlations.T, eigenvalue.T, count,
         sparse=sparse_rounds)
 
-    go_node_char = namedtuple(
-        'Node_Char', [
-            'current', 'informativity', 'confusion_potential', 'p_value'])
     group_char = namedtuple(
         'Group_Char', [
             'UPs', 'num_UPs', 'average_connection', 'p_value'])
 
     if r_nodes is not None:
-        not_random_nodes = [str(int(GO_id))
-                            for GO_id in go_node_ids[r_nodes < p_val].tolist()]
+        not_random_nodes = [GO_id for GO_id in go_node_ids[r_nodes < p_val].tolist()]
 
         if not sparse_rounds:
             not_random_groups = np.concatenate(
@@ -423,21 +412,19 @@ def compare_to_blank(
         else:
             not_random_groups = []
 
-        print 'debug, not random nodes', not_random_nodes
-        print 'debug bulbs_id_disp_name',  \
-            go_interface_instance.GO2UP_Reachable_nodes.items()[:10]
-
+        log.debug('not random nodes: %s', not_random_nodes)
+        log.debug('bulbs_id_disp_name: %s',
+                  go_interface_instance.GO2UP_Reachable_nodes.items()[:10])
         # basically the second element below are the nodes that contribute to the information
         #  flow through the node that is considered as non-random
-        dct = dict((GO_id,
-                    tuple([go_node_char(*(dict_system[GO_id] +
-                                          r_nodes[go_node_ids == float(GO_id)].tolist())),
-                           list(set(go_interface_instance.GO2UP_Reachable_nodes[GO_id]
-                                    ).intersection(set(real_knowledge_interface.analytic_Uniprots
-                                                       )))]))
-                   for GO_id in not_random_nodes)
+        node_char_list = [
+            [int(GO_id), go_interface_instance.GO_Names[GO_id]] +
+            dict_system[GO_id] + r_nodes[go_node_ids == float(GO_id)].tolist() +
+            [list(set(go_interface_instance.GO2UP_Reachable_nodes[GO_id]).
+                  intersection(set(go_interface_instance.analytic_uniprots)))]
+            for GO_id in not_random_nodes]
 
-        return sorted(dct.iteritems(), key=lambda x: x[1][0][3]), not_random_groups
+        return sorted(node_char_list, key=lambda x: x[5]), not_random_groups
 
     return None, None
 
@@ -518,7 +505,6 @@ def auto_analyze(source=None, go_interface_instance=None, processors=3, desired_
             nr_nodes, nr_groups = compare_to_blank(
                 len(go_interface_instance.analytic_uniprots),
                 [1100, 1300],
-                go_interface_instance,
                 p_val=0.9,
                 go_interface_instance=go_interface_instance,
                 param_set=param_set)
@@ -544,7 +530,6 @@ def auto_analyze(source=None, go_interface_instance=None, processors=3, desired_
             nr_nodes, nr_groups = compare_to_blank(
                 len(go_interface_instance.analytic_uniprots),
                 [1100, 1300],
-                go_interface_instance,
                 p_val=0.9, sparse_rounds=sampling_depth,
                 go_interface_instance=go_interface_instance,
                 param_set=param_set)
@@ -552,9 +537,11 @@ def auto_analyze(source=None, go_interface_instance=None, processors=3, desired_
         go_interface_instance.export_conduction_system()
 
         for group in nr_groups:
-            print group
+            log.info(group)
+        log.info('\t NodeID \t Name \t current \t informativity \t confusion_potential \t p_val \t '
+                 'UP_list')
         for node in nr_nodes:
-            print node
+            log.info('\t %s \t %s \t %s \t %s \t %s \t %s \t %s', *node)
 
 
 if __name__ == "__main__":

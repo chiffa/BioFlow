@@ -11,6 +11,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy import histogram2d
 from scipy.stats import gaussian_kde
+from sys import path
+from bioflow.main_configs import output_location
+
 
 
 def better_2d_density_plot(x_data, y_data, threshold=3, bins=(100, 100)):
@@ -138,6 +141,7 @@ def render_2d_matrix(matrix, name):
     plt.title(name)
     plt.imshow(matrix, interpolation='nearest')
     plt.colorbar()
+    plt.savefig(path.join(output_location, name+'.png'))
     plt.show()
 
 

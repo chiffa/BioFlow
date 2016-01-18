@@ -18,6 +18,8 @@ from bioflow.utils.io_routines import get_source_bulbs_ids, get_background_bulbs
 
 log = get_logger(__name__)
 
+plt.gcf().set_size_inches(20, 15)
+
 
 # TODO: factor that into the "retrieve" routine of the laplacian wrapper
 def get_interactome_interface():
@@ -88,7 +90,7 @@ def spawn_sampler_pool(
          sparse_rounds,
          chromosome_specific,
          interactome_interface_instance)]
-    print payload
+    log.debug('spawning the sampler with payload %s', payload)
     process_pool.map(spawn_sampler, payload * pool_size)
 
 
@@ -249,7 +251,6 @@ def show_test_statistics(
 def compare_to_blank(
         blank_model_size,
         zoom_range_selector,
-        real_interactome_interface=None,
         p_val=0.05,
         sparse_rounds=False,
         cluster_no=3,
@@ -260,8 +261,6 @@ def compare_to_blank(
     :param blank_model_size: the number of uniprots in the blank model
     :param zoom_range_selector: tuple representing the coverage range for which we would
      want to see the histogram of current distributions
-    :param real_interactome_interface: The interactome_Interface that has run the current
-     computation
     :param p_val: desired p_value for the returned terms
     :param sparse_rounds: if set to a number, sparse computation technique would be used
      with the number of rounds equal the integer value of that argument
@@ -312,28 +311,22 @@ def compare_to_blank(
     final = np.concatenate(tuple(curr_inf_conf_general), axis=1)
     final_mean_correlations = np.concatenate(tuple(mean_correlation_accumulator), axis=0).T
     final_eigenvalues = np.concatenate(tuple(eigenvalues_accumulator), axis=0).T
-    curr_inf_conf = None
-    mean_correlations = None
-    eigenvalue = None
-    group2avg_offdiag = None
-    node_ids = None
-    dictionary_system = None
-    if real_interactome_interface:
-        node_currents = real_interactome_interface.node_current
-        dictionary_system = interactome_interface_instance.format_node_props(node_currents)
-        curr_inf_conf_tot = np.array(
-            [[int(key)] + list(val) for key, val in dictionary_system.iteritems()]).T
-        node_ids, curr_inf_conf = (curr_inf_conf_tot[0, :],
-                                   curr_inf_conf_tot[(1, 2), :])
 
-        if not sparse_rounds:
-            group2avg_offdiag, _, mean_correlations, eigenvalue = perform_clustering(
-                real_interactome_interface.UP2UP_voltages, cluster_no)
+    node_currents = interactome_interface_instance.node_current
+    dictionary_system = interactome_interface_instance.format_node_props(node_currents)
+    curr_inf_conf_tot = np.array(
+        [[int(key)] + list(val) for key, val in dictionary_system.iteritems()]).T
+    node_ids, curr_inf_conf = (curr_inf_conf_tot[0, :],
+                               curr_inf_conf_tot[(1, 2), :])
 
-        else:
-            group2avg_offdiag = np.array([[(0, ), 0, 0]]*cluster_no)
-            mean_correlations = np.array([[0, 0]]*cluster_no)
-            eigenvalue = np.array([-1]*cluster_no)
+    if not sparse_rounds:
+        group2avg_offdiag, _, mean_correlations, eigenvalue = perform_clustering(
+            interactome_interface_instance.UP2UP_voltages, cluster_no)
+
+    else:
+        group2avg_offdiag = np.array([[(0, ), 0, 0]]*cluster_no)
+        mean_correlations = np.array([[0, 0]]*cluster_no)
+        eigenvalue = np.array([-1]*cluster_no)
 
     log.info("stats on  %s samples" % count)
 
@@ -344,8 +337,6 @@ def compare_to_blank(
         zoom_range_selector, curr_inf_conf, mean_correlations.T,
         eigenvalue.T, count, sparse_rounds)
 
-    interactome_node_char = namedtuple(
-        'Node_Char', ['name', 'current', 'degree', 'p_value'])
     group_char = namedtuple(
         'Group_Char', [
             'UPs', 'num_UPs', 'average_connection', 'p_value'])
@@ -366,21 +357,17 @@ def compare_to_blank(
         # basically the second element below are the nodes that contribute to the
         #  information flow through the node that is considered as non-random
 
-        print 'debug, not random nodes', not_random_nodes
-        print 'debug bulbs_id_disp_name',  \
-            interactome_interface_instance.bulbs_id_2_display_name.items()[:10]
+        log.debug('debug, not random nodes: %s', not_random_nodes)
+        log.debug('debug bulbs_id_disp_name: %s',
+                  interactome_interface_instance.bulbs_id_2_display_name.items()[:10])
 
-        dct = dict(
-            (nr_node_id,
-             interactome_node_char(
-                 interactome_interface_instance.bulbs_id_2_display_name[nr_node_id],
-                 *
-                 (dictionary_system[nr_node_id] +
-                  r_nodes[node_ids == float(nr_node_id)].tolist())))
-            for nr_node_id in not_random_nodes)
+        node_char_list = [
+            [int(nr_node_id),
+             interactome_interface_instance.bulbs_id_2_display_name[nr_node_id]] +
+            dictionary_system[nr_node_id] + r_nodes[node_ids == float(nr_node_id)].tolist()
+            for nr_node_id in not_random_nodes]
 
-        return sorted(dct.iteritems(), key=lambda x: x[1][3]),\
-            not_random_groups
+        return sorted(node_char_list, key=lambda x: x[4]), not_random_groups
 
     return None, None
 
@@ -406,7 +393,7 @@ def auto_analyze(source_list, desired_depth=24, processors=4, background_list=No
         desired_depth = desired_depth / processors
 
     for _list in source_list:
-        log.info('Auto analyzing list of interest: %s %s', len(_list), _list)
+        log.info('Auto analyzing list of interest: %s', len(_list))
         interactome_interface = get_interactome_interface()
         log.debug("retrieved interactome_interface instance e_p_u_b_i length: %s",
                   len(interactome_interface.entry_point_uniprots_bulbs_ids))
@@ -437,7 +424,6 @@ def auto_analyze(source_list, desired_depth=24, processors=4, background_list=No
             nr_nodes, nr_groups = compare_to_blank(
                 len(interactome_interface.entry_point_uniprots_bulbs_ids),
                 [0.5, 0.6],
-                interactome_interface,
                 p_val=0.9, interactome_interface_instance=interactome_interface)
         else:
 
@@ -463,15 +449,15 @@ def auto_analyze(source_list, desired_depth=24, processors=4, background_list=No
             nr_nodes, nr_groups = compare_to_blank(
                 len(interactome_interface.entry_point_uniprots_bulbs_ids),
                 [0.5, 0.6],
-                interactome_interface,
                 p_val=0.9, sparse_rounds=sampling_depth,
                 interactome_interface_instance=interactome_interface)
 
         interactome_interface.export_conduction_system()
         for group in nr_groups:
-            print group
+            log.info(group)
+        log.info('\t Node_ID \t Name \t current \t connectedness \t p_value')
         for node in nr_nodes:
-            print node
+            log.info('\t %s \t %s \t %s \t %s \t %s', *node)
 
 
 if __name__ == "__main__":

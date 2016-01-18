@@ -280,7 +280,6 @@ class GeneOntologyInterface(object):
 
         log.info('Finished rebuilding the GO Interface object %s', self.pretty_time())
 
-
     def load(self):
         """
         loads itself from the saved dumps, in case the Filtering system is the same
