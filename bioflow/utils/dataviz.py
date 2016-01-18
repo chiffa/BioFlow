@@ -138,7 +138,6 @@ def render_2d_matrix(matrix, name):
     :param name:
     :return:
     """
-    print name
     plt.title(name)
     plt.imshow(matrix, interpolation='nearest')
     plt.colorbar()

@@ -421,10 +421,10 @@ def compare_to_blank(
         node_char_list = [
             [int(GO_id), go_interface_instance.GO_Names[GO_id]] +
             dict_system[GO_id] + r_nodes[go_node_ids == float(GO_id)].tolist() +
-            [go_interface_instance.interactome_interface_instance.
+            [[go_interface_instance.interactome_interface_instance.
                 bulbs_id_2_display_name[up_bulbs_id]
              for up_bulbs_id in list(set(go_interface_instance.GO2UP_Reachable_nodes[GO_id]).
-                intersection(set(go_interface_instance.analytic_uniprots)))]
+                intersection(set(go_interface_instance.analytic_uniprots)))]]
             for GO_id in not_random_nodes]
 
         return sorted(node_char_list, key=lambda x: x[5]), not_random_groups
