@@ -86,7 +86,7 @@ For more details or usage as a library, refer to the `usage guide
    :target: https://coveralls.io/github/chiffa/BioFlow?branch=master
 .. |Branch status| image:: https://img.shields.io/badge/branch_status-0.1.0_release_candidate-yellow
 .svg
-   :target: https://github.com/chiffa/BioFlow/blob/master/README.md
+   :target: https://github.com/chiffa/BioFlow/blob/master/README.rst
 .. |Code Issues| image:: https://www.quantifiedcode.com/api/v1/project/1c3f8cd001a44319abddab249101b646/badge.svg
    :target: https://www.quantifiedcode.com/app/project/1c3f8cd001a44319abddab249101b646
 .. |Duplicate Lines| image:: https://img.shields.io/badge/duplicate%20lines-17.66%25-yellowgreen.svg
