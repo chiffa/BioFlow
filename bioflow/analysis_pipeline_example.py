@@ -18,8 +18,12 @@ from bioflow.utils.io_routines import get_source_bulbs_ids, get_background_bulbs
 from bioflow.utils.log_behavior import clear_logs
 
 
-# first, let's clear logs:
-clear_logs()
+# # first, let's clear logs:
+# clear_logs()
+#
+# # if needed, clear the mongodb:
+# annotome_rand_samp.drop()
+# interactome_rand_samp.drop()
 
 # # setting static folders and urls for the databases
 set_folders('/home/andrei/support')

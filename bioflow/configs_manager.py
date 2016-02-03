@@ -152,7 +152,6 @@ class StructureGenerator(object):
             if pl_type == 'yeast':
                 cfdict = cls._generate_template(cls._S_Cerevisae)
             cfdict = cls._add_location_to_template(cfdict)
-            print cfdict
             dict2init_configs(write_path, cfdict)
 
     @classmethod
