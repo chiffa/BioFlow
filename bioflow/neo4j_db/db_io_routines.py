@@ -68,13 +68,14 @@ def annotations_2_node_chars(node_generator):
             log.warning("%s is floating alone in the wild. He feels lonely. %s",
                         str(node), 'The database is most likely broken.')
 
-        for object_node in annotates_backlink_generator:
-            node_bulbs_id = get_bulbs_id(object_node)
-            node_legacy_id = object_node.ID
-            node_type = object_node.element_type
-            node_display_name = object_node.displayName
-            referenced_nodes.append((node_type, node_display_name,
-                                     node_bulbs_id, node_legacy_id))
+        else:
+            for object_node in annotates_backlink_generator:
+                node_bulbs_id = get_bulbs_id(object_node)
+                node_legacy_id = object_node.ID
+                node_type = object_node.element_type
+                node_display_name = object_node.displayName
+                referenced_nodes.append((node_type, node_display_name,
+                                         node_bulbs_id, node_legacy_id))
 
     return referenced_nodes
 

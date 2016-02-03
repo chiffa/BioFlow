@@ -60,7 +60,7 @@ class StructureGenerator(object):
         'shortname': 'human',
         'tax_id': '9606',
         'Reactome_name': 'Homo_sapiens.owl',
-        'Biogrid_name': 'Homo_Sapiens',
+        'Biogrid_name': 'Homo_sapiens',
         'HINT_name': 'HumanBinaryHQ.txt'}
 
     # default configuration elements for mice proteins analysis
@@ -243,8 +243,8 @@ def set_folders(file_directory, neo4jserver='http://localhost:7474',
 
 
 if __name__ == "__main__":
-    set_folders('/home/ank/datastore')
-    StructureGenerator.build_source_config('yeast')
+    set_folders('/home/andrei/support')
+    StructureGenerator.build_source_config('human')
     # pp = PrettyPrinter(indent=4)
     # pp.pprint(parse_configs())
     # StructureGenerator.pull_online_dbs()

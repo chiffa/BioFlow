@@ -19,10 +19,10 @@ from bioflow.utils.log_behavior import clear_logs
 
 
 # first, let's clear logs:
-# clear_logs()
+clear_logs()
 
 # # setting static folders and urls for the databases
-# set_folders('/home/andrei/support')
+set_folders('/home/andrei/support')
 # # pulling the online databases
 # StructureGenerator.pull_online_dbs()
 # # setting the organism to yeast
