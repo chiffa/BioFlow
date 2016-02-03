@@ -315,21 +315,36 @@ def cast_background_set_to_bulbs_id(background_set_csv_location=background_prote
     writer(open(Dumps.background_set_bulbs_ids, 'w'), delimiter='\n').writerow(source[2])
 
 
-def memoize_bulbs_type(bulbs_type, dict_to_load_into=None):
+def stable_get_all(bulbs_class):
+    """
+    A Bulbs_NodeProxy.get_all() wrapper that guards against the failure of the neo4j index.
+
+    :param bulbs_class: Node Proxy object
+    """
+    unsafe_generator = bulbs_class.get_all()
+    type_var = bulbs_class.client.config.type_var
+    element_type = bulbs_class.element_class.get_element_type(bulbs_class.client.config)
+    for bulbs_node in unsafe_generator:
+        if getattr(bulbs_node, type_var) == element_type:
+            yield bulbs_node
+
+
+def memoize_bulbs_type(bulbs_class, dict_to_load_into=None):
     """
     Loads a bulbs type ID_2_object into a supplied dict. If no dict supplied, returns the dict as
     a result
 
-    :param bulbs_type: bulbs class whose contents we want to memoize
+    :param bulbs_class: bulbs class whose contents we want to memoize
     :param dict_to_load_into: if provided, will be loaded into and then returned
     :return:
     """
     if dict_to_load_into is None:
         dict_to_load_into = {}
-    log.info('starting %s memoization load', bulbs_type)
-    for bulbs_node in bulbs_type.get_all():
-        dict_to_load_into[bulbs_node.ID] = bulbs_type.get(get_bulbs_id(bulbs_node))
-    log.info('%s Loaded, contains %s elements', bulbs_type, len(dict_to_load_into))
+    log.info('starting %s memoization load', bulbs_class)
+
+    for bulbs_node in stable_get_all(bulbs_class):
+        dict_to_load_into[bulbs_node.ID] = bulbs_class.get(get_bulbs_id(bulbs_node))
+    log.info('%s Loaded, contains %s elements', bulbs_class, len(dict_to_load_into))
 
     return dict_to_load_into
 
@@ -367,9 +382,9 @@ def clear_all(instruction_list):
     for name in instruction_list:
         bulbs_class, bulbs_alias = bulbs_names_dict[name]
         log.info('processing class: %s, alias %s', bulbs_class, bulbs_alias)
-        if bulbs_class.get_all():
+        if stable_get_all(bulbs_class):
             id_list = [get_bulbs_id(bulbs_class_instance)
-                       for bulbs_class_instance in bulbs_class.get_all()]
+                       for bulbs_class_instance in stable_get_all(bulbs_class)]
             id_list_length = len(id_list) / 100.
             for counter, ID in enumerate(id_list):
                 del_set = get_attached_annotations(ID)
@@ -422,6 +437,6 @@ if __name__ == "__main__":
     # pprint(resdict)
     # print reslist
     # run_diagnostics(full_list)
-    cast_analysis_set_to_bulbs_ids()
-    # TODO: critical: check if it works
-    cast_background_set_to_bulbs_id(background_set_csv_location=None)
+    memoize_bulbs_type(bulbs_names_dict['UNIPROT'][0])
+    # cast_analysis_set_to_bulbs_ids()
+    # cast_background_set_to_bulbs_id(background_set_csv_location=None)

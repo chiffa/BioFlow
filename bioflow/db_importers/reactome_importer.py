@@ -9,6 +9,7 @@ from bioflow.internal_configs import Leg_ID_Filter
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from bioflow.neo4j_db.db_io_routines import get_bulbs_id
 from bioflow.bio_db_parsers.reactomeParser import ReactomeParser
+from bioflow.neo4j_db.db_io_routines import stable_get_all
 
 log = get_logger(__name__)
 
@@ -271,7 +272,7 @@ def get_one_meta_set(bulbs_bound_class):
 
     :param bulbs_bound_class:
     """
-    for bulbs_object in bulbs_bound_class.get_all():
+    for bulbs_object in stable_get_all(bulbs_bound_class):
         if bulbs_object is not None:
             memoization_dict[bulbs_object.ID] = bulbs_object
 

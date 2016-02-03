@@ -12,34 +12,24 @@ from collections import defaultdict
 from copy import copy
 from random import shuffle, sample
 from time import time
-
 import numpy as np
 from scipy.sparse import lil_matrix
 from scipy.sparse.csgraph import connected_components
 from scipy.sparse.linalg import eigsh
 
 from bioflow.utils.gdfExportInterface import GdfExportInterface
-
 from bioflow.utils.io_routines import write_to_csv, dump_object, undump_object
-
 from bioflow.utils.log_behavior import get_logger
-
 from bioflow.main_configs import Chromosome_source, Chromosome_file_filter
-
 from bioflow.main_configs import Dumps, Outputs, interactome_rand_samp
-
 from bioflow.internal_configs import edge_type_filters, Adjacency_Martix_Dict, \
     Conductance_Matrix_Dict
-
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
-
 from bioflow.neo4j_db.db_io_routines import expand_from_seed, \
     erase_custom_fields, node_extend_once, get_bulbs_id
-
 from bioflow.neo4j_db.graph_content import bulbs_names_dict
-
 from bioflow.algorithms_bank import conduction_routines as cr
-
+from bioflow.neo4j_db.db_io_routines import stable_get_all
 
 log = get_logger(__name__)
 
@@ -294,9 +284,9 @@ class InteractomeInterface(object):
             seeds = set()
             total_reaction_participants = 0
             for ReactionType in self.reactions_types_list:
-                if not ReactionType.get_all():
+                if not stable_get_all(ReactionType):
                     continue
-                for Reaction in ReactionType.get_all():
+                for Reaction in stable_get_all(ReactionType):
                     if Reaction is None:
                         continue
                     reaction_participants, reaction_particpants_no = node_extend_once(
@@ -463,7 +453,7 @@ class InteractomeInterface(object):
         self.reached_uniprots_bulbs_id_list = list(set(self.reached_uniprots_bulbs_id_list))
         log.info("reached uniprots: %s", len(self.reached_uniprots_bulbs_id_list))
 
-        up_generator = DatabaseGraph.UNIPORT.get_all()
+        up_generator = stable_get_all(DatabaseGraph.UNIPORT)
         if up_generator:
             for up_node in up_generator:
                 bulbs_node_id = get_bulbs_id(up_node)

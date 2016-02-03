@@ -7,7 +7,7 @@ Confirmed minor refactoring requiring a sane rollback:
 -  Split the computation of the blank from the performing of the
    analysis round
 
--  Properly indent multi-line :param type paramname: descriptors
+-  Properly indent multi-line :param <parameter type> <parameter name>: descriptors
 
 -  Inline the background for the InteractomeInstance into the __init__
 
@@ -15,7 +15,7 @@ Confirmed minor refactoring requiring a sane rollback:
 InteractomeInstance and BioKnowledgeInterface
 
 - Build an "inspector routine" that would allow us to see the nodes that would allow us to route
-teh most information => we need to recompute the most central nodes in Interactome, because we
+the most information => we need to recompute the most central nodes in Interactome, because we
 still observe a heavy skew in the nodes with a high degree.
 
 Minor refactoring suggestions:

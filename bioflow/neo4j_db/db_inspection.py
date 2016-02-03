@@ -1,7 +1,9 @@
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from bioflow.utils.log_behavior import get_logger
+from bioflow.neo4j_db.db_io_routines import stable_get_all
 
 log = get_logger(__name__)
+
 
 def print_node_look_up_by_id(domain, search_legacy_id):
     """
@@ -31,7 +33,7 @@ def count_nodes(domain):
     :param domain: Domain of the DatabaseGraph.Object whose objects we are going to count
     :return: number of objects in the domain
     """
-    return sum(1 for _ in domain.get_all())
+    return sum(1 for _ in stable_get_all(domain))
 
 
 def print_look_up_by_id_for_a_set(domain, id_set):
