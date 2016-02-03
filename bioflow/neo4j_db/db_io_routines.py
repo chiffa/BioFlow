@@ -338,13 +338,14 @@ def memoize_bulbs_type(bulbs_class, dict_to_load_into=None):
     :param dict_to_load_into: if provided, will be loaded into and then returned
     :return:
     """
+    class_name = bulbs_class.element_class.get_element_type(bulbs_class.client.config)
     if dict_to_load_into is None:
         dict_to_load_into = {}
-    log.info('starting %s memoization load', bulbs_class)
+    log.info('starting %s memoization load', class_name)
 
     for bulbs_node in stable_get_all(bulbs_class):
         dict_to_load_into[bulbs_node.ID] = bulbs_class.get(get_bulbs_id(bulbs_node))
-    log.info('%s Loaded, contains %s elements', bulbs_class, len(dict_to_load_into))
+    log.info('%s Loaded, contains %s elements', class_name, len(dict_to_load_into))
 
     return dict_to_load_into
 
