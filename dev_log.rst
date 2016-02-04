@@ -4,30 +4,92 @@ TODOs for the project in the future:
 Confirmed minor refactoring requiring a sane rollback:
 ------------------------------------------------------
 
+-  Properly indent multi-line :param <parameter type> <parameter name>: descriptors
+
+New features:
+-------------
+
+-  Introduce signal over noise ratio: amount of current in the current
+   configuration compared to what we would have expected in case of a
+   random set of nodes. We could introduce this as a bootstrap on a
+   random subset of nodes to figure which ones are random and which ones
+   aren't
+
+-  Add protein abundance level
+
+-  Add a coarseness feature on the interactome analysis affecting
+   sampling behavior, so that precision is sacrificed in favor of
+   computation speed.
+
+-  Language of network alignement/explanation of net1 by net2: allows
+   to compare GO annotation with interactome, cell type specificity 
+   analysis or organ context.
+
+-  Build an "inspector routine" that would allow us to see the nodes that would allow us to route
+   the most information => we need to recompute the most central nodes in Interactome, because we
+   still observe a heavy skew in the nodes with a high degree.
+
+-  add @jit() wrapper in order to compile the elements within the current calculation routines.
+   
+-  We always need to first build Interactome Interface before BioKnowledge Interface and in the
+   end we need to have both of them build before we can run automated analysis. A nice fix would be
+   to raise flags when they are loaded, instead of relying on the loading behaviors.
+
+- single command to change the neo4j instance bieng used or copied
+   
+   - copy a designated database
+   
+   - cd into the designated database and execute neo4j start/stop
+
+
+Structure-required refactoring:
+-------------------------------
+-  separate the envelopes for the GO and Reactome graphs retrieval from
+   the envelope used to recover and compute over the graph.
+   
+   -  remove the memoization of individual pairs during the flow withing
+      the group computation
+
+
+-  transfer the annotation search to an ElasticSearch engine.
+
+   -  remove the overhead of loading all the annotation nodes to the
+      neo4j instance
+
+   -  allow efficient filtering on the node types. Currently type
+      detection and filtering is done upon enumeration. In practice,
+      this is not critical, because DB Ids from different databases have
+      low intersection
+
+   -  approximate matching capacities for gene names mistypings
+
 -  Split the computation of the blank from the performing of the
    analysis round
-
--  Properly indent multi-line :param <parameter type> <parameter name>: descriptors
 
 -  Inline the background for the InteractomeInstance into the __init__
 
 -  Inline the undumping and dependent variables calculation into the __init__ of
-InteractomeInstance and BioKnowledgeInterface
+   InteractomeInstance and BioKnowledgeInterface
 
-- Build an "inspector routine" that would allow us to see the nodes that would allow us to route
-the most information => we need to recompute the most central nodes in Interactome, because we
-still observe a heavy skew in the nodes with a high degree.
+-  change to element import directories from which too many
+   functions/objects are imported (import numpy as np)
 
-Minor refactoring suggestions:
-------------------------------
+-  Make methods running large systems of procedures to being
+   dictionary-driven
 
--  add active state memoization for the import commander, so that when
+Good-to-have; non-critical:
+---------------------------
+
+-  In all the DB calls, add a mock-able wrapper that would read the
+   state of a project-wide variable and if it is set to True (in
+   unittests) will switch it to
+
+-  Bulk-insertion into the neo4j. => Requires taking over the bulbs engine
+
+-  Add active state memoization for the import commander, so that when
    an exception happens, it prints it, terminates gracefully and upon
    restart offers an option to resume from the point of failure while
    managing all the support
-
--  separate configs by the level of modification frequency and move to
-   the top-level directory
 
 -  modify the config generator code so that there is only one place
    where the default configurations are stored and can be modified from
@@ -47,7 +109,6 @@ Minor refactoring suggestions:
 
    -  Configs that allow switching between organisms
 
-      -  Forking and switching the databases
       -  Re-filling the database
       -  Re-building the intermediate representations
       -  Re-building the mongoDB reference and average heatmap
@@ -60,72 +121,6 @@ Minor refactoring suggestions:
    we might want to insert "singleton" module into the block, that
    performs all the parsings only once per program run.
 
--  In case of go/uniprot and reactome parsers, create wrapping objects,
-   that would contain memoization dictionaries.
-
--  change to element import directories from which too many
-   functions/objects are imported (import numpy as np)
-
--  refactor the configs to contain the following elements:
-
-   -  Configs computed based on the .ini files
-   -  Inner configs that has an effect on what is being computed
-   -  Inner configs that has only anything to do with the project
-      structure and implementation
-
--  remove the memoization of individual pairs during the flow withing
-   the group computation
-
--  Make methods running large systems of procedures to being
-   dictionary-driven
-
--  create a set of wrappers that would log, either into INFO or into
-   DEBUG channel, every time function is called and parameters on the
-   entrance and the exit
-
--  add @jit() wrapper in order to compile the elements within the current calculation routines.
-
-- explicit mention of the rebuild dataset is not set in the BioKnowledge Interface
-
-- We always need to first build Interactome Interface before BioKnowledge Interface and in the
-end we need to have both of them build before we can run automated analysis. A nice fix would be
-to raise flags when they are loaded, instead of relying on the loading behaviors.
-
-Major refactoring suggestions:
-------------------------------
-
--  transfer the annotation search to an ElasticSearch engine. Reasons:
-
-   -  remove the overhead of loading all the annotation nodes to the
-      neo4j instance
-
-   -  allow efficient filtering on the node types. Currently type
-      detection and filtering is done upon enumeration. In practice,
-      this is not critical, because DB Ids from different databases have
-      low intersection
-
-   -  approximate matching capacities for gene names mistypings
-
--  in all the DB calls, add a mock-able wrapper that would read the
-   state of a project-wide variable and if it is set to True (in
-   unittests) will switch it to
-
--  Introduce signal over noise ratio: amount of current in the current
-   configuration compared to what we would have expected in case of a
-   random set of nodes. We could introduce this as a bootstrap on a
-   random subset of nodes to figure which ones are random and which ones
-   aren't
-
--  Add protein abundance level
-
--  Add a coarseness feature on the interactome analysis affecting
-   sampling behavior, so that precision is sacrificed in favor of
-   computation speed.
-
--  separate the envelopes for the GO and Reactome graphs retrieval from
-   the envelope used to recover and compute over the graph.
-
--  Bulk-insertion into the neo4j. => Requires taking over the bulbs engine
 
 Documentation and description:
 ==============================
