@@ -9,7 +9,7 @@ from collections import defaultdict
 from csv import reader, writer
 from pprint import PrettyPrinter, pprint
 from bioflow.main_configs import forbidden_bulbs_ids, Dumps, analysis_protein_ids_csv, \
-    background_protein_ids_csv
+    background_protein_ids_csv, verbosity
 from bioflow.internal_configs import edge_type_filters, Leg_ID_Filter, annotation_nodes_ptypes
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from bioflow.neo4j_db.graph_content import bulbs_names_dict, full_list, forbidden_verification_list
@@ -163,7 +163,10 @@ def look_up_annotation_set(p_load_list, p_type=''):
     db_id_list = [db_id_mapping_helper(value) for key, value in load_2_name_list]
     not_found_list = [key for key, value in load_2_name_list if value == []]
     for warnId in not_found_list:
-        log.warning('Following ID has no corresponding entry in the database: %s', warnId)
+        if verbosity > 1:
+            log.warning('Following ID has no corresponding entry in the database: %s', warnId)
+        else:
+            log.debug('Following ID has no corresponding entry in the database: %s', warnId)
     log.info('%s IDs out of %s have not been found', len(not_found_list), len(p_load_list))
     return not_found_list, load_2_name_list, db_id_list
 

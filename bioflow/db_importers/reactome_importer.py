@@ -4,7 +4,7 @@ Created on Jun 15, 2013
 """
 import pickle
 from bioflow.utils.log_behavior import get_logger
-from bioflow.main_configs import Dumps, ReactomeBioPax
+from bioflow.main_configs import Dumps, ReactomeBioPax, verbosity
 from bioflow.internal_configs import Leg_ID_Filter
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from bioflow.neo4j_db.db_io_routines import get_bulbs_id
@@ -44,8 +44,12 @@ def insert_minimal_annotations(annotated_node, annot_type_2_annot):
             for annotation in annotation_set:
                 annotation_node = DatabaseGraph.AnnotNode.create(
                     ptype=annotation_type, payload=annotation)
-                log.info('created annotation %s for %s, _id:%s',
-                         annotation_node, annotated_node, annotated_node.ID)
+                if verbosity > 1:
+                    log.info('created annotation %s for %s, _id:%s',
+                             annotation_node, annotated_node, annotated_node.ID)
+                else:
+                    log.debug('created annotation %s for %s, _id:%s',
+                             annotation_node, annotated_node, annotated_node.ID)
                 DatabaseGraph.is_annotated.create(
                     annotated_node,
                     annotation_node,
@@ -64,7 +68,8 @@ def insert_meta_objects(bulbs_graph_class, meta_id_2_property_dict):
     total_properties = len(meta_id_2_property_dict)
 
     for i, (meta_name, property_dict) in enumerate(meta_id_2_property_dict.iteritems()):
-        log.info('meta_insert: property %s out of %s', i, total_properties)
+        if i*20 % total_properties < 21:
+            log.info('meta_insert: property %s out of %s', i, total_properties)
 
         primary = bulbs_graph_class.create(
             ID=meta_name,

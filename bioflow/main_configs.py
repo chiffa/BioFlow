@@ -10,7 +10,6 @@ from bioflow.configs_manager import parse_configs, conf_file_path_flattener
 from bioflow.utils.general_utils import high_level_os_io as hl_os_io
 
 
-
 dump_location = path.join(path.abspath(path.dirname(__file__)), 'dumps')
 output_location = path.join(path.abspath(os.path.expanduser('~')), 'outputs')
 log_location = path.join(path.abspath(path.dirname(__file__)), 'logs')
@@ -25,6 +24,8 @@ Servers, Options, Sources, Predictions = parse_configs()
 mongo_db_url = Servers['PRODUCTION']['mongodb_server']
 neo4j_server = Servers['PRODUCTION']['server_neo4j']
 ReadSourceDBs = conf_file_path_flattener(Sources)
+
+verbosity = int(Options['VERBOSITY']['level'])
 
 # REQUIRED PARAMETERS
 GeneOntology = ReadSourceDBs['GO']
@@ -131,8 +132,6 @@ if path.isfile(Dumps.Forbidden_IDs):
 rna_source = "/home/ank/Documents/External_Predictions/Ben_RNA_seq/counts.tsv"
 analysis_protein_ids_csv = "/home/andrei/support/tmp/Chr_10.txt"
 background_protein_ids_csv = "/home/ank/projects_files/2014/Poly_Pharma/HJ-screen/Allgene_R2.csv"
-
-
 
 
 if __name__ == "__main__":

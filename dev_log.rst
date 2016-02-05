@@ -41,6 +41,8 @@ New features:
    
    - cd into the designated database and execute neo4j start/stop
 
+- Different levels of verbosity set in the configurations
+
 
 Structure-required refactoring:
 -------------------------------
