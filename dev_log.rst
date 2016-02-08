@@ -6,6 +6,7 @@ Confirmed minor refactoring requiring a sane rollback:
 
 -  Properly indent multi-line :param <parameter type> <parameter name>: descriptors
 
+
 New features:
 -------------
 
@@ -41,8 +42,8 @@ New features:
    
    - cd into the designated database and execute neo4j start/stop
 
-- Different levels of verbosity set in the configurations
-
+-  write the circulation files so that it is possible to calculate the information circulation
+    between two sets or as set and a single protein (application for p53 and PKD1 regulators)
 
 Structure-required refactoring:
 -------------------------------
@@ -78,6 +79,18 @@ Structure-required refactoring:
 
 -  Make methods running large systems of procedures to being
    dictionary-driven
+
+-  Factor out the traversals used in order to build the Laplacians
+
+-  Refactor the flow calculation as a calculation between two sets protein sets:
+
+    -  Dense calculation or sampling is a strategy
+
+    -  Self-set is just when the two sets are equal
+
+    -  Circulation with a single protein is a special case when one of the sets contain a single
+    element.
+
 
 Good-to-have; non-critical:
 ---------------------------
