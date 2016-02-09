@@ -18,52 +18,53 @@ from bioflow.utils.io_routines import get_source_bulbs_ids, get_background_bulbs
 from bioflow.utils.log_behavior import clear_logs
 
 
-# # first, let's clear logs:
-# clear_logs()
-#
-# # if needed, clear the mongodb:
-# annotome_rand_samp.drop()
-# interactome_rand_samp.drop()
+if __name__ == "__main__":
+    # # first, let's clear logs:
+    # clear_logs()
+    #
+    # # if needed, clear the mongodb:
+    # annotome_rand_samp.drop()
+    # interactome_rand_samp.drop()
 
-# # setting static folders and urls for the databases
-set_folders('/home/andrei/support')
-# # pulling the online databases
-# StructureGenerator.pull_online_dbs()
-# # setting the organism to yeast
-StructureGenerator.build_source_config('human')
+    # # setting static folders and urls for the databases
+    set_folders('/home/andrei/support')
+    # # pulling the online databases
+    # StructureGenerator.pull_online_dbs()
+    # # setting the organism to yeast
+    StructureGenerator.build_source_config('human')
 
-# # clearing the database, if required
-# destroy_db()
+    # # clearing the database, if required
+    # destroy_db()
 
-# building the neo4j database
-build_db()
+    # building the neo4j database
+    build_db()
 
-# # set the source file of the ids of perturbed proteins and background set:
-# cast_analysis_set_to_bulbs_ids("/home/andrei/HS_30_Linhao_outliers.txt")
-# cast_background_set_to_bulbs_id(
-#     background_set_csv_location=None,
-#     analysis_set_csv_location="/home/andrei/HS_30_Linhao_outliers.txt")
+    # # set the source file of the ids of perturbed proteins and background set:
+    # cast_analysis_set_to_bulbs_ids("/home/andrei/HS_30_Linhao_outliers.txt")
+    # cast_background_set_to_bulbs_id(
+    #     background_set_csv_location=None,
+    #     analysis_set_csv_location="/home/andrei/HS_30_Linhao_outliers.txt")
 
-# get the bulbs ids oif the nodes we would like to analyze
-# source_bulbs_ids = get_source_bulbs_ids()
-# background_bulbs_ids = get_background_bulbs_ids()
+    # get the bulbs ids oif the nodes we would like to analyze
+    # source_bulbs_ids = get_source_bulbs_ids()
+    # background_bulbs_ids = get_background_bulbs_ids()
 
-# # building the interactome interface object
-# local_matrix = InteractomeInterface(main_connex_only=True, full_impact=False)
-# local_matrix.full_rebuild()
+    # # building the interactome interface object
+    # local_matrix = InteractomeInterface(main_connex_only=True, full_impact=False)
+    # local_matrix.full_rebuild()
 
-# # perform the interactome analysis
-# interactome_analysis([source_bulbs_ids], desired_depth=24, processors=3,
-#                      background_list=background_bulbs_ids, skip_sampling=False)
+    # # perform the interactome analysis
+    # interactome_analysis([source_bulbs_ids], desired_depth=24, processors=3,
+    #                      background_list=background_bulbs_ids, skip_sampling=False)
 
-# # building the reference parameters set
-# _filter = ['biological_process']
-# ref_param_set = [_filter, background_bulbs_ids, (1, 1), True, 3]
+    # # building the reference parameters set
+    # _filter = ['biological_process']
+    # ref_param_set = [_filter, background_bulbs_ids, (1, 1), True, 3]
 
-# build the annotome interface
-# annot_matrix = AnnotomeInterface(*ref_param_set)
-# annot_matrix.full_rebuild()
+    # build the annotome interface
+    # annot_matrix = AnnotomeInterface(*ref_param_set)
+    # annot_matrix.full_rebuild()
 
-# perform the knowledge analysis
-# knowledge_analysis([source_bulbs_ids], desired_depth=24, processors=3,
-#                    param_set=ref_param_set, skip_sampling=False)
+    # perform the knowledge analysis
+    # knowledge_analysis([source_bulbs_ids], desired_depth=24, processors=3,
+    #                    param_set=ref_param_set, skip_sampling=False)

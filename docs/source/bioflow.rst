@@ -9,7 +9,6 @@ Subpackages
     bioflow.algorithms_bank
     bioflow.annotation_network
     bioflow.bio_db_parsers
-    bioflow.data_repository_retrieval
     bioflow.db_importers
     bioflow.molecular_network
     bioflow.neo4j_db
