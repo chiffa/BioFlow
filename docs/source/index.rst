@@ -1,4 +1,4 @@
-.. include:: ../../README.rst
+.. include:: ../../inlined_readme.rst
 
 Usage Guides:
 =============
