@@ -59,7 +59,7 @@ Fire up the databases :
     > /home/ank/neo4j-yeast/bin/neo4j start
     > nohup /home/ank/mongodb/bin/mongod &
 
-Setup environement :
+Setup environment :
 
     > bioflow initialize --/home/ank/data_store
     > bioflow downloaddbs
@@ -75,17 +75,17 @@ analysis :
 
     > bioflow setsource /home/ank/source_data/perturbed_proteins_ids.csv
 
-Build netowrk interfaces :
+Build network interfaces :
 
     > bioflow extractmatrix --interactome
     > bioflow extractmatrix --annotome
 
-Peform the analysis:
+Perform the analysis:
 
     > bioflow analyze --matrix interactome --depth 24 --processors 4
     > bioflow analyze --matrix annotome --depth 24 --processors 4
 
-The resulst of analysis will be available in the output folder, and
+The results of analysis will be available in the output folder, and
 printed out to the standard output.
 
 For more details or usage as a library, refer to the [usage
