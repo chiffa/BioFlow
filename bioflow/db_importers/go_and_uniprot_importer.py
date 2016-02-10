@@ -47,7 +47,7 @@ def import_gene_ontology(go_terms, go_terms_structure):
         log.debug('creating GO terms relations %s %%',
                   str("{0:.2f}".format(float(i) / float(go_links_number) * 100)))
         if i*20 % go_links_number < 20:
-            log.info('GO terms import: %s %%',
+            log.info('GO terms linking: %s %%',
                      "{0:.2f}".format(float(i) / float(go_links_number) * 100))
         go_term_1 = GO_term_memoization_dict[relation[0]]
         go_term_2 = GO_term_memoization_dict[relation[2]]
