@@ -70,11 +70,9 @@ def insert_meta_objects(bulbs_graph_class, meta_id_2_property_dict):
     config = bulbs_graph_class.client.config
     element_type = bulbs_graph_class.element_class.get_element_type(config)
 
-    log.info('inserting %s:', element_type)
-
     for i, (meta_name, property_dict) in enumerate(meta_id_2_property_dict.iteritems()):
         if i*20 % total_properties < 21:
-            log.info('meta_insert: property %s out of %s', i, total_properties)
+            log.info('insert %s: %s out of %s', element_type, i, total_properties)
 
         primary = bulbs_graph_class.create(
             ID=meta_name,

@@ -373,8 +373,8 @@ def recompute_forbidden_ids(forbidden_entities_list):
             # Wait, why isn't it breaking up here? only bub
             associated_node_ids = node_generator_2_bulbs_ids(generator)
             forbidden_ids_list.update(associated_node_ids)
-    log.info('recomputed the forbidden IDs %s. \n Dumping them to %s',
-             forbidden_ids_list, Dumps.Forbidden_IDs)
+    log.info('recomputed %s forbidden IDs. \n Dumping them to %s',
+             len(forbidden_ids_list), Dumps.Forbidden_IDs)
     pickle.dump(forbidden_ids_list, file(Dumps.Forbidden_IDs, 'w'))
 
 
@@ -408,12 +408,14 @@ def run_diagnostics(instructions_list):
     :param instructions_list:
     """
     super_counter = 0
+    str_list = ['Database Diagnostics:']
     for name in instructions_list:
         bulbs_class, bulbs_alias = bulbs_names_dict[name]
         counter = bulbs_class.index.count(element_type=bulbs_alias)
-        print name, ':', counter
+        str_list.append('\t %s : %s' % (name, counter))
         super_counter += counter
-    print 'Total: ', super_counter
+    str_list.append('Total : %s' % super_counter)
+    log.info('\n'.join(str_list))
 
 
 # Yes, I know what goes below here is ugly and shouldn't be in the
