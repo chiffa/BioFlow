@@ -45,6 +45,13 @@ New features:
 -  write the circulation files so that it is possible to calculate the information circulation
     between two sets or as set and a single protein (application for p53 and PKD1 regulators)
 
+-  distinction between downstream and upstream targets can be implemented by translating the
+    directed graph into an associated Markov transition matrix. This will allow to:
+        - explicitly allow ponderation of importance of sources/sinks of information
+        - account only for the information propagating downstream the pathways, not both ways as
+        it is the case now
+        - synchronous computation of the flow for all sources/sinks
+
 Structure-required refactoring:
 -------------------------------
 -  separate the envelopes for the GO and Reactome graphs retrieval from
