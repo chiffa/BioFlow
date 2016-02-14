@@ -345,7 +345,7 @@ class GeneOntologyInterface(object):
         log.info('total number of UPs without a go_node annotation: %s out of %s',
                  uniprots_without_gene_ontology_terms, len(self.InitSet))
 
-    # TODO: needs refactoring: cyclo complexity is way too high.
+    # TODO: REFACTORING. Method is excessively complex.
     def get_gene_ontology_structure(self):
         """
         Loads all of the relations between the GOs that are generalisation of the seedList
@@ -471,7 +471,7 @@ class GeneOntologyInterface(object):
         return pow(-self.correction_factor[0] * self.total_Entropy /
                    math.log(1 / float(number), 2), self.correction_factor[1])
 
-    # TODO: refactor. Method is excessively complex.
+    # TODO: REFACTORING. Method is excessively complex.
     def get_go_reach(self):
         """
         Recovers by how many different uniprots each GO term is reached, both in

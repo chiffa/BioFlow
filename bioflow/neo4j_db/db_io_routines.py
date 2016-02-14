@@ -28,7 +28,7 @@ def get_bulbs_id(bulbs_node):
     return bulbs_node._id
 
 
-# TODO: refactor when we are going to offload annotations to ElasticSearch engine
+# TODO: REFACTOR: offload annotations to ElasticSearch engine
 def get_attached_annotations(bulbs_node_id):
     """
     Recovers ids of annotation nodes attached the the node with a given bulbs id
@@ -208,7 +208,7 @@ def node_extend_once(edge_type_filter, main_connex_only, core_node):
     for edge_type in edge_type_filter:
         if core_node.bothV(edge_type) is not None:  # get the next edge type
 
-            # TODO: refactor connex logic.
+            # TODO: REFACTOR: connex logic is quite unclear
             for node in core_node.bothV(edge_type):  # get all the nodes in core_node
                 connex = True
 

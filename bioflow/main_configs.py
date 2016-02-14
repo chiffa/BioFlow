@@ -6,7 +6,7 @@ import pickle
 from os import path, makedirs
 from pprint import PrettyPrinter
 from pymongo import MongoClient
-from bioflow.configs_manager import parse_config, conf_file_path_flattener
+from bioflow.configs_manager import parse_config, compute_full_paths
 from bioflow.utils.general_utils import high_level_os_io as hl_os_io
 
 
@@ -21,11 +21,12 @@ hl_os_io.mkdir_recursive(log_location)
 Servers = parse_config('servers')
 Options = parse_config('options')
 Sources = parse_config('sources')
+DB_locations = parse_config('online_dbs')
 
 # SERVERS CONFIGURATIONS
 mongo_db_url = Servers['PRODUCTION']['mongodb_server']
 neo4j_server = Servers['PRODUCTION']['server_neo4j']
-source_db_paths = conf_file_path_flattener(Sources)
+source_db_paths = compute_full_paths(Sources, DB_locations, Servers['PRODUCTION'])
 
 verbosity = int(Options['VERBOSITY']['level'])
 
@@ -39,11 +40,6 @@ biogrid_path = source_db_paths['BIOGRID']
 # TAXONOMY IDs for Uniprot parsing:
 up_tax_ids = [tax_id.strip() for tax_id in Sources['UNIPROT'][
     'tax_ids'].split(',') if tax_id not in ('', ' ')]
-
-# OPTIONAL PARAMETERS
-Chromosome_source = source_db_paths['CHROMOSOMES']
-Chromosome_file_filter = Sources['CHROMOSOMES']['namepattern']
-# PROTEIN ABOUNDANCES?
 
 # Defines Mongodb properties and connections
 pymongo_prefix = Sources['INTERNAL']['mongoprefix']
