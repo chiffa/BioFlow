@@ -6,7 +6,7 @@ import pickle
 from os import path, makedirs
 from pprint import PrettyPrinter
 from pymongo import MongoClient
-from bioflow.configs_manager import parse_configs, conf_file_path_flattener
+from bioflow.configs_manager import parse_config, conf_file_path_flattener
 from bioflow.utils.general_utils import high_level_os_io as hl_os_io
 
 
@@ -18,28 +18,30 @@ hl_os_io.mkdir_recursive(dump_location)
 hl_os_io.mkdir_recursive(output_location)
 hl_os_io.mkdir_recursive(log_location)
 
-Servers, Options, Sources, Predictions = parse_configs()
+Servers = parse_config('servers')
+Options = parse_config('options')
+Sources = parse_config('sources')
 
 # SERVERS CONFIGURATIONS
 mongo_db_url = Servers['PRODUCTION']['mongodb_server']
 neo4j_server = Servers['PRODUCTION']['server_neo4j']
-ReadSourceDBs = conf_file_path_flattener(Sources)
+source_db_paths = conf_file_path_flattener(Sources)
 
 verbosity = int(Options['VERBOSITY']['level'])
 
 # REQUIRED PARAMETERS
-GeneOntology = ReadSourceDBs['GO']
-ReactomeBioPax = ReadSourceDBs['REACTOME']
-UNIPROT_source = ReadSourceDBs['UNIPROT']
-Hint_csv = ReadSourceDBs['HINT']  # attention, for me it is tab-separated
-BioGRID = ReadSourceDBs['BIOGRID']
+gene_ontology_path = source_db_paths['GO']
+reactome_biopax_path = source_db_paths['REACTOME']
+uniprot_path = source_db_paths['UNIPROT']
+hint_csv_path = source_db_paths['HINT']  # attention, for me it is tab-separated
+biogrid_path = source_db_paths['BIOGRID']
 
 # TAXONOMY IDs for Uniprot parsing:
 up_tax_ids = [tax_id.strip() for tax_id in Sources['UNIPROT'][
     'tax_ids'].split(',') if tax_id not in ('', ' ')]
 
 # OPTIONAL PARAMETERS
-Chromosome_source = ReadSourceDBs['CHROMOSOMES']
+Chromosome_source = source_db_paths['CHROMOSOMES']
 Chromosome_file_filter = Sources['CHROMOSOMES']['namepattern']
 # PROTEIN ABOUNDANCES?
 

@@ -5,6 +5,7 @@ Performs IO from the setup .ini files and casts into relevant Python Dictionarie
 """
 from os.path import join, abspath, expanduser
 import os
+from shutil import copy as copy_file
 from string import lower
 from bioflow.utils.general_utils.dict_like_configs_parser import ini_configs2dict, dict2init_configs
 from bioflow.utils.general_utils.high_level_os_io import mkdir_recursive
@@ -17,13 +18,26 @@ configs_rootdir = os.path.abspath(
         os.path.dirname(__file__),
         'configs/'))
 
-shortnames = ['servers', 'options', 'sources', 'predictions']
-configsfiles = dict([(name, join(configs_rootdir, name + '.ini'))
-                     for name in shortnames])
+
+conf_files_shortnames = ['servers', 'options', 'sources', 'predictions', 'online_dbs']
+conf_files_locations = dict([(name, join(configs_rootdir, name + '.ini'))
+                             for name in conf_files_shortnames])
+
+# TODO: read from options.ini configs file
+ref_orgs_shortnames = ['human', 'mouse', 'yeast']
+ref_orgs_locations = dict([(name, join(configs_rootdir, name + '.ini'))
+                           for name in ref_orgs_shortnames])
+
+
+def expand_folder_locations():
+    # TODO: read from servers.ini the location of the base folder
+    # TODO: combine the location of the base folder with the
+    pass
+
+# TODO: REFACTORING: we need to build a solution that rebuilds the full location elements
 
 
 class StructureGenerator(object):
-
     # TODO: REFACTORING: needs to be pulled from a separate config file
     _online_DBs = {
         'REACTOME': [r'http://www.reactome.org/download/current/biopax.zip'],
@@ -43,7 +57,7 @@ class StructureGenerator(object):
         'UNIPROT': 'Uniprot/uniprot_sprot.dat',
         'HINT': 'HiNT',
         'GO': 'GO/go.obo',
-        'BIOGRID': 'BioGRID'
+        'BIOGRID': 'biogrid_path'
     }
 
     # default configuration elements for yeast protein analysis
@@ -70,7 +84,6 @@ class StructureGenerator(object):
         'Biogrid_name': 'Mus_musculus',
         'HINT_name': 'HumanBinaryHQ.txt'}
 
-    # TODO: find and redirect towards th reading from configurations
     reforgs = ['mouse', 'human', 'yeast']
 
     @classmethod
@@ -122,38 +135,36 @@ class StructureGenerator(object):
         :param template_dict:
         :return:
         """
-        master_location = ini_configs2dict(configsfiles['servers'])[
+        master_location = ini_configs2dict(conf_files_locations['servers'])[
             'PRODUCTION']['base_folder']
         for key, value in template_dict.iteritems():
             value['location'] = join(
                 master_location, cls._local_file_tree[key])
         return template_dict
 
+    # TODO: REFACTORING: have to persist
     @classmethod
-    def build_source_config(cls, pl_type):
+    def build_source_config(cls, organism_shortname):
         """
         Writes a bioflow file based on the string organism argument
 
-        :param pl_type: string falling into one of the three categories. if not valid, an custom
+        :param organism_shortname: string falling into one of the three categories. if not valid, an custom
         exception is raised
         :return:
         """
-        if pl_type not in cls.reforgs:
-            raise Exception(
-                'Unsupported organism, %s not in %s.' %
-                (pl_type, cls.reforgs) + ' Please modify the sources.ini manually')
+        if organism_shortname not in ref_orgs_shortnames:
+            raise Exception('Unsupported organism, %s not in %s. %s',
+                            (organism_shortname, ref_orgs_shortnames,
+                             'Please modify the sources.ini manually'))
+
         else:
             write_path = join(configs_rootdir, 'sources.ini')
-            cfdict = {}
-            if pl_type == 'mouse':
-                cfdict = cls._generate_template(cls._Mice)
-            if pl_type == 'human':
-                cfdict = cls._generate_template(cls._Human)
-            if pl_type == 'yeast':
-                cfdict = cls._generate_template(cls._S_Cerevisae)
-            cfdict = cls._add_location_to_template(cfdict)
-            dict2init_configs(write_path, cfdict)
+            # TODO: parse the reference, edit the location, re-convert to .ini files
+            copy_file(ref_orgs_locations[organism_shortname], write_path)
 
+
+    # TODO: REFACTORING: have to persist
+    # the filtration happens here: read active from dbs_configs
     @classmethod
     def pull_online_dbs(cls):
         """
@@ -162,7 +173,7 @@ class StructureGenerator(object):
         :return:
         """
         # read the sources.ini file
-        write_dirs = ini_configs2dict(configsfiles['sources'])
+        write_dirs = ini_configs2dict(conf_files_locations['sources'])
         write_dirs = dict([(key, directory['location']) for key, directory in
                            write_dirs.iteritems() if key not in ['INTERNAL', 'CHROMOSOMES']])
         for DB_type, location in write_dirs.iteritems():
@@ -173,22 +184,21 @@ class StructureGenerator(object):
                 url_to_local(sublocation, location)
 
 
-def graceful_fail():
-    raise Exception('Argument not contained in the initial config file')
+def parse_config(configfile_shortname):
+    """
+    Parses the config file given config short name
 
+    :param configfile_shortname:
+    :return:
+    """
+    return ini_configs2dict(conf_files_locations[configfile_shortname])
 
-def parse_configs():
-    """ parses all the relevant configs and inserts graceful failure to all of them """
-    pre_srces = ini_configs2dict(configsfiles['sources'])
-    srces = defaultdict(graceful_fail)
-    srces.update(pre_srces)
-
-    return ini_configs2dict(configsfiles['servers']), \
-        ini_configs2dict(configsfiles['options']),\
-        srces,\
-        ini_configs2dict(configsfiles['predictions'])
-
-
+# TODO: it is suggested we refactor it to generate paths to different locations:
+#   - check if the location in download is a file or a folder.
+#   - if file, return
+#   - if folder, read the load argument
+#       - use load as namepattern
+#       - check if "Active" flag is set to false
 def conf_file_path_flattener(raw_configs_dict):
     """
     Rips out the 'location' argument and parses it into a filename from the parse of the
@@ -208,12 +218,10 @@ def conf_file_path_flattener(raw_configs_dict):
                 if ext_DB_args['load'] in fle:
                     current_path = os.path.join(current_path, fle)
         paths_dict[ext_DB_type] = current_path
-    final_paths_dict = defaultdict(graceful_fail)
-    final_paths_dict.update(paths_dict)
-    return final_paths_dict
+    return paths_dict
 
 
-def edit_confile(conf_shortname, section, parameter, newvalue):
+def edit_config_file(conf_shortname, section, parameter, newvalue):
     """
 
     :param conf_shortname:
@@ -222,22 +230,23 @@ def edit_confile(conf_shortname, section, parameter, newvalue):
     :param newvalue:
     :return:
     """
-    tmp_confdict = ini_configs2dict(configsfiles[conf_shortname])
+    tmp_confdict = ini_configs2dict(conf_files_locations[conf_shortname])
     tmp_confdict[section][parameter] = newvalue
-    dict2init_configs(configsfiles[conf_shortname], tmp_confdict)
+    dict2init_configs(conf_files_locations[conf_shortname], tmp_confdict)
 
 
-def set_folders(file_directory, neo4jserver='http://localhost:7474',
+def set_folders(file_directory,
+                neo4jserver='http://localhost:7474',
                 mongoserver='mongodb://localhost:27017/'):
     if file_directory[0] == r'~':
         file_directory = expanduser(file_directory)
-    edit_confile(
+    edit_config_file(
         'servers',
         'PRODUCTION',
         'base_folder',
         abspath(file_directory))
-    edit_confile('servers', 'PRODUCTION', 'server_neo4j', neo4jserver)
-    edit_confile('servers', 'PRODUCTION', 'mongodb_server', mongoserver)
+    edit_config_file('servers', 'PRODUCTION', 'server_neo4j', neo4jserver)
+    edit_config_file('servers', 'PRODUCTION', 'mongodb_server', mongoserver)
     StructureGenerator.build_source_config('yeast')
 
 

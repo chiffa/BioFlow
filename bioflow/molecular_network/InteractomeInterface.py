@@ -389,7 +389,7 @@ class InteractomeInterface(object):
 
         self.biogrid_links, self.full_set = n_expansion(self.pre_full_set,
                                                         'BioGRID_Contact_interaction',
-                                                        'BioGRID Links', 2)
+                                                        'biogrid_path Links', 2)
 
         self.Super_Links, self.ExpSet = n_expansion(self.full_set, 'possibly_same',
                                                     'Looks_similar Links')

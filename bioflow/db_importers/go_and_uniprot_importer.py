@@ -256,6 +256,6 @@ def memoize_uniprots():
 
 
 if __name__ == "__main__":
-    _uniprot = UniProtParser(main_configs.up_tax_ids).parse_uniprot(main_configs.UNIPROT_source)
+    _uniprot = UniProtParser(main_configs.up_tax_ids).parse_uniprot(main_configs.uniprot_path)
     _reactome_acnum_bindings = pull_up_acc_nums_from_reactome()
     import_uniprots(_uniprot, _reactome_acnum_bindings)

@@ -3,7 +3,7 @@ Responsible for the injection of the BioGRID parse into the main space.
 """
 from bioflow.bio_db_parsers.proteinRelParsers import parse_bio_grid
 from bioflow.utils.log_behavior import get_logger
-from bioflow.main_configs import BioGRID
+from bioflow.main_configs import biogrid_path
 from bioflow.neo4j_db.db_io_routines import look_up_annotation_set
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 
@@ -52,12 +52,12 @@ def insert_into_the_database(_up_ids_2_inner_ids, _up_ids_2_properties):
 
 
 def cross_ref_bio_grid():
-    """    performs the total BioGRID parse. """
+    """    performs the total biogrid_path parse. """
     log.info('Starting BioGrid Parsing')
-    up_ids_2_properties, up_ids = parse_bio_grid(BioGRID)
+    up_ids_2_properties, up_ids = parse_bio_grid(biogrid_path)
     log.info('BioGrid parsed, starting translation of UP identifiers to internal database ' +
              'identifiers')
     up_ids_2_inner_ids = convert_to_internal_ids(up_ids)
     log.info('UP identifier conversion finished, starting database insertion')
     insert_into_the_database(up_ids_2_inner_ids, up_ids_2_properties)
-    log.info('Database insertion finished. BioGRID import finished')
+    log.info('Database insertion finished. biogrid_path import finished')

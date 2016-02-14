@@ -254,7 +254,7 @@ class is_interacting(
     label = "is_interacting"
 
 
-class is_weakly_interacting(CostumLink):  # interaction according to BioGRID
+class is_weakly_interacting(CostumLink):  # interaction according to biogrid_path
     label = "is_weakly_interacting"
     throughput = String()      # high or all
     confidence = Float()        # float

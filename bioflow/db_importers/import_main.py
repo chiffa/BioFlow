@@ -22,10 +22,10 @@ from bioflow.neo4j_db.graph_content import forbidden_verification_list, full_lis
 def build_db():
     insert_reactome()
 
-    _go_terms, _go_terms_structure = GOTermsParser().parse_go_terms(main_configs.GeneOntology)
+    _go_terms, _go_terms_structure = GOTermsParser().parse_go_terms(main_configs.gene_ontology_path)
     import_gene_ontology(_go_terms, _go_terms_structure)
 
-    _uniprot = UniProtParser(main_configs.up_tax_ids).parse_uniprot(main_configs.UNIPROT_source)
+    _uniprot = UniProtParser(main_configs.up_tax_ids).parse_uniprot(main_configs.uniprot_path)
     _reactome_acnum_bindings = pull_up_acc_nums_from_reactome()
     import_uniprots(_uniprot, _reactome_acnum_bindings)
 
@@ -49,14 +49,14 @@ if __name__ == "__main__":
 
     # clear_all({'GO Term': (DatabaseGraph.GOTerm, "GOTerm")})
 
-    go_terms, go_terms_structure = GOTermsParser().parse_go_terms(main_configs.GeneOntology)
+    go_terms, go_terms_structure = GOTermsParser().parse_go_terms(main_configs.gene_ontology_path)
     import_gene_ontology(go_terms, go_terms_structure)
 
     # memoize_go_terms()
 
     # clear_all({'UNIPROT': (DatabaseGraph.UNIPORT, "UNIPROT")})
 
-    uniprot = UniProtParser(main_configs.up_tax_ids).parse_uniprot(main_configs.UNIPROT_source)
+    uniprot = UniProtParser(main_configs.up_tax_ids).parse_uniprot(main_configs.uniprot_path)
     reactome_acnum_bindings = pull_up_acc_nums_from_reactome()
     import_uniprots(uniprot, reactome_acnum_bindings)
 

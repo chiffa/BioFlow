@@ -4,7 +4,7 @@ Created on Jun 15, 2013
 """
 import pickle
 from bioflow.utils.log_behavior import get_logger
-from bioflow.main_configs import Dumps, ReactomeBioPax, verbosity
+from bioflow.main_configs import Dumps, reactome_biopax_path, verbosity
 from bioflow.internal_configs import Leg_ID_Filter
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from bioflow.neo4j_db.db_io_routines import get_bulbs_id
@@ -318,7 +318,7 @@ def insert_reactome(skip_import='N'):
                      * M => skips meta import, recovers the metas and resumes from the Reactions
                      import.
     """
-    reactome_parser = ReactomeParser(ReactomeBioPax)
+    reactome_parser = ReactomeParser(reactome_biopax_path)
     reactome_parser.parse_all()
 
     # TODO: refactor using abbreviations and bulbs_names_dict

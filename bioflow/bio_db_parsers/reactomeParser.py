@@ -84,7 +84,7 @@ class ReactomeParser(object):
     # TODO: convert the system of references to a single tree that has all the different
     # subcategories already declared
 
-    def __init__(self, path_to_biopax_file=main_configs.ReactomeBioPax):
+    def __init__(self, path_to_biopax_file=main_configs.reactome_biopax_path):
 
         self.tree = ET.parse(path_to_biopax_file)
         self.root = self.tree.getroot()
@@ -457,6 +457,6 @@ class ReactomeParser(object):
 
 if __name__ == "__main__":
     source_file = "/home/andrei/PycharmProjects/bioflow/unittests/UT_examples/reactome_extract.owl"
-    # source_file = main_configs.ReactomeBioPax
+    # source_file = main_configs.reactome_biopax_path
     RP = ReactomeParser(source_file)
     RP.parse_all()
