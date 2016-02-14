@@ -444,6 +444,7 @@ if __name__ == "__main__":
     # pprint(resdict)
     # print reslist
     # run_diagnostics(full_list)
-    memoize_bulbs_type(bulbs_names_dict['UNIPROT'][0])
+    # memoize_bulbs_type(bulbs_names_dict['UNIPROT'][0])
     # cast_analysis_set_to_bulbs_ids()
     # cast_background_set_to_bulbs_id(background_set_csv_location=None)
+    bulbs_names_dict

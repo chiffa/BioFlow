@@ -24,6 +24,7 @@ configsfiles = dict([(name, join(configs_rootdir, name + '.ini'))
 
 class StructureGenerator(object):
 
+    # TODO: REFACTORING: needs to be pulled from a separate config file
     _online_DBs = {
         'REACTOME': [r'http://www.reactome.org/download/current/biopax.zip'],
         'UNIPROT': [r'ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.dat.gz'],
@@ -32,8 +33,8 @@ class StructureGenerator(object):
             r'http://hint.yulab.org/HumanBinaryHQ.txt',
             r'http://hint.yulab.org/MouseBinaryHQ.txt'],
         'GO': [r'http://purl.obolibrary.org/obo/go/go-basic.obo'],
-        'BIOGRID': [r'http://thebiogrid.org/downloads/archives/Release%20Archive/BIOGRID-3.3.122/BIOGRID-ORGANISM-3.3.122.tab2.zip'],
-        'ABOUNDANCES': []}
+        'BIOGRID': [r'http://thebiogrid.org/downloads/archives/Release%20Archive/BIOGRID-3.3.122/BIOGRID-ORGANISM-3.3.122.tab2.zip']
+    }
 
     # paths to be appended to the user-provided installation directory
     _local_file_tree = {
@@ -42,10 +43,8 @@ class StructureGenerator(object):
         'UNIPROT': 'Uniprot/uniprot_sprot.dat',
         'HINT': 'HiNT',
         'GO': 'GO/go.obo',
-        'BIOGRID': 'BioGRID',
-        'SIDER': 'SIDER2/meddra_adverse_effects.tsv',
-        'ABOUNDANCES': 'Protein_aboundances',
-        'CHROMOSOMES': 'Chr_mappings'}
+        'BIOGRID': 'BioGRID'
+    }
 
     # default configuration elements for yeast protein analysis
     _S_Cerevisae = {
@@ -71,6 +70,7 @@ class StructureGenerator(object):
         'Biogrid_name': 'Mus_musculus',
         'HINT_name': 'HumanBinaryHQ.txt'}
 
+    # TODO: find and redirect towards th reading from configurations
     reforgs = ['mouse', 'human', 'yeast']
 
     @classmethod
