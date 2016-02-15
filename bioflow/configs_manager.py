@@ -113,10 +113,17 @@ def compute_full_paths(sources_parse_dict, online_dbs_parse_dict, servers_parse_
         elif 'name_pattern' in source_contents.keys():
             target = ''
 
-            for file_name in os.listdir(pre_location):
-                if source_contents['name_pattern'] in file_name:
-                    target = file_name
-                    break
+            if not os._exists(pre_location):
+                target = 'Invalid for now'
+                log.warning('name_pattern %s was not matched in %s. Pull the online dbs first',
+                            source_contents['name_pattern'], pre_location)
+
+            else:
+                for file_name in os.listdir(pre_location):
+                    # TODO: now raises an error if the folder has not been initialized
+                    if source_contents['name_pattern'] in file_name:
+                        target = file_name
+                        break
 
             if target:
                 paths_dict[source_name] = join(pre_location, target)
@@ -162,7 +169,7 @@ def set_folders(file_directory,
 
 
 if __name__ == "__main__":
-    set_folders('/home/andrei/support')
+    set_folders('/home/andrei/sources')
     build_source_config('human')
     # pp = PrettyPrinter(indent=4)
     # pp.pprint(parse_configs())
