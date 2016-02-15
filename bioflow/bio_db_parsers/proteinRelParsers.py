@@ -10,7 +10,7 @@ def parse_bio_grid(bio_grid):
     """
     Parses the given file as a BioGrid file and returns as
 
-    :param bio_grid: the location of the BioGRID bioflow file that needs to bprased
+    :param bio_grid: the location of the biogrid_path bioflow file that needs to bprased
     :return:
     """
     ret_dict = {}

@@ -1,7 +1,8 @@
 """
 Top-Level scripts, examples of analysis pipelines.
 """
-from bioflow.configs_manager import StructureGenerator, set_folders
+from bioflow.configs_manager import set_folders, build_source_config, \
+    pull_online_dbs
 from bioflow.annotation_network.BioKnowledgeInterface \
     import GeneOntologyInterface as AnnotomeInterface
 from bioflow.annotation_network.knowledge_access_analysis \
@@ -29,9 +30,9 @@ if __name__ == "__main__":
     # # setting static folders and urls for the databases
     set_folders('/home/andrei/support')
     # # pulling the online databases
-    # StructureGenerator.pull_online_dbs()
+    # pull_online_dbs()
     # # setting the organism to yeast
-    StructureGenerator.build_source_config('human')
+    build_source_config('human')
 
     # # clearing the database, if required
     # destroy_db()

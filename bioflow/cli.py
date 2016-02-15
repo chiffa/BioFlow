@@ -2,7 +2,8 @@
 Contains the access to the command line interface of the application.
 """
 import click
-from bioflow.configs_manager import StructureGenerator, set_folders
+from bioflow.configs_manager import set_folders, build_source_config, \
+    pull_online_dbs
 from bioflow.annotation_network.BioKnowledgeInterface \
     import GeneOntologyInterface as AnnotomeInterface
 from bioflow.utils.io_routines import get_background_bulbs_ids, get_source_bulbs_ids
@@ -53,7 +54,7 @@ def downloaddbs():
 
     :return:
     """
-    StructureGenerator.pull_online_dbs()
+    pull_online_dbs()
 
 
 @click.command()
@@ -65,7 +66,7 @@ def setorg(organism):
     :param organism:
     :return:
     """
-    StructureGenerator.build_source_config(organism)
+    build_source_config(organism)
 
 
 @click.command()
@@ -192,6 +193,7 @@ def analyze(matrixtype, depth, processors,):
     background_bulbs_ids = get_background_bulbs_ids()
 
     # TODO: CRICIAL: inject background usage when background switch is available.
+    # Refer to the analysis pipeline example for an example
     interactome_interface_instance = InteractomeInterface(main_connex_only=True, full_impact=False)
     interactome_interface_instance.fast_load()
     ref_param_set = [['biological_process'], background_bulbs_ids, (1, 1), True, 3]

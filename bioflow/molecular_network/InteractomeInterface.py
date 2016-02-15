@@ -20,7 +20,6 @@ from scipy.sparse.linalg import eigsh
 from bioflow.utils.gdfExportInterface import GdfExportInterface
 from bioflow.utils.io_routines import write_to_csv, dump_object, undump_object
 from bioflow.utils.log_behavior import get_logger
-from bioflow.main_configs import Chromosome_source, Chromosome_file_filter
 from bioflow.main_configs import Dumps, Outputs, interactome_rand_samp
 from bioflow.internal_configs import edge_type_filters, Adjacency_Martix_Dict, \
     Conductance_Matrix_Dict
@@ -39,9 +38,6 @@ log = get_logger(__name__)
 #   UP Links and 1191 HiNT links
 # With forbidding overloaded items: 24k771 Nodes, 4293 UP Links, 1186 HiNT
 # links
-
-
-# TODO: CRITICAL proper forbidden Ids Integration in the reaction set
 
 class InteractomeInterface(object):
     """
@@ -389,7 +385,7 @@ class InteractomeInterface(object):
 
         self.biogrid_links, self.full_set = n_expansion(self.pre_full_set,
                                                         'BioGRID_Contact_interaction',
-                                                        'BioGRID Links', 2)
+                                                        'biogrid_path Links', 2)
 
         self.Super_Links, self.ExpSet = n_expansion(self.full_set, 'possibly_same',
                                                     'Looks_similar Links')
@@ -989,29 +985,6 @@ class InteractomeInterface(object):
                          'time: %s ', self.random_tag, sample_size, i,
                          "{0:.2f}".format(sample_size * (sample_size - 1) / 2 / self._time()),
                          self.pretty_time())
-
-    # TODO: this method needs to be refactored in order to use the new chromosome to up id sources.
-    # it needs to support the fact that chromosome mapping file are not necessarily present
-    def map_uniprots_to_chromosomes(self):
-        """
-        Maps the Uniprot Ids to chromosomes of the organism and reversely.
-        """
-        resulting_dict = {}
-        # TODO: add the possibility that Chromosome_source wasn't properly declared or is
-        # a mapping to a void declaration if this is the case,
-        for fle in os.listdir(Chromosome_source):
-            if Chromosome_file_filter in fle:
-                source_fle = Chromosome_source + '/' + fle
-                chromosome_id = fle.split('.')[0].split(Chromosome_file_filter)[1]
-                resulting_dict[chromosome_id] = open(source_fle).read()
-
-        for i, (bulbs_id, legacy_id) in enumerate(self.bulbs_id_2_legacy_id.iteritems()):
-            for chromosome_id, chromosome_text_block in resulting_dict.iteritems():
-                if legacy_id in chromosome_text_block:
-                    self.UP2Chrom[bulbs_id] = chromosome_id
-                    self.chromosomes_2_uniprot[chromosome_id].append(bulbs_id)
-
-        self.chromosomes_2_uniprot = dict(self.chromosomes_2_uniprot)
 
 
 if __name__ == "__main__":

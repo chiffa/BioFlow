@@ -10,7 +10,7 @@ from bioflow.neo4j_db.db_io_routines import memoize_bulbs_type, get_bulbs_id
 
 log = get_logger(__name__)
 
-# TODO: this should be refactored into a class to wrap memoization dicts
+# TODO: REFACTORING: this should be refactored into a class to wrap memoization dicts
 # Stores relations between GO IDs and the objects in the neo4j database
 GO_term_memoization_dict = {}
 # Stores relations between the SWISSPROT UNIPROT IDs and the neo4j database objects
@@ -256,6 +256,6 @@ def memoize_uniprots():
 
 
 if __name__ == "__main__":
-    _uniprot = UniProtParser(main_configs.up_tax_ids).parse_uniprot(main_configs.UNIPROT_source)
+    _uniprot = UniProtParser(main_configs.up_tax_ids).parse_uniprot(main_configs.uniprot_path)
     _reactome_acnum_bindings = pull_up_acc_nums_from_reactome()
     import_uniprots(_uniprot, _reactome_acnum_bindings)

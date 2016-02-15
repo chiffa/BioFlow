@@ -5,245 +5,172 @@ Performs IO from the setup .ini files and casts into relevant Python Dictionarie
 """
 from os.path import join, abspath, expanduser
 import os
+from shutil import copy as copy_file
 from string import lower
 from bioflow.utils.general_utils.dict_like_configs_parser import ini_configs2dict, dict2init_configs
 from bioflow.utils.general_utils.high_level_os_io import mkdir_recursive
 from bioflow.utils.general_utils.internet_io import url_to_local
-from collections import defaultdict
+from bioflow.utils.log_behavior import get_logger
 
+log = get_logger(__name__)
 
 configs_rootdir = os.path.abspath(
     os.path.join(
         os.path.dirname(__file__),
         'configs/'))
 
-shortnames = ['servers', 'options', 'sources', 'predictions']
-configsfiles = dict([(name, join(configs_rootdir, name + '.ini'))
-                     for name in shortnames])
+conf_files_shortnames = ['servers', 'options', 'sources', 'predictions', 'online_dbs']
+conf_files_locations = dict([(name, join(configs_rootdir, name + '.ini'))
+                             for name in conf_files_shortnames])
+
+ref_orgs_shortnames = [
+    shortname.strip() for shortname in
+    ini_configs2dict(conf_files_locations['options'])['ORGANISMS']['allowed'].split(',')]
+ref_orgs_locations = dict([(name, join(configs_rootdir, 'reference', name + '.ini'))
+                           for name in ref_orgs_shortnames])
 
 
-class StructureGenerator(object):
-
-    _online_DBs = {
-        'REACTOME': [r'http://www.reactome.org/download/current/biopax.zip'],
-        'UNIPROT': [r'ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.dat.gz'],
-        'HINT': [
-            r'http://hint.yulab.org/CervBinaryHQ.txt',
-            r'http://hint.yulab.org/HumanBinaryHQ.txt',
-            r'http://hint.yulab.org/MouseBinaryHQ.txt'],
-        'GO': [r'http://purl.obolibrary.org/obo/go/go-basic.obo'],
-        'BIOGRID': [r'http://thebiogrid.org/downloads/archives/Release%20Archive/BIOGRID-3.3.122/BIOGRID-ORGANISM-3.3.122.tab2.zip'],
-        'ABOUNDANCES': []}
-
-    # paths to be appended to the user-provided installation directory
-    _local_file_tree = {
-        'INTERNAL': '.',
-        'REACTOME': 'Reactome',
-        'UNIPROT': 'Uniprot/uniprot_sprot.dat',
-        'HINT': 'HiNT',
-        'GO': 'GO/go.obo',
-        'BIOGRID': 'BioGRID',
-        'SIDER': 'SIDER2/meddra_adverse_effects.tsv',
-        'ABOUNDANCES': 'Protein_aboundances',
-        'CHROMOSOMES': 'Chr_mappings'}
-
-    # default configuration elements for yeast protein analysis
-    _S_Cerevisae = {
-        'shortname': 'sCerevisae',
-        'tax_id': '559292',
-        'Reactome_name': 'Saccharomyces_cerevisiae.owl',
-        'Biogrid_name': 'Saccharomyces_cerevisiae',
-        'HINT_name': 'CervBinaryHQ.txt'}
-
-    # default configuration elements for human proteins analysis
-    _Human = {
-        'shortname': 'human',
-        'tax_id': '9606',
-        'Reactome_name': 'Homo_sapiens.owl',
-        'Biogrid_name': 'Homo_sapiens',
-        'HINT_name': 'HumanBinaryHQ.txt'}
-
-    # default configuration elements for mice proteins analysis
-    _Mice = {
-        'shortname': 'mouse',
-        'tax_id': '10090',
-        'Reactome_name': 'Mus_musculus.owl',
-        'Biogrid_name': 'Mus_musculus',
-        'HINT_name': 'HumanBinaryHQ.txt'}
-
-    reforgs = ['mouse', 'human', 'yeast']
-
-    @classmethod
-    def _generate_template(cls, payload_dict, expanded=False):
-        """
-        Generates a template dictionary that would be converted to a sources.ini config file
-            to a file that would be
-        :param payload_dict: Dict containing tax_id, Reactome and biogrid filenames. if expanded
-        use is anticipated, needs chromosome namepattern
-        :param expanded: if true, will try to add additional options into the configs file
-        :return:
-        """
-        template_dict = {
-            'INTERNAL': {'mongoprefix': '_' + payload_dict['shortname'],
-                         'mongosuffix': '_v_1',
-                         'dumpprefix': '/' + payload_dict['shortname'],
-                         'load': 'NotAFile.txt'},
-            'REACTOME':
-                {'load': payload_dict['Reactome_name']},
-            'UNIPROT':
-                {'tax_ids': payload_dict['tax_id']},
-            'HINT':
-                {'load': payload_dict['HINT_name']},
-            'BIOGRID':
-                {'load': payload_dict['Biogrid_name']},
-            'GO':
-                {}
-        }
-
-        if expanded:
-            additional_options = {
-                'CHROMOSOMES': {'load': payload_dict['name_pattern'],
-                                'namepattern': payload_dict['name_pattern']},
-                'ABOUNDANCES': {'load': payload_dict['tax_id']},
-            }
-        else:
-            additional_options = {
-                'CHROMOSOMES': {'load': '-1', 'namepattern': '-1'},
-                'ABOUNDANCES': {'load': '-1'},
-            }
-        template_dict.update(additional_options)
-
-        return template_dict
-
-    @classmethod
-    def _add_location_to_template(cls, template_dict):
-        """
-        Adds a location to the template dictionary used to generate a configuration file
-        :param template_dict:
-        :return:
-        """
-        master_location = ini_configs2dict(configsfiles['servers'])[
-            'PRODUCTION']['base_folder']
-        for key, value in template_dict.iteritems():
-            value['location'] = join(
-                master_location, cls._local_file_tree[key])
-        return template_dict
-
-    @classmethod
-    def build_source_config(cls, pl_type):
-        """
-        Writes a bioflow file based on the string organism argument
-
-        :param pl_type: string falling into one of the three categories. if not valid, an custom
-        exception is raised
-        :return:
-        """
-        if pl_type not in cls.reforgs:
-            raise Exception(
-                'Unsupported organism, %s not in %s.' %
-                (pl_type, cls.reforgs) + ' Please modify the sources.ini manually')
-        else:
-            write_path = join(configs_rootdir, 'sources.ini')
-            cfdict = {}
-            if pl_type == 'mouse':
-                cfdict = cls._generate_template(cls._Mice)
-            if pl_type == 'human':
-                cfdict = cls._generate_template(cls._Human)
-            if pl_type == 'yeast':
-                cfdict = cls._generate_template(cls._S_Cerevisae)
-            cfdict = cls._add_location_to_template(cfdict)
-            dict2init_configs(write_path, cfdict)
-
-    @classmethod
-    def pull_online_dbs(cls):
-        """
-        Pulls the databases mentionned online to the direction in the
-
-        :return:
-        """
-        # read the sources.ini file
-        write_dirs = ini_configs2dict(configsfiles['sources'])
-        write_dirs = dict([(key, directory['location']) for key, directory in
-                           write_dirs.iteritems() if key not in ['INTERNAL', 'CHROMOSOMES']])
-        for DB_type, location in write_dirs.iteritems():
-            # recursively create directories if the directories don't exist
-            for sublocation in cls._online_DBs[DB_type]:
-                print 'loading %s database from %s to %s' % (lower(DB_type), sublocation, location)
-                mkdir_recursive(location)
-                url_to_local(sublocation, location)
-
-
-def graceful_fail():
-    raise Exception('Argument not contained in the initial config file')
-
-
-def parse_configs():
-    """ parses all the relevant configs and inserts graceful failure to all of them """
-    pre_srces = ini_configs2dict(configsfiles['sources'])
-    srces = defaultdict(graceful_fail)
-    srces.update(pre_srces)
-
-    return ini_configs2dict(configsfiles['servers']), \
-        ini_configs2dict(configsfiles['options']),\
-        srces,\
-        ini_configs2dict(configsfiles['predictions'])
-
-
-def conf_file_path_flattener(raw_configs_dict):
+def build_source_config(organism_shortname):
     """
-    Rips out the 'location' argument and parses it into a filename from the parse of the
-    configurations tree and flattens the resulting dictionary. It is used mainly for the
-    accelerated file location recovery
+    Writes a bioflow file based on the string organism argument
 
-    :param raw_configs_dict: Initial file location and parameter locations: `
-    {'HINT':{'load': ld, 'location': loc}...}`
-    :return: `{'HINT': }`
+    :param organism_shortname: string falling into one of the three categories. if not valid, an custom
+    exception is raised
+    :return:
     """
+    if organism_shortname not in ref_orgs_shortnames:
+        raise Exception('Unsupported organism, %s not in %s. %s',
+                        (organism_shortname, ref_orgs_shortnames,
+                         'Please modify the sources.ini manually'))
+
+    else:
+        write_path = join(configs_rootdir, 'sources.ini')
+        copy_file(ref_orgs_locations[organism_shortname], write_path)
+
+
+def pull_online_dbs():
+    """
+    Pulls the databases mentionned online to the direction in the
+
+    :return:
+    """
+    write_dirs = ini_configs2dict(conf_files_locations['online_dbs'])
+    base_folder = ini_configs2dict(conf_files_locations['servers'])['PRODUCTION']['base_folder']
+
+    for DB_type, location_dict in write_dirs.iteritems():
+
+        if 'inactive' in location_dict.keys() and location_dict['inactive'] == 'True':
+            continue
+
+        local = location_dict['local'].replace('$DB_HOME$', base_folder)
+        onlines = [location.strip() for location in location_dict['online'].split(',')]
+
+        for online in onlines:
+            log.info('loading %s database from %s to %s',
+                     lower(DB_type), location_dict['online'], local)
+            mkdir_recursive(local)
+            url_to_local(online, local)
+
+
+def parse_config(configfile_shortname):
+    """
+    Parses the config file given config short name
+
+    :param configfile_shortname:
+    :return:
+    """
+    return ini_configs2dict(conf_files_locations[configfile_shortname])
+
+
+def compute_full_paths(sources_parse_dict, online_dbs_parse_dict, servers_parse_dict):
+    """
+    Computes all of the base files locations for the set or sources, based on the locations
+    specified in the online_dbs.inin configuration file
+
+    :param sources_parse_dict:
+    :param online_dbs_parse_dict:
+    :param servers_parse_dict:
+    :return:
+    """
+    base_folder = servers_parse_dict['base_folder']
     paths_dict = {}
-    for ext_DB_type, ext_DB_args in raw_configs_dict.iteritems():
-        current_path = ext_DB_args['location']
-        if os.path.isdir(current_path):
-            for fle in [f for f in os.listdir(current_path) if
-                        os.path.exists(os.path.join(current_path, f))]:
-                if ext_DB_args['load'] in fle:
-                    current_path = os.path.join(current_path, fle)
-        paths_dict[ext_DB_type] = current_path
-    final_paths_dict = defaultdict(graceful_fail)
-    final_paths_dict.update(paths_dict)
-    return final_paths_dict
+    for source_name, source_contents in sources_parse_dict.items():
+
+        if source_name == 'INTERNAL':
+            continue
+
+        if not online_dbs_parse_dict[source_name] or \
+                ('inactive' in online_dbs_parse_dict[source_name].keys() and
+                 online_dbs_parse_dict[source_name]['inactive'] == 'True'):
+            log.exception('attempt to load an inactive source type %s', source_name)
+            continue
+
+        pre_location = online_dbs_parse_dict[source_name]['local'].replace('$DB_HOME$', base_folder)
+
+        if 'file' in source_contents.keys():
+            paths_dict[source_name] = join(pre_location, source_contents['file'])
+
+        elif 'name_pattern' in source_contents.keys():
+            target = ''
+
+            if not os._exists(pre_location):
+                target = 'Invalid for now'
+                log.warning('name_pattern %s was not matched in %s. Pull the online dbs first',
+                            source_contents['name_pattern'], pre_location)
+
+            else:
+                for file_name in os.listdir(pre_location):
+                    # TODO: now raises an error if the folder has not been initialized
+                    if source_contents['name_pattern'] in file_name:
+                        target = file_name
+                        break
+
+            if target:
+                paths_dict[source_name] = join(pre_location, target)
+
+            else:
+                log.exception('cannot find name pattern %s in folder %s',
+                              source_contents['name_pattern'],
+                              pre_location)
+
+        else:
+            paths_dict[source_name] = pre_location
+
+    return paths_dict
 
 
-def edit_confile(conf_shortname, section, parameter, newvalue):
+def edit_config_file(conf_shortname, section, parameter, new_value):
     """
 
     :param conf_shortname:
     :param section:
     :param parameter:
-    :param newvalue:
+    :param new_value:
     :return:
     """
-    tmp_confdict = ini_configs2dict(configsfiles[conf_shortname])
-    tmp_confdict[section][parameter] = newvalue
-    dict2init_configs(configsfiles[conf_shortname], tmp_confdict)
+    tmp_config_dict = ini_configs2dict(conf_files_locations[conf_shortname])
+    tmp_config_dict[section][parameter] = new_value
+    dict2init_configs(conf_files_locations[conf_shortname], tmp_config_dict)
 
 
-def set_folders(file_directory, neo4jserver='http://localhost:7474',
+def set_folders(file_directory,
+                neo4jserver='http://localhost:7474',
                 mongoserver='mongodb://localhost:27017/'):
     if file_directory[0] == r'~':
         file_directory = expanduser(file_directory)
-    edit_confile(
+    edit_config_file(
         'servers',
         'PRODUCTION',
         'base_folder',
         abspath(file_directory))
-    edit_confile('servers', 'PRODUCTION', 'server_neo4j', neo4jserver)
-    edit_confile('servers', 'PRODUCTION', 'mongodb_server', mongoserver)
-    StructureGenerator.build_source_config('yeast')
+    edit_config_file('servers', 'PRODUCTION', 'server_neo4j', neo4jserver)
+    edit_config_file('servers', 'PRODUCTION', 'mongodb_server', mongoserver)
+    build_source_config('yeast')
 
 
 if __name__ == "__main__":
-    set_folders('/home/andrei/support')
-    StructureGenerator.build_source_config('human')
+    set_folders('/home/andrei/sources')
+    build_source_config('human')
     # pp = PrettyPrinter(indent=4)
     # pp.pprint(parse_configs())
-    # StructureGenerator.pull_online_dbs()
+    # pull_online_dbs()

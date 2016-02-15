@@ -1,6 +1,6 @@
 
 |License Type| |Build Status| |Coverage Status| |Branch status| |Code
-Issues| |Duplicate Lines|
+Issues| |Duplicate Lines| |Code Health|
 
 BioFlow Project
 ===============
@@ -90,3 +90,5 @@ For more details or usage as a library, refer to the `usage guide
    :target: https://www.quantifiedcode.com/app/project/1c3f8cd001a44319abddab249101b646
 .. |Duplicate Lines| image:: https://img.shields.io/badge/duplicate%20lines-17.66%25-yellowgreen.svg
    :target: http://clonedigger.sourceforge.net/
+.. |Code Health| image:: https://landscape.io/github/chiffa/BioFlow/master/landscape.svg?style=flat
+   :target: https://landscape.io/github/chiffa/BioFlow/master

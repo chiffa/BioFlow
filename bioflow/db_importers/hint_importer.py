@@ -2,7 +2,7 @@
 Set of tools to work with HiNT database
 """
 from bioflow.bio_db_parsers.proteinRelParsers import parse_hint
-from bioflow.main_configs import Hint_csv
+from bioflow.main_configs import hint_csv_path
 from bioflow.neo4j_db.db_io_routines import memoize_bulbs_type
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from bioflow.utils.log_behavior import get_logger
@@ -30,7 +30,7 @@ def cross_ref_hint(flush=True):
     :param flush: if True, relationships are pushed to the actual graph database
     :return:
     """
-    relations_dict = parse_hint(Hint_csv)
+    relations_dict = parse_hint(hint_csv_path)
     uniprot_ref_dict = get_uniprots_for_hint()
     processed_pairs = set()
     actual_cross_links = 0

@@ -22,7 +22,7 @@ New features:
    sampling behavior, so that precision is sacrificed in favor of
    computation speed.
 
--  Language of network alignement/explanation of net1 by net2: allows
+-  Language of network alignment/explanation of net1 by net2: allows
    to compare GO annotation with interactome, cell type specificity 
    analysis or organ context.
 
