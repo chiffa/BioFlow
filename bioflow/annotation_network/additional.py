@@ -37,7 +37,7 @@ def run_analysis(group):
     go_interface_instance.build_extended_conduction_system()
     go_interface_instance.export_conduction_system()
     nr_nodes, nr_groups = compare_to_blank(
-        len(group), [1000, 1200], go_interface_instance, p_val=0.9)
+        len(group), [1000, 1200], go_interface_instance)
     for group in nr_groups:
         print 'run analysis 1: %s' % group
     for node in nr_nodes:

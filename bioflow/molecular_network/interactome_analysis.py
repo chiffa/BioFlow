@@ -372,8 +372,9 @@ def compare_to_blank(
 
 
 # TODO: check if background list works as expected
-def auto_analyze(source_list, desired_depth=24, processors=4, background_list=None,
-                 skip_sampling=False):
+def auto_analyze(source_list,
+                 desired_depth=24, processors=4,
+                 background_list=None, skip_sampling=False):
     """
     Automatically analyzes the itneractome synergetic action of the RNA_seq results
 
@@ -477,4 +478,5 @@ if __name__ == "__main__":
 
     source = get_source_bulbs_ids()
     background_list = get_background_bulbs_ids()
-    auto_analyze([source], 6, 3, background_list, skip_sampling=True)
+    auto_analyze([source], desired_depth=5, processors=6,
+                 background_list=background_list, skip_sampling=True)

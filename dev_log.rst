@@ -145,6 +145,10 @@ Good-to-have; non-critical:
    we might want to insert "singleton" module into the block, that
    performs all the parsings only once per program run.
 
+-  We need to dynamically update the values of main_config whenever the location whenever
+   configs from configsfiles are modified, so their modification do not require restaring the
+   program. Alternatively we say that the configs need to be modified before the rest of the
+   program can be executed.
 
 Documentation and description:
 ==============================

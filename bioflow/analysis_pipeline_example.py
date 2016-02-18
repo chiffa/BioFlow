@@ -34,6 +34,11 @@ if __name__ == "__main__":
     # # setting the organism to yeast
     # build_source_config('human')
 
+    ##########################################
+    # After you've changed folders/sources above, you need to re-start python to force
+    # main_configs update
+    ##########################################
+
     # # clearing the database, if required
     # destroy_db()
 
@@ -53,12 +58,12 @@ if __name__ == "__main__":
     print len(source_bulbs_ids)
     print len(background_bulbs_ids)
     # # building the interactome interface object
-    local_matrix = InteractomeInterface(main_connex_only=True, full_impact=False)
-    local_matrix.full_rebuild()
+    # local_matrix = InteractomeInterface(main_connex_only=True, full_impact=False)
+    # local_matrix.full_rebuild()
 
-    # # perform the interactome analysis
-    # interactome_analysis([source_bulbs_ids], desired_depth=24, processors=3,
-    #                      background_list=background_bulbs_ids, skip_sampling=False)
+    # perform the interactome analysis
+    interactome_analysis([source_bulbs_ids], desired_depth=30, processors=4,
+                         background_list=background_bulbs_ids, skip_sampling=False)
 
     # # building the reference parameters set
     # _filter = ['biological_process']

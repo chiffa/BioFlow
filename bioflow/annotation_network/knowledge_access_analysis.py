@@ -21,7 +21,8 @@ log = get_logger(__name__)
 
 _filter = ['biological_process']
 _correlation_factors = (1, 1)
-ref_param_set = [_filter, [], (1, 1), True, 3]
+# TODO: test that conversion to the tuple works well
+ref_param_set = tuple([_filter, [], (1, 1), True, 3])
 
 
 def get_go_interface_instance(param_set=ref_param_set):
