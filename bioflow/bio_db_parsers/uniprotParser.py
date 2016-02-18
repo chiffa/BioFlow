@@ -93,6 +93,8 @@ class UniProtParser(object):
         :param line:
         """
         words = filter(lambda x: x != '', str(line[2:].strip() + ' ').split('; '))
+        # TODO: CRITICAL: replace by code below:
+        # words = [x for x in str(line[2:].strip() + ' ').split('; ') if x!='']
         for word in words:
             if 'ORFNames' in word:
                 for subword in word.split('=')[1].strip().split(','):
@@ -143,9 +145,13 @@ class UniProtParser(object):
         """
         if keyword == 'ID':
             words = filter(lambda a: a != '', line.split(' '))
+            # TODO: CRITICAL: replace by code below:
+            # words = [a for a in line.split(' ') if a!='']
             self._single_up_dict['ID'] = words[1]
         if keyword == 'AC':
             words = filter(lambda a: a != '', line.split(' '))
+            # TODO: CRITICAL: replace by code below:
+            # words = [a for a in line.split(' ') if a!='']
             for word in words[1:]:
                 self._single_up_dict['Acnum'].append(word.split(';')[0])
         if keyword == 'OX':
