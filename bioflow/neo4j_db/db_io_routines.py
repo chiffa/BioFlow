@@ -14,6 +14,7 @@ from bioflow.internal_configs import edge_type_filters, Leg_ID_Filter, annotatio
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from bioflow.neo4j_db.graph_content import bulbs_names_dict, full_list, forbidden_verification_list
 from bioflow.utils.log_behavior import get_logger
+from bioflow.utils.io_routines import write_to_csv
 
 log = get_logger(__name__)
 
@@ -40,10 +41,12 @@ def get_attached_annotations(bulbs_node_id):
     node = DatabaseGraph.vertices.get(bulbs_node_id)
     annotation_node_generator = node.outV("is_annotated")
     if not annotation_node_generator:
-        log.info("node %s has not annotations attached to it", bulbs_node_id)
-    for rel_node in annotation_node_generator:
-        list_of_annotations.append(get_bulbs_id(rel_node))
-    return list_of_annotations
+        log.debug("node %s has not annotations attached to it", bulbs_node_id)
+        return []
+    else:
+        for rel_node in annotation_node_generator:
+            list_of_annotations.append(get_bulbs_id(rel_node))
+        return list_of_annotations
 
 
 def annotations_2_node_chars(node_generator):
@@ -227,6 +230,7 @@ def node_extend_once(edge_type_filter, main_connex_only, core_node):
     return node_neighbors, node_neighbor_no
 
 
+# TODO: add a directionality argument
 def expand_from_seed(seed_node_id, edge_filter, main_connex_only):
     """
     Recovers all the nodes accessible in one jump from a seed_node with a given database ID by
@@ -328,9 +332,10 @@ def stable_get_all(bulbs_class):
     unsafe_generator = bulbs_class.get_all()
     type_var = bulbs_class.client.config.type_var
     element_type = bulbs_class.element_class.get_element_type(bulbs_class.client.config)
-    for bulbs_node in unsafe_generator:
-        if getattr(bulbs_node, type_var) == element_type:
-            yield bulbs_node
+    if unsafe_generator:
+        for bulbs_node in unsafe_generator:
+            if getattr(bulbs_node, type_var) == element_type:
+                yield bulbs_node
 
 
 def memoize_bulbs_type(bulbs_class, dict_to_load_into=None):
@@ -418,6 +423,41 @@ def run_diagnostics(instructions_list):
     log.info('\n'.join(str_list))
 
 
+def lookup(bulbs_node_shortname, list_of_ids):
+    """
+    Just performs the lookup for a list of legacy IDs in for a given node type
+
+    :param bulbs_node_shortname:
+    :param list_of_ids:
+    :return:
+    """
+    bulbs_node_id_list = []
+    for legacy_id in list_of_ids:
+        bulbs_node_generator = bulbs_names_dict[bulbs_node_shortname][0].index.lookup(ID=legacy_id)
+        if bulbs_node_generator:
+            for node in bulbs_node_generator:
+                bulbs_node_id_list.append(get_bulbs_id(node))
+                print node.ID, get_bulbs_id(node), node.displayName
+    return bulbs_node_id_list
+
+
+def pull_associations(bulbs_nodes_id_list, allowed_edge_types, direction="BOTH"):
+    """
+    Pulls associated nodes to a given set of bulbs IDs according to a given relationship
+
+    :param bulbs_nodes_id_list:
+    :param allowed_edge_types:
+    :param direction:
+    :return:
+    """
+    association_dict = {}
+    for bulbs_node_id in bulbs_nodes_id_list:
+        root_node = DatabaseGraph.vertices.get(bulbs_node_id)
+        association_dict[bulbs_node_id] = node_extend_once(allowed_edge_types,
+                                                           False, root_node)[0]
+    return association_dict
+
+
 # Yes, I know what goes below here is ugly and shouldn't be in the
 # production part of the code
 
@@ -447,4 +487,9 @@ if __name__ == "__main__":
     # memoize_bulbs_type(bulbs_names_dict['UNIPROT'][0])
     # cast_analysis_set_to_bulbs_ids()
     # cast_background_set_to_bulbs_id(background_set_csv_location=None)
-    bulbs_names_dict
+    Akshay_p53_go_set = ["0030330", "0000019", "0000002", "0006977"]
+    go_bulbs_ids = lookup("GO Term", Akshay_p53_go_set)
+    association_dict = pull_associations(go_bulbs_ids, ["is_go_annotation"])
+    proteins = [item for key, val in association_dict.iteritems() for item in val]
+    writer(open(Dumps.analysis_set_bulbs_ids, 'w'), delimiter='\n').writerow(proteins)
+    print proteins

@@ -10,6 +10,8 @@ status](https://img.shields.io/badge/branch_status-0.1.0_release_candidate-yello
 Issues](https://www.quantifiedcode.com/api/v1/project/1c3f8cd001a44319abddab249101b646/badge.svg)](https://www.quantifiedcode.com/app/project/1c3f8cd001a44319abddab249101b646)
 [![Duplicate
 Lines](https://img.shields.io/badge/duplicate%20lines-17.66%25-yellowgreen.svg)](http://clonedigger.sourceforge.net/)
+[![Code
+Health](https://landscape.io/github/chiffa/BioFlow/master/landscape.svg?style=flat)](https://landscape.io/github/chiffa/BioFlow/master)
 
 BioFlow Project
 ===============

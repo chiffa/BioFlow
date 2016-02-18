@@ -28,17 +28,17 @@ if __name__ == "__main__":
     # interactome_rand_samp.drop()
 
     # # setting static folders and urls for the databases
-    set_folders('/home/andrei/support')
+    # set_folders('/home/andrei/support')
     # # pulling the online databases
     # pull_online_dbs()
     # # setting the organism to yeast
-    build_source_config('human')
+    # build_source_config('human')
 
     # # clearing the database, if required
     # destroy_db()
 
-    # building the neo4j database
-    build_db()
+    # # building the neo4j database
+    # build_db()
 
     # # set the source file of the ids of perturbed proteins and background set:
     # cast_analysis_set_to_bulbs_ids("/home/andrei/HS_30_Linhao_outliers.txt")
@@ -47,12 +47,14 @@ if __name__ == "__main__":
     #     analysis_set_csv_location="/home/andrei/HS_30_Linhao_outliers.txt")
 
     # get the bulbs ids oif the nodes we would like to analyze
-    # source_bulbs_ids = get_source_bulbs_ids()
-    # background_bulbs_ids = get_background_bulbs_ids()
+    source_bulbs_ids = get_source_bulbs_ids()
+    background_bulbs_ids = get_background_bulbs_ids()
 
+    print len(source_bulbs_ids)
+    print len(background_bulbs_ids)
     # # building the interactome interface object
-    # local_matrix = InteractomeInterface(main_connex_only=True, full_impact=False)
-    # local_matrix.full_rebuild()
+    local_matrix = InteractomeInterface(main_connex_only=True, full_impact=False)
+    local_matrix.full_rebuild()
 
     # # perform the interactome analysis
     # interactome_analysis([source_bulbs_ids], desired_depth=24, processors=3,
@@ -69,3 +71,4 @@ if __name__ == "__main__":
     # perform the knowledge analysis
     # knowledge_analysis([source_bulbs_ids], desired_depth=24, processors=3,
     #                    param_set=ref_param_set, skip_sampling=False)
+    # pass

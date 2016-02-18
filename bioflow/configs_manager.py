@@ -113,7 +113,7 @@ def compute_full_paths(sources_parse_dict, online_dbs_parse_dict, servers_parse_
         elif 'name_pattern' in source_contents.keys():
             target = ''
 
-            if not os._exists(pre_location):
+            if not os.path.exists(pre_location):
                 target = 'Invalid for now'
                 log.warning('name_pattern %s was not matched in %s. Pull the online dbs first',
                             source_contents['name_pattern'], pre_location)

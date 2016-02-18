@@ -52,6 +52,8 @@ New features:
         it is the case now
         - synchronous computation of the flow for all sources/sinks
 
+-  add citations into the online databases files, that allows integration
+
 Structure-required refactoring:
 -------------------------------
 -  separate the envelopes for the GO and Reactome graphs retrieval from
