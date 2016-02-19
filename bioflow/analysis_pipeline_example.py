@@ -62,7 +62,7 @@ if __name__ == "__main__":
     # local_matrix.full_rebuild()
 
     # perform the interactome analysis
-    interactome_analysis([source_bulbs_ids], desired_depth=30, processors=4,
+    interactome_analysis([source_bulbs_ids], desired_depth=11, processors=1,
                          background_list=background_bulbs_ids, skip_sampling=False)
 
     # # building the reference parameters set

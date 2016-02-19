@@ -54,6 +54,24 @@ New features:
 
 -  add citations into the online databases files, that allows integration
 
+- Clustering algorithms going beyond the spectral clustering,
+
+    - Not needing a pre-defined number of clusters
+
+    - Able to assign the same node to several clusters
+
+    - Maybe iterative DBSCAN or agglomerative clustering with removal of detected clusters until
+      we hit some threshold on the number of number of nodes - average circulation in cluster curve
+      obtained from random nodes sampling
+
+    - We can deduce that graph from the clustering of sets of random nodes v.s.
+
+- Graph exploration module:
+
+    - Strongest eigenvectors / highest circulation in a random set of nodes
+
+    - Randomized clustering/
+
 Structure-required refactoring:
 -------------------------------
 -  separate the envelopes for the GO and Reactome graphs retrieval from
@@ -100,6 +118,12 @@ Structure-required refactoring:
     -  Circulation with a single protein is a special case when one of the sets contain a single
     element.
 
+- Clustering algorithms going beyond the spectral clustering,
+    - Not needing a pre-defined number of clusters
+    - Able to assign the same node to several clusters
+    - Maybe iterative DBSCAN or agglomerative clustering with removal of detected clusters until
+    we hit some threshold on the number of number of nodes - average circulation in cluster
+    - We can deduce that graph from the clustering of sets of random nodes
 
 Good-to-have; non-critical:
 ---------------------------
@@ -149,6 +173,9 @@ Good-to-have; non-critical:
    configs from configsfiles are modified, so their modification do not require restaring the
    program. Alternatively we say that the configs need to be modified before the rest of the
    program can be executed.
+
+-  Transform all the matrices so that the first one is packed line-based and the second one
+   column-based. This will allow the optimization for register pre-pulling in the processor
 
 Documentation and description:
 ==============================

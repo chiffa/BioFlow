@@ -4,6 +4,7 @@ File managing most of the logging behavior of the application.
 import os
 from os import path
 import logging
+import logging.handlers
 import sys
 from shutil import rmtree
 
@@ -66,16 +67,21 @@ def wipe_dir(_path):  # pragma: no cover
     return True
 
 
-def add_handler(_logger, level, file_name):
+def add_handler(_logger, level, file_name, rotating=False):
     """
     Adds a file-writing handler for the log.
 
     :param _logger:
     :param level: logging.DEBUG or other level
     :param file_name: short file name, that will be stored within the application logs location
+    :param rotating: if true, rotating file handler will be added.
     :return:
     """
-    _fh = logging.FileHandler(os.path.join(log_location, file_name), mode='a')
+    handler_name = os.path.join(log_location, file_name)
+    if rotating:
+        _fh = logging.handlers.RotatingFileHandler(handler_name, maxBytes=1e7, backupCount=3)
+    else:
+        _fh = logging.FileHandler(handler_name, mode='a')
     _fh.setLevel(level)
     _fh.setFormatter(formatter)
     _logger.addHandler(_fh)
@@ -100,7 +106,7 @@ def get_logger(logger_name):
     _logger = logging.getLogger(logger_name)
     _logger.setLevel(logging.DEBUG)
 
-    add_handler(_logger, logging.DEBUG, 'debug.log')
+    add_handler(_logger, logging.DEBUG, 'debug.log', rotating=True)
     add_handler(_logger, logging.INFO, 'info.log')
     add_handler(_logger, logging.WARNING, 'warning.log')
     add_handler(_logger, logging.ERROR, 'error.log')
