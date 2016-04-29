@@ -10,51 +10,43 @@ Confirmed minor refactoring requiring a sane rollback:
 New features:
 -------------
 
--  Introduce signal over noise ratio: amount of current in the current
-   configuration compared to what we would have expected in case of a
-   random set of nodes. We could introduce this as a bootstrap on a
-   random subset of nodes to figure which ones are random and which ones
-   aren't
-
--  Add protein abundance level
-
--  Add a coarseness feature on the interactome analysis affecting
-   sampling behavior, so that precision is sacrificed in favor of
-   computation speed.
+-  Add protein abundance level for instantiation of the network
 
 -  Language of network alignment/explanation of net1 by net2: allows
    to compare GO annotation with interactome, cell type specificity 
    analysis or organ context.
 
+-  Add a coarseness feature on the interactome analysis affecting
+   sampling behavior, so that precision is sacrificed in favor of
+   computation speed.
+
 -  Build an "inspector routine" that would allow us to see the nodes that would allow us to route
    the most information => we need to recompute the most central nodes in Interactome, because we
    still observe a heavy skew in the nodes with a high degree.
 
--  add @jit() wrapper in order to compile the elements within the current calculation routines.
-   
 -  We always need to first build Interactome Interface before BioKnowledge Interface and in the
    end we need to have both of them build before we can run automated analysis. A nice fix would be
    to raise flags when they are loaded, instead of relying on the loading behaviors.
 
-- single command to change the neo4j instance bieng used or copied
-   
-   - copy a designated database
-   
-   - cd into the designated database and execute neo4j start/stop
+-  Write the circulation files so that it is possible to calculate the information circulation
+   between two sets or as set and a single protein (application for p53 and PKD1 regulators)
 
--  write the circulation files so that it is possible to calculate the information circulation
-    between two sets or as set and a single protein (application for p53 and PKD1 regulators)
+-  Distinction between downstream and upstream targets can be implemented by translating the
+   directed graph into an associated Markov transition matrix. This will allow to:
 
--  distinction between downstream and upstream targets can be implemented by translating the
-    directed graph into an associated Markov transition matrix. This will allow to:
-        - explicitly allow ponderation of importance of sources/sinks of information
-        - account only for the information propagating downstream the pathways, not both ways as
-        it is the case now
-        - synchronous computation of the flow for all sources/sinks
+    - explicitly allow weight of importance of sources/sinks of information (match the
+      distribution shape with the quantile distribution normalization)
 
--  add citations into the online databases files, that allows integration
+    - account only for the information propagating downstream the pathways, not both ways as
+      it is the case now. A Markov Matrix differential system solution is a good idea as well, of
+      the type F(t) = A*(F(t-1)+B); dA = A*F(t-1)+A*B-F(t)
 
-- Clustering algorithms going beyond the spectral clustering,
+    - synchronous computation of the flow for all sources/sinks
+
+-  Add citations into the online databases files, that allows integration of different source
+   into a single database.
+
+-  Clustering algorithms going beyond the spectral clustering,
 
     - Not needing a pre-defined number of clusters
 
@@ -66,11 +58,26 @@ New features:
 
     - We can deduce that graph from the clustering of sets of random nodes v.s.
 
-- Graph exploration module:
+-  Graph exploration module:
 
     - Strongest eigenvectors / highest circulation in a random set of nodes
 
     - Randomized clustering/
+
+-  Introduce signal over noise ratio: amount of current in the current
+   configuration compared to what we would have expected in case of a
+   random set of nodes. We could introduce this as a bootstrap on a
+   random subset of nodes to figure which ones are random and which ones
+   aren't
+
+-  add @jit() wrapper in order to compile the elements within the current calculation routines.
+
+-  Single command to change the neo4j instance being used or copied
+
+   - Copy a designated database
+
+   - Cd into the designated database and execute neo4j start/stop
+
 
 Structure-required refactoring:
 -------------------------------
@@ -221,8 +228,8 @@ Internals high-level doc:
 
 -  Retrieving giant connex set and operating on it only.
 
-- Filtering GOs without enough UP attachement (less than 2) to avoid infinite informativity
-(entropy reduction to 0).
+-  Filtering GOs without enough UP attachement (less than 2) to avoid infinite informativity
+   (entropy reduction to 0).
 
 
 GO Terms analysis techniques

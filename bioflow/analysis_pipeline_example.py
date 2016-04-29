@@ -28,7 +28,7 @@ if __name__ == "__main__":
     # interactome_rand_samp.drop()
 
     # # setting static folders and urls for the databases
-    # set_folders('/home/andrei/support')
+    # set_folders('/home/ccd/support')
     # # pulling the online databases
     # pull_online_dbs()
     # # setting the organism to yeast
@@ -51,18 +51,18 @@ if __name__ == "__main__":
     #     background_set_csv_location=None,
     #     analysis_set_csv_location="/home/andrei/HS_30_Linhao_outliers.txt")
 
-    # get the bulbs ids oif the nodes we would like to analyze
+    # # get the bulbs ids oif the nodes we would like to analyze
     source_bulbs_ids = get_source_bulbs_ids()
     background_bulbs_ids = get_background_bulbs_ids()
 
     print len(source_bulbs_ids)
     print len(background_bulbs_ids)
-    # # building the interactome interface object
+    # building the interactome interface object
     # local_matrix = InteractomeInterface(main_connex_only=True, full_impact=False)
     # local_matrix.full_rebuild()
 
     # perform the interactome analysis
-    interactome_analysis([source_bulbs_ids], desired_depth=11, processors=1,
+    interactome_analysis([source_bulbs_ids], desired_depth=4, processors=1,
                          background_list=background_bulbs_ids, skip_sampling=False)
 
     # # building the reference parameters set
