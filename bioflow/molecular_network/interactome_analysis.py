@@ -10,7 +10,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from bioflow.algorithms_bank.conduction_routines import perform_clustering
-from bioflow.main_configs import interactome_rand_samp, Outputs, Dumps
+from bioflow.main_configs import interactome_rand_samp, Outputs, Dumps, estimated_comp_ops
 from bioflow.molecular_network.InteractomeInterface import InteractomeInterface
 from bioflow.utils.dataviz import kde_compute
 from bioflow.utils.log_behavior import get_logger
@@ -385,8 +385,6 @@ def auto_analyze(source_list,
     :param skip_sampling: if true, will skip background sampling step
     """
     # noinspection PyTypeChecker
-    estimated_comp_ops = 5
-
     if desired_depth % processors != 0:
         desired_depth = desired_depth / processors + 1
     else:

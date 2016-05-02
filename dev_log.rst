@@ -32,6 +32,10 @@ New features:
    end we need to have both of them build before we can run automated analysis. A nice fix would be
    to raise flags when they are loaded, instead of relying on the loading behaviors.
 
+-  Event sourcing pattern for the graph assembly and modification from the base databases.
+
+-  The execution entry points have to be the five canonical queries.
+
 -  Write the circulation files so that it is possible to calculate the information circulation
    between two sets or as set and a single protein (application for p53 and PKD1 regulators)
 
