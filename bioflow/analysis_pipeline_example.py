@@ -28,7 +28,7 @@ if __name__ == "__main__":
     # interactome_rand_samp.drop()
 
     # # setting static folders and urls for the databases
-    # set_folders('/home/ccd/support')
+    # set_folders('/home/andrei/support')
     # # pulling the online databases
     # pull_online_dbs()
     # # setting the organism to yeast
@@ -62,8 +62,8 @@ if __name__ == "__main__":
     # local_matrix.full_rebuild()
 
     # perform the interactome analysis
-    interactome_analysis([source_bulbs_ids], desired_depth=4, processors=1,
-                         background_list=background_bulbs_ids, skip_sampling=False)
+    interactome_analysis([source_bulbs_ids], desired_depth=11, processors=1,
+                         background_list=background_bulbs_ids, skip_sampling=True)
 
     # # building the reference parameters set
     # _filter = ['biological_process']

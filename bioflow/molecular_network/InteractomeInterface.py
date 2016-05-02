@@ -385,7 +385,7 @@ class InteractomeInterface(object):
 
         self.biogrid_links, self.full_set = n_expansion(self.pre_full_set,
                                                         'BioGRID_Contact_interaction',
-                                                        'biogrid_path Links', 2)
+                                                        'BioGRID Links', 2)
 
         self.Super_Links, self.ExpSet = n_expansion(self.full_set, 'possibly_same',
                                                     'Looks_similar Links')
@@ -871,6 +871,18 @@ class InteractomeInterface(object):
 
         for NodeID in self.node_current.iterkeys():
             matrix_index = self.bulbs_id_2_matrix_index[NodeID]
+
+            if NodeID not in self.bulbs_id_2_display_name.keys():
+                log.warning('bulbs id %s does not seem to appear in the main import set', NodeID)
+                log.warning('corresponding matrix id is %s', matrix_index)
+                continue
+
+            if not self.bulbs_id_2_display_name[NodeID]:
+                log.warning('bulbs id %s maps to a display ID that is void', NodeID)
+                log.warning('corresponding matrix id is %s', matrix_index)
+                self.bulbs_id_2_display_name[NodeID] = "None"
+                continue
+
             characterization_dict[NodeID] = [
                 str(self.node_current[NodeID]),
                 self.bulbs_id2_node_type[NodeID],

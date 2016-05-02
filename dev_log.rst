@@ -6,6 +6,10 @@ Confirmed minor refactoring requiring a sane rollback:
 
 -  Properly indent multi-line :param <parameter type> <parameter name>: descriptors
 
+-  Integrate compops/second estimation to the sources.ini
+
+-  Perform profiling by creating a dedicated set of loggers that would log an "execution time"
+flag set
 
 New features:
 -------------
@@ -183,6 +187,31 @@ Good-to-have; non-critical:
 
 -  Transform all the matrices so that the first one is packed line-based and the second one
    column-based. This will allow the optimization for register pre-pulling in the processor
+
+Possible Major refactoring that would simplify the problem a lot:
+-----------------------------------------------------------------
+
+-  Use a dictionary-configurable parser to parse from a given file format to the neo4j database.
+
+    - The dictionary must show what identifiers have to be recovered from the file and to what
+        nodes they should be matched in the neo4j database
+
+    - The dictionary must show how the relationships should be inserted into the neo4j database
+
+-  All the insertions are added without node or edge duplication. In case of multiple insertions,
+    additional key:value pairs are added to the annotation of the node or the edge
+
+-  Laplacian construction interface takes a dictionary providing instructions on how to
+    compute the laplacian or adjacency matrix from the key:map values, both for nodes and edges
+
+    - It allows both easy instantiation from the values for the nodes, such as protein/metabolite
+     abundance in a tissue/organ, suppression of an interaction because of a mutation
+
+    - It allows to use a single routine in order to perform different types of computation, such
+    as the reliability of information transmission, likehood of randomness/jitter, etc...
+
+    - It allows a high degree of customization by the end user, beyond what would be suggested by
+     the initial user
 
 Documentation and description:
 ==============================

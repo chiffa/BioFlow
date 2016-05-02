@@ -52,12 +52,12 @@ def insert_into_the_database(_up_ids_2_inner_ids, _up_ids_2_properties):
 
 
 def cross_ref_bio_grid():
-    """    performs the total biogrid_path parse. """
-    log.info('Starting BioGrid Parsing')
+    """    performs the total BioGRID parse. """
+    log.info('Starting BioGRID Parsing')
     up_ids_2_properties, up_ids = parse_bio_grid(biogrid_path)
     log.info('BioGrid parsed, starting translation of UP identifiers to internal database ' +
              'identifiers')
     up_ids_2_inner_ids = convert_to_internal_ids(up_ids)
     log.info('UP identifier conversion finished, starting database insertion')
     insert_into_the_database(up_ids_2_inner_ids, up_ids_2_properties)
-    log.info('Database insertion finished. biogrid_path import finished')
+    log.info('Database insertion finished. BioGRID import finished')

@@ -11,7 +11,7 @@ from matplotlib import pyplot as plt
 
 from bioflow.algorithms_bank.conduction_routines import perform_clustering
 from bioflow.annotation_network.BioKnowledgeInterface import GeneOntologyInterface
-from bioflow.main_configs import annotome_rand_samp, Dumps, Outputs
+from bioflow.main_configs import annotome_rand_samp, Dumps, Outputs, estimated_comp_ops
 from bioflow.molecular_network.InteractomeInterface import InteractomeInterface
 from bioflow.utils.dataviz import kde_compute
 from bioflow.utils.io_routines import undump_object, get_source_bulbs_ids, get_background_bulbs_ids
@@ -470,9 +470,6 @@ def auto_analyze(source=None, go_interface_instance=None, processors=3, desired_
         dumplist = undump_object(Dumps.RNA_seq_counts_compare)
     else:
         dumplist = source
-
-    # comp_ops are computation of pair-flow
-    estimated_comp_ops = 5
 
     if desired_depth % processors != 0:
         desired_depth = desired_depth / processors + 1

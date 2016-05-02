@@ -27,7 +27,6 @@ DB_locations = parse_config('online_dbs')
 mongo_db_url = Servers['PRODUCTION']['mongodb_server']
 neo4j_server = Servers['PRODUCTION']['server_neo4j']
 source_db_paths = compute_full_paths(Sources, DB_locations, Servers['PRODUCTION'])
-
 verbosity = int(Options['VERBOSITY']['level'])
 
 # REQUIRED PARAMETERS
@@ -44,6 +43,7 @@ up_tax_ids = [tax_id.strip() for tax_id in Sources['UNIPROT'][
 # Defines Mongodb properties and connections
 pymongo_prefix = Sources['INTERNAL']['mongoprefix']
 pymongo_suffix = Sources['INTERNAL']['mongosuffix']
+estimated_comp_ops = Sources['INTERNAL']['compops']  # pairwise flows computed per second
 
 # Builds static entry points for mongodatabase access
 client = MongoClient(mongo_db_url)
