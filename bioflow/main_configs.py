@@ -43,7 +43,7 @@ up_tax_ids = [tax_id.strip() for tax_id in Sources['UNIPROT'][
 # Defines Mongodb properties and connections
 pymongo_prefix = Sources['INTERNAL']['mongoprefix']
 pymongo_suffix = Sources['INTERNAL']['mongosuffix']
-estimated_comp_ops = Sources['INTERNAL']['compops']  # pairwise flows computed per second
+estimated_comp_ops = int(Sources['INTERNAL']['compops'])  # pairwise flows computed per second
 
 # Builds static entry points for mongodatabase access
 client = MongoClient(mongo_db_url)

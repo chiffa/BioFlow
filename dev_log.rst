@@ -89,6 +89,11 @@ New features:
 
 Structure-required refactoring:
 -------------------------------
+
+-  In the random reference generator, reformat so that different types of queries are matched
+  with the same types of queries. This is required in order to provide support for statistics on
+  multiple query types calls.
+
 -  separate the envelopes for the GO and Reactome graphs retrieval from
    the envelope used to recover and compute over the graph.
    
