@@ -480,16 +480,18 @@ if __name__ == "__main__":
     # print look_up_annotation_set('ENSG00000131981', 'UNIPROT_Ensembl')
     # cast_analysis_set_to_bulbs_ids()
     # cast_background_set_to_bulbs_id()
-    # _, resdict, reslist = look_up_annotation_set(['MYPN'])
-    # pprint(resdict)
-    # print reslist
+    _, resdict, reslist = look_up_annotation_set(['BCL9L'])
+    pprint(resdict)
+    print reslist
     # run_diagnostics(full_list)
     # memoize_bulbs_type(bulbs_names_dict['UNIPROT'][0])
     # cast_analysis_set_to_bulbs_ids()
     # cast_background_set_to_bulbs_id(background_set_csv_location=None)
-    Akshay_p53_go_set = ["0030330", "0000019", "0000002", "0006977"]
-    go_bulbs_ids = lookup("GO Term", Akshay_p53_go_set)
-    association_dict = pull_associations(go_bulbs_ids, ["is_go_annotation"])
-    proteins = [item for key, val in association_dict.iteritems() for item in val]
-    writer(open(Dumps.analysis_set_bulbs_ids, 'w'), delimiter='\n').writerow(proteins)
-    print proteins
+    # Akshay_p53_go_set = ["0030330", "0000019", "0000002", "0006977"]
+    # go_bulbs_ids = lookup("GO Term", Akshay_p53_go_set)
+    # association_dict = pull_associations(go_bulbs_ids, ["is_go_annotation"])
+    # proteins = [item for key, val in association_dict.iteritems() for item in val]
+    # writer(open(Dumps.analysis_set_bulbs_ids, 'w'), delimiter='\n').writerow(proteins)
+    # print proteins
+
+    # bulbs_id = lookup('UNIPROT', 'Q16206')

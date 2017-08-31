@@ -197,6 +197,8 @@ Good-to-have; non-critical:
 -  Transform all the matrices so that the first one is packed line-based and the second one
    column-based. This will allow the optimization for register pre-pulling in the processor
 
+- Docker container cp command to accelerate the database rebuild process?
+
 Possible Major refactoring that would simplify the problem a lot:
 -----------------------------------------------------------------
 
@@ -507,6 +509,15 @@ Add additional databases:
    willing to use a specific organ and not a general database?
 
 -  Add organ specificity levels of protein expression
+
+-  Database sources cited in the differential network biology paper by {Idecker 2012}:
+    - BioGRID
+    - HPRD (Human Reference Protein-protein interaction Dataset - human only)
+    - IntAct (good idea to integrate given the quality and extensivity of data)
+    - DIP (Database of Interacting Proteins - releases seem to have stopped in 2014)
+    - GeneMania (Not entirely clear what the dataset or intention are)
+
+
 
 
 Improve crosslinking between different databases
