@@ -22,6 +22,8 @@ apt-get -y install python-software-properties
 add-apt-repository ppa:webupd8team/java
 apt-get -y update
 
+# As of now the java 7 has been rolled into support and java 8 is the default one. This might
+# affect the stability of my version of neo4j, but we will have to see what is going to happen
 apt-get -y install oracle-java7-installer
 apt-get -y install oracle-java7-set-default
 

@@ -1,5 +1,20 @@
 #!/usr/bin/env bash
 
+# To build container:
+docker build -t "bioflow:dockerfile" .
+
+
+# To run the container:
+docker run -p biflow:dockerfile
+
+
+
+# basically the idea is to create a volume that would be mounted for every new instance and
+# filled with data for the relevant organisms. Since the data is unlikely to change, the instance
+# of neo4j can actually kept on it.
+
+# this is however a non-essential development and will be skipped for now.
+
 docker volume create my-vol
 
 docker run -d \

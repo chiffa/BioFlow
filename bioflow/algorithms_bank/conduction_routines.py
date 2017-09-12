@@ -65,7 +65,8 @@ def get_potentials(conductivity_laplacian, io_index_pair):
 
     :return: array of potential in each node
     """
-    # TODO: technically, Cholesky is not the best solver => change it if needed
+    # TODO: technically, Cholesky is not the best solver. Change is needed, but in approximation
+    # it should be good enough
     solver = cholesky(csc_matrix(conductivity_laplacian), fudge)
     io_array = build_sink_source_current_array(
         io_index_pair, conductivity_laplacian.shape)
@@ -192,7 +193,7 @@ def master_edge_current(conductivity_laplacian, index_list,
     :param memoization:
     :return:
     """
-    # TODO: remove memoization in order to reduce overhead nad mongo database load
+    # TODO: remove memoization option in order to reduce overhead nad mongo database load
 
     # generate index list in agreement with the sampling strategy
     if sampling:
