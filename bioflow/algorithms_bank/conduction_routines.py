@@ -10,6 +10,7 @@ from scipy.sparse import csc_matrix, diags, triu, lil_matrix
 from scipy.sparse.linalg import eigsh
 # noinspection PyUnresolvedReferences
 from scikits.sparse.cholmod import cholesky
+from scipy.sparse.linalg import splu
 from pickle import dump
 import warnings
 from bioflow.utils.log_behavior import get_logger
@@ -53,7 +54,7 @@ def build_sink_source_current_array(io_index_pair, shape):
     """
     io_array = np.zeros((shape[0], 1))
     io_array[io_index_pair[0], 0], io_array[io_index_pair[1], 0] = (1.0, -1.0)
-    return io_array
+    return csc_matrix(io_array)
 
 
 def get_potentials(conductivity_laplacian, io_index_pair):
@@ -84,7 +85,8 @@ def get_current_matrix(conductivity_laplacian, node_potentials):
      it is negative.
     :rtype: scipy.sparse.lil_matrix
     """
-    diag_voltages = lil_matrix(diags(node_potentials.T.tolist()[0], 0))
+    print type(node_potentials.shape)
+    diag_voltages = lil_matrix(diags(node_potentials.T.toarray().tolist()[0], 0))
     corr_conductance_matrix = conductivity_laplacian - \
         lil_matrix(diags(conductivity_laplacian.diagonal(), 0))
     currents = diag_voltages.dot(corr_conductance_matrix) - \
@@ -213,6 +215,9 @@ def master_edge_current(conductivity_laplacian, index_list,
     # dump(csc_matrix(conductivity_laplacian), open('debug_for_cholesky.dmp', 'w'))
     # log.exception('debug dump occured here!')
     # raw_input('press enter to continue!')
+
+    # raise Exception('tracing the execution stack')
+
     solver = cholesky(csc_matrix(conductivity_laplacian), fudge)
 
     # run the main loop on the list of indexes in agreement with the memoization strategy:

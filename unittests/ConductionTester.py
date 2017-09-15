@@ -29,7 +29,7 @@ class ConductionRoutinesTester(unittest.TestCase):
     def test_build_sink_source_current_array(self):
         ref = np.array([[1, -1, 0, 0]]).T
         calc = cr.build_sink_source_current_array((0, 1), (4, 4))
-        self.assertListEqual(calc.T.tolist(), ref.T.tolist())
+        self.assertListEqual(calc.T.toarray().tolist(), ref.T.tolist())
 
     def test_build_potentials(self):
         calc = cr.get_potentials(self.test_laplacian, (0, 3))
