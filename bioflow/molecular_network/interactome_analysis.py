@@ -474,7 +474,13 @@ if __name__ == "__main__":
     # for node in nr_nodes:
     #     print node
 
-    source = get_source_bulbs_ids()
-    background_list = get_background_bulbs_ids()
-    auto_analyze([source], desired_depth=5, processors=6,
-                 background_list=background_list, skip_sampling=True)
+    # source = get_source_bulbs_ids()
+    # background_list = get_background_bulbs_ids()
+    # auto_analyze([source], desired_depth=5, processors=6,
+    #              background_list=background_list, skip_sampling=True)
+
+    local_matrix = InteractomeInterface(main_connex_only=True, full_impact=False)
+    local_matrix.full_rebuild()
+
+    spawn_sampler_pool(4, [2], [125], interactome_interface_instance=None)
+
