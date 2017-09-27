@@ -6,7 +6,7 @@ import random
 from copy import copy
 import numpy as np
 from itertools import combinations, repeat
-from scipy.sparse import csc_matrix, diags, triu, lil_matrix
+from scipy.sparse import csc_matrix, diags, triu, lil_matrix, csr_matrix
 from scipy.sparse.linalg import eigsh
 # noinspection PyUnresolvedReferences
 from scikits.sparse.cholmod import cholesky
@@ -21,11 +21,41 @@ from bioflow.utils.linalg_routines import cluster_nodes, average_off_diag_in_sub
 
 log = get_logger(__name__)
 
+switch_to_splu = False
+# Looks like we are failing the normalization due to the matrix symmetry when using SPLU.
+# Which is expected - since we did simplifying assumptions about the Laplacian to be able to share it
+
 # TODO: we have to problems here: wrong solver and wrong laplacian
 #   1) we are using a Cholesky solver on a system that by definition has at least one nul eigval
 #   2) we are using the same laplacian matrix for all the calculations. However this is wrong:
 #   we need to account for the fact that we are adding external sink/sources by adding 1
 #   to the diagonal terms of the matrix that are being used as sinks/sources
+
+
+def delete_row_csr(mat, i):
+    if not isinstance(mat, csr_matrix):
+        raise ValueError("works only for CSR format -- use .tocsr() first")
+    n = mat.indptr[i+1] - mat.indptr[i]
+    if n > 0:
+        mat.data[mat.indptr[i]:-n] = mat.data[mat.indptr[i+1]:]
+        mat.data = mat.data[:-n]
+        mat.indices[mat.indptr[i]:-n] = mat.indices[mat.indptr[i+1]:]
+        mat.indices = mat.indices[:-n]
+    mat.indptr[i:-1] = mat.indptr[i+1:]
+    mat.indptr[i:] -= n
+    mat.indptr = mat.indptr[:-1]
+    mat._shape = (mat._shape[0]-1, mat._shape[1])
+
+
+def trim_matrix(mat, i):
+    mat = mat.copy()
+    mat = mat.tocsr()
+    delete_row_csr(mat, i)
+    mat = mat.transpose()
+    mat = mat.tocsr()
+    delete_row_csr(mat, i)
+    mat = mat.transpose()
+    return mat
 
 
 def sparse_abs(sparse_matrix):
@@ -45,16 +75,25 @@ def sparse_abs(sparse_matrix):
     return ret_mat
 
 
-def build_sink_source_current_array(io_index_pair, shape):
+def build_sink_source_current_array(io_index_pair, shape, splu=False):
     """
     converts index pair to a solver-compatible array
 
     :param shape: shape of the conductance matrix
     :param io_index_pair: pair of indexes where sinks/bioflow pair is
     """
-    io_array = np.zeros((shape[0], 1))
-    io_array[io_index_pair[0], 0], io_array[io_index_pair[1], 0] = (1.0, -1.0)
-    return csc_matrix(io_array)
+
+    if splu:
+        io_array = np.zeros((shape[0]-1, 1))
+        if io_index_pair[0] < io_index_pair[1]:
+            io_array[io_index_pair[0], 0] = 1.0
+        else:
+            io_array[io_index_pair[0]-1, 0] = 1.0
+        return csr_matrix(io_array)
+    else:
+        io_array = np.zeros((shape[0], 1))
+        io_array[io_index_pair[0], 0], io_array[io_index_pair[1], 0] = (1.0, -1.0)
+        return csc_matrix(io_array)
 
 
 def get_potentials(conductivity_laplacian, io_index_pair):
@@ -68,10 +107,18 @@ def get_potentials(conductivity_laplacian, io_index_pair):
     """
     # TODO: technically, Cholesky is not the best solver. Change is needed, but in approximation
     # it should be good enough
-    solver = cholesky(csc_matrix(conductivity_laplacian), fudge)
-    io_array = build_sink_source_current_array(
-        io_index_pair, conductivity_laplacian.shape)
-    return solver(io_array)
+
+    if switch_to_splu:
+        io_array = build_sink_source_current_array(io_index_pair, conductivity_laplacian.shape, splu=True)
+        local_conductivity_laplacian = trim_matrix(conductivity_laplacian, io_index_pair[1])
+        log.info('starting splu computation')
+        solver = splu(csc_matrix(local_conductivity_laplacian))
+        log.info('splu computation done')
+        return solver.solve(io_array.toarray())
+    else:
+        io_array = build_sink_source_current_array(io_index_pair, conductivity_laplacian.shape)
+        solver = cholesky(csc_matrix(conductivity_laplacian), fudge)
+        return solver(io_array)
 
 
 def get_current_matrix(conductivity_laplacian, node_potentials):
@@ -85,12 +132,49 @@ def get_current_matrix(conductivity_laplacian, node_potentials):
      it is negative.
     :rtype: scipy.sparse.lil_matrix
     """
-    print type(node_potentials.shape)
-    diag_voltages = lil_matrix(diags(node_potentials.T.toarray().tolist()[0], 0))
+    if switch_to_splu:
+        diag_voltages = lil_matrix(diags(node_potentials.toarray().T.tolist()[0], 0))
+    else:
+        # print type(node_potentials)
+        # print node_potentials.shape
+        # print node_potentials
+        diag_voltages = lil_matrix(diags(node_potentials.toarray().T.tolist()[0], 0))
     corr_conductance_matrix = conductivity_laplacian - \
-        lil_matrix(diags(conductivity_laplacian.diagonal(), 0))
-    currents = diag_voltages.dot(corr_conductance_matrix) - \
-        corr_conductance_matrix.dot(diag_voltages)
+                              lil_matrix(diags(conductivity_laplacian.diagonal(), 0))
+
+    # true currents
+    currents = diag_voltages.dot(corr_conductance_matrix) - corr_conductance_matrix.dot(diag_voltages)
+
+    # print type(currents)
+
+    # we want them to be fully positive (so that the direction of flow doesn't matter)
+    abs_current = sparse_abs(currents)
+
+    # and symmetric so that the triangular upper matrix contains all the data
+    currents = abs_current+abs_current.T
+
+    # positive_current = lil_matrix(currents.shape)
+    # positive_current[currents > 0.0] = currents[currents > 0.0]
+    # negative_current = lil_matrix(currents.shape)
+    # negative_current[currents < 0.0] = currents[currents < 0.0]
+    #
+    # incoming_current = np.array((positive_current + positive_current.T).sum(axis=1)).flatten()/2
+    # outgoing_current = np.array((negative_current + negative_current.T).sum(axis=1)).flatten()/2
+
+    # print incoming_current
+    # print outgoing_current
+    #
+    # print 'flow conservation', np.allclose(incoming_current, outgoing_current)
+    # print incoming_current+outgoing_current
+    # print 'discordant', np.nonzero(incoming_current+outgoing_current)
+    #
+    # # print 'symmetric', (currents-currents.T)
+    # # print 'positive', np.any(currents > 0.0)
+    # # print 'negative', np.any(currents < 0.0)
+    # raise Exception('debug')
+
+    # PB: we can't really use the triu because the flow matrix is not symmetric
+
     return currents, triu(currents)
 
 
@@ -98,25 +182,40 @@ def get_current_through_nodes(triu_current_matrix):
     """
     Recovers current flowing through each node
 
-    :param triu_current_matrix: non-redundant (i.e. triangular superior) matrix of
+    :param triu_current_matrix: non-redundant (i.e. triangular superior/lower) matrix of
     currents through a conduction system
     :return : current through the individual nodes based on the current matrix as defined in
      the get_current_matrix module
     :rtype: numpy.array
     """
-    pos_curr = lil_matrix(triu_current_matrix.shape)
-    pos_curr[
-        triu_current_matrix > 0.0] = \
-        triu_current_matrix[triu_current_matrix > 0.0]
-    neg_curr = lil_matrix(triu_current_matrix.shape)
-    neg_curr[
-        triu_current_matrix < 0.0] = \
-        triu_current_matrix[triu_current_matrix < 0.0]
-    s = np.array(pos_curr.sum(axis=1).T - neg_curr.sum(axis=0))
-    r = np.array(pos_curr.sum(axis=0) - neg_curr.sum(axis=1).T)
-    ret = copy(s)
-    ret[r > s] = r[r > s]
-    ret = list(ret.flatten())
+    positive_current = lil_matrix(triu_current_matrix.shape)
+    positive_current[triu_current_matrix > 0.0] = triu_current_matrix[triu_current_matrix > 0.0]
+
+    negative_current = lil_matrix(triu_current_matrix.shape)
+    negative_current[triu_current_matrix < 0.0] = triu_current_matrix[triu_current_matrix < 0.0]
+
+    # print np.any(triu_current_matrix.diagonal())
+
+    incoming_current = np.array((positive_current + positive_current.T).sum(axis=1)).flatten()/2
+    outgoing_current = np.array((negative_current + negative_current.T).sum(axis=1)).flatten()/2
+
+    if np.any(outgoing_current):
+        print 'incoming', incoming_current
+        print 'outgoing', outgoing_current
+        print 'diff', incoming_current + outgoing_current
+        print np.any(incoming_current + outgoing_current > 0.)
+        raise Exception('debug: assumption failed....')
+
+    ret = list(incoming_current)
+
+    # s = np.array(positive_current.sum(axis=1).T - negative_current.sum(axis=0))
+    # r = np.array(positive_current.sum(axis=0) - negative_current.sum(axis=1).T)
+    # ret = copy(s)
+    # ret[r > s] = r[r > s]
+    # ret = list(ret.flatten())
+    #
+    # print 'old ret', ret
+
     return ret
 
 
@@ -146,6 +245,9 @@ def laplacian_reachable_filter(laplacian, reachable_indexes):
         diags(re_laplacian.diagonal(), 0, format="lil")
     d = (-re_laplacian.sum(axis=0)).tolist()[0]
     re_laplacian = re_laplacian + diags(d, 0, format="lil")
+
+    # print 're_laplacian', re_laplacian.shape
+
     return re_laplacian
 
 
@@ -168,11 +270,24 @@ def edge_current_iteration(conductivity_laplacian, index_pair,
         solver = None
 
     i, j = index_pair
-    io_array = build_sink_source_current_array((i, j), conductivity_laplacian.shape)
+
     if solver:
-        voltages = solver(io_array)
+        if switch_to_splu:
+            pass  # because the solver was not passed to start with
+        else:
+            # print 'solver branch picked'
+            io_array = build_sink_source_current_array((i, j), conductivity_laplacian.shape)
+            voltages = solver(io_array)
     else:
+        # print 'branch analysis: no solver provided'
         voltages = get_potentials(conductivity_laplacian, (i, j))
+        # print 'voltages', voltages.shape
+        # problem: are we retrieving anything with i, j when we cut the laplacian?
+        if switch_to_splu:
+            voltages = np.insert(voltages, j, 0, axis=0)
+            # print 'voltages after 0-insertion', voltages.shape
+
+    # print 'tracing voltages', voltages.shape
     _, current_upper = get_current_matrix(conductivity_laplacian, voltages)
     potential_diff = abs(voltages[i, 0] - voltages[j, 0])
 
@@ -218,7 +333,13 @@ def master_edge_current(conductivity_laplacian, index_list,
 
     # raise Exception('tracing the execution stack')
 
-    solver = cholesky(csc_matrix(conductivity_laplacian), fudge)
+    if switch_to_splu:
+        pass # for now we are not going to using smart iteration through i, j
+        # solver = splu(csc_matrix(conductivity_laplacian))
+    else:
+        solver = cholesky(csc_matrix(conductivity_laplacian), fudge)
+
+    # solver = cholesky(csc_matrix(conductivity_laplacian), fudge)
 
     # run the main loop on the list of indexes in agreement with the memoization strategy:
     for counter, (i, j) in enumerate(list_of_pairs):
@@ -230,9 +351,13 @@ def master_edge_current(conductivity_laplacian, index_list,
             potential_diff, current_upper = memory_source[tuple(sorted((i, j)))]
 
         else:
-            potential_diff, current_upper = \
-                edge_current_iteration(conductivity_laplacian, (i, j),
-                                       solver=solver)
+            if switch_to_splu:
+                potential_diff, current_upper = \
+                    edge_current_iteration(conductivity_laplacian, (i, j))
+            else:
+                potential_diff, current_upper = \
+                    edge_current_iteration(conductivity_laplacian, (i, j),
+                                           solver=solver)
 
         if memoization:
             up_pair_2_voltage_current[tuple(sorted((i, j)))] = \
@@ -240,7 +365,7 @@ def master_edge_current(conductivity_laplacian, index_list,
 
         # normalize to potential, if needed
         if potential_dominated:
-
+            # raise Exception('tracing the stack!')
             if potential_diff != 0:
                 current_upper = current_upper / potential_diff
 

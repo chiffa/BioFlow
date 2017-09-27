@@ -800,8 +800,10 @@ class InteractomeInterface(object):
                     memory_source=self.uniprots_2_voltage_and_circulation)
             # self.uniprots_2_voltage_and_circulation.update(up_pair_2_voltage_current)
             self.UP2UP_voltages.update(
-                dict((pair, voltage)
-                     for pair, (voltage, current) in up_pair_2_voltage_current.iteritems()))
+                dict(((self.matrix_index_2_bulbs_id[i],
+                       self.matrix_index_2_bulbs_id[j]),
+                      voltage)
+                     for (i, j), (voltage, current) in up_pair_2_voltage_current.iteritems()))
 
         if incremental:
             self.current_accumulator = self.current_accumulator + current_accumulator

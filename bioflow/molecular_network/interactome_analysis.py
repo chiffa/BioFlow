@@ -479,8 +479,10 @@ if __name__ == "__main__":
     # auto_analyze([source], desired_depth=5, processors=6,
     #              background_list=background_list, skip_sampling=True)
 
+
     local_matrix = InteractomeInterface(main_connex_only=True, full_impact=False)
-    local_matrix.full_rebuild()
+    local_matrix.fast_load()
+    #
+    # spawn_sampler_pool(3, [2], [150], interactome_interface_instance=None)
 
-    spawn_sampler_pool(4, [2], [125], interactome_interface_instance=None)
-
+    # local_matrix.randomly_sample([2], [250])

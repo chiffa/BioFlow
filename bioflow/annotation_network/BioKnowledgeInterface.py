@@ -15,6 +15,7 @@ from itertools import combinations, chain
 from pprint import PrettyPrinter
 from random import shuffle
 from time import time
+import traceback, sys
 
 import numpy as np
 from scipy.sparse import lil_matrix
@@ -292,6 +293,9 @@ class GeneOntologyInterface(object):
             raise Exception(
                 "Wrong Filtering attempted to be recovered from storage")
         if self.InitSet != initial_set:
+            print len(self.InitSet)
+            print len(initial_set)
+            print traceback.print_tb(file=sys.stdout)
             log.critical("Wrong initial_set attempted to be recovered from storage")
             raise Exception(
                 "Wrong initial_set attempted to be recovered from storage")

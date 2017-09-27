@@ -50,23 +50,31 @@ if __name__ == "__main__":
     # "/home/andrei/Linhao_imaging.txt"
     # "/home/andrei/HS_30_Linhao_outliers.txt"
     # cast_analysis_set_to_bulbs_ids("/home/andrei/Linhao_imaging.txt")
+    # cast_analysis_set_to_bulbs_ids("/home/andrei/Dropbox/workspaces/JHU/Mehdi_paper_1/inviable_annotations_filtered_by_S288C-filt.tsv")
     #
     # cast_background_set_to_bulbs_id(
     #     background_set_csv_location=None,
     #     analysis_set_csv_location="/home/andrei/HS_30_Linhao_outliers.txt")
 
-    # # get the bulbs ids oif the nodes we would like to analyze
+    # cast_analysis_set_to_bulbs_ids("/home/andrei/akshay_data/top_50.csv")
+    # cast_analysis_set_to_bulbs_ids("/home/andrei/akshay_data/bottom_50.csv")
+    #
+    # cast_background_set_to_bulbs_id(
+    #     background_set_csv_location="/home/andrei/akshay_data/All_genes.csv",
+    #     analysis_set_csv_location="/home/andrei/akshay_data/bottom_50.csv")
+
+    # get the bulbs ids if the nodes we would like to analyze
     source_bulbs_ids = get_source_bulbs_ids()
     background_bulbs_ids = get_background_bulbs_ids()
 
-    print len(source_bulbs_ids)
-    print len(background_bulbs_ids)
-    # # building the interactome interface object
+    # print len(source_bulbs_ids)
+    # print len(background_bulbs_ids)
+    # building the interactome interface object
     # local_matrix = InteractomeInterface(main_connex_only=True, full_impact=False)
     # local_matrix.full_rebuild()
 
-    # # perform the interactome analysis
-    # interactome_analysis([source_bulbs_ids], desired_depth=24, processors=3,
+    # perform the interactome analysis
+    # interactome_analysis([source_bulbs_ids], desired_depth=50, processors=2,
     #                      background_list=background_bulbs_ids, skip_sampling=False)
 
     # # building the reference parameters set
@@ -74,10 +82,11 @@ if __name__ == "__main__":
     ref_param_set = [_filter, background_bulbs_ids, (1, 1), True, 3]
 
     # # build the annotome interface
-    # annot_matrix = AnnotomeInterface(*ref_param_set)
+    annot_matrix = AnnotomeInterface(*ref_param_set)
+    annot_matrix.load()
     # annot_matrix.full_rebuild()
 
     # # perform the knowledge analysis
-    knowledge_analysis([source_bulbs_ids], desired_depth=24, processors=3,
-                       param_set=ref_param_set, skip_sampling=True)
+    knowledge_analysis([source_bulbs_ids], desired_depth=40, processors=4,
+                       param_set=ref_param_set, skip_sampling=False)
     # pass
