@@ -58,6 +58,7 @@ if __name__ == "__main__":
 
     # cast_analysis_set_to_bulbs_ids("/home/andrei/akshay_data/top_50.csv")
     # cast_analysis_set_to_bulbs_ids("/home/andrei/akshay_data/bottom_50.csv")
+    # cast_analysis_set_to_bulbs_ids("/home/andrei/akshay_data/combined_100.csv")
     #
     # cast_background_set_to_bulbs_id(
     #     background_set_csv_location="/home/andrei/akshay_data/All_genes.csv",
@@ -74,19 +75,19 @@ if __name__ == "__main__":
     # local_matrix.full_rebuild()
 
     # perform the interactome analysis
-    # interactome_analysis([source_bulbs_ids], desired_depth=50, processors=2,
-    #                      background_list=background_bulbs_ids, skip_sampling=False)
+    interactome_analysis([source_bulbs_ids], desired_depth=20, processors=2,
+                         background_list=background_bulbs_ids, skip_sampling=False)
 
-    # # building the reference parameters set
-    _filter = ['biological_process']
-    ref_param_set = [_filter, background_bulbs_ids, (1, 1), True, 3]
-
-    # # build the annotome interface
-    annot_matrix = AnnotomeInterface(*ref_param_set)
-    annot_matrix.load()
-    # annot_matrix.full_rebuild()
-
-    # # perform the knowledge analysis
-    knowledge_analysis([source_bulbs_ids], desired_depth=40, processors=4,
-                       param_set=ref_param_set, skip_sampling=False)
-    # pass
+    # building the reference parameters set
+    # _filter = ['biological_process']
+    # ref_param_set = [_filter, background_bulbs_ids, (1, 1), True, 3]
+    #
+    # # # build the annotome interface
+    # annot_matrix = AnnotomeInterface(*ref_param_set)
+    # annot_matrix.load()
+    # # annot_matrix.full_rebuild()
+    #
+    # # # perform the knowledge analysis
+    # knowledge_analysis([source_bulbs_ids], desired_depth=50, processors=3,
+    #                    param_set=ref_param_set, skip_sampling=False)
+    #

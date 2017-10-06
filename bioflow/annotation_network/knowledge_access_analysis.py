@@ -394,7 +394,7 @@ def compare_to_blank(
     r_nodes, r_groups = show_correlations(
         final, final_mean_correlations, final_eigenvalues,
         zoom_range_selector, curr_inf_conf, mean_correlations.T, eigenvalue.T, count,
-        sparse=sparse_rounds)
+        sparse=sparse_rounds, go_interface_instance=go_interface_instance)
 
     group_char = namedtuple(
         'Group_Char', [
