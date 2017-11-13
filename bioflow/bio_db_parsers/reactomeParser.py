@@ -222,7 +222,16 @@ class ReactomeParser(object):
             local_dict['collectionMembers'].append(
                 local_property.attrib.values()[0][1:])
         if '}entityReference' in local_property.tag:
-                    local_dict['references'] = \
+            # print local_property.attrib.values()[0][1:]
+            # TODO: temporary fix
+            if not "EntityReference" in local_property.attrib.values()[0][1:]:
+                # pass
+                # print local_property.attrib.values()[0][1:]
+                # for ref in meta_refs.keys():
+                #     print ref
+                # meta_ref_types = set(''.join([i for i in ref if not i.isdigit()]) for ref in meta_refs.keys())
+                # print meta_ref_types
+                local_dict['references'] = \
                         zip_dicts(meta_refs[local_property.attrib.values()[0][1:]],
                                   local_dict['references'])
         if '}feature' in local_property.tag \

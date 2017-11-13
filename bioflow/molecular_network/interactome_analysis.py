@@ -423,6 +423,8 @@ def auto_analyze(source_list,
                 len(interactome_interface.entry_point_uniprots_bulbs_ids),
                 [0.5, 0.6],
                 p_val=0.9, interactome_interface_instance=interactome_interface)
+
+
         else:
 
             sampling_depth = max(200 ** 2 /
@@ -434,7 +436,7 @@ def auto_analyze(source_list,
                          len(interactome_interface.entry_point_uniprots_bulbs_ids),
                          sampling_depth,
                          len(interactome_interface.entry_point_uniprots_bulbs_ids) *
-                         sampling_depth / 2 / desired_depth / 60)
+                         sampling_depth / 2 / 60)
 
                 spawn_sampler_pool(processors,
                                    [len(interactome_interface.entry_point_uniprots_bulbs_ids)],
@@ -453,7 +455,6 @@ def auto_analyze(source_list,
         interactome_interface.export_conduction_system()
         for group in nr_groups:
             log.info(group)
-        log.info('\t Node_ID \t Name \t current \t connectedness \t p_value')
         for node in nr_nodes:
             log.info('\t %s \t %s \t %s \t %s \t %s', *node)
 

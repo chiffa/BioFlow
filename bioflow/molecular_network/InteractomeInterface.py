@@ -785,8 +785,7 @@ class InteractomeInterface(object):
         if sparse_samples:
             current_accumulator = cr.sample_group_edge_current(
                 self.laplacian_matrix,
-                [
-                    self.bulbs_id_2_matrix_index[UP] for UP in self.entry_point_uniprots_bulbs_ids],
+                [self.bulbs_id_2_matrix_index[UP] for UP in self.entry_point_uniprots_bulbs_ids],
                 re_samples=sparse_samples,
                 cancellation=cancellation)
         else:

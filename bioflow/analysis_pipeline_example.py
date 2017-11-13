@@ -18,7 +18,7 @@ from bioflow.neo4j_db.db_io_routines import look_up_annotation_set, \
 from bioflow.utils.io_routines import get_source_bulbs_ids, get_background_bulbs_ids
 from bioflow.utils.log_behavior import clear_logs
 
-
+168987
 if __name__ == "__main__":
     # # first, let's clear logs:
     # clear_logs()
@@ -32,7 +32,7 @@ if __name__ == "__main__":
     # # pulling the online databases
     # pull_online_dbs()
     # # setting the organism to yeast
-    # build_source_config('human')
+    # build_source_config('mouse')
 
     ##########################################
     # After you've changed folders/sources above, you need to re-start python to force
@@ -59,14 +59,16 @@ if __name__ == "__main__":
     # cast_analysis_set_to_bulbs_ids("/home/andrei/akshay_data/top_50.csv")
     # cast_analysis_set_to_bulbs_ids("/home/andrei/akshay_data/bottom_50.csv")
     # cast_analysis_set_to_bulbs_ids("/home/andrei/akshay_data/combined_100.csv")
-    #
+
+    # cast_analysis_set_to_bulbs_ids("/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Veena data/both.csv")
+
     # cast_background_set_to_bulbs_id(
     #     background_set_csv_location="/home/andrei/akshay_data/All_genes.csv",
     #     analysis_set_csv_location="/home/andrei/akshay_data/bottom_50.csv")
-
-    # get the bulbs ids if the nodes we would like to analyze
+    #
+    # # get the bulbs ids if the nodes we would like to analyze
     source_bulbs_ids = get_source_bulbs_ids()
-    background_bulbs_ids = get_background_bulbs_ids()
+    # background_bulbs_ids = get_background_bulbs_ids()
 
     # print len(source_bulbs_ids)
     # print len(background_bulbs_ids)
@@ -74,18 +76,22 @@ if __name__ == "__main__":
     # local_matrix = InteractomeInterface(main_connex_only=True, full_impact=False)
     # local_matrix.full_rebuild()
 
-    # perform the interactome analysis
-    interactome_analysis([source_bulbs_ids], desired_depth=20, processors=2,
-                         background_list=background_bulbs_ids, skip_sampling=False)
+    # # perform the interactome analysis
+    interactome_analysis([source_bulbs_ids],
+                         desired_depth=20,
+                         processors=1,
+                         # background_list=background_bulbs_ids,
+                         skip_sampling=False)
 
     # building the reference parameters set
     # _filter = ['biological_process']
+    # background_bulbs_ids = []
     # ref_param_set = [_filter, background_bulbs_ids, (1, 1), True, 3]
     #
     # # # build the annotome interface
     # annot_matrix = AnnotomeInterface(*ref_param_set)
-    # annot_matrix.load()
-    # # annot_matrix.full_rebuild()
+    # # annot_matrix.load()
+    # annot_matrix.full_rebuild()
     #
     # # # perform the knowledge analysis
     # knowledge_analysis([source_bulbs_ids], desired_depth=50, processors=3,

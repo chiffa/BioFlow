@@ -85,6 +85,9 @@ class UniProtParser(object):
             self._single_up_dict['PDB'].append(line.split(';')[1].strip())
         if 'GeneID; ' in line:
             self._single_up_dict['GeneID'].append(line.split(';')[1].strip())
+        if 'RefSeq; ' in line:
+            self._single_up_dict['RefSeq'].append(line.split(';')[1].strip())
+            self._single_up_dict['RefSeq'].append(line.split(';')[2].split(' ').strip())
 
     def parse_gene_references(self, line):
         """

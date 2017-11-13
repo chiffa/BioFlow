@@ -4,6 +4,7 @@ IO current arrays.
 """
 import random
 from copy import copy
+from time import time
 import numpy as np
 from itertools import combinations, repeat
 from scipy.sparse import csc_matrix, diags, triu, lil_matrix, csr_matrix
@@ -312,6 +313,10 @@ def master_edge_current(conductivity_laplacian, index_list,
     """
     # TODO: remove memoization option in order to reduce overhead nad mongo database load
 
+    log.info('master edge current starting to sample with %s nodes; cancellation: %s;'
+             ' pot-dominated %s; sampling %s; sampling_depth %s'
+             % (len(index_list), cancellation, potential_dominated, sampling, sampling_depth))
+
     # generate index list in agreement with the sampling strategy
     if sampling:
         list_of_pairs = []
@@ -342,6 +347,10 @@ def master_edge_current(conductivity_laplacian, index_list,
     # solver = cholesky(csc_matrix(conductivity_laplacian), fudge)
 
     # run the main loop on the list of indexes in agreement with the memoization strategy:
+    run_length = len(list_of_pairs)
+    breakpoints = run_length / 100
+    previous_time = time()
+
     for counter, (i, j) in enumerate(list_of_pairs):
 
         if counter % total_pairs/100 == 0:
@@ -375,6 +384,12 @@ def master_edge_current(conductivity_laplacian, index_list,
                             i, j, 'Tension-normalization was aborted')
 
         current_accumulator += sparse_abs(current_upper)
+
+        if counter % breakpoints == 0 and counter > 1:
+            compops = float(breakpoints)/(time()-previous_time)
+            log.info("progress: %s/%s, current speed: %s compops, time remaining: %s min"
+                     % (counter, total_pairs, compops, (total_pairs-counter)/compops/60))
+            previous_time = time()
 
     if cancellation:
         current_accumulator /= total_pairs
