@@ -952,11 +952,20 @@ class GeneOntologyInterface(object):
                                  self.node_current)),
                             'voltages': pickle.dumps(
                                 self.UP2UP_voltages)})
-                log.info(
-                    'Random ID: %s \t Sample size: %s \t iteration: %s\t compops: %s \t time: %s ',
-                    self.random_tag, sample_size, i,
-                    "{0:.2f}".format(sample_size * (sample_size - 1) / 2 / self._time()),
-                    self.pretty_time())
+
+                if not sparse_rounds:
+
+                    log.info(
+                        'Random ID: %s \t Sample size: %s \t iteration: %s\t compops: %s \t time: %s ',
+                        self.random_tag, sample_size, i,
+                        "{0:.2f}".format(sample_size * (sample_size - 1) / 2 / self._time()),
+                        self.pretty_time())
+
+                else:
+                    log.info('Random ID: %s \t Sample size: %s \t iteration: %s\t compops: %s \t '
+                             'time: %s ', self.random_tag, sample_size, i,
+                             "{0:.2f}".format(sample_size * sparse_rounds / 2 / self._time()),
+                             self.pretty_time())
 
     def get_independent_linear_groups(self):
         """

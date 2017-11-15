@@ -77,23 +77,26 @@ if __name__ == "__main__":
     # local_matrix.full_rebuild()
 
     # # perform the interactome analysis
-    interactome_analysis([source_bulbs_ids],
-                         desired_depth=20,
-                         processors=1,
-                         # background_list=background_bulbs_ids,
-                         skip_sampling=False)
+    # interactome_analysis([source_bulbs_ids],
+    #                      desired_depth=20,
+    #                      processors=1,
+    #                      # background_list=background_bulbs_ids,
+    #                      skip_sampling=False)
 
     # building the reference parameters set
-    # _filter = ['biological_process']
-    # background_bulbs_ids = []
-    # ref_param_set = [_filter, background_bulbs_ids, (1, 1), True, 3]
+    _filter = ['biological_process']
+    background_bulbs_ids = []
+    ref_param_set = [_filter, background_bulbs_ids, (1, 1), True, 3]
     #
     # # # build the annotome interface
     # annot_matrix = AnnotomeInterface(*ref_param_set)
     # # annot_matrix.load()
     # annot_matrix.full_rebuild()
     #
-    # # # perform the knowledge analysis
-    # knowledge_analysis([source_bulbs_ids], desired_depth=50, processors=3,
-    #                    param_set=ref_param_set, skip_sampling=False)
+    # # perform the knowledge analysis
+    knowledge_analysis([source_bulbs_ids],
+                       desired_depth=20,
+                       processors=1,
+                       param_set=ref_param_set,
+                       skip_sampling=True)
     #

@@ -519,7 +519,7 @@ def auto_analyze(source=None, go_interface_instance=None, processors=3, desired_
                 log.info('length: %s \t sampling depth: %s \t, estimated round time: %s min',
                          len(go_interface_instance.analytic_uniprots),
                          sampling_depth,
-                         len(go_interface_instance.analytic_uniprots) * sampling_depth / 2 / 6 / 60)
+                         len(go_interface_instance.analytic_uniprots) * sampling_depth / 2 / 60)
 
                 spawn_sampler_pool(processors,
                                    [len(go_interface_instance.analytic_uniprots)],
