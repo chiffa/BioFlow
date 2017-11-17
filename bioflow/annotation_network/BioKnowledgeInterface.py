@@ -751,7 +751,10 @@ class GeneOntologyInterface(object):
         else:
             iterator = combinations(self.analytic_uniprots, 2)
 
-        for UP1, UP2 in iterator:
+        total_pairs = len(iterator)
+        breakpoints=300
+
+        for counter, (UP1, UP2) in enumerate(iterator):
 
             if sourced:
                 self.current_accumulator = self.current_accumulator + \
@@ -776,6 +779,12 @@ class GeneOntologyInterface(object):
                 self.uniprots_2_voltage_and_circulation[
                     tuple(sorted((UP1, UP2)))] = \
                     (voltage_diff, current_upper)
+
+            if counter % breakpoints == 0 and counter > 1:
+                compops = float(breakpoints) / (time() - previous_time)
+                log.info("progress: %s/%s, current speed: %s compops, time remaining: %s min"
+                         % (counter, total_pairs, compops, (total_pairs - counter) / compops / 60))
+                previous_time = time()
 
         if cancellation:  # TODO: factor that one into the Conduction Routilens
             ln = len(self.analytic_uniprots)

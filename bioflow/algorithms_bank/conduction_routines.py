@@ -347,13 +347,12 @@ def master_edge_current(conductivity_laplacian, index_list,
     # solver = cholesky(csc_matrix(conductivity_laplacian), fudge)
 
     # run the main loop on the list of indexes in agreement with the memoization strategy:
-    run_length = len(list_of_pairs)
-    breakpoints = run_length / 100
+    breakpoints = 300
     previous_time = time()
 
     for counter, (i, j) in enumerate(list_of_pairs):
 
-        if counter % total_pairs/100 == 0:
+        if counter % total_pairs/300 == 0:
             log.debug('getting pairwise flow %s out of %s', counter + 1, total_pairs)
 
         if memory_source and tuple(sorted((i, j))) in memory_source.keys():

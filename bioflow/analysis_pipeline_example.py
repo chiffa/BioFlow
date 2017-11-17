@@ -61,42 +61,51 @@ if __name__ == "__main__":
     # cast_analysis_set_to_bulbs_ids("/home/andrei/akshay_data/combined_100.csv")
 
     # cast_analysis_set_to_bulbs_ids("/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Veena data/both.csv")
+    # cast_analysis_set_to_bulbs_ids("/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Veena data/both_top_100.csv")
+    # cast_analysis_set_to_bulbs_ids("/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Veena data/both_sig_and_above_2x.csv")
 
     # cast_background_set_to_bulbs_id(
     #     background_set_csv_location="/home/andrei/akshay_data/All_genes.csv",
     #     analysis_set_csv_location="/home/andrei/akshay_data/bottom_50.csv")
-    #
+
+
+
     # # get the bulbs ids if the nodes we would like to analyze
     source_bulbs_ids = get_source_bulbs_ids()
     # background_bulbs_ids = get_background_bulbs_ids()
 
+
+
     # print len(source_bulbs_ids)
     # print len(background_bulbs_ids)
-    # building the interactome interface object
+
+    # # building the interactome interface object
     # local_matrix = InteractomeInterface(main_connex_only=True, full_impact=False)
     # local_matrix.full_rebuild()
 
-    # # perform the interactome analysis
+
+    # perform the interactome analysis
     # interactome_analysis([source_bulbs_ids],
-    #                      desired_depth=20,
-    #                      processors=1,
+    #                      desired_depth=24,
+    #                      processors=2,
     #                      # background_list=background_bulbs_ids,
     #                      skip_sampling=False)
+
+
 
     # building the reference parameters set
     _filter = ['biological_process']
     background_bulbs_ids = []
     ref_param_set = [_filter, background_bulbs_ids, (1, 1), True, 3]
-    #
-    # # # build the annotome interface
+
+
+    # # build the annotome interface
     # annot_matrix = AnnotomeInterface(*ref_param_set)
     # # annot_matrix.load()
     # annot_matrix.full_rebuild()
-    #
-    # # perform the knowledge analysis
+
+    # perform the knowledge analysis
     knowledge_analysis([source_bulbs_ids],
-                       desired_depth=20,
-                       processors=1,
+                       desired_depth=24,
                        param_set=ref_param_set,
-                       skip_sampling=True)
-    #
+                       skip_sampling=False)
