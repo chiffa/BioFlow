@@ -753,6 +753,7 @@ class GeneOntologyInterface(object):
 
         total_pairs = len(iterator)
         breakpoints=300
+        previous_time = time()
 
         for counter, (UP1, UP2) in enumerate(iterator):
 

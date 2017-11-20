@@ -88,6 +88,8 @@ class UniProtParser(object):
         if 'RefSeq; ' in line:
             self._single_up_dict['RefSeq'].append(line.split(';')[1].strip())
             self._single_up_dict['RefSeq'].append(line.split(';')[2].split(' ').strip())
+        if 'MGI;' in line:
+            self._single_up_dict['GeneID'].append(line.split(';')[2].split(' ').strip())
 
     def parse_gene_references(self, line):
         """

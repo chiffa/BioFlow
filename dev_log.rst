@@ -11,6 +11,30 @@ Confirmed minor refactoring requiring a sane rollback:
 -  Perform profiling by creating a dedicated set of loggers that would log an "execution time"
 flag set
 
+- Return the control of the reach-limiter from the Knowledge interface to the current routines
+
+- Re-inject the p_values following the comparison back into the output and export them as part of
+gdf schema
+
+- integrate the amplification level into the analysis - relative amplitude of perturbation
+
+- enforce p-value limitation to what is achievable with the background sampling size.
+
+- add the forwarding of the thread number to the progress report
+
+- reformat progress report as a progress bar.
+
+- normalize the Laplacian (Joel Bader)
+
+- increase the fudge factor to ~ 10% of error (Joel Bader)
+
+- for mice, perform a retrieval of orthologs and projection into the human interactome (Joel Bader)
+
+- Cross-validate with what is expected (Andrew Ewald)
+
+- The explanation of the model and its transmission into the published data needs to be easy enough
+to explain why the hits are justified and why they aren't.
+
 New features:
 -------------
 
@@ -223,6 +247,20 @@ Possible Major refactoring that would simplify the problem a lot:
 
     - It allows a high degree of customization by the end user, beyond what would be suggested by
      the initial user
+
+New Databases:
+--------------
+
+- Protein abundance
+
+- Transcription/translation regulation
+
+- Post-translational modifications
+
+- Isoforms
+
+- Interactions that store annotation datasets, such as IntAct
+
 
 Documentation and description:
 ==============================

@@ -63,12 +63,11 @@ if __name__ == "__main__":
     # cast_analysis_set_to_bulbs_ids("/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Veena data/both.csv")
     # cast_analysis_set_to_bulbs_ids("/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Veena data/both_top_100.csv")
     # cast_analysis_set_to_bulbs_ids("/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Veena data/both_sig_and_above_2x.csv")
+    # cast_analysis_set_to_bulbs_ids("/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Kp_Km data/all_significant.csv")
 
     # cast_background_set_to_bulbs_id(
     #     background_set_csv_location="/home/andrei/akshay_data/All_genes.csv",
     #     analysis_set_csv_location="/home/andrei/akshay_data/bottom_50.csv")
-
-
 
     # # get the bulbs ids if the nodes we would like to analyze
     source_bulbs_ids = get_source_bulbs_ids()
@@ -84,12 +83,12 @@ if __name__ == "__main__":
     # local_matrix.full_rebuild()
 
 
-    # perform the interactome analysis
+    # # perform the interactome analysis
     # interactome_analysis([source_bulbs_ids],
-    #                      desired_depth=24,
-    #                      processors=2,
+    #                      desired_depth=1,
+    #                      processors=1,
     #                      # background_list=background_bulbs_ids,
-    #                      skip_sampling=False)
+    #                      skip_sampling=True)
 
 
 
@@ -106,6 +105,7 @@ if __name__ == "__main__":
 
     # perform the knowledge analysis
     knowledge_analysis([source_bulbs_ids],
-                       desired_depth=24,
+                       desired_depth=10,
+                       processors=1,
                        param_set=ref_param_set,
-                       skip_sampling=False)
+                       skip_sampling=True)
