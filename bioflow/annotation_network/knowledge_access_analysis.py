@@ -375,9 +375,7 @@ def compare_to_blank(
     curr_inf_conf_tot = np.array(
         [[int(key)] + list(val) for key, val in dict_system.iteritems()]).T
     go_node_ids, curr_inf_conf = (
-        curr_inf_conf_tot[
-            0, :], curr_inf_conf_tot[
-            (1, 2, 3), :])
+        curr_inf_conf_tot[0, :], curr_inf_conf_tot[ (1, 2, 3), :])  # fails here when no significant terms to print
     log.info('blank comparison: %s', curr_inf_conf.shape)
     if not sparse_rounds:
         group2avg_off_diag, _, mean_correlations, eigenvalue = perform_clustering(

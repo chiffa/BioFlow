@@ -788,6 +788,7 @@ class InteractomeInterface(object):
                 [self.bulbs_id_2_matrix_index[UP] for UP in self.entry_point_uniprots_bulbs_ids],
                 re_samples=sparse_samples,
                 cancellation=cancellation)
+
         else:
             current_accumulator, up_pair_2_voltage_current =\
                 cr.group_edge_current_memoized(

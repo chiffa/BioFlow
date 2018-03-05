@@ -404,7 +404,7 @@ def auto_analyze(source_list,
             log.info("spawning a sampler for %s proteins @ %s compops/sec",
                      len(interactome_interface.entry_point_uniprots_bulbs_ids), estimated_comp_ops)
 
-        if len(interactome_interface.entry_point_uniprots_bulbs_ids) < 200:
+        if len(interactome_interface.entry_point_uniprots_bulbs_ids) < 60:
 
             if not skip_sampling:
                 log.info('length: %s \t sampling depth: %s \t, estimated round time: %s min',
@@ -414,7 +414,8 @@ def auto_analyze(source_list,
                          estimated_comp_ops / 60)
 
                 spawn_sampler_pool(
-                    processors, [len(interactome_interface.entry_point_uniprots_bulbs_ids)],
+                    processors,
+                    [len(interactome_interface.entry_point_uniprots_bulbs_ids)],
                     [desired_depth],
                     interactome_interface_instance=None)
 
@@ -426,8 +427,8 @@ def auto_analyze(source_list,
 
 
         else:
-
-            sampling_depth = max(200 ** 2 /
+            ceiling = min(205, len(interactome_interface.entry_point_uniprots_bulbs_ids))
+            sampling_depth = max((ceiling-5) ** 2 /
                                  len(interactome_interface.entry_point_uniprots_bulbs_ids),
                                  5)
 
@@ -486,4 +487,4 @@ if __name__ == "__main__":
     #
     # spawn_sampler_pool(3, [2], [150], interactome_interface_instance=None)
 
-    # local_matrix.randomly_sample([2], [250])
+    local_matrix.randomly_sample([195], [10], sparse_rounds=195)

@@ -20,6 +20,9 @@ from bioflow.internal_configs import fudge
 from bioflow.utils.linalg_routines import cluster_nodes, average_off_diag_in_sub_matrix, \
     average_interset_linkage, normalize_laplacian
 
+import objgraph
+import traceback
+
 log = get_logger(__name__)
 
 switch_to_splu = False
@@ -314,8 +317,11 @@ def master_edge_current(conductivity_laplacian, index_list,
     # TODO: remove memoization option in order to reduce overhead nad mongo database load
 
     log.info('master edge current starting to sample with %s nodes; cancellation: %s;'
-             ' pot-dominated %s; sampling %s; sampling_depth %s'
+             ' potential-dominated %s; sampling %s; sampling_depth %s'
              % (len(index_list), cancellation, potential_dominated, sampling, sampling_depth))
+
+    # for line in traceback.format_stack():
+    #     print (line.strip())
 
     # generate index list in agreement with the sampling strategy
     if sampling:
@@ -368,6 +374,7 @@ def master_edge_current(conductivity_laplacian, index_list,
                                            solver=solver)
 
         if memoization:
+            # print 'memoization_branch fired'
             up_pair_2_voltage_current[tuple(sorted((i, j)))] = \
                 (potential_diff, current_upper)
 
@@ -389,6 +396,8 @@ def master_edge_current(conductivity_laplacian, index_list,
             log.info("progress: %s/%s, current speed: %s compops, time remaining: %s min"
                      % (counter, total_pairs, compops, (total_pairs-counter)/compops/60))
             previous_time = time()
+            # objgraph.show_most_common_types(limit=50)
+
 
     if cancellation:
         current_accumulator /= total_pairs

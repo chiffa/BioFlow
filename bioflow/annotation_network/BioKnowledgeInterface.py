@@ -295,7 +295,7 @@ class GeneOntologyInterface(object):
         if self.InitSet != initial_set:
             print len(self.InitSet)
             print len(initial_set)
-            print traceback.print_tb(file=sys.stdout)
+            print traceback.print_stack()
             log.critical("Wrong initial_set attempted to be recovered from storage")
             raise Exception(
                 "Wrong initial_set attempted to be recovered from storage")
@@ -751,8 +751,10 @@ class GeneOntologyInterface(object):
         else:
             iterator = combinations(self.analytic_uniprots, 2)
 
+        iterator = [item for item in iterator]
+
         total_pairs = len(iterator)
-        breakpoints=300
+        breakpoints = 300
         previous_time = time()
 
         for counter, (UP1, UP2) in enumerate(iterator):
