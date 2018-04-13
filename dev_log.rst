@@ -1,39 +1,102 @@
 TODOs for the project in the future:
 ====================================
 
-Confirmed minor refactoring requiring a sane rollback:
-------------------------------------------------------
 
--  Properly indent multi-line :param <parameter type> <parameter name>: descriptors
+Functional:
+-----------
+-   Enforce p-value limitation to what is achievable with the background sampling size.
 
--  Integrate compops/second estimation to the sources.ini
+-   Re-inject the p_values following the comparison back into the output and export them as part of
+    gdf schema
 
--  Perform profiling by creating a dedicated set of loggers that would log an "execution time"
-flag set
+-   Normalize the Laplacian (Joel Bader)
 
-- Return the control of the reach-limiter from the Knowledge interface to the current routines
+-   Increase the fudge factor to ~ 10% of error (Joel Bader)
 
-- Re-inject the p_values following the comparison back into the output and export them as part of
-gdf schema
+-   Integrate the amplification level into the analysis - relative amplitude of perturbation
 
-- integrate the amplification level into the analysis - relative amplitude of perturbation
+    -   Would require to fold the hits list into the interface object
 
-- enforce p-value limitation to what is achievable with the background sampling size.
+    -   Would require to always use the hits list as
 
-- add the forwarding of the thread number to the progress report
+    -   Would require an explicite injection of voltage (rather a normalization)
 
-- reformat progress report as a progress bar.
+-   For dense sampling, switch to a matrix instead of a dictionary to store current/tension for each
+    pair of proteins.
 
-- normalize the Laplacian (Joel Bader)
+-   Enable a calculation with explicit sinks and sources groups
 
-- increase the fudge factor to ~ 10% of error (Joel Bader)
+    -   Would require a split in hits into "sink" and "source" groups
 
-- for mice, perform a retrieval of orthologs and projection into the human interactome (Joel Bader)
+    -   Would need a revised null model (random sinks/sources? if single sink, random sources?)
 
-- Cross-validate with what is expected (Andrew Ewald)
+-   Add signal/noise ration - the flow we are getting in a given node compared to what we would have
+    expected in a random node.
 
-- The explanation of the model and its transmission into the published data needs to be easy enough
-to explain why the hits are justified and why they aren't.
+-   Wrap neo4j and laplacian files loading/offloading into top-level commands
+
+    -   check if this is compatible with long-term neo4j architecture => have to; multi-org systems
+
+-   Flow system comparison
+
+    -   change in the Laplacian
+
+    -   comparison of specific flow patterns
+
+    -   separation between instance, actual flow and flow comparator.
+
+Structural:
+-----------
+-   Create a separate structure for performing the statistical analysis, that is idependent from the
+    wrapper
+
+-   Enforce the single source of the Interface Objects for sampling to simplify consistency enforcing
+
+-   Return the control of the reach-limiter from the Knowledge interface to the current routines (Why?)
+
+-   Insert the effective sample into the storage DB to avoid re-running it in case more background is
+    needed or the background needs to be interrupted.
+
+-   In the random reference generator, reformat so that different types of queries are matched
+    with the same types of queries. This is required in order to provide support for statistics on
+    multiple query types calls.
+
+    -   There are two levels of tagging: conduction system (eg background, ....) and query system
+        (hits, circulation, etc...)
+
+    -   There is also a need for specific querying for the conduction system to avoid re-generating
+        them
+
+    -   As well as "hit" analysis systems, so that they can be retrieved instead of needing to be
+        re-generated.
+
+-   Move node annotation loading/offloading to an elasticsearch instance, always mapping to uniprots
+
+Integration:
+------------
+- Update to CYPHER and a more recent neo4j instance accessed through bolt
+    - possibility of using a periodic Cypher update (each 500-1000) instead of atomic?
+
+- Consider removing neo4j altogether
+
+
+Cosmetic:
+---------
+
+-   Properly indent multi-line :param <parameter type> <parameter name>: descriptors
+
+-   Integrate compops/second estimation to the sources.ini
+
+-   Perform profiling by creating a dedicated set of loggers that would log an "execution time"
+    flag set
+
+-   Add the forwarding of the thread number to the progress report
+
+-   Reformat progress report as a progress bar.
+
+-   The explanation of the model and its transmission into the published data needs to be easy enough
+    to explain why the hits are justified and why they aren't.
+
 
 New features:
 -------------
@@ -54,13 +117,13 @@ New features:
 
 -  We always need to first build Interactome Interface before BioKnowledge Interface and in the
    end we need to have both of them build before we can run automated analysis. A nice fix would be
-   to raise flags when they are loaded, instead of relying on the loading behaviors.
+   to raise flags when they are loaded, instead of relying on the loading behaviors. (Deprecated)
 
--  Event sourcing pattern for the graph assembly and modification from the base databases.
+-  Event sourcing pattern for the graph assembly and modification from the base databases. (Far Fetched)
 
 -  The execution entry points have to be the five canonical queries.
 
--  Write the circulation files so that it is possible to calculate the information circulation
+-  Write the flow groups so that it is possible to calculate the information circulation
    between two sets or as set and a single protein (application for p53 and PKD1 regulators)
 
 -  Distinction between downstream and upstream targets can be implemented by translating the
@@ -76,7 +139,7 @@ New features:
     - synchronous computation of the flow for all sources/sinks
 
 -  Add citations into the online databases files, that allows integration of different source
-   into a single database.
+   into a single database (Long-term applicability enhancement).
 
 -  Clustering algorithms going beyond the spectral clustering,
 
@@ -94,7 +157,7 @@ New features:
 
     - Strongest eigenvectors / highest circulation in a random set of nodes
 
-    - Randomized clustering/
+    - Randomized clustering
 
 -  Introduce signal over noise ratio: amount of current in the current
    configuration compared to what we would have expected in case of a
@@ -114,9 +177,6 @@ New features:
 Structure-required refactoring:
 -------------------------------
 
--  In the random reference generator, reformat so that different types of queries are matched
-  with the same types of queries. This is required in order to provide support for statistics on
-  multiple query types calls.
 
 -  separate the envelopes for the GO and Reactome graphs retrieval from
    the envelope used to recover and compute over the graph.
@@ -137,9 +197,6 @@ Structure-required refactoring:
 
    -  approximate matching capacities for gene names mistypings
 
--  Split the computation of the blank from the performing of the
-   analysis round
-
 -  Inline the background for the InteractomeInstance into the __init__
 
 -  Inline the undumping and dependent variables calculation into the __init__ of
@@ -149,7 +206,7 @@ Structure-required refactoring:
    functions/objects are imported (import numpy as np)
 
 -  Make methods running large systems of procedures to being
-   dictionary-driven
+   dictionary-driven (Why?)
 
 -  Factor out the traversals used in order to build the Laplacians
 
@@ -174,7 +231,7 @@ Good-to-have; non-critical:
 
 -  In all the DB calls, add a mock-able wrapper that would read the
    state of a project-wide variable and if it is set to True (in
-   unittests) will switch it to
+   unittests) will switch it to a mock, not expecting the database to answer
 
 -  Bulk-insertion into the neo4j. => Requires taking over the bulbs engine
 
@@ -207,7 +264,7 @@ Good-to-have; non-critical:
 
 -  build a condas-compatible package that would be installable
    cross-plateform and would contain pre-compiled binaries for
-   C-extenstions.
+   C-extenstions. (Failed - we are better off with a Docker given complexity of the stack)
 
 -  In case we are calling time-consuming parsers from several location,
    we might want to insert "singleton" module into the block, that
@@ -221,10 +278,10 @@ Good-to-have; non-critical:
 -  Transform all the matrices so that the first one is packed line-based and the second one
    column-based. This will allow the optimization for register pre-pulling in the processor
 
-- Docker container cp command to accelerate the database rebuild process?
+-  Docker container cp command to accelerate the database rebuild process?
 
-Possible Major refactoring that would simplify the problem a lot:
------------------------------------------------------------------
+Neo4j and Laplacian construction:
+---------------------------------
 
 -  Use a dictionary-configurable parser to parse from a given file format to the neo4j database.
 
@@ -247,6 +304,7 @@ Possible Major refactoring that would simplify the problem a lot:
 
     - It allows a high degree of customization by the end user, beyond what would be suggested by
      the initial user
+
 
 New Databases:
 --------------
@@ -412,7 +470,7 @@ Utils and general Utils:
    name of calling and the time of calling to the project root
 
 -  visual debugger for the matrix operations that allows to specify what
-   input matrixes we would like to inspect and what output matrixes we
+   input matrices we would like to inspect and what output matrices we
    would like to inspect (by index)
 
 Information flow computation:
@@ -455,7 +513,7 @@ Information flow computation:
 
 -  Get rid of Cholesky decomposition: it is not appliable in our
    case because of presence of null eigenvalues In fact there are as
-   many null eigenvalues as there are connex segments in the graph
+   many null eigenvalues as there are connex segments in the graph (Error is acceptable, LU is slower)
 
 -  Removed: replace pickling by JSON wherever appliable => numpy objects
    are not JSON-seriasable
@@ -492,7 +550,7 @@ Information flow computation:
    2: we cannot necessary normalise all the vectors, since some proteins
    are affecting several proteins at the same time
 
--  TODO: Add the 95% confidence interval for a given percision rate for the depth of sampling.
+-  TODO: Add the 95% confidence interval for a given precision rate for the depth of sampling.
    For instance if we want 95% confidence into the p_value with 95% confidence, we need to run not
    25 samples, but rather 30 or something in that range.
 
@@ -553,10 +611,8 @@ Add additional databases:
     - HPRD (Human Reference Protein-protein interaction Dataset - human only)
     - IntAct (good idea to integrate given the quality and extensivity of data)
     - DIP (Database of Interacting Proteins - releases seem to have stopped in 2014)
-    - GeneMania (Not entirely clear what the dataset or intention are)
-
-
-
+    - GeneMania (Not entirely clear what the dataset or intention are, but can be used to x-link
+     complexes)
 
 Improve crosslinking between different databases
 ------------------------------------------------
