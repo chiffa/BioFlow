@@ -65,6 +65,8 @@ def spawn_sampler(sample_size_list_plus_iteration_list_plus_args):
         sparse_rounds,
         chromosome_specific)
 
+    # TODO: choromosome specific has nothing to do here; should be managed otherwise
+
 
 def spawn_sampler_pool(
         pool_size,

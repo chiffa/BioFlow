@@ -27,7 +27,7 @@ Leg_ID_Filter = ['H+', 'ATP', 'GTP', 'Pi', 'H2O', 'ADP', 'PPi', 'GDP', 'O2', 'CO
 
 
 #  Fudge for matrix diagonalization and other solver functions
-fudge = 1e-10
+fudge = 1e-10  ## TODO: test a different value, such as 1e-1 or even 2e-1, as suggested by Joel Bader
 
 # Coefficients values for the value_Matrix
 Adjacency_Martix_Dict = {

@@ -19,6 +19,35 @@ from bioflow.utils.io_routines import get_source_bulbs_ids, get_background_bulbs
 from bioflow.utils.log_behavior import clear_logs
 
 
+def map_and_save_gene_ids(hit_genes_location, all_detectable_genes_location=''):
+    cast_analysis_set_to_bulbs_ids(hit_genes_location)
+    hit_genes_ids = get_source_bulbs_ids()
+
+    if all_detectable_genes_location:
+        cast_background_set_to_bulbs_id(
+            background_set_csv_location=all_detectable_genes_location,
+            analysis_set_csv_location=hit_genes_location)
+
+        all_detectable_genes_ids = get_background_bulbs_ids()
+
+    else:
+        all_detectable_genes_ids = []
+
+    return hit_genes_ids, all_detectable_genes_ids
+
+
+def rebuild_the_laplacians(all_detectable_genes=[]):
+
+    local_matrix = InteractomeInterface(main_connex_only=True, full_impact=False)
+    local_matrix.full_rebuild()
+
+    _filter = ['biological_process']
+    ref_param_set = [_filter, all_detectable_genes, (1, 1), True, 3]  # TODO: all_detectable_genes should not be here either
+
+    annot_matrix = AnnotomeInterface(*ref_param_set)
+    annot_matrix.full_rebuild()
+
+
 if __name__ == "__main__":
     # # first, let's clear logs:
     # clear_logs()
@@ -46,75 +75,29 @@ if __name__ == "__main__":
     # # building the neo4j database
     # build_db()
 
-    # # set the source file of the ids of perturbed proteins and background set:
-    # "/home/andrei/2nd_pass_2x.txt"
-    # "/home/andrei/Linhao_imaging.txt"
-    # "/home/andrei/HS_30_Linhao_outliers.txt"
-    # "/home/andrei/Linhao_imaging.txt"
-    # "/home/andrei/Dropbox/workspaces/JHU/Mehdi_paper_1/inviable_annotations_filtered_by_S288C-filt.tsv"
+    background_bulbs_ids = []
 
-    # hits = "/home/andrei/Dropbox/workspaces/JHU/Linhao-Analysis/no_import_screen_results/hits.csv"
-    # background ="/home/andrei/Dropbox/workspaces/JHU/Linhao-Analysis/no_import_screen_results/background.csv"
-    #
-    # cast_analysis_set_to_bulbs_ids(hits)
-    #
-    # cast_background_set_to_bulbs_id(
-    #     background_set_csv_location=background,
-    #     analysis_set_csv_location=hits)
+    # hits_ids, background_ids = map_and_save_gene_ids('sample_hist_list.csv', 'sample_background_list.csv')
 
-    # cast_analysis_set_to_bulbs_ids("/home/andrei/akshay_data/top_50.csv")
-    # cast_analysis_set_to_bulbs_ids("/home/andrei/akshay_data/bottom_50.csv")
-    # cast_analysis_set_to_bulbs_ids("/home/andrei/akshay_data/combined_100.csv")
-
-    # cast_analysis_set_to_bulbs_ids("/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Veena data/both_HUM.csv")
-    # cast_analysis_set_to_bulbs_ids("/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Kp_Km data/top_100_hum.csv")
-    # cast_analysis_set_to_bulbs_ids("/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Kp_Km data/all_sig_hum.csv")
-    # cast_analysis_set_to_bulbs_ids(
-    #     "/home/andrei/Dropbox/workspaces/JHU/Linhao-Analysis/feb-proteomics/hits_WT-MUT_vs_CTRL.csv")
-
-    # cast_analysis_set_to_bulbs_ids("/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Veena data/both_top_100.csv")
-    # cast_analysis_set_to_bulbs_ids("/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Veena data/both_sig_and_above_2x.csv")
-    # cast_analysis_set_to_bulbs_ids("/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Kp_Km data/all_significant.csv")
-
-    # cast_background_set_to_bulbs_id(
-    #     background_set_csv_location="/home/andrei/Dropbox/workspaces/JHU/Linhao-Analysis/feb-proteomics/background.csv",
-    #     analysis_set_csv_location="/home/andrei/Dropbox/workspaces/JHU/Linhao-Analysis/feb-proteomics/hits_WT-MUT_vs_CTRL.csv")
-
-    # cast_background_set_to_bulbs_id(
-    #     background_set_csv_location="/home/andrei/akshay_data/All_genes.csv",
-    #     analysis_set_csv_location="/home/andrei/akshay_data/bottom_50.csv")
-
-    # # get the bulbs ids if the nodes we would like to analyze
-    source_bulbs_ids = get_source_bulbs_ids()
+    # get the bulbs ids if the nodes we would like to analyze
+    hits_ids = get_source_bulbs_ids()
     background_bulbs_ids = get_background_bulbs_ids()
 
-    print len(source_bulbs_ids)
-    print len(background_bulbs_ids)
-
-    # # building the interactome interface object
-    # local_matrix = InteractomeInterface(main_connex_only=True, full_impact=False)
-    # local_matrix.full_rebuild()
-
-    # # perform the interactome analysis
-    # interactome_analysis([source_bulbs_ids],
-    #                      desired_depth=20,
-    #                      processors=3,
-    #                      background_list=background_bulbs_ids,
-    #                      skip_sampling=False)
-
-    # building the reference parameters set
     _filter = ['biological_process']
-    # background_bulbs_ids = []
     ref_param_set = [_filter, background_bulbs_ids, (1, 1), True, 3]
 
-    # # build the annotome interface
-    # annot_matrix = AnnotomeInterface(*ref_param_set)
-    # # annot_matrix.load()
-    # annot_matrix.full_rebuild()
-    #
-    # perform the knowledge analysis
-    knowledge_analysis([source_bulbs_ids],
-                       desired_depth=20,
-                       processors=3,
-                       param_set=ref_param_set,
-                       skip_sampling=False)
+    # rebuild_the_laplacians(all_detectable_genes=[])
+
+    # perform the interactome analysis
+    interactome_analysis([hits_ids],
+                         desired_depth=12,
+                         processors=3,
+                         background_list=background_bulbs_ids,
+                         skip_sampling=False)
+
+    # # perform the knowledge analysis
+    # knowledge_analysis([hits_ids],
+    #                    desired_depth=20,
+    #                    processors=3,
+    #                    param_set=ref_param_set,
+    #                    skip_sampling=False)

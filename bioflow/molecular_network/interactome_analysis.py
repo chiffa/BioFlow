@@ -39,7 +39,7 @@ def get_interactome_interface():
 # TODO: defined only as an auxilary to the spawn_sampler_pool => inline that in the sampler pool
 def spawn_sampler(sample_size_list_plus_iteration_list_plus_args):
     """
-    Spawns a sampler initialized from the default GO_Interface
+    Spawns a sampler initialized from the default GO_Interface.
 
     :param sample_size_list_plus_iteration_list_plus_args: combined list of sample sizes and
     iterations (required for Pool.map usage)
@@ -255,7 +255,9 @@ def compare_to_blank(
         cluster_no=3,
         interactome_interface_instance=None):
     """
-    Recovers the statistics on the circulation nodes and shows the visual of a circulation system
+    Recovers the statistics on the circulation nodes and shows the visual of a circulation system.
+    There is no issue with using the same interactome interface instance, because they are forked when
+    threads are generated and will not interfere.
 
     :param blank_model_size: the number of uniprots in the blank model
     :param zoom_range_selector: tuple representing the coverage range for which we would
@@ -400,6 +402,7 @@ def auto_analyze(source_list,
                   len(interactome_interface.entry_point_uniprots_bulbs_ids))
 
         interactome_interface.background = background_list
+
         if not skip_sampling:
             log.info("spawning a sampler for %s proteins @ %s compops/sec",
                      len(interactome_interface.entry_point_uniprots_bulbs_ids), estimated_comp_ops)
@@ -417,7 +420,7 @@ def auto_analyze(source_list,
                     processors,
                     [len(interactome_interface.entry_point_uniprots_bulbs_ids)],
                     [desired_depth],
-                    interactome_interface_instance=None)
+                    interactome_interface_instance=interactome_interface)
 
             interactome_interface.build_extended_conduction_system()
             nr_nodes, nr_groups = compare_to_blank(
@@ -443,7 +446,7 @@ def auto_analyze(source_list,
                                    [len(interactome_interface.entry_point_uniprots_bulbs_ids)],
                                    [desired_depth],
                                    sparse_rounds=sampling_depth,
-                                   interactome_interface_instance=None)
+                                   interactome_interface_instance=interactome_interface)
 
             interactome_interface.build_extended_conduction_system(sparse_samples=sampling_depth)
             # interactome_interface.export_conduction_system()
@@ -481,10 +484,9 @@ if __name__ == "__main__":
     # auto_analyze([source], desired_depth=5, processors=6,
     #              background_list=background_list, skip_sampling=True)
 
-
     local_matrix = InteractomeInterface(main_connex_only=True, full_impact=False)
     local_matrix.fast_load()
-    #
+
     # spawn_sampler_pool(3, [2], [150], interactome_interface_instance=None)
 
     local_matrix.randomly_sample([195], [10], sparse_rounds=195)

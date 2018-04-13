@@ -23,12 +23,14 @@ from bioflow.utils.log_behavior import get_logger
 from bioflow.main_configs import Dumps, Outputs, interactome_rand_samp
 from bioflow.internal_configs import edge_type_filters, Adjacency_Martix_Dict, \
     Conductance_Matrix_Dict
+from bioflow.algorithms_bank import conduction_routines as cr
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from bioflow.neo4j_db.db_io_routines import expand_from_seed, \
-    erase_custom_fields, node_extend_once, get_bulbs_id
+    erase_custom_fields, node_extend_once, get_bulbs_id, stable_get_all
 from bioflow.neo4j_db.graph_content import bulbs_names_dict
-from bioflow.algorithms_bank import conduction_routines as cr
-from bioflow.neo4j_db.db_io_routines import stable_get_all
+
+
+l_norm = False
 
 log = get_logger(__name__)
 
@@ -489,6 +491,19 @@ class InteractomeInterface(object):
         self.laplacian_matrix[element[0], element[0]] += \
             Conductance_Matrix_Dict[index_type]
 
+    def normalize_laplacian(self):
+        """
+        Performs Laplacian Normalization
+
+        :return:
+        """
+        D = self.laplacian_matrix.diagonal()
+        mD = np.power(D, -0.5)
+        lpl_shape = self.laplacian_matrix.shape
+        D = lil_matrix(lpl_shape)
+        D.setdiag(mD)
+        self.laplacian_matrix = (D.dot(self.laplacian_matrix)).dot(D)
+
     def create_val_matrix(self):
         """
         Creates anew self.adjacency_Matrix and self.laplacian_matrix
@@ -563,7 +578,7 @@ class InteractomeInterface(object):
         log.debug("all laplacian eigenvalues above%s", np.all(eigsh(self.laplacian_matrix)[0] > 0))
         log.info("Finished eigenvalues computation, starting the dump %s", self.pretty_time())
 
-    def get_normalized_laplacian(self, fudge=1E-18):
+    def deprecated_normalized_laplacian(self, fudge=1E-18):
         """
         Returns the normalized conductance matrix (Conductance matrix is actually the
          matrix laplacian of the associated Graph)
@@ -755,7 +770,8 @@ class InteractomeInterface(object):
             sourced=False,
             incremental=False,
             cancellation=True,
-            sparse_samples=False):
+            sparse_samples=False,
+            lapl_normalized=l_norm):
         """
         Builds a conduction matrix that integrates uniprots, in order to allow an easier
         knowledge flow analysis
@@ -773,8 +789,14 @@ class InteractomeInterface(object):
         :param int sparse_samples: if set to an integer the sampling will be sparse and not dense,
             i.e. instead of computation for each node pair, only an estimation will be made, equal to
             computing sparse_samples association with other randomly chosen nodes
+        :param lapl_normalized: Accounts whether the laplacian is normalized before calculation the
+            flow of information. Currently a place-holder
         :return: adjusted conduction system
         """
+
+        if lapl_normalized:
+            self.normalize_laplacian()
+
         if not incremental or self.current_accumulator == np.zeros((2, 2)):
             self.current_accumulator = lil_matrix(self.laplacian_matrix.shape)
             self.UP2UP_voltages = {}
