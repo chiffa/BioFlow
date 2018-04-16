@@ -110,9 +110,11 @@ def local_indexed_select(bi_array, array_column, selection_span):
     return filtered_bi_array
 
 
+
 # TODO: there is a lot of repetition depending on which values are the biggest,
 # test-sets or real sets. In all, we should be able to reduce it to two functions:
 # scatter plot and histogram with two sets that should go into the dataviz module
+# TODO: too complex (McCabe 14)
 def show_test_statistics(
         bi_corr_array,
         mean_correlations,  # shutdown if sparse
@@ -281,6 +283,9 @@ def compare_to_blank(
     mean_correlation_accumulator = []
     eigenvalues_accumulator = []
 
+    log.info("looking to test against:"
+             "\t size: %s \t sys_hash: %s \t sparse_rounds: %s" % (blank_model_size, md5_hash, sparse_rounds))
+
     log.info("samples found to test against:\t %s" %
              interactome_rand_samp.find({'size': blank_model_size, 'sys_hash': md5_hash,
                                         'sparse_rounds': sparse_rounds}).count())
@@ -373,7 +378,8 @@ def compare_to_blank(
     return None, None
 
 
-# TODO: check if background list works as expected
+# TODO: source_list is a single list, not list of lists.
+# TODO: add support for a dict as source_list, not only list
 def auto_analyze(source_list,
                  desired_depth=24, processors=4,
                  background_list=None, skip_sampling=False):
@@ -394,14 +400,19 @@ def auto_analyze(source_list,
 
     for _list in source_list:
         log.info('Auto analyzing list of interest: %s', len(_list))
+
         interactome_interface = get_interactome_interface()
         log.debug("retrieved interactome_interface instance e_p_u_b_i length: %s",
                   len(interactome_interface.entry_point_uniprots_bulbs_ids))
+
         interactome_interface.set_uniprot_source(list(_list))
         log.debug(" e_p_u_b_i length after UP_source was set: %s",
                   len(interactome_interface.entry_point_uniprots_bulbs_ids))
 
         interactome_interface.background = background_list
+
+        interactome_interface.connected_uniprots = list(
+            set(interactome_interface.connected_uniprots).intersection(set(interactome_interface.background)))
 
         if not skip_sampling:
             log.info("spawning a sampler for %s proteins @ %s compops/sec",
@@ -447,6 +458,9 @@ def auto_analyze(source_list,
                                    [desired_depth],
                                    sparse_rounds=sampling_depth,
                                    interactome_interface_instance=interactome_interface)
+
+            log.info('real run characteristics: sys_hash: %s, size: %s, sparse_rounds: %s' % (interactome_interface.md5_hash(),
+                      len(interactome_interface.entry_point_uniprots_bulbs_ids), sampling_depth))
 
             interactome_interface.build_extended_conduction_system(sparse_samples=sampling_depth)
             # interactome_interface.export_conduction_system()

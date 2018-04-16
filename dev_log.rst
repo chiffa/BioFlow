@@ -1,6 +1,20 @@
 TODOs for the project in the future:
 ====================================
 
+Current refactoring:
+--------------------
+
+We are using Interactome Interface for 5 independent reasons:
+    - build the laplacian matrix
+    - store the laplacian matrix
+    - perform sampling on the laplacian matrix
+    - calculate the stats on teh sampling matrix
+    - export the rendering to the gdf
+
+We can already factor out the two methods responsible for a laplacian matrix building.
+
+BUG: there is no fragment of the analysis that takes in account the fact that there is a background
+ sample.
 
 Functional:
 -----------

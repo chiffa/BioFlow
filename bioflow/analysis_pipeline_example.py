@@ -90,10 +90,10 @@ if __name__ == "__main__":
 
     # perform the interactome analysis
     interactome_analysis([hits_ids],
-                         desired_depth=12,
-                         processors=3,
+                         desired_depth=1,
+                         processors=1,
                          background_list=background_bulbs_ids,
-                         skip_sampling=False)
+                         skip_sampling=True)
 
     # # perform the knowledge analysis
     # knowledge_analysis([hits_ids],

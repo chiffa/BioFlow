@@ -114,6 +114,7 @@ class InteractomeInterface(object):
         self.current_accumulator = np.zeros((2, 2))
         self.node_current = {}
 
+        # Ideally, should be removed
         self.UP2Chrom = {}
         self.chromosomes_2_uniprot = defaultdict(list)
 
@@ -993,7 +994,11 @@ class InteractomeInterface(object):
             for i in range(0, iterations):
                 shuffle(self.connected_uniprots)
                 analytics_uniprot_list = self.connected_uniprots[:sample_size]
+
                 self.set_uniprot_source(analytics_uniprot_list)
+                log.info('sampling characteristics: sys_hash: %s, size: %s, sparse_rounds: %s' % (self.md5_hash(),
+                            sample_size, sparse_rounds))
+
                 self.build_extended_conduction_system(
                     memoized=memoized, sourced=False, sparse_samples=sparse_rounds)
 
@@ -1003,6 +1008,9 @@ class InteractomeInterface(object):
                         sort_keys=True)).hexdigest()
 
                 if not no_add:
+                    log.info("Adding a blanc:"
+                             "\t size: %s \t sys_hash: %s \t sparse_rounds: %s" % (
+                                sample_size, md5, sparse_rounds))
                     interactome_rand_samp.insert(
                         {
                             'UP_hash': md5,
