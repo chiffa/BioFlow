@@ -67,6 +67,7 @@ class InteractomeInterface(object):
         self.adjacency_Matrix = np.zeros((4, 4))
         # This is just non-normalized laplacian matrix
         self.laplacian_matrix = np.zeros((4, 4))
+        self.non_norm_laplacian_matrix = np.zeros((4, 4))
 
         self.adj_eigenvects = np.zeros((4, 4))
         self.adj_eigenvals = np.zeros((4, 4))
@@ -158,6 +159,7 @@ class InteractomeInterface(object):
         """
         self.adjacency_Matrix = undump_object(Dumps.interactome_adjacency_matrix)
         self.laplacian_matrix = undump_object(Dumps.interactome_laplacian_matrix)
+        self.non_norm_laplacian_matrix = self.laplacian_matrix.copy()
 
     def dump_eigen(self):
         """
@@ -498,6 +500,7 @@ class InteractomeInterface(object):
 
         :return:
         """
+        self.non_norm_laplacian_matrix = self.laplacian_matrix.copy()
         D = self.laplacian_matrix.diagonal()
         mD = np.power(D, -0.5)
         lpl_shape = self.laplacian_matrix.shape
@@ -548,6 +551,8 @@ class InteractomeInterface(object):
         insert_expansion_links(self.hint_links, "Contact_interaction")
         insert_expansion_links(self.biogrid_links, "weak_contact")
         insert_expansion_links(self.biogrid_links, "possibly_same")
+
+        self.non_norm_laplacian_matrix = self.laplacian_matrix.copy()
 
     def get_eigen_spectrum(self, biggest_eigvals_to_get):
         """
@@ -858,7 +863,7 @@ class InteractomeInterface(object):
         for NodeID, i in self.bulbs_id_2_matrix_index.iteritems():
             if node_current[NodeID] > limit_current:
                 characterization_dict[NodeID] = [node_current[NodeID],
-                                                 self.laplacian_matrix[i, i]]
+                                                 self.non_norm_laplacian_matrix[i, i]]
         return characterization_dict
 
     def export_conduction_system(self, output_location=Outputs.Interactome_GDF_output):
@@ -982,7 +987,7 @@ class InteractomeInterface(object):
         if not len(samples_size) == len(samples_each_size):
             raise Exception('Not the same list sizes!')
 
-        if self.background:
+        if self.background:  # TODO: move that part to the interactome analysis section => Unique Interactome Interface
             self.connected_uniprots = list(
                 set(self.connected_uniprots).intersection(set(self.background)))
 
