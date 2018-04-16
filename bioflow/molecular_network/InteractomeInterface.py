@@ -30,7 +30,7 @@ from bioflow.neo4j_db.db_io_routines import expand_from_seed, \
 from bioflow.neo4j_db.graph_content import bulbs_names_dict
 
 
-l_norm = False
+l_norm = True
 
 log = get_logger(__name__)
 
@@ -739,7 +739,8 @@ class InteractomeInterface(object):
             self.connexity_aware,
             sorted_initial_set,
             self.full_impact,
-            connected_ups]
+            connected_ups,
+            cr.fudge]
         md5 = hashlib.md5(json.dumps(data, sort_keys=True)).hexdigest()
 
         return str(md5)

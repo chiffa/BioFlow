@@ -13,8 +13,6 @@ We are using Interactome Interface for 5 independent reasons:
 
 We can already factor out the two methods responsible for a laplacian matrix building.
 
-SOLVED BUG: degree calculation doesn't work properly once the Laplacian is normalized
-
 Functional:
 -----------
 -   Enforce p-value limitation to what is achievable with the background sampling size.
