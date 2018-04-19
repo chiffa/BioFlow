@@ -8,21 +8,36 @@ We are using Interactome Interface for 5 independent reasons:
     - build the laplacian matrix
     - store the laplacian matrix
     - perform sampling on the laplacian matrix
-    - calculate the stats on teh sampling matrix
-    - export the rendering to the gdf
+    - calculate the stats on teh sampling matrix => This is actually done in interactome analysis
+    - (OK) export the rendering to the gdf => this actually is done by a separate object.
 
 We can already factor out the two methods responsible for a laplacian matrix building.
+
+Correct the HINT downloading and renaming
+
+Add to the runtime the estimation of the run completion time => detects slippage
+
+Add buffering of the main run to allow rapid re-runs to debug the p_value injection
+
+TODO: Debug why in GDF nodes, the p_vlue dict doens't have all the uniprots in it.
+     -  There seems to be a disconnect between the bslurd in self.node_current.iterkeys() and
+        self.bulbs_id_2_matrix_index.iteritems() in node_props
+
+     => yes, this is the floor for the flow in node_props is set at 0.01
+
+Memoization logic is somewhat wacky - it saves to a file on the system rather than a database, but
+not the entire object, just certain properties.
 
 Functional:
 -----------
 -   Enforce p-value limitation to what is achievable with the background sampling size.
 
--   Re-inject the p_values following the comparison back into the output and export them as part of
+-   (OK - In testing) Re-inject the p_values following the comparison back into the output and export them as part of
     gdf schema
 
--   Normalize the Laplacian (Joel Bader)
+-   (OK - In testing) Normalize the Laplacian (Joel Bader)
 
--   Increase the fudge factor to ~ 10% of error (Joel Bader)
+-   (OK - In testing ) Increase the fudge factor to ~ 10% of error (Joel Bader)
 
 -   Integrate the amplification level into the analysis - relative amplitude of perturbation
 
@@ -30,7 +45,7 @@ Functional:
 
     -   Would require to always use the hits list as
 
-    -   Would require an explicite injection of voltage (rather a normalization)
+    -   Would require an explicit injection of voltage (rather a normalization)
 
 -   For dense sampling, switch to a matrix instead of a dictionary to store current/tension for each
     pair of proteins.
@@ -43,6 +58,8 @@ Functional:
 
 -   Add signal/noise ration - the flow we are getting in a given node compared to what we would have
     expected in a random node.
+
+        -   => More or less already done by the p_value; excpet p_value also accounts for the node of average degree X
 
 -   Wrap neo4j and laplacian files loading/offloading into top-level commands
 

@@ -30,7 +30,7 @@ from bioflow.neo4j_db.db_io_routines import expand_from_seed, \
 from bioflow.neo4j_db.graph_content import bulbs_names_dict
 
 
-l_norm = True
+l_norm = False
 
 log = get_logger(__name__)
 
@@ -740,7 +740,7 @@ class InteractomeInterface(object):
             sorted_initial_set,
             self.full_impact,
             connected_ups,
-            cr.fudge]
+            cr.line_loss]
         md5 = hashlib.md5(json.dumps(data, sort_keys=True)).hexdigest()
 
         return str(md5)
@@ -778,7 +778,8 @@ class InteractomeInterface(object):
             incremental=False,
             cancellation=True,
             sparse_samples=False,
-            lapl_normalized=l_norm):
+            lapl_normalized=l_norm,
+            fast_load=False):
         """
         Builds a conduction matrix that integrates uniprots, in order to allow an easier
         knowledge flow analysis
@@ -803,6 +804,22 @@ class InteractomeInterface(object):
 
         if lapl_normalized:
             self.normalize_laplacian()
+
+        if fast_load:
+            payload = self.undump_memoized()
+            print ''
+            UP_hash = hashlib.md5(json.dumps(sorted(self.entry_point_uniprots_bulbs_ids), sort_keys=True)).hexdigest()
+            if payload['sys_hash'] == self.md5_hash() and payload['UP_hash'] == UP_hash:
+                self.current_accumulator, self.node_current  = pickle.loads(payload['currents'])
+                self.uniprots_2_voltage_and_circulation = pickle.loads(payload['voltages'])
+
+            index_current = cr.get_current_through_nodes(self.current_accumulator)
+            log.info('current accumulator shape %s', self.current_accumulator.shape)
+            self.node_current.update(
+                dict((self.matrix_index_2_bulbs_id[idx], val) for idx, val in
+                     enumerate(index_current)))
+
+            return None
 
         if not incremental or self.current_accumulator == np.zeros((2, 2)):
             self.current_accumulator = lil_matrix(self.laplacian_matrix.shape)
@@ -839,16 +856,13 @@ class InteractomeInterface(object):
         else:
             self.current_accumulator = current_accumulator
 
-        if memoized:
-            self.dump_memoized()
-
         index_current = cr.get_current_through_nodes(self.current_accumulator)
         log.info('current accumulator shape %s', current_accumulator.shape)
         self.node_current.update(
-            dict(
-                (self.matrix_index_2_bulbs_id[idx],
-                 val) for idx,
-                val in enumerate(index_current)))
+            dict((self.matrix_index_2_bulbs_id[idx], val) for idx, val in enumerate(index_current)))
+
+        if memoized:
+            self.dump_memoized()
 
     def format_node_props(self, node_current, limit=0.01):
         """
@@ -867,11 +881,12 @@ class InteractomeInterface(object):
                                                  self.non_norm_laplacian_matrix[i, i]]
         return characterization_dict
 
-    def export_conduction_system(self, output_location=Outputs.Interactome_GDF_output):
+    def export_conduction_system(self, p_value_dict=None, output_location=Outputs.Interactome_GDF_output):
         """
         Computes the conduction system of the GO terms and exports it to the GDF format and
          flushes it into a file that can be viewed with Gephi
 
+         :param p_value_dict:
          :param output_location:
         """
 
@@ -885,7 +900,9 @@ class InteractomeInterface(object):
             'Legacy_ID',
             'Names',
             'Degree',
-            'Source']
+            'Source',
+            'p-value',
+            'p_p-value']
 
         node_char_types = [
             'DOUBLE',
@@ -893,7 +910,12 @@ class InteractomeInterface(object):
             'VARCHAR',
             'VARCHAR',
             'DOUBLE',
+            'DOUBLE',
+            'DOUBLE',
             'DOUBLE']
+
+        if p_value_dict is None:
+            p_value_dict = defaultdict(lambda :'na')
 
         characterization_dict = {}
 
@@ -920,7 +942,9 @@ class InteractomeInterface(object):
                 self.bulbs_id_2_legacy_id[NodeID],
                 self.bulbs_id_2_display_name[NodeID].replace(',', '-'),
                 str(self.laplacian_matrix[matrix_index, matrix_index]),
-                str(float(int(NodeID in self.entry_point_uniprots_bulbs_ids)))]
+                str(float(int(NodeID in self.entry_point_uniprots_bulbs_ids))),
+                str(p_value_dict[int(NodeID)]),
+                str(-np.log10(p_value_dict[int(NodeID)]))]
 
         gdf_exporter = GdfExportInterface(
             target_fname=output_location,

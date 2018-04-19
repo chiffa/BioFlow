@@ -5,6 +5,7 @@ import pickle
 from collections import namedtuple
 from csv import reader
 from multiprocessing import Pool
+from collections import defaultdict
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -339,9 +340,15 @@ def compare_to_blank(
     # TODO: We could and should separate the visualisation from the gaussian
     # estimators computation
     r_nodes, r_groups = show_test_statistics(
-        final, final_mean_correlations, final_eigenvalues,
-        zoom_range_selector, curr_inf_conf, mean_correlations.T,
-        eigenvalue.T, count, sparse_rounds)
+        final,
+        final_mean_correlations,
+        final_eigenvalues,
+        zoom_range_selector,
+        curr_inf_conf,
+        mean_correlations.T,
+        eigenvalue.T,
+        count,
+        sparse_rounds)
 
     group_char = namedtuple(
         'Group_Char', [
@@ -368,21 +375,25 @@ def compare_to_blank(
                   interactome_interface_instance.bulbs_id_2_display_name.items()[:10])
 
         node_char_list = [
-            [int(nr_node_id),
-             interactome_interface_instance.bulbs_id_2_display_name[nr_node_id]] +
+            [int(nr_node_id), interactome_interface_instance.bulbs_id_2_display_name[nr_node_id]] +
             dictionary_system[nr_node_id] + r_nodes[node_ids == float(nr_node_id)].tolist()
             for nr_node_id in not_random_nodes]
 
-        return sorted(node_char_list, key=lambda x: x[4]), not_random_groups
+        nodes_dict = np.hstack((node_ids[:, np.newaxis], r_nodes[:, np.newaxis]))
+        nodes_dict = dict(nodes_dict.tolist())
+        nodes_dict = defaultdict(lambda: 1, nodes_dict)  # corresponds to the cases of super low flow - never significant
 
-    return None, None
+        return sorted(node_char_list, key=lambda x: x[4]), not_random_groups, nodes_dict
+
+    return None, None, None
 
 
 # TODO: source_list is a single list, not list of lists.
 # TODO: add support for a dict as source_list, not only list
 def auto_analyze(source_list,
                  desired_depth=24, processors=4,
-                 background_list=None, skip_sampling=False):
+                 background_list=None, skip_sampling=False,
+                 from_memoization=False):
     """
     Automatically analyzes the itneractome synergetic action of the RNA_seq results
 
@@ -433,8 +444,12 @@ def auto_analyze(source_list,
                     [desired_depth],
                     interactome_interface_instance=interactome_interface)
 
-            interactome_interface.build_extended_conduction_system()
-            nr_nodes, nr_groups = compare_to_blank(
+            if not from_memoization:
+                interactome_interface.build_extended_conduction_system()
+            else:
+                interactome_interface.build_extended_conduction_system(fast_load=True)
+
+            nr_nodes, nr_groups, p_val_dict = compare_to_blank(
                 len(interactome_interface.entry_point_uniprots_bulbs_ids),
                 [0.5, 0.6],
                 p_val=0.9, interactome_interface_instance=interactome_interface)
@@ -462,17 +477,25 @@ def auto_analyze(source_list,
             log.info('real run characteristics: sys_hash: %s, size: %s, sparse_rounds: %s' % (interactome_interface.md5_hash(),
                       len(interactome_interface.entry_point_uniprots_bulbs_ids), sampling_depth))
 
-            interactome_interface.build_extended_conduction_system(sparse_samples=sampling_depth)
-            # interactome_interface.export_conduction_system()
-            nr_nodes, nr_groups = compare_to_blank(
+            if not from_memoization:
+                interactome_interface.build_extended_conduction_system(sparse_samples=sampling_depth)
+                # interactome_interface.export_conduction_system()
+            else:
+                interactome_interface.build_extended_conduction_system(sparse_samples=sampling_depth, fast_load=True)
+            nr_nodes, nr_groups, p_val_dict = compare_to_blank(
                 len(interactome_interface.entry_point_uniprots_bulbs_ids),
                 [0.5, 0.6],
                 p_val=0.9, sparse_rounds=sampling_depth,
                 interactome_interface_instance=interactome_interface)
 
-        interactome_interface.export_conduction_system()
+        interactome_interface.export_conduction_system(p_val_dict)
+
         for group in nr_groups:
             log.info(group)
+
+        log.info('\t %s \t %s \t %s \t %s \t %s', ('node id',
+            'display name', 'info flow', 'degree', 'p value'))
+
         for node in nr_nodes:
             log.info('\t %s \t %s \t %s \t %s \t %s', *node)
 

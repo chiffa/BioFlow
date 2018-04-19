@@ -16,7 +16,7 @@ from pickle import dump
 import warnings
 from bioflow.utils.log_behavior import get_logger
 from bioflow.utils.dataviz import render_2d_matrix
-from bioflow.internal_configs import fudge
+from bioflow.internal_configs import line_loss
 from bioflow.utils.linalg_routines import cluster_nodes, average_off_diag_in_sub_matrix, \
     average_interset_linkage, normalize_laplacian
 
@@ -121,7 +121,7 @@ def get_potentials(conductivity_laplacian, io_index_pair):
         return solver.solve(io_array.toarray())
     else:
         io_array = build_sink_source_current_array(io_index_pair, conductivity_laplacian.shape)
-        solver = cholesky(csc_matrix(conductivity_laplacian), fudge)
+        solver = cholesky(csc_matrix(conductivity_laplacian), line_loss)
         return solver(io_array)
 
 
@@ -348,9 +348,9 @@ def master_edge_current(conductivity_laplacian, index_list,
         pass # for now we are not going to using smart iteration through i, j
         # solver = splu(csc_matrix(conductivity_laplacian))
     else:
-        solver = cholesky(csc_matrix(conductivity_laplacian), fudge)
+        solver = cholesky(csc_matrix(conductivity_laplacian), line_loss)
 
-    # solver = cholesky(csc_matrix(conductivity_laplacian), fudge)
+    # solver = cholesky(csc_matrix(conductivity_laplacian), line_loss)
 
     # run the main loop on the list of indexes in agreement with the memoization strategy:
     breakpoints = 300
