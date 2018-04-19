@@ -5,6 +5,7 @@ IO current arrays.
 import random
 from copy import copy
 from time import time
+import datetime
 import numpy as np
 from itertools import combinations, repeat
 from scipy.sparse import csc_matrix, diags, triu, lil_matrix, csr_matrix
@@ -393,8 +394,10 @@ def master_edge_current(conductivity_laplacian, index_list,
 
         if counter % breakpoints == 0 and counter > 1:
             compops = float(breakpoints)/(time()-previous_time)
-            log.info("progress: %s/%s, current speed: %s compops, time remaining: %s min"
-                     % (counter, total_pairs, compops, (total_pairs-counter)/compops/60))
+            mins_before_termination = (total_pairs-counter)/compops/60
+            log.info("progress: %s/%s, current speed: %s compops, time remaining: %s min, finishing: %s "
+                     % (counter, total_pairs, compops, mins_before_termination,
+                        datetime.datetime.now() + datetime.timedelta(minutes=mins_before_termination)))
             previous_time = time()
             # objgraph.show_most_common_types(limit=50)
 
