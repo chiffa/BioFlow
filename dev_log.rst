@@ -26,7 +26,8 @@ TODO: Debug why in GDF nodes, the p_vlue dict doens't have all the uniprots in i
      => yes, this is the floor for the flow in node_props is set at 0.01
 
 Memoization logic is somewhat wacky - it saves to a file on the system rather than a database, but
-not the entire object, just certain properties.
+not the entire object, just certain properties. However it works for re-launching the process
+
 
 Functional:
 -----------

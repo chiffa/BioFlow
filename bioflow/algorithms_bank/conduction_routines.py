@@ -401,9 +401,8 @@ def master_edge_current(conductivity_laplacian, index_list,
             previous_time = time()
             # objgraph.show_most_common_types(limit=50)
 
-
     if cancellation:
-        current_accumulator /= total_pairs
+        current_accumulator /= float(total_pairs)
 
     return current_accumulator, up_pair_2_voltage_current
 

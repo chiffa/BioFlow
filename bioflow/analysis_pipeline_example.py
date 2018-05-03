@@ -51,7 +51,7 @@ def rebuild_the_laplacians(all_detectable_genes=[]):
 if __name__ == "__main__":
     # # first, let's clear logs:
     # clear_logs()
-    #
+
     # # if needed, clear the mongodb:
     # annotome_rand_samp.drop()
     # interactome_rand_samp.drop()
@@ -60,8 +60,9 @@ if __name__ == "__main__":
     # set_folders('/home/andrei/support')
     # # pulling the online databases
     # pull_online_dbs()
+
     # # setting the organism to yeast
-    # build_source_config('yeast')
+    # build_source_config('human')
     # raise Exception('planned interrupt')
 
     ##########################################
@@ -77,14 +78,14 @@ if __name__ == "__main__":
 
     background_bulbs_ids = []
 
-    # hits_ids, background_ids = map_and_save_gene_ids('sample_hist_list.csv', 'sample_background_list.csv')
+    hits_ids, background_ids = map_and_save_gene_ids('/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Kp_Km data/top_100_hum.csv',
+                                                     '')
 
     # get the bulbs ids if the nodes we would like to analyze
     hits_ids = get_source_bulbs_ids()
-    background_bulbs_ids = get_background_bulbs_ids()
+    # background_bulbs_ids = get_background_bulbs_ids()
 
     _filter = ['biological_process']
-    ref_param_set = [_filter, background_bulbs_ids, (1, 1), True, 3]
 
     # rebuild_the_laplacians(all_detectable_genes=[])
 

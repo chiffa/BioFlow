@@ -297,14 +297,18 @@ def compare_to_blank(
             {'size': blank_model_size, 'sys_hash': md5_hash, 'sparse_rounds': sparse_rounds})):
         if sparse_rounds:
             log.warning('Blank done on sparse rounds. Clustering will not be performed')
+
         _, node_currents = pickle.loads(sample['currents'])
         tensions = pickle.loads(sample['voltages'])
+
         if not sparse_rounds:
             _, _, mean_correlations, eigvals = perform_clustering(
                 tensions, cluster_no, show=False)
+
         else:
             mean_correlations = np.array([[(0, ), 0, 0]]*cluster_no)
             eigvals = np.array([-1]*cluster_no)
+
         mean_correlation_accumulator.append(np.array(mean_correlations))
         eigenvalues_accumulator.append(eigvals)
         dictionary_system = interactome_interface_instance.format_node_props(node_currents)
@@ -420,10 +424,10 @@ def auto_analyze(source_list,
         log.debug(" e_p_u_b_i length after UP_source was set: %s",
                   len(interactome_interface.entry_point_uniprots_bulbs_ids))
 
-        interactome_interface.background = background_list
-
-        interactome_interface.connected_uniprots = list(
-            set(interactome_interface.connected_uniprots).intersection(set(interactome_interface.background)))
+        if background_list:
+            interactome_interface.background = background_list
+            interactome_interface.connected_uniprots = list(
+                set(interactome_interface.connected_uniprots).intersection(set(interactome_interface.background)))
 
         if not skip_sampling:
             log.info("spawning a sampler for %s proteins @ %s compops/sec",

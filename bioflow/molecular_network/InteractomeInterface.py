@@ -810,7 +810,7 @@ class InteractomeInterface(object):
             print ''
             UP_hash = hashlib.md5(json.dumps(sorted(self.entry_point_uniprots_bulbs_ids), sort_keys=True)).hexdigest()
             if payload['sys_hash'] == self.md5_hash() and payload['UP_hash'] == UP_hash:
-                self.current_accumulator, self.node_current  = pickle.loads(payload['currents'])
+                self.current_accumulator, self.node_current = pickle.loads(payload['currents'])
                 self.uniprots_2_voltage_and_circulation = pickle.loads(payload['voltages'])
 
             index_current = cr.get_current_through_nodes(self.current_accumulator)
@@ -857,7 +857,7 @@ class InteractomeInterface(object):
             self.current_accumulator = current_accumulator
 
         index_current = cr.get_current_through_nodes(self.current_accumulator)
-        log.info('current accumulator shape %s', current_accumulator.shape)
+        log.info('current accumulator shape %s, sum %s', current_accumulator.shape, np.sum(current_accumulator))
         self.node_current.update(
             dict((self.matrix_index_2_bulbs_id[idx], val) for idx, val in enumerate(index_current)))
 
@@ -1039,8 +1039,9 @@ class InteractomeInterface(object):
 
                 if not no_add:
                     log.info("Adding a blanc:"
-                             "\t size: %s \t sys_hash: %s \t sparse_rounds: %s" % (
-                                sample_size, md5, sparse_rounds))
+                             "\t size: %s \t sys_hash: %s \t sparse_rounds: %s, matrix weight: %s" % (
+                                sample_size, md5, sparse_rounds, np.sum(self.current_accumulator)))
+
                     interactome_rand_samp.insert(
                         {
                             'UP_hash': md5,
@@ -1062,9 +1063,9 @@ class InteractomeInterface(object):
                              self.pretty_time())
                 else:
                     log.info('Random ID: %s \t Sample size: %s \t iteration: %s\t compops: %s \t '
-                             'time: %s ', self.random_tag, sample_size, i,
+                             'time: %s, sparse @ %s ', self.random_tag, sample_size, i,
                              "{0:.2f}".format(sample_size * sparse_rounds / 2 / self._time()),
-                             self.pretty_time())
+                             self.pretty_time(), sparse_rounds)
 
 if __name__ == "__main__":
     interactome_interface_instance = InteractomeInterface(main_connex_only=True,
