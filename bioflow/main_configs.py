@@ -117,6 +117,9 @@ class Outputs(object):
     knowledge_network_stats = prefix + '/knowledge_network_stats.png'
     interactome_network_stats = prefix + '/interactome_network_stats.png'
 
+    knowledge_network_output = prefix + '/knowledge_stats.tsv'
+    interactome_network_output = prefix + '/interactome_stats.tsv'
+
 
 #  Declares overloaded IDs, pickles from the dumps of already computed
 forbidden_bulbs_ids = []

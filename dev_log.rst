@@ -15,19 +15,6 @@ We can already factor out the two methods responsible for a laplacian matrix bui
 
 Correct the HINT downloading and renaming
 
-Add to the runtime the estimation of the run completion time => detects slippage
-
-Add buffering of the main run to allow rapid re-runs to debug the p_value injection
-
-TODO: Debug why in GDF nodes, the p_vlue dict doens't have all the uniprots in it.
-     -  There seems to be a disconnect between the bslurd in self.node_current.iterkeys() and
-        self.bulbs_id_2_matrix_index.iteritems() in node_props
-
-     => yes, this is the floor for the flow in node_props is set at 0.01
-
-Memoization logic is somewhat wacky - it saves to a file on the system rather than a database, but
-not the entire object, just certain properties. However it works for re-launching the process
-
 
 Functional:
 -----------

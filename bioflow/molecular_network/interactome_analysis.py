@@ -4,6 +4,7 @@ New analytical routines for the interactome
 import pickle
 from collections import namedtuple
 from csv import reader
+from csv import writer as csv_writer
 from multiprocessing import Pool
 from collections import defaultdict
 
@@ -497,11 +498,18 @@ def auto_analyze(source_list,
         for group in nr_groups:
             log.info(group)
 
-        log.info('\t %s \t %s \t %s \t %s \t %s', ('node id',
-            'display name', 'info flow', 'degree', 'p value'))
+
+        log.info('\t %s \t %s \t %s \t %s \t %s', 'node id',
+            'display name', 'info flow', 'degree', 'p value')
 
         for node in nr_nodes:
             log.info('\t %s \t %s \t %s \t %s \t %s', *node)
+
+        with open(Outputs.interactome_network_output, 'w') as output:
+            writer = csv_writer(output, delimiter='\t')
+            writer.writerow(['node id', 'display name', 'info flow', 'degree', 'p value'])
+            for node in nr_nodes:
+                writer.writerow(node)
 
 
 if __name__ == "__main__":
