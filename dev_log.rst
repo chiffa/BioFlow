@@ -15,9 +15,7 @@ We can already factor out the two methods responsible for a laplacian matrix bui
 
 Correct the HINT downloading and renaming
 
-Implement gene drop-out
-
-Implement edge drop-out
+Test gene and Edge drop-outs
 
 Switch to matrix instead of dict for a current/tension storing in a dense fashion
 

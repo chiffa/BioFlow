@@ -1,6 +1,9 @@
 """
 Top-Level scripts, examples of analysis pipelines.
 """
+import os
+from os import path
+
 from bioflow.configs_manager import set_folders, build_source_config, \
     pull_online_dbs
 from bioflow.annotation_network.BioKnowledgeInterface \
@@ -78,7 +81,7 @@ if __name__ == "__main__":
 
     background_bulbs_ids = []
 
-    hits_ids, background_ids = map_and_save_gene_ids('/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Kp_Km data/top_100_hum.csv',
+    hits_ids, background_ids = map_and_save_gene_ids('/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Kp_Km data/top_80 - 20p drop-out.csv',
                                                      '')
 
     # get the bulbs ids if the nodes we would like to analyze
@@ -92,7 +95,7 @@ if __name__ == "__main__":
     # perform the interactome analysis
     interactome_analysis([hits_ids],
                          desired_depth=9,
-                         processors=3,
+                         processors=2,
                          background_list=background_bulbs_ids,
                          skip_sampling=False,
                          from_memoization=False)

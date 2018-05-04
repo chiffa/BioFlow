@@ -30,7 +30,9 @@ from bioflow.neo4j_db.db_io_routines import expand_from_seed, \
 from bioflow.neo4j_db.graph_content import bulbs_names_dict
 
 
-l_norm = True
+l_norm = False
+# edge_drop = 0.2
+edge_drop = 0.0
 
 log = get_logger(__name__)
 
@@ -516,10 +518,11 @@ class InteractomeInterface(object):
         def insert_expansion_links(link_dict, link_type):
             for _key, values in link_dict.iteritems():
                 for _val in values:
-                    _link_indexes = (
-                        self.bulbs_id_2_matrix_index[_key],
-                        self.bulbs_id_2_matrix_index[_val])
-                    self.fast_row_insert(_link_indexes, link_type)
+                    if not edge_drop or np.random.random_sample() > edge_drop:  # TODO: check that no crash occurs
+                        _link_indexes = (
+                            self.bulbs_id_2_matrix_index[_key],
+                            self.bulbs_id_2_matrix_index[_val])
+                        self.fast_row_insert(_link_indexes, link_type)
 
         self.full_load_ls()
 
