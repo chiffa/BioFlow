@@ -24,8 +24,7 @@ class CostumNode(Node):             # Serves as a basis for the annotation
     # names
 
 
-class AnnotNode(
-        Node):                # Used mainly the simplest annotation basis annotation
+class AnnotNode(Node):                # Used mainly the simplest annotation basis annotation
     """
     Available AnnotNode Types are listed in AnnotNode_ptypes
     """

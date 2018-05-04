@@ -27,7 +27,7 @@ Leg_ID_Filter = ['H+', 'ATP', 'GTP', 'Pi', 'H2O', 'ADP', 'PPi', 'GDP', 'O2', 'CO
 
 
 #  Fudge for matrix diagonalization and other solver functions
-line_loss = 2e-1
+line_loss = 1e-10
 
 # Coefficients values for the value_Matrix
 Adjacency_Martix_Dict = {
