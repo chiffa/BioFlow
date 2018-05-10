@@ -8,10 +8,13 @@ from pprint import PrettyPrinter
 from pymongo import MongoClient
 from bioflow.configs_manager import parse_config, compute_full_paths
 from bioflow.utils.general_utils import high_level_os_io as hl_os_io
+from datetime import datetime
 
+current_run_start_time = str(datetime.now())
+current_run_start_time = current_run_start_time.replace(':', '.')
 
 dump_location = path.join(path.abspath(path.dirname(__file__)), 'dumps')
-output_location = path.join(path.abspath(os.path.expanduser('~')), 'outputs')
+output_location = path.join(path.abspath(os.path.expanduser('~')), 'outputs' + '_' + current_run_start_time)
 log_location = path.join(path.abspath(path.dirname(__file__)), 'logs')
 
 hl_os_io.mkdir_recursive(dump_location)

@@ -744,7 +744,8 @@ class InteractomeInterface(object):
             self.full_impact,
             connected_ups,
             cr.line_loss,
-            l_norm]
+            l_norm,
+            edge_drop]
         md5 = hashlib.md5(json.dumps(data, sort_keys=True)).hexdigest()
 
         return str(md5)

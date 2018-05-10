@@ -15,9 +15,10 @@ We can already factor out the two methods responsible for a laplacian matrix bui
 
 Correct the HINT downloading and renaming
 
-Test gene and Edge drop-outs
-
 Switch to matrix instead of dict for a current/tension storing in a dense fashion
+
+Implement output redirects - main_config Outputs patching does not seem to work - we need
+to create the object anew in case of need.
 
 
 
