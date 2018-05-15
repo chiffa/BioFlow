@@ -23,7 +23,7 @@ edge_type_filters = {
 
 #  Defines what nodes are to be masked to avoid conduction overload of non-informative nodes
 Leg_ID_Filter = ['H+', 'ATP', 'GTP', 'Pi', 'H2O', 'ADP', 'PPi', 'GDP', 'O2', 'CO2', 'NTP',
-                 'Ubiquitin', 'cAMP', 'Actin', ]
+                 'Ubiquitin', 'cAMP', 'Actin', 'UBC']
 
 
 #  Fudge for matrix diagonalization and other solver functions

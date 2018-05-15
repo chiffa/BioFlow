@@ -72,14 +72,15 @@ Structural:
 -   Create a separate structure for performing the statistical analysis, that is idependent from the
     wrapper
 
--   Enforce the single source of the Interface Objects for sampling to simplify consistency enforcing
+-   (TO BE TESTED) Enforce the single source of the Interface Objects for sampling to simplify
+    consistency enforcing
 
 -   Return the control of the reach-limiter from the Knowledge interface to the current routines (Why?)
 
--   Insert the effective sample into the storage DB to avoid re-running it in case more background is
-    needed or the background needs to be interrupted.
+-   (DONE) Insert the effective sample into the storage DB to avoid re-running it in case more background is
+    needed or the background needs to be interrupted. (Implemented otherwise)
 
--   In the random reference generator, reformat so that different types of queries are matched
+-   (DONE) In the random reference generator, reformat so that different types of queries are matched
     with the same types of queries. This is required in order to provide support for statistics on
     multiple query types calls.
 
@@ -93,6 +94,8 @@ Structural:
         re-generated.
 
 -   Move node annotation loading/offloading to an elasticsearch instance, always mapping to uniprots
+
+- The alteration of the chain of statistics calculation is somewhat hardcore
 
 Integration:
 ------------
@@ -141,7 +144,7 @@ New features:
    end we need to have both of them build before we can run automated analysis. A nice fix would be
    to raise flags when they are loaded, instead of relying on the loading behaviors. (Deprecated)
 
--  Event sourcing pattern for the graph assembly and modification from the base databases. (Far Fetched)
+-  (WillNotFix) Event sourcing pattern for the graph assembly and modification from the base databases. (Far Fetched)
 
 -  The execution entry points have to be the five canonical queries.
 

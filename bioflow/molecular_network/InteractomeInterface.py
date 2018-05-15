@@ -907,7 +907,9 @@ class InteractomeInterface(object):
             'Degree',
             'Source',
             'p-value',
-            'p_p-value']
+            'p_p-value',
+            'rel_value',
+            'std_diffs']
 
         node_char_types = [
             'DOUBLE',
@@ -917,10 +919,12 @@ class InteractomeInterface(object):
             'DOUBLE',
             'DOUBLE',
             'DOUBLE',
+            'DOUBLE',
+            'DOUBLE',
             'DOUBLE']
 
         if p_value_dict is None:
-            p_value_dict = defaultdict(lambda :'na')
+            p_value_dict = defaultdict(lambda: 'na')
 
         characterization_dict = {}
 
@@ -948,8 +952,10 @@ class InteractomeInterface(object):
                 self.bulbs_id_2_display_name[NodeID].replace(',', '-'),
                 str(self.laplacian_matrix[matrix_index, matrix_index]),
                 str(float(int(NodeID in self.entry_point_uniprots_bulbs_ids))),
-                str(p_value_dict[int(NodeID)]),
-                str(-np.log10(p_value_dict[int(NodeID)]))]
+                str(p_value_dict[int(NodeID)][0]),
+                str(-np.log10(p_value_dict[int(NodeID)][0])),
+                str(float(p_value_dict[int(NodeID)][1])),
+                str(float(p_value_dict[int(NodeID)][2]))]
 
         gdf_exporter = GdfExportInterface(
             target_fname=output_location,

@@ -180,9 +180,21 @@ def show_test_statistics(
     plt.subplot(334)
     plt.title('Gaussian KDE current_info')
     estimator_function = kde_compute(bi_corr_array[(1, 0), :], 50, re_samples)
+    base_bi_corr = bi_corr_array[(0, 1), :]
+
     current_info_rel = None
+    current_rel_base = []
+    current_std_base = []
     if test_bi_corr_array is not None:
         current_info_rel = estimator_function(test_bi_corr_array[(1, 0), :])
+
+        for point in test_bi_corr_array.T:
+            selector = np.logical_and(base_bi_corr[1, :] > point[1]*0.9, base_bi_corr[1, :] < point[1]*1.1)
+            current_rel_base.append(point[0]/np.mean(base_bi_corr[0, selector]))
+            current_std_base.append((point[0]-np.mean(base_bi_corr[0, selector]))/np.std(base_bi_corr[0, selector]))
+
+        current_rel_base = np.array(current_rel_base)
+        current_std_base = np.array(current_std_base)
 
     plt.subplot(335)
     plt.title('Node degree distribution')
@@ -247,7 +259,7 @@ def show_test_statistics(
     plt.savefig(Outputs.interactome_network_stats)
 
     # pull the groups corresponding to non-random associations.
-    return current_info_rel, cluster_props
+    return current_info_rel, cluster_props, current_rel_base, current_std_base
 
 
 # TODO: correct the error: remove the clustering on the sparse round
@@ -344,7 +356,7 @@ def compare_to_blank(
 
     # TODO: We could and should separate the visualisation from the gaussian
     # estimators computation
-    r_nodes, r_groups = show_test_statistics(
+    r_nodes, r_groups, r_rel_nodes, r_std_nodes = show_test_statistics(
         final,
         final_mean_correlations,
         final_eigenvalues,
@@ -384,9 +396,13 @@ def compare_to_blank(
             dictionary_system[nr_node_id] + r_nodes[node_ids == float(nr_node_id)].tolist()
             for nr_node_id in not_random_nodes]
 
-        nodes_dict = np.hstack((node_ids[:, np.newaxis], r_nodes[:, np.newaxis]))
-        nodes_dict = dict(nodes_dict.tolist())
-        nodes_dict = defaultdict(lambda: 1, nodes_dict)  # corresponds to the cases of super low flow - never significant
+        print len(node_ids), len(r_nodes), len(r_rel_nodes), len(r_std_nodes)
+
+        nodes_dict = np.hstack((node_ids[:, np.newaxis], r_nodes[:, np.newaxis], r_rel_nodes[:, np.newaxis], r_std_nodes[:, np.newaxis]))
+        nodes_dict = dict((node[0], (node[1], node[2], node[3])) for node in nodes_dict.tolist())
+        print nodes_dict.items()[0]
+        raw_input('press enter to continues')
+        nodes_dict = defaultdict(lambda: (1., 0., 0.), nodes_dict)  # corresponds to the cases of super low flow - never significant
 
         return sorted(node_char_list, key=lambda x: x[4]), not_random_groups, nodes_dict
 
