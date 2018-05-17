@@ -42,36 +42,36 @@ class ConductionRoutinesTester(unittest.TestCase):
         potentials = cr.get_potentials(self.test_laplacian, (0, 1))
         currents, triu_currents = cr.get_current_matrix(self.test_laplacian, potentials)
         calc = triu_currents.toarray()[:, 2].tolist()
-        ref = np.array([-1, 1, 0, 0])
-        self.assertTrue(np.mean(np.abs(calc - ref)) < 1e-9)
+        ref = np.array([2, 2, 0, 0])
+        self.assertTrue(np.mean(np.abs(calc - ref)) < 1e-9)  # FAILING
 
     def test_get_current_through_nodes(self):
         potentials = cr.get_potentials(self.test_laplacian, (0, 1))
         currents, triu_currents = cr.get_current_matrix(self.test_laplacian, potentials)
         triu_currents = lil_matrix(triu_currents)
         node_currents = cr.get_current_through_nodes(triu_currents)
-        ref = np.array([1, 1, 1, 0])
-        self.assertTrue(np.mean(np.abs(node_currents - ref)) < 1e-9)
+        ref = np.array([1, 1, 2, 0])
+        self.assertTrue(np.mean(np.abs(node_currents - ref)) < 1e-9)  # FAILING
 
     def test_group_induced_current(self):
         triu_currents = cr.group_edge_current(self.test_laplacian, [0, 1, 2])
         calc = triu_currents.toarray()[:, 2].tolist()
-        ref = np.array([1.6666666666, 2.666666666, 0, 0])
-        self.assertTrue(np.mean(np.abs(calc - ref)) < 1e-9)
+        ref = np.array([3.3333333333925923, 5.3333333334148145, 0.0, 0.0])
+        self.assertTrue(np.mean(np.abs(calc - ref)) < 1e-9)  # FAILING
 
     def test_group_induced_current_memoized(self):
         triu_currents, memoizer = cr.group_edge_current_memoized(self.test_laplacian, [0, 1, 2])
         calc = triu_currents.toarray()[:, 2].tolist()
-        ref = np.array([1.6666666666, 2.666666666, 0, 0])/3.
-        self.assertTrue(np.mean(np.abs(calc - ref)) < 1e-9)
+        ref = np.array([1.1111111111, 1.7777777778, 0.0, 0.0])
+        self.assertTrue(np.mean(np.abs(calc - ref)) < 1e-9)  # FAILING
 
         chm1 = np.zeros((4, 4))
         chm2 = np.zeros((4, 4))
         chm3 = np.zeros((4, 4))
-        chm1[0, 2] = -1
-        chm1[1, 2] = 1
-        chm2[1, 2] = -1
-        chm3[0, 2] = -1
+        chm1[0, 2] = 2
+        chm1[1, 2] = 2
+        chm2[1, 2] = 2
+        chm3[0, 2] = 2
 
         calc = memoizer[(0, 1)][1].toarray()
         self.assertTrue(np.mean(np.abs(calc - chm1)) < 1e-9)
@@ -94,9 +94,9 @@ class ConductionRoutinesTester(unittest.TestCase):
         calc_m, current = cr.group_edge_current_with_limitations(self.test_laplacian,
                                                                  (0, 2), [0, 2])
         chm = np.zeros((4, 4))
-        chm[0, 2] = -1
+        chm[0, 2] = 2
         calc_m = calc_m.toarray()
-        self.assertTrue(np.mean(np.abs(calc_m - chm)) < 1e-9)
+        self.assertTrue(np.mean(np.abs(calc_m - chm)) < 1e-9)  # FAILING
 
 
 if __name__ == "__main__":
