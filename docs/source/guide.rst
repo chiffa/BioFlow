@@ -114,26 +114,6 @@ Software for graph visualization:
 Network analysis results will be output as `.gdf` files. In order to visualize them, I would
 recommend using `Gephi <https://gephi.org/users/download/>`__.
 
-The standard usage pipeline for me is to import the .gdf file into Gephi and:
-
- - Add a filter for current, set it between 2.5% of max and max
-
- - In statistics, run modularity analysis
-
- - Set the color of the nodes as Partition/Modularity Class
-
- - Set the node size as Ranking/rel_value (current relative to what would have been expected in null conditions)
-
- - Set the label color as Partition/Source (whether the node was in the hits set or not)
-
- - Set the label size as Ranking/rel_value
-
- - Add a Filter for p_value, below 0.05
-
- - Run Force Atlas, if needed enabling the "no overlap" and "dissuade hubs" options
-
- - Turn on the labels and switch them to "legacy IDs" or "names"
-
 
 Data and databases setup:
 =========================
@@ -394,3 +374,26 @@ Perform the knowledge analysis ::
         import auto_analyze as knowledge_analysis
     knowledge_analysis([source_bulbs_ids], desired_depth=24, processors=6)
 
+
+Graph Analysis with Gephi:
+--------------------------
+
+The standard usage pipeline for me is to import the .gdf file into `Gephi <https://gephi.org/users/download/>`__ and:
+
+ - Add a filter for current, set it between 2.5% of max and max
+
+ - In statistics, run modularity analysis
+
+ - Set the color of the nodes as Partition/Modularity Class
+
+ - Set the node size as Ranking/rel_value (current relative to what would have been expected in null conditions)
+
+ - Set the label color as Partition/Source (whether the node was in the hits set or not)
+
+ - Set the label size as Ranking/rel_value
+
+ - Add a Filter for p_value, below 0.05
+
+ - Run Force Atlas, if needed enabling the "no overlap" and "dissuade hubs" options
+
+ - Turn on the labels and switch them to "legacy IDs" or "names"
