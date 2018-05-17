@@ -51,6 +51,22 @@ bioflow.utils.log_behavior module
     :undoc-members:
     :show-inheritance:
 
+bioflow.utils.remap_IDs module
+------------------------------
+
+.. automodule:: bioflow.utils.remap_IDs
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+bioflow.utils.usage_ex-average_path_length module
+-------------------------------------------------
+
+.. automodule:: bioflow.utils.usage_ex-average_path_length
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 
 Module contents
 ---------------
