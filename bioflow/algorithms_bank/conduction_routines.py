@@ -21,9 +21,6 @@ from bioflow.internal_configs import line_loss
 from bioflow.utils.linalg_routines import cluster_nodes, average_off_diag_in_sub_matrix, \
     average_interset_linkage, normalize_laplacian
 
-import objgraph
-import traceback
-
 log = get_logger(__name__)
 
 switch_to_splu = False

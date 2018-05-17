@@ -85,18 +85,18 @@ if __name__ == "__main__":
     #                                                  '')
 
     hits_ids, background_ids = map_and_save_gene_ids(
-        '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/TWIST1_ECAD/Hits.csv',
-        # ''
-        '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/TWIST1_ECAD/All_genes.csv'
+        '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Veena data/both_HUM.csv',
+        ''
+        # '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/TWIST1_ECAD/All_genes.csv'
         )
 
     # get the bulbs ids if the nodes we would like to analyze
     hits_ids = get_source_bulbs_ids()
-    background_bulbs_ids = get_background_bulbs_ids()
+    # background_bulbs_ids = get_background_bulbs_ids()
 
     _filter = ['biological_process']
 
-    # rebuild_the_laplacians(all_detectable_genes=background_bulbs_ids)
+    rebuild_the_laplacians(all_detectable_genes=background_bulbs_ids)
 
     # perform the interactome analysis
     interactome_analysis([hits_ids],
