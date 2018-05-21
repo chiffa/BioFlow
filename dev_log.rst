@@ -20,6 +20,7 @@ Switch to matrix instead of dict for a current/tension storing in a dense fashio
 Implement output redirects - main_config Outputs patching does not seem to work - we need
 to create the object anew in case of need.
 
+# correct the overestimation of flow gain for low-edge nodes in the network.
 
 
 Functional:

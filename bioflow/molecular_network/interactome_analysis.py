@@ -396,12 +396,8 @@ def compare_to_blank(
             dictionary_system[nr_node_id] + r_nodes[node_ids == float(nr_node_id)].tolist()
             for nr_node_id in not_random_nodes]
 
-        print len(node_ids), len(r_nodes), len(r_rel_nodes), len(r_std_nodes)
-
         nodes_dict = np.hstack((node_ids[:, np.newaxis], r_nodes[:, np.newaxis], r_rel_nodes[:, np.newaxis], r_std_nodes[:, np.newaxis]))
         nodes_dict = dict((node[0], (node[1], node[2], node[3])) for node in nodes_dict.tolist())
-        print nodes_dict.items()[0]
-        raw_input('press enter to continues')
         nodes_dict = defaultdict(lambda: (1., 0., 0.), nodes_dict)  # corresponds to the cases of super low flow - never significant
 
         return sorted(node_char_list, key=lambda x: x[4]), not_random_groups, nodes_dict

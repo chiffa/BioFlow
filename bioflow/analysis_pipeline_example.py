@@ -103,8 +103,8 @@ if __name__ == "__main__":
                          desired_depth=9,
                          processors=3,
                          background_list=background_bulbs_ids,
-                         skip_sampling=True,
-                         from_memoization=True)
+                         skip_sampling=False,
+                         from_memoization=False)
 
     # # perform the knowledge analysis
     # knowledge_analysis([hits_ids],
