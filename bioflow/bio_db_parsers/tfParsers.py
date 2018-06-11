@@ -105,9 +105,3 @@ def parse_marbach(marbach_prefix, parse_mode='mean'):
     base = list(set(base))
 
     return ret_dict, base
-
-
-if __name__ == "__main__":
-    parse_cellnet_grn(mc.cellnet_path)
-    parse_TRRUST(mc.trrust_path)
-    parse_marbach(mc.marbach_path, mc.marbach_mode)

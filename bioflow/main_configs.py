@@ -38,10 +38,14 @@ reactome_biopax_path = source_db_paths['REACTOME']
 uniprot_path = source_db_paths['UNIPROT']
 hint_csv_path = source_db_paths['HINT']  # attention, for me it is tab-separated
 biogrid_path = source_db_paths['BIOGRID']
+
 marbach_path = source_db_paths['MARBACH']
 marbach_mode = Sources['MARBACH']['mode']
+marbach_sig = Sources['MARBACH']['significance']
 trrust_path = source_db_paths['TRRUST']
+trrust_sig = Sources['TRRUST']['significance']
 cellnet_path = source_db_paths['CELLNET']
+cellnet_sig = Sources['CELLNET']['significance']
 
 # TAXONOMY IDs for Uniprot parsing:
 up_tax_ids = [tax_id.strip() for tax_id in Sources['UNIPROT'][

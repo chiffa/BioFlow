@@ -10,6 +10,7 @@ from bioflow.bio_db_parsers.uniprotParser import UniProtParser
 from bioflow.db_importers.hint_importer import cross_ref_hint
 from bioflow.db_importers.reactome_importer import insert_reactome
 from bioflow.db_importers.biogrid_importer import cross_ref_bio_grid
+from bioflow.db_importers.tf_importers import cross_ref_tf_factors
 from bioflow.db_importers.go_and_uniprot_importer import memoize_go_terms, import_gene_ontology, \
     import_uniprots, pull_up_acc_nums_from_reactome
 from bioflow.neo4j_db.db_io_routines import recompute_forbidden_ids, clear_all, run_diagnostics
@@ -31,6 +32,7 @@ def build_db():
 
     cross_ref_hint()
     cross_ref_bio_grid()
+    cross_ref_tf_factors()
 
     run_diagnostics(full_list)
 
@@ -62,6 +64,7 @@ if __name__ == "__main__":
 
     cross_ref_hint()
     cross_ref_bio_grid()
+    cross_ref_tf_factors()
 
     run_diagnostics(full_list)
 

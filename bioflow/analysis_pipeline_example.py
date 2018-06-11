@@ -76,35 +76,36 @@ if __name__ == "__main__":
     # # clearing the database, if required
     # destroy_db()
 
-    # # building the neo4j database
-    # build_db()
+    # building the neo4j database
+    build_db()
 
     background_bulbs_ids = []
 
-    # hits_ids, background_ids = map_and_save_gene_ids('/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Kp_Km data/top_100_hum.csv',
-    #                                                  '')
+    hits_ids, background_ids = map_and_save_gene_ids('/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Kp_Km data/top_100_hum.csv',
+                                                     '')
 
-    hits_ids, background_ids = map_and_save_gene_ids(
-        '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Veena data/both_HUM.csv',
-        ''
-        # '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/TWIST1_ECAD/All_genes.csv'
-        )
+    # hits_ids, background_ids = map_and_save_gene_ids(
+    #     '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Veena data/both_HUM.csv',
+    #     ''
+    #     # '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/TWIST1_ECAD/All_genes.csv'
+    #     )
 
-    # # get the bulbs ids if the nodes we would like to analyze
-    # hits_ids = get_source_bulbs_ids()
-    # # background_bulbs_ids = get_background_bulbs_ids()
-    #
-    # _filter = ['biological_process']
-    #
-    # rebuild_the_laplacians(all_detectable_genes=background_bulbs_ids)
+    # get the bulbs ids if the nodes we would like to analyze
+    hits_ids = get_source_bulbs_ids()
 
-    # # perform the interactome analysis
-    # interactome_analysis([hits_ids],
-    #                      desired_depth=9,
-    #                      processors=3,
-    #                      background_list=background_bulbs_ids,
-    #                      skip_sampling=False,
-    #                      from_memoization=False)
+    # background_bulbs_ids = get_background_bulbs_ids()
+
+    _filter = ['biological_process']
+
+    rebuild_the_laplacians(all_detectable_genes=background_bulbs_ids)
+
+    # perform the interactome analysis
+    interactome_analysis([hits_ids],
+                         desired_depth=9,
+                         processors=3,
+                         background_list=background_bulbs_ids,
+                         skip_sampling=False,
+                         from_memoization=False)
 
     # # perform the knowledge analysis
     # knowledge_analysis([hits_ids],
