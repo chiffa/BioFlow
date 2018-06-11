@@ -94,6 +94,7 @@ def compute_full_paths(sources_parse_dict, online_dbs_parse_dict, servers_parse_
     """
     base_folder = servers_parse_dict['base_folder']
     paths_dict = {}
+
     for source_name, source_contents in sources_parse_dict.items():
 
         if source_name == 'INTERNAL':

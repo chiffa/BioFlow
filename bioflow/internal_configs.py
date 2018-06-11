@@ -6,6 +6,8 @@ the API_doc, just code comments for the maintainers
 #  Configures the mappings between concrete edge types and meta-types used for confidence
 # calculation
 
+## TODO: remove the edge_type_filter - it looks pretty deprecated by now.
+
 edge_type_filters = {
     "Group": ["is_part_of_collection"],
     # Group relation group
@@ -18,7 +20,10 @@ edge_type_filters = {
     "HiNT_Contact_interaction": ["is_interacting"],
     # Contact_interaction relation group
     "BioGRID_Contact_interaction": ["is_weakly_interacting"],
-    "possibly_same": ["is_possibly_same"], }
+    # possibly same interaction relations group
+    "possibly_same": ["is_possibly_same"],
+    # TF factors interaction
+    "TRRUST_TF_Regulation": ["is_interacting"]}
 
 
 #  Defines what nodes are to be masked to avoid conduction overload of non-informative nodes

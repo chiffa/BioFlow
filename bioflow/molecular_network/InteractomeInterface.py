@@ -365,7 +365,7 @@ class InteractomeInterface(object):
             for _i in range(0, expansions_n):
                 round_name = '%s %s' % (char_name, _i+1)
                 tmp_links, tmp_group, _count = get_expansion(
-                    tmp_group, edge_type_filters[edge_type])
+                    tmp_group, edge_type_filters[edge_type])  # TODO: edit here for edge type retrieval
                 if expansions_n > 1:
                     print_characteristics(round_name, tmp_links, tmp_group, _count)
                 else:
@@ -393,6 +393,12 @@ class InteractomeInterface(object):
         self.biogrid_links, self.full_set = n_expansion(self.pre_full_set,
                                                         'BioGRID_Contact_interaction',
                                                         'BioGRID Links', 2)
+
+        # add links from TRRUST
+
+        # add links from Marbach
+
+        # add links from Cell Rel
 
         self.Super_Links, self.ExpSet = n_expansion(self.full_set, 'possibly_same',
                                                     'Looks_similar Links')
@@ -468,6 +474,7 @@ class InteractomeInterface(object):
 
         self.all_uniprots_bulbs_id_list = list(set(self.all_uniprots_bulbs_id_list))
         log.info("analyzable uniprots: %s", len(self.all_uniprots_bulbs_id_list))
+
 
     def fast_row_insert(self, element, index_type):
         """

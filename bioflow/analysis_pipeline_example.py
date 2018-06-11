@@ -64,7 +64,7 @@ if __name__ == "__main__":
     # # pulling the online databases
     # pull_online_dbs()
 
-    # # setting the organism to yeast
+    # # setting the organism to XXXX
     # build_source_config('human')
     # raise Exception('planned interrupt')
 
@@ -90,21 +90,21 @@ if __name__ == "__main__":
         # '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/TWIST1_ECAD/All_genes.csv'
         )
 
-    # get the bulbs ids if the nodes we would like to analyze
-    hits_ids = get_source_bulbs_ids()
-    # background_bulbs_ids = get_background_bulbs_ids()
+    # # get the bulbs ids if the nodes we would like to analyze
+    # hits_ids = get_source_bulbs_ids()
+    # # background_bulbs_ids = get_background_bulbs_ids()
+    #
+    # _filter = ['biological_process']
+    #
+    # rebuild_the_laplacians(all_detectable_genes=background_bulbs_ids)
 
-    _filter = ['biological_process']
-
-    rebuild_the_laplacians(all_detectable_genes=background_bulbs_ids)
-
-    # perform the interactome analysis
-    interactome_analysis([hits_ids],
-                         desired_depth=9,
-                         processors=3,
-                         background_list=background_bulbs_ids,
-                         skip_sampling=False,
-                         from_memoization=False)
+    # # perform the interactome analysis
+    # interactome_analysis([hits_ids],
+    #                      desired_depth=9,
+    #                      processors=3,
+    #                      background_list=background_bulbs_ids,
+    #                      skip_sampling=False,
+    #                      from_memoization=False)
 
     # # perform the knowledge analysis
     # knowledge_analysis([hits_ids],

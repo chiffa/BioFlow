@@ -32,12 +32,16 @@ neo4j_server = Servers['PRODUCTION']['server_neo4j']
 source_db_paths = compute_full_paths(Sources, DB_locations, Servers['PRODUCTION'])
 verbosity = int(Options['VERBOSITY']['level'])
 
-# REQUIRED PARAMETERS
+# Locations of data source files to be passed to parsers
 gene_ontology_path = source_db_paths['GO']
 reactome_biopax_path = source_db_paths['REACTOME']
 uniprot_path = source_db_paths['UNIPROT']
 hint_csv_path = source_db_paths['HINT']  # attention, for me it is tab-separated
 biogrid_path = source_db_paths['BIOGRID']
+marbach_path = source_db_paths['MARBACH']
+marbach_mode = Sources['MARBACH']['mode']
+trrust_path = source_db_paths['TRRUST']
+cellnet_path = source_db_paths['CELLNET']
 
 # TAXONOMY IDs for Uniprot parsing:
 up_tax_ids = [tax_id.strip() for tax_id in Sources['UNIPROT'][

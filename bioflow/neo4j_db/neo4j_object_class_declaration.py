@@ -42,6 +42,8 @@ class CostumLink(Relationship):
     linkType = String()
     custom = String()
     load = Float()
+    source = String()
+    weight = Float()
 # < ======================================================================= >
 
 
