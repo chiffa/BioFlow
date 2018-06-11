@@ -109,7 +109,8 @@ def insert_meta_objects(bulbs_graph_class, meta_id_2_property_dict):
 
                     DatabaseGraph.is_able_to_modify.create(
                         primary, located_modification,
-                        costum_from=primary.ID, costum_to=located_modification.ID)
+                        costum_from=primary.ID, costum_to=located_modification.ID,
+                        source='Reactome_modification')
 
 
 def insert_collections(collections_2_members):
@@ -126,7 +127,8 @@ def insert_collections(collections_2_members):
                 memoization_dict[collection],
                 memoization_dict[member],
                 costum_from=memoization_dict[collection].ID,
-                costum_to=memoization_dict[member].ID)
+                costum_to=memoization_dict[member].ID,
+                source='Reactome_collection')
 
 
 def insert_complex_parts(complex_property_dict):
@@ -143,7 +145,8 @@ def insert_complex_parts(complex_property_dict):
                     memoization_dict[key],
                     memoization_dict[part],
                     costum_from=memoization_dict[key].ID,
-                    costum_to=memoization_dict[part].ID)
+                    costum_to=memoization_dict[part].ID,
+                    source='Reactome_complex')
 
 
 def insert_reactions(bulbs_graph_class, property_source_dict):
@@ -168,7 +171,8 @@ def insert_reactions(bulbs_graph_class, property_source_dict):
                         memoization_dict[elt],
                         side=property_name,
                         costum_from=memoization_dict[reaction].ID,
-                        costum_to=memoization_dict[elt].ID)
+                        costum_to=memoization_dict[elt].ID,
+                        source='Reactome_reaction')
 
 
 # TODO: catalysis and modulation are identical in the marked lines
@@ -198,7 +202,8 @@ def insert_catalysis(catalysises_dict):
                     ID=catalysis,
                     controlType=catalysis_properties['ControlType'],
                     costum_from=controller.ID,
-                    costum_to=controlled.ID)
+                    costum_to=controlled.ID,
+                    source='Reactome_catalysis')
 
             else:
                 log.debug("Catalysis targets not memoized: %s : %s, %s, %s", catalysis,
@@ -227,7 +232,8 @@ def insert_modulation(modulations_dict):
             ID=modulation,
             controlType=modulation_property_dict['controlType'],
             costum_from=controller.ID,
-            costum_to=controlled.ID)
+            costum_to=controlled.ID,
+            source='Reactome_modulation')
 
 
 def insert_pathways(pathway_steps, pathways):
@@ -251,26 +257,31 @@ def insert_pathways(pathway_steps, pathways):
             DatabaseGraph.is_part_of_pathway.create(memoization_dict[pathway_step],
                                                     memoization_dict[component],
                                                     costum_from=pathway_step,
-                                                    costum_to=component)
+                                                    costum_to=component,
+                                                    source='Reactome_pathway')
 
         for next_step in pathway_steps[pathway_step]['nextStep']:
             DatabaseGraph.is_next_in_pathway.create(memoization_dict[pathway_step],
                                                     memoization_dict[next_step],
                                                     costum_from=pathway_step,
-                                                    costum_to=next_step)
+                                                    costum_to=next_step,
+                                                    source='Reactome_pathway')
+
     for pathway_step in pathways.keys():
 
         for second_pathway_step in pathways[pathway_step]['PathwayStep']:
             DatabaseGraph.is_part_of_pathway.create(memoization_dict[pathway_step],
                                                     memoization_dict[second_pathway_step],
                                                     costum_from=pathway_step,
-                                                    costum_to=second_pathway_step)
+                                                    costum_to=second_pathway_step,
+                                                    source='Reactome_pathway')
 
         for sub_pathway in pathways[pathway_step]['components']:
             DatabaseGraph.is_part_of_pathway.create(memoization_dict[pathway_step],
                                                     memoization_dict[sub_pathway],
                                                     costum_from=pathway_step,
-                                                    costum_to=sub_pathway)
+                                                    costum_to=sub_pathway,
+                                                    source='Reactome_pathway')
 
 
 def get_one_meta_set(bulbs_bound_class):

@@ -44,10 +44,12 @@ def insert_into_the_database(_up_ids_2_inner_ids, _up_ids_2_properties):
         node2 = DatabaseGraph.UNIPORT.get(node2_id)
         if len(link_parameters) > 1:
             DatabaseGraph.is_weakly_interacting.create(node1, node2,
+                                                       source='BioGRID',
                                                        throughput=link_parameters[0],
                                                        confidence=float(link_parameters[1]))
         else:
             DatabaseGraph.is_weakly_interacting.create(node1, node2,
+                                                       source='BioGRID',
                                                        throughput=link_parameters[0])
 
 

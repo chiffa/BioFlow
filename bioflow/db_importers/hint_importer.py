@@ -43,6 +43,6 @@ def cross_ref_hint(flush=True):
                     log.debug('HINT links: %s, %s', key, subkey)
                     if flush:
                         DatabaseGraph.is_interacting.create(
-                            uniprot_ref_dict[key], uniprot_ref_dict[subkey])
+                            uniprot_ref_dict[key], uniprot_ref_dict[subkey], source='HINT')
     log.info('HINT Cross-links: %s, HINT processed pairs: %s',
              actual_cross_links, len(processed_pairs))

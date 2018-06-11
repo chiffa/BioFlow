@@ -27,9 +27,14 @@ bulbs_names_dict = {
     'GO Term': (DatabaseGraph.GOTerm, "GOTerm"),
     }
 
+
+# TODO: perform an edit here to kill the UBC insanity
 forbidden_verification_list = ['Small Molecule',
                                'Small Molecule Collection',
                                'Physical Entity',
-                               'Physical Entity Collection']
+                               'Physical Entity Collection',
+                               # 'Protein',
+                               # 'Protein Collection',
+                               ]
 
 full_list = list(bulbs_names_dict.keys())
