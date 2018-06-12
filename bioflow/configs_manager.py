@@ -9,7 +9,7 @@ from shutil import copy as copy_file
 from string import lower
 from bioflow.utils.general_utils.dict_like_configs_parser import ini_configs2dict, dict2init_configs
 from bioflow.utils.general_utils.high_level_os_io import mkdir_recursive
-from bioflow.utils.general_utils.internet_io import url_to_local
+from bioflow.utils.general_utils.internet_io import url_to_local, marbach_post_proc
 from bioflow.utils.log_behavior import get_logger
 
 log = get_logger(__name__)
@@ -64,6 +64,7 @@ def pull_online_dbs():
 
         local = location_dict['local'].replace('$DB_HOME$', base_folder)
         onlines = [location.strip() for location in location_dict['online'].split(',')]
+
         if 'rename' in location_dict.keys():
             renames = [location.strip() for location in location_dict['rename'].split(',')]
 
@@ -79,6 +80,11 @@ def pull_online_dbs():
                          lower(DB_type), location_dict['online'], local)
                 mkdir_recursive(local)
                 url_to_local(online, local)
+
+        if DB_type == 'MARBACH':
+            log.info('cleaning up local marbach databse')
+            marbach_post_proc(local)
+
 
 
 def parse_config(configfile_shortname):

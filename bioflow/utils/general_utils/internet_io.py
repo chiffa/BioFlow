@@ -3,6 +3,7 @@ Module responsible for retrieval of files stored on the internet.
 Requires some refactoring before can be considered a library in its onw right.
 """
 from os.path import abspath, join, isdir
+import os
 import requests
 import shutil
 import zipfile
@@ -19,7 +20,7 @@ import hashlib
 #   - decompression algorithm selection
 
 
-def url_to_local_path(url, path):
+def url_to_local_path(url, path, rename=None):
     """
     Copies a file from an http url to a local destination provided in path.
     Performs file-to-folder converstion
@@ -28,10 +29,15 @@ def url_to_local_path(url, path):
     :return:
     """
     if isdir(path) and '.zip' not in url and '.tar' not in url:
-        path = join(path, url.split('/')[-1])
+        new_path = join(path, url.split('/')[-1])
+
+        if rename is not None:
+            new_path = join(path, rename)
+
     r = requests.get(url, stream=True)
+
     if r.status_code == 200:
-        with open(path, 'wb') as f:
+        with open(new_path, 'wb') as f:
             r.raw.decode_content = True
             shutil.copyfileobj(r.raw, f)
     else:
@@ -49,11 +55,13 @@ def url_to_local_p_zip(url, path):
     """
     if not isdir(path):
         raise Exception("path provided %s is not a directory" % path)
+
     r = requests.get(url, stream=True)
     if r.status_code == 200:
         r.raw.decode_content = True
         z = zipfile.ZipFile(StringIO.StringIO(r.content))
         z.extractall(path)  # This is unsafe as hell
+
     else:
         raise Exception(
             "Something is wrong with the url provided: %s.\n Please attempt downloading files manually" %
@@ -86,7 +94,7 @@ def url_to_local_p_gz(url, path):
             url)
 
 
-def url_to_local(url, path):
+def url_to_local(url, path, rename=None):
     """
     Copies a file from an http or ftp url to a local destination provided in path while choosing a good decompression algorithm
     so far, only gunzipped ftp url downloads and path autocompletion only for non-compressed files are supported
@@ -96,11 +104,33 @@ def url_to_local(url, path):
     :return:
     """
     if url[-2:] == 'gz':
+        if rename is not None:
+            raise Exception('rename unsupported for gunzipped files')
         url_to_local_p_gz(url, path)
     elif url[-3:] == 'zip':
+        if rename is not None:
+            raise Exception('rename unsupported for zipped files')
         url_to_local_p_zip(url, path)
     else:
-        url_to_local_path(url, path)
+        url_to_local_path(url, path, rename)
+
+
+def marbach_post_proc(local_directory):
+    """
+
+    :return:
+    """
+    relevant_path = join(local_directory, 'Network_compendium/Tissue-specific_regulatory_networks_FANTOM5-v1/32_high-level_networks')
+    for fle in os.listdir(relevant_path):
+        # print fle
+        if fle[-3:] == '.gz':
+            f_in = join(relevant_path, fle)
+            f_out = join(local_directory, fle[:-3])
+            with gzip.open(f_in, 'rb') as _in, open(f_out, 'wb') as _out:
+                # print _in, _out
+                shutil.copyfileobj(_in, _out)
+
+    shutil.rmtree(join(local_directory, 'Network_compendium'))
 
 
 def check_hash(file_path, expected_hash, hasher):
