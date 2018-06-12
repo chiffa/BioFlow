@@ -74,7 +74,7 @@ if __name__ == "__main__":
     ##########################################
 
     # # clearing the database, if required
-    # destroy_db()
+    destroy_db()
 
     # building the neo4j database
     build_db()
