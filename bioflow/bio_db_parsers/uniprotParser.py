@@ -21,7 +21,7 @@ Uniprot = { SWISSPROT_ID:{
 import copy
 from bioflow.utils.log_behavior import get_logger
 from bioflow.internal_configs import interesting_lines, interesting_xrefs,\
-    names_to_ignore, starting_dict
+    names_to_ignore, uniprot_load_dict
 
 
 log = get_logger(__name__)
@@ -87,9 +87,9 @@ class UniProtParser(object):
             self._single_up_dict['GeneID'].append(line.split(';')[1].strip())
         if 'RefSeq; ' in line:
             self._single_up_dict['RefSeq'].append(line.split(';')[1].strip())
-            self._single_up_dict['RefSeq'].append(line.split(';')[2].split(' ').strip())
+            self._single_up_dict['RefSeq'].append(line.split(';')[2].split(' ')[0].strip())
         if 'MGI;' in line:
-            self._single_up_dict['GeneID'].append(line.split(';')[2].split(' ').strip())
+            self._single_up_dict['MGI'].append(line.split(';')[2].split(' ')[0].strip())
 
     def parse_gene_references(self, line):
         """
@@ -171,7 +171,7 @@ class UniProtParser(object):
         if self._single_up_dict['TaxID'] in self.tax_id_list:
             self._ignore[0] = False
             self.uniprot[self._single_up_dict['ID']] = self._single_up_dict
-        return copy.deepcopy(starting_dict)
+        return copy.deepcopy(uniprot_load_dict)
 
     def parse_uniprot(self, source_path):
         """
@@ -180,7 +180,7 @@ class UniProtParser(object):
         :param source_path: path towards the uniprot test file
         :return: uniprot parse dictionary
         """
-        self._single_up_dict = copy.deepcopy(starting_dict)
+        self._single_up_dict = copy.deepcopy(uniprot_load_dict)
         source_file = open(source_path, "r")
         line_counter = 0
         while True:
@@ -208,6 +208,7 @@ class UniProtParser(object):
         if not self.parsed:
             log.warning('Attempting to get access points to a non-parsed uniprot object')
         access_dict = {}
+
         for key in self.uniprot.keys():
             for sub_element in self.uniprot[key]['KEGG']:
                 access_dict[sub_element] = key
@@ -224,4 +225,5 @@ class UniProtParser(object):
                 access_dict[sub_element] = key
             for sub_element in self.uniprot[key]['GeneRefs']['ORFNames']:
                 access_dict[sub_element] = key
+
         return access_dict

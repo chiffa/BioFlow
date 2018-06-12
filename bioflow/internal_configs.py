@@ -83,7 +83,7 @@ names_to_ignore = [
     'CD_antigen',
     'INN=']
 
-starting_dict = {
+uniprot_load_dict = {
     'Acnum': [],
     'Names': {
         'Full': '',
@@ -99,4 +99,6 @@ starting_dict = {
     'Pfam': [],
     'SUPFAM': [],
     'PDB': [],
-    'GeneID': []}
+    'GeneID': [],
+    'RefSeq': [],
+    'MGI': []}
