@@ -64,12 +64,21 @@ def pull_online_dbs():
 
         local = location_dict['local'].replace('$DB_HOME$', base_folder)
         onlines = [location.strip() for location in location_dict['online'].split(',')]
+        if 'rename' in location_dict.keys():
+            renames = [location.strip() for location in location_dict['rename'].split(',')]
 
-        for online in onlines:
-            log.info('loading %s database from %s to %s',
-                     lower(DB_type), location_dict['online'], local)
-            mkdir_recursive(local)
-            url_to_local(online, local)
+            for online, rename in zip(onlines, renames):
+                log.info('loading %s database from %s to %s',
+                         lower(DB_type), location_dict['online'], local)
+                mkdir_recursive(local)
+                url_to_local(online, local, rename=rename)
+
+        else:
+            for online in onlines:
+                log.info('loading %s database from %s to %s',
+                         lower(DB_type), location_dict['online'], local)
+                mkdir_recursive(local)
+                url_to_local(online, local)
 
 
 def parse_config(configfile_shortname):
@@ -170,8 +179,9 @@ def set_folders(file_directory,
 
 
 if __name__ == "__main__":
-    set_folders('/home/andrei/sources')
+    set_folders('/home/andrei/sources2')
     build_source_config('human')
+    pull_online_dbs()
     # pp = PrettyPrinter(indent=4)
     # pp.pprint(parse_configs())
     # pull_online_dbs()
