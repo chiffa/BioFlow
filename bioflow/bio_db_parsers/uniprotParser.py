@@ -18,6 +18,7 @@ Uniprot = { SWISSPROT_ID:{
     'PDB': [],
     'GeneID': [], }}
 """
+import re
 import copy
 from bioflow.utils.log_behavior import get_logger
 from bioflow.internal_configs import interesting_lines, interesting_xrefs,\
@@ -106,8 +107,11 @@ class UniProtParser(object):
                 for subword in word.split('=')[1].strip().split(','):
                     self._single_up_dict['GeneRefs']['OrderedLocusNames'].append(subword.strip())
             if 'Name=' in word or 'Synonyms=' in word:
-                for subword in word.split('=')[1].strip().split(','):
-                    self._single_up_dict['GeneRefs']['Names'].append(subword.strip())
+                for subword in word.split('=')[1].strip().replace(',', ' ').replace(';', ' ').split():
+                    if re.match("^[a-zA-Z0-9_.-]*$", word):
+                        self._single_up_dict['GeneRefs']['Names'].append(subword.strip())
+                    else:
+                        print "rejected %s: doesn't look like a valid name" % subword
 
     def parse_name(self, line):
         """
