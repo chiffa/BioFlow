@@ -7,6 +7,9 @@ from bioflow.utils.log_behavior import get_logger
 from bioflow.main_configs import marbach_mode, marbach_path, cellnet_path, trrust_path
 from bioflow.neo4j_db.db_io_routines import look_up_annotation_set
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
+from time import time
+import datetime
+
 
 log = get_logger(__name__)
 
@@ -25,13 +28,17 @@ def convert_to_internal_ids(base):
     return return_dict
 
 
-def insert_into_the_database(up_ids_2_inner_ids, up_ids_2_properties,
-                             strong_interaction_threshold, origin):
+def insert_into_the_database(up_ids_2_inner_ids,
+                             up_ids_2_properties,
+                             strong_interaction_threshold,
+                             origin):
     """
     Performs the insertion in the database sub-routine
 
     :param up_ids_2_inner_ids:
     :param up_ids_2_properties:
+    :param strong_interaction_threshold:
+    :param origin:
     :return:
     """
 
@@ -40,7 +47,25 @@ def insert_into_the_database(up_ids_2_inner_ids, up_ids_2_properties,
         for key, value in up_ids_2_properties.iteritems()
         if key[0] in up_ids_2_inner_ids.keys() and key[1] in up_ids_2_inner_ids.keys())
 
-    for (node1_id, node2_id), link_parameter in final_dicts.iteritems():
+    breakpoints = 300
+    total_pairs = len(final_dicts.keys())
+    previous_time = time()
+
+    for counter, ((node1_id, node2_id), link_parameter) in enumerate(final_dicts.iteritems()):
+
+        if counter % breakpoints == 0 and counter > 1:
+            compops = float(breakpoints)/(time()-previous_time)
+            mins_before_termination = int((total_pairs-counter)/compops/60)
+            print mins_before_termination, type(mins_before_termination)
+
+            log.debug('inserting link %s out of %s; %s\% complete; inserting speed: %s; expected finsihing: %s',
+                      counter + 1,
+                      total_pairs,
+                      counter / float(total_pairs) * 100,
+                      compops,
+                      datetime.datetime.now() + datetime.timedelta(minutes=mins_before_termination))
+            previous_time = time()
+
         node1 = DatabaseGraph.UNIPORT.get(node1_id)
         node2 = DatabaseGraph.UNIPORT.get(node2_id)
 
@@ -55,44 +80,45 @@ def insert_into_the_database(up_ids_2_inner_ids, up_ids_2_properties,
                                                        weight=float(link_parameter))
 
 
-def cross_ref_tf_factors():
+def cross_ref_tf_factors(confs='tcm'):
     """
     Performs the full transcription factors parsing and insertion routine.
 
     :return:
     """
 
-    log.info('Starting TRRUST Parsing')
-    up_ids_2_properties, up_ids = parse_TRRUST(trrust_path)
+    if 't' in confs:
+        log.info('Starting TRRUST Parsing')
+        up_ids_2_properties, up_ids = parse_TRRUST(trrust_path)
 
-    log.info('TRRUST parsed, starting translation of UP identifiers to internal database identifiers')
-    up_ids_2_inner_ids = convert_to_internal_ids(up_ids)
+        log.info('TRRUST parsed, starting translation of UP identifiers to internal database identifiers')
+        up_ids_2_inner_ids = convert_to_internal_ids(up_ids)
 
-    log.info('UP identifier conversion finished, starting database insertion')
-    insert_into_the_database(up_ids_2_inner_ids, up_ids_2_properties, 1, 'TF_TRRUST')
+        log.info('UP identifier conversion finished, starting database insertion for %s links' % len(up_ids_2_properties.keys()))
+        insert_into_the_database(up_ids_2_inner_ids, up_ids_2_properties, 1, 'TF_TRRUST')
 
-    log.info('Database insertion finished. TRRUST import finished')
+        log.info('Database insertion finished. TRRUST import finished')
 
+    if 'c' in confs:
+        log.info('Starting CellNet Parsing')
+        up_ids_2_properties, up_ids = parse_cellnet_grn(cellnet_path)
 
-    log.info('Starting CellNet Parsing')
-    up_ids_2_properties, up_ids = parse_cellnet_grn(cellnet_path)
+        log.info('CellNet parsed, starting translation of UP identifiers to internal database identifiers')
+        up_ids_2_inner_ids = convert_to_internal_ids(up_ids)
 
-    log.info('CellNet parsed, starting translation of UP identifiers to internal database identifiers')
-    up_ids_2_inner_ids = convert_to_internal_ids(up_ids)
+        log.info('UP identifier conversion finished, starting database insertion for %s links' % len(up_ids_2_properties.keys()))
+        insert_into_the_database(up_ids_2_inner_ids, up_ids_2_properties, 10, 'CellNet')
 
-    log.info('UP identifier conversion finished, starting database insertion')
-    insert_into_the_database(up_ids_2_inner_ids, up_ids_2_properties, 10, 'CellNet')
+        log.info('Database insertion finished. CellNet import finished')
 
-    log.info('Database insertion finished. CellNet import finished')
+    if 'm' in confs:
+        log.info('Starting Marbach Parsing')
+        up_ids_2_properties, up_ids = parse_marbach(marbach_path, marbach_mode)
 
+        log.info('Marbach parsed, starting translation of UP identifiers to internal database identifiers')
+        up_ids_2_inner_ids = convert_to_internal_ids(up_ids)
 
-    log.info('Starting Marbach Parsing')
-    up_ids_2_properties, up_ids = parse_marbach(marbach_path, marbach_mode)
+        log.info('UP identifier conversion finished, starting database insertion for %s links' % len(up_ids_2_properties.keys()))
+        insert_into_the_database(up_ids_2_inner_ids, up_ids_2_properties, 10, 'Marbach2016')
 
-    log.info('Marbach parsed, starting translation of UP identifiers to internal database identifiers')
-    up_ids_2_inner_ids = convert_to_internal_ids(up_ids)
-
-    log.info('UP identifier conversion finished, starting database insertion')
-    insert_into_the_database(up_ids_2_inner_ids, up_ids_2_properties, 10, 'Marbach2016')
-
-    log.info('Database insertion finished. Marbach import finished')
+        log.info('Database insertion finished. Marbach import finished')

@@ -6,6 +6,8 @@ from bioflow.utils.log_behavior import get_logger
 from bioflow.main_configs import biogrid_path
 from bioflow.neo4j_db.db_io_routines import look_up_annotation_set
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
+from time import time
+import datetime
 
 
 log = get_logger(__name__)
@@ -39,9 +41,27 @@ def insert_into_the_database(_up_ids_2_inner_ids, _up_ids_2_properties):
         for key, value in _up_ids_2_properties.iteritems()
         if key[0] in _up_ids_2_inner_ids.keys() and key[1] in _up_ids_2_inner_ids.keys())
 
-    for (node1_id, node2_id), link_parameters in final_dicts.iteritems():
+    breakpoints = 300
+    total_pairs = len(final_dicts.keys())
+    previous_time = time()
+
+    for counter, ((node1_id, node2_id), link_parameters) in enumerate(final_dicts.iteritems()):
+
+        if counter % breakpoints == 0 and counter > 1:
+            compops = float(breakpoints)/(time()-previous_time)
+            mins_before_termination = int((total_pairs-counter)/compops/60)
+
+            log.debug('inserting link %s out of %s; %s\% complete; inserting speed: %s; expected finsihing: %s',
+                      counter + 1,
+                      total_pairs,
+                      counter / float(total_pairs) * 100,
+                      compops,
+                      datetime.datetime.now() + datetime.timedelta(minutes=mins_before_termination))
+            previous_time = time()
+
         node1 = DatabaseGraph.UNIPORT.get(node1_id)
         node2 = DatabaseGraph.UNIPORT.get(node2_id)
+
         if len(link_parameters) > 1:
             DatabaseGraph.is_weakly_interacting.create(node1, node2,
                                                        source='BioGRID',
