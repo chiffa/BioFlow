@@ -185,7 +185,7 @@ def set_folders(file_directory,
 
 
 if __name__ == "__main__":
-    set_folders('/home/andrei/sources2')
+    set_folders('/home/andrei/sources')
     build_source_config('human')
     pull_online_dbs()
     # pp = PrettyPrinter(indent=4)
