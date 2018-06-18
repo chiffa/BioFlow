@@ -356,8 +356,8 @@ def master_edge_current(conductivity_laplacian, index_list,
 
     for counter, (i, j) in enumerate(list_of_pairs):
 
-        if counter % total_pairs/300 == 0:
-            log.debug('getting pairwise flow %s out of %s', counter + 1, total_pairs)
+        # if counter % total_pairs/breakpoints == 0:
+        #     log.debug('getting pairwise flow %s out of %s', counter + 1, total_pairs)
 
         if memory_source and tuple(sorted((i, j))) in memory_source.keys():
             potential_diff, current_upper = memory_source[tuple(sorted((i, j)))]
@@ -396,7 +396,6 @@ def master_edge_current(conductivity_laplacian, index_list,
                      % (counter, total_pairs, compops, mins_before_termination,
                         datetime.datetime.now() + datetime.timedelta(minutes=mins_before_termination)))
             previous_time = time()
-            # objgraph.show_most_common_types(limit=50)
 
     if cancellation:
         current_accumulator /= float(total_pairs)
