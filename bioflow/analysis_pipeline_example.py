@@ -81,12 +81,12 @@ if __name__ == "__main__":
 
     background_bulbs_ids = []
 
-    # hits_ids, background_ids = map_and_save_gene_ids('/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Kp_Km data/top_100_hum.csv',
-    #                                                  '')
+    hits_ids, background_ids = map_and_save_gene_ids('/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Matrigel vs Collagen/Matrigel_vs_collagen-tumor.tsv',
+                                                     '')
 
-    hits_ids, background_ids = map_and_save_gene_ids(
-        '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/TWIST1_ECAD/Hits.csv',
-        '')
+    # hits_ids, background_ids = map_and_save_gene_ids(
+    #     '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/TWIST1_ECAD/Hits.csv',
+    #     '')
 
     # hits_ids, background_ids = map_and_save_gene_ids(
     #     '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Veena data/both_HUM.csv',
@@ -101,7 +101,7 @@ if __name__ == "__main__":
 
     _filter = ['biological_process']
 
-    rebuild_the_laplacians(all_detectable_genes=background_bulbs_ids)
+    # rebuild_the_laplacians(all_detectable_genes=background_bulbs_ids)
 
     # perform the interactome analysis
     interactome_analysis([hits_ids],
