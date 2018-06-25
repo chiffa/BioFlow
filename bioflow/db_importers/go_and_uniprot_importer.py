@@ -254,7 +254,7 @@ def memoize_uniprots():
     """
     Pre-loads uniprots
     """
-    memoize_bulbs_type(DatabaseGraph.UNIPORT, GO_term_memoization_dict)
+    memoize_bulbs_type(DatabaseGraph.UNIPORT, Uniprot_memoization_dict)
 
 
 if __name__ == "__main__":

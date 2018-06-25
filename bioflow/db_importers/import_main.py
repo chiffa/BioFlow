@@ -50,14 +50,14 @@ if __name__ == "__main__":
     # insert_reactome()
     # run_diagnostics(full_list)
     #
-    # # clear_all({'GO Term': (DatabaseGraph.GOTerm, "GOTerm")})
-    #
+    # # clear_all(['GO Term'])
+
     # go_terms, go_terms_structure = GOTermsParser().parse_go_terms(main_configs.gene_ontology_path)
     # import_gene_ontology(go_terms, go_terms_structure)
     #
-    # memoize_go_terms()
+    # # memoize_go_terms()
     #
-    # # clear_all({'UNIPROT': (DatabaseGraph.UNIPORT, "UNIPROT")})
+    # # clear_all(['UNIPROT'])
     #
     # uniprot = UniProtParser(main_configs.up_tax_ids).parse_uniprot(main_configs.uniprot_path)
     # reactome_acnum_bindings = pull_up_acc_nums_from_reactome()
@@ -67,7 +67,7 @@ if __name__ == "__main__":
     # cross_ref_hint()
     # cross_ref_bio_grid()
 
-    cross_ref_tf_factors('t')
+    cross_ref_tf_factors('m')
 
     run_diagnostics(full_list)
 

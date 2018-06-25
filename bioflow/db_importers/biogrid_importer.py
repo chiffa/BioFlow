@@ -48,10 +48,12 @@ def insert_into_the_database(_up_ids_2_inner_ids, _up_ids_2_properties):
     for counter, ((node1_id, node2_id), link_parameters) in enumerate(final_dicts.iteritems()):
 
         if counter % breakpoints == 0 and counter > 1:
-            compops = float(breakpoints)/(time()-previous_time)
+            compops = float(breakpoints)/(time() - previous_time)
             mins_before_termination = int((total_pairs-counter)/compops/60)
 
-            log.debug('inserting link %s out of %s; %s\% complete; inserting speed: %s; expected finsihing: %s',
+            print mins_before_termination, type(mins_before_termination)
+
+            log.debug('inserting link %s out of %s; %.2f complete; inserting speed: %.2f; expected finsihing: %s',
                       counter + 1,
                       total_pairs,
                       counter / float(total_pairs) * 100,

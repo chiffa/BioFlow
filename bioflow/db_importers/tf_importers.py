@@ -52,18 +52,18 @@ def insert_into_the_database(up_ids_2_inner_ids,
     previous_time = time()
 
     for counter, ((node1_id, node2_id), link_parameter) in enumerate(final_dicts.iteritems()):
+        # print 'tick'
 
         if counter % breakpoints == 0 and counter > 1:
             compops = float(breakpoints)/(time()-previous_time)
-            mins_before_termination = int((total_pairs-counter)/compops/60)
-            print mins_before_termination, type(mins_before_termination)
+            secs_before_termination = int((total_pairs-counter)/compops)
 
-            log.debug('inserting link %s out of %s; %s\% complete; inserting speed: %s; expected finsihing: %s',
+            log.info('inserting link %s out of %s; %.2f complete; inserting speed: %.2f; expected finsihing: %s',
                       counter + 1,
                       total_pairs,
                       counter / float(total_pairs) * 100,
                       compops,
-                      datetime.datetime.now() + datetime.timedelta(minutes=mins_before_termination))
+                      datetime.datetime.now() + datetime.timedelta(seconds=secs_before_termination))
             previous_time = time()
 
         node1 = DatabaseGraph.UNIPORT.get(node1_id)
