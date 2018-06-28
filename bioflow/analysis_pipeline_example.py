@@ -81,18 +81,18 @@ if __name__ == "__main__":
 
     background_bulbs_ids = []
 
-    hits_ids, background_ids = map_and_save_gene_ids('/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Matrigel vs Collagen/Matrigel_vs_collagen-tumor.tsv',
-                                                     '')
+    # hits_ids, background_ids = map_and_save_gene_ids('/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Matrigel vs Collagen/Matrigel_vs_collagen-tumor.tsv',
+    #                                                  '')
 
     # hits_ids, background_ids = map_and_save_gene_ids(
     #     '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/TWIST1_ECAD/Hits.csv',
     #     '')
 
-    # hits_ids, background_ids = map_and_save_gene_ids(
-    #     '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Veena data/both_HUM.csv',
-    #     ''
+    hits_ids, background_ids = map_and_save_gene_ids(
+        '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Veena data/both_HUM.csv',
+        ''
     #     # '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/TWIST1_ECAD/All_genes.csv'
-    #     )
+        )
 
     # get the bulbs ids if the nodes we would like to analyze
     hits_ids = get_source_bulbs_ids()
@@ -105,8 +105,8 @@ if __name__ == "__main__":
 
     # perform the interactome analysis
     interactome_analysis([hits_ids],
-                         desired_depth=12,
-                         processors=4,
+                         desired_depth=9,
+                         processors=3,
                          background_list=background_bulbs_ids,
                          skip_sampling=False,
                          from_memoization=False)

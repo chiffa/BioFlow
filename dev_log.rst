@@ -4,6 +4,24 @@ TODOs for the project in the future:
 Current refactoring:
 --------------------
 
+Pull all instances of neo4j usage
+    - mapping of names to nodes
+    - iteration through nodes
+    - parameters retrieval
+    - edge parameters retrieval
+=> the goals are to cut the layers of abstraction that will no more be needed after bulbflow deletion
+
+Usages so far:
+    - Importers
+    - retrieval of Uniprot nodes => mostly to be able to perform a get fromm, an id
+    - retrieving the GO nodes
+    - generators in the location index lookups
+    - generator when getting all the uniprot nodes
+    - massive usage in the db_io_routines
+
+=> Javascriptify wrapper around the dictionary of node properties?
+=> add a "with" statement
+
 We are using Interactome Interface for 5 independent reasons:
     - build the laplacian matrix
     - store the laplacian matrix
@@ -13,11 +31,11 @@ We are using Interactome Interface for 5 independent reasons:
 
 We can already factor out the two methods responsible for a laplacian matrix building.
 
-Correct the HINT downloading and renaming
+(OK) Correct the HINT downloading and renaming
 
 Switch to matrix instead of dict for a current/tension storing in a dense fashion
 
-Implement output redirects - main_config Outputs patching does not seem to work - we need
+(OK) Implement output redirects - main_config Outputs patching does not seem to work - we need
 to create the object anew in case of need.
 
 # correct the overestimation of flow gain for low-edge nodes in the network.
@@ -51,7 +69,7 @@ Functional:
 
     -   Would need a revised null model (random sinks/sources? if single sink, random sources?)
 
--   Add signal/noise ration - the flow we are getting in a given node compared to what we would have
+-   (OK) Add signal/noise ration - the flow we are getting in a given node compared to what we would have
     expected in a random node.
 
         -   => More or less already done by the p_value; excpet p_value also accounts for the node of average degree X
@@ -70,7 +88,7 @@ Functional:
 
 Structural:
 -----------
--   Create a separate structure for performing the statistical analysis, that is idependent from the
+-   Create a separate structure for performing the statistical analysis, that is independent from the
     wrapper
 
 -   (TO BE TESTED) Enforce the single source of the Interface Objects for sampling to simplify
@@ -103,7 +121,7 @@ Integration:
 - Update to CYPHER and a more recent neo4j instance accessed through bolt
     - possibility of using a periodic Cypher update (each 500-1000) instead of atomic?
 
-- Consider removing neo4j altogether
+- (Rejected) Consider removing neo4j altogether => Nope, it's a good persistence solution
 
 
 Cosmetic:
@@ -111,14 +129,14 @@ Cosmetic:
 
 -   Properly indent multi-line :param <parameter type> <parameter name>: descriptors
 
--   Integrate compops/second estimation to the sources.ini
+-   (OK) Integrate compops/second estimation to the sources.ini
 
 -   Perform profiling by creating a dedicated set of loggers that would log an "execution time"
     flag set
 
 -   Add the forwarding of the thread number to the progress report
 
--   Reformat progress report as a progress bar.
+-   (MEH) Reformat progress report as a progress bar.
 
 -   The explanation of the model and its transmission into the published data needs to be easy enough
     to explain why the hits are justified and why they aren't.
