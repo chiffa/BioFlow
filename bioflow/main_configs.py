@@ -47,6 +47,10 @@ trrust_sig = Sources['TRRUST']['significance']
 cellnet_path = source_db_paths['CELLNET']
 cellnet_sig = Sources['CELLNET']['significance']
 
+
+phosphosite_path = source_db_paths['PHOSPHOSITE']
+phosphosite_organism = Sources['PHOSPHOSITE']['organism']
+
 # TAXONOMY IDs for Uniprot parsing:
 up_tax_ids = [tax_id.strip() for tax_id in Sources['UNIPROT'][
     'tax_ids'].split(',') if tax_id not in ('', ' ')]
