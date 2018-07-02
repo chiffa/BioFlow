@@ -47,13 +47,14 @@ def destroy_db():
 
 
 if __name__ == "__main__":
+    pass
     # # clear_all(bulbs_names_dict)
     # run_diagnostics(full_list)
     # insert_reactome()
     # run_diagnostics(full_list)
     #
     # # clear_all(['GO Term'])
-
+    #
     # go_terms, go_terms_structure = GOTermsParser().parse_go_terms(main_configs.gene_ontology_path)
     # import_gene_ontology(go_terms, go_terms_structure)
     #
@@ -68,11 +69,11 @@ if __name__ == "__main__":
     #
     # cross_ref_hint()
     # cross_ref_bio_grid()
-
-    cross_ref_tf_factors('t')
-
-    cross_ref_kinases_factors()
-
+    #
+    # cross_ref_tf_factors('t')
+    #
+    # cross_ref_kinases_factors()
+    #
     # run_diagnostics(full_list)
-
-    # recompute_forbidden_ids(forbidden_verification_list)
+    #
+    recompute_forbidden_ids(forbidden_verification_list)

@@ -1,9 +1,9 @@
 """
-Responsible for the injection of the phosphosite phosphorilation regulation into the main space
+Imports the complexes and insert them into the neo4j database
 """
-from bioflow.bio_db_parsers.PhosphositeParser import parse_phosphosite
+from bioflow.bio_db_parsers.ComplexPortalParser import parse_complex_portal
 from bioflow.utils.log_behavior import get_logger
-from bioflow.main_configs import phosphosite_path, phosphosite_organism
+from bioflow.main_configs import complexes_path
 from bioflow.neo4j_db.db_io_routines import look_up_annotation_set
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from time import time
@@ -39,6 +39,20 @@ def insert_into_the_database(up_ids_2_inner_ids,
     :param origin:
     :return:
     """
+    for counter, new_node in enumerate(up_ids_2_properties.iteritems()):
+
+        complex_node = DatabaseGraph.COMPLEX.create(ID=new_node['ID'],
+                                                    displayName=new_node['DisplayName'],
+                                                    main_connex=False)
+
+        for node2_up in new_node['components']:
+
+            node2 = DatabaseGraph.UNIPORT.get(up_ids_2_inner_ids[node2_up])
+
+            DatabaseGraph.is_interacting.create(complex_node, node2,
+                                                source=origin,
+                                                weight=1.0)
+
 
     final_dicts = dict(
         ((up_ids_2_inner_ids[key[0]], up_ids_2_inner_ids[key[1]]), value)
@@ -72,21 +86,20 @@ def insert_into_the_database(up_ids_2_inner_ids,
                                             weight=float(np.sum(np.array(link_parameter).astype(np.int))))
 
 
-def cross_ref_kinases_factors():
+def insert_complexes():
     """
     Performs the full kinase-substrate parsing and insertion.
 
     :return:
     """
-    log.info('Starting PhosphoSite Parsing')
+    log.info('Starting Complex Portal parsing')
 
+    up_ids_2_properties, up_ids = parse_complex_portal(complexes_path)
 
-    up_ids_2_properties, up_ids = parse_phosphosite(phosphosite_path, phosphosite_organism)
-
-    log.info('PhosphoSite parsed, starting translation of UP identifiers to internal database identifiers')
+    log.info('Complex Portal parsed, starting translation of UP identifiers to internal database identifiers')
     up_ids_2_inner_ids = convert_to_internal_ids(up_ids)
 
     log.info('UP identifier conversion finished, starting database insertion for %s links' % len(up_ids_2_properties.keys()))
-    insert_into_the_database(up_ids_2_inner_ids, up_ids_2_properties, 'PhosphoSite')
+    insert_into_the_database(up_ids_2_inner_ids, up_ids_2_properties, 'ComplexPortal')
 
-    log.info('Database insertion finished. PhosphoSite import finished')
+    log.info('Database insertion finished. Complex Portal import finished')
