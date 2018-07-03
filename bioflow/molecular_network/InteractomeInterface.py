@@ -377,6 +377,8 @@ class InteractomeInterface(object):
 
         log.info('Entering retrieval of the connection system of physical entities')
 
+        #TODO: following hte addition of the new types, this part now makes little sense.
+
         self.ReactLinks, self.InitSet, count = get_reaction_blocks()
         print_characteristics('Reactions', self.ReactLinks, self.InitSet, count)
 

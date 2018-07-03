@@ -5,19 +5,22 @@ def parse_complex_portal(complex_portal_file):
 
     def unpack_complex_contents(complex_name):
         unpacked_subnodes = []
-        subnode_list = new_nodes[complex_name]
+        subnode_list = new_nodes[complex_name]['components']
         for sub_node in subnode_list:
-            if sub_node in complexes:
+            if sub_node in new_nodes[complex_name].keys():
                 unpacked_subnodes += unpack_complex_contents(sub_node)
             else:
-                unpacked_subnodes +=sub_node
+                if ':' or '_9606' in sub_node:
+                    pass
+                elif '-' in sub_node:
+                    unpacked_subnodes.append(sub_node.split('-')[0])
+                else:
+                    unpacked_subnodes.append(sub_node)
 
         return unpacked_subnodes
 
-
-    complexes = []
     base = []
-    new_nodes = []
+    new_nodes = {}
 
     with open(complex_portal_file, 'rb') as source:
         reader = csv_reader(source, delimiter='\t')
@@ -26,18 +29,16 @@ def parse_complex_portal(complex_portal_file):
             legacy_id = line[0]
             display_name = line[1]
             componenets = line[4].split('|')
-            componenets = [comp[:-3] for comp in componenets]
+            componenets = [comp.split('(')[0] for comp in componenets]
             node = {'ID': legacy_id, 'displayName': display_name, 'components': componenets}
-            new_nodes.append(node)
-            complexes.append(node['ID'])
+            new_nodes[node['ID']] = node
 
-    for node in new_nodes:
+    print new_nodes
+
+    for node in new_nodes.itervalues():
         node['components'] = unpack_complex_contents(node['ID'])
         base += node['components']
 
     base = list(set(base))
 
-    return base, new_nodes
-
-if __name__ == "__main__":
-    parse_complex_portal('/home/andrei/sources/ComplexPortal/homo_sapiens.tsv')
+    return new_nodes, base

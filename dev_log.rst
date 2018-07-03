@@ -4,6 +4,9 @@ TODOs for the project in the future:
 Current refactoring:
 --------------------
 
+Propagate the insertion of COMPLEX type
+
+
 Pull all instances of neo4j usage
     - mapping of names to nodes
     - iteration through nodes

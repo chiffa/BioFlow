@@ -39,10 +39,10 @@ def insert_into_the_database(up_ids_2_inner_ids,
     :param origin:
     :return:
     """
-    for counter, new_node in enumerate(up_ids_2_properties.iteritems()):
+    for counter, (node_id, new_node) in enumerate(up_ids_2_properties.iteritems()):
 
-        complex_node = DatabaseGraph.COMPLEX.create(ID=new_node['ID'],
-                                                    displayName=new_node['DisplayName'],
+        complex_node = DatabaseGraph.COMPLEX.create(ID=node_id,
+                                                    displayName=new_node['displayName'],
                                                     main_connex=False)
 
         for node2_up in new_node['components']:
@@ -99,7 +99,7 @@ def insert_complexes():
     log.info('Complex Portal parsed, starting translation of UP identifiers to internal database identifiers')
     up_ids_2_inner_ids = convert_to_internal_ids(up_ids)
 
-    log.info('UP identifier conversion finished, starting database insertion for %s links' % len(up_ids_2_properties.keys()))
+    log.info('UP identifier conversion finished, starting database insertion for %s complexes' % len(up_ids_2_properties.keys()))
     insert_into_the_database(up_ids_2_inner_ids, up_ids_2_properties, 'ComplexPortal')
 
     log.info('Database insertion finished. Complex Portal import finished')

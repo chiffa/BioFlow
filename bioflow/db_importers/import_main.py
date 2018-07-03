@@ -12,6 +12,7 @@ from bioflow.db_importers.reactome_importer import insert_reactome
 from bioflow.db_importers.biogrid_importer import cross_ref_bio_grid
 from bioflow.db_importers.tf_importers import cross_ref_tf_factors
 from bioflow.db_importers.phosphosite_importer import cross_ref_kinases_factors
+from bioflow.db_importers.complex_importer import insert_complexes
 from bioflow.db_importers.go_and_uniprot_importer import memoize_go_terms, import_gene_ontology, \
     import_uniprots, pull_up_acc_nums_from_reactome
 from bioflow.neo4j_db.db_io_routines import recompute_forbidden_ids, clear_all, run_diagnostics
@@ -60,7 +61,7 @@ if __name__ == "__main__":
     #
     # # memoize_go_terms()
     #
-    # # clear_all(['UNIPROT'])
+    # # clear_all(['COMPLEX'])
     #
     # uniprot = UniProtParser(main_configs.up_tax_ids).parse_uniprot(main_configs.uniprot_path)
     # reactome_acnum_bindings = pull_up_acc_nums_from_reactome()
@@ -73,6 +74,8 @@ if __name__ == "__main__":
     # cross_ref_tf_factors('t')
     #
     # cross_ref_kinases_factors()
+    #
+    insert_complexes()
     #
     # run_diagnostics(full_list)
     #
