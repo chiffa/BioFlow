@@ -209,20 +209,21 @@ def show_test_statistics(
         plt.hist(test_bi_corr_array[1, :],
                  bins=100, histtype='step', log=True, color='r')
 
-    plt.subplot(336)
-    plt.title('Density of current in the highlighted area')
-    if test_bi_corr_array is not None:
-        bins = np.linspace(
-            min(local_indexed_select(bi_corr_array, 1, selector)[0, :].min(),
-                local_indexed_select(test_bi_corr_array, 1, selector)[0, :].min()),
-            max(local_indexed_select(bi_corr_array, 1, selector)[0, :].max(),
-                local_indexed_select(test_bi_corr_array, 1, selector)[0, :].max()),
-            100)
-    plt.hist(local_indexed_select(bi_corr_array, 1, selector)[0, :],
-             bins=bins, histtype='step', log=True, color='b')
-    if test_bi_corr_array is not None:
-        plt.hist(local_indexed_select(test_bi_corr_array, 1, selector)[0, :],
-                 bins=100, histtype='step', log=True, color='r')
+    # plt.subplot(336)
+    # plt.title('Density of current in the highlighted area')
+    # if test_bi_corr_array is not None:
+    #     bins = np.linspace(
+    #         min(local_indexed_select(bi_corr_array, 1, selector)[0, :].min(),
+    #             local_indexed_select(test_bi_corr_array, 1, selector)[0, :].min()),
+    #         max(local_indexed_select(bi_corr_array, 1, selector)[0, :].max(),
+    #             local_indexed_select(test_bi_corr_array, 1, selector)[0, :].max()),
+    #         100)
+    # plt.hist(local_indexed_select(bi_corr_array, 1, selector)[0, :],
+    #          bins=bins, histtype='step', log=True, color='b')
+    #
+    # if test_bi_corr_array is not None:
+    #     plt.hist(local_indexed_select(test_bi_corr_array, 1, selector)[0, :],
+    #              bins=100, histtype='step', log=True, color='r')
 
     # this property is better off viewed as a scatterplot of true points and
     # default points

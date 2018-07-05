@@ -25,6 +25,7 @@ bulbs_names_dict = {
     'Modification Feature': (DatabaseGraph.ModificationFeature, "ModificationFeature"),
     'UNIPROT': (DatabaseGraph.UNIPORT, "UNIPROT"),
     'GO Term': (DatabaseGraph.GOTerm, "GOTerm"),
+    'COMPLEX': (DatabaseGraph.COMPLEX, "COMPLEX"),
     }
 
 
@@ -33,8 +34,9 @@ forbidden_verification_list = ['Small Molecule',
                                'Small Molecule Collection',
                                'Physical Entity',
                                'Physical Entity Collection',
-                               # 'Protein',
-                               # 'Protein Collection',
+                               'Protein',
+                               'Protein Collection',
+                               'UNIPROT'
                                ]
 
 full_list = list(bulbs_names_dict.keys())

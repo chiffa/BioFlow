@@ -37,6 +37,7 @@ def build_db():
 
     cross_ref_tf_factors('t')
     cross_ref_kinases_factors()
+    insert_complexes()
 
     run_diagnostics(full_list)
 
@@ -61,7 +62,7 @@ if __name__ == "__main__":
     #
     # # memoize_go_terms()
     #
-    # # clear_all(['COMPLEX'])
+    clear_all(['COMPLEX'])
     #
     # uniprot = UniProtParser(main_configs.up_tax_ids).parse_uniprot(main_configs.uniprot_path)
     # reactome_acnum_bindings = pull_up_acc_nums_from_reactome()
@@ -77,6 +78,6 @@ if __name__ == "__main__":
     #
     insert_complexes()
     #
-    # run_diagnostics(full_list)
+    run_diagnostics(full_list)
     #
     recompute_forbidden_ids(forbidden_verification_list)

@@ -227,6 +227,10 @@ class UNIPROT(Meta):
     involved = Bool()
 
 
+class COMPLEX(Meta):
+    element_type = "COMPLEX"
+
+
 class GOTerm(CostumNode):
     element_type = "GOTerm"
     Name = String()

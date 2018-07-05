@@ -4,7 +4,10 @@ TODOs for the project in the future:
 Current refactoring:
 --------------------
 
-Propagate the insertion of COMPLEX type
+Right now the new "COMPLEX" instance is failing to get absorbed upon the network construction
+=> Was not connected to anything
+
+Now we have a second problem. It's that the complex is connecting to "proteins", not UNIPROTs.
 
 
 Pull all instances of neo4j usage

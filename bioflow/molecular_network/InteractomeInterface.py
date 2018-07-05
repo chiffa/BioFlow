@@ -325,14 +325,17 @@ class InteractomeInterface(object):
             super_seed = set()
             super_seed.update(sub_seed)
             total_expansion_participants = 0
+
             for element in sub_seed:
                 # TODO: refactor below: edge_type_filter -> edge_type_filters[edge_type]
                 local_list, count_increase = expand_from_seed(
                     element, edge_type_filter, self.connexity_aware)
+
                 if len(local_list) > 0:
                     clusters[element] = copy(local_list)
                     super_seed.update(local_list)
                     total_expansion_participants += count_increase
+
             return clusters, super_seed, total_expansion_participants
 
         def print_characteristics(name, links, group, total_expansion_participants):

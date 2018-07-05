@@ -33,6 +33,7 @@ class Graph(Neo4jGraph):
         self.PathwayStep = self.build_proxy(ddl.Pathway_Step)
         self.GOTerm = self.build_proxy(ddl.GOTerm)
         self.UNIPORT = self.build_proxy(ddl.UNIPROT)
+        self.COMPLEX = self.build_proxy(ddl.COMPLEX)
 
         # Simple Compounds
         self.DNA = self.build_proxy(ddl.DNA)

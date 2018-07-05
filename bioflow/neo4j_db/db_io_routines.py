@@ -96,6 +96,7 @@ def node_generator_2_bulbs_ids(node_generator):
     node_set = []
     for node in node_generator:
         node_set.append(get_bulbs_id(node))
+        # print 'forbidding ', node.ID, node.displayName
 
     return node_set
 
@@ -163,7 +164,9 @@ def look_up_annotation_set(p_load_list, p_type=''):
 
     load_2_name_list = [(p_load, look_up_annotation_node(p_load, p_type))
                         for p_load in p_load_list]
+
     db_id_list = [db_id_mapping_helper(value) for key, value in load_2_name_list]
+
     not_found_list = [key for key, value in load_2_name_list if value == []]
     for warnId in not_found_list:
         if verbosity > 1:
@@ -223,6 +226,7 @@ def node_extend_once(edge_type_filter, main_connex_only, core_node):
                         connex = True
 
                 node_bulbs_id = get_bulbs_id(node)
+                print 'debug: COMPLEX node type retrieved in expansion', node.element_type
 
                 if node_bulbs_id not in forbidden_bulbs_ids and connex:
                     node_neighbors.append(node_bulbs_id)
@@ -372,6 +376,7 @@ def recompute_forbidden_ids(forbidden_entities_list):
     their corresponding bulbs classes
     """
     forbidden_ids_list = set()
+    forbidden_hist_names_list = set()
     for name in forbidden_entities_list:
         bulbs_class, _ = bulbs_names_dict[name]
         for forbidden_legacy_id in Leg_ID_Filter:
@@ -379,8 +384,10 @@ def recompute_forbidden_ids(forbidden_entities_list):
             # Wait, why isn't it breaking up here? only bub
             associated_node_ids = node_generator_2_bulbs_ids(generator)
             forbidden_ids_list.update(associated_node_ids)
+
     log.info('recomputed %s forbidden IDs. \n Dumping them to %s',
              len(forbidden_ids_list), Dumps.Forbidden_IDs)
+    # log.info(forbidden_ids_list)
     pickle.dump(forbidden_ids_list, file(Dumps.Forbidden_IDs, 'w'))
 
 
@@ -457,6 +464,30 @@ def pull_associations(bulbs_nodes_id_list, allowed_edge_types, direction="BOTH")
         association_dict[bulbs_node_id] = node_extend_once(allowed_edge_types,
                                                            False, root_node)[0]
     return association_dict
+
+
+def convert_to_internal_ids(base):
+    """"
+    converts names of proteins to database_ids, preferably matching to UNIPROTS
+
+    :param base:
+    :return:
+    """
+    warn_list, results_tuple_list, results_list = look_up_annotation_set(set(base))
+    return_dict = {}
+
+    for key, match_list in results_tuple_list:
+        if key not in warn_list:
+            for match in match_list:
+                if match[0] == 'UNIPROT':
+                    return_dict[key] = match[2]
+                else:
+                    return_dict[key] = match_list[0][2]
+
+
+    log.debug('TF ID cast converter length: %s', len(return_dict))
+    return return_dict
+
 
 
 # Yes, I know what goes below here is ugly and shouldn't be in the
