@@ -4,11 +4,6 @@ TODOs for the project in the future:
 Current refactoring:
 --------------------
 
-Right now the new "COMPLEX" instance is failing to get absorbed upon the network construction
-=> Was not connected to anything
-
-Now we have a second problem. It's that the complex is connecting to "proteins", not UNIPROTs.
-
 
 Pull all instances of neo4j usage
     - mapping of names to nodes
@@ -27,6 +22,16 @@ Usages so far:
 
 => Javascriptify wrapper around the dictionary of node properties?
 => add a "with" statement
+
+
+=> We can actually re-implement the GraphDatabase instance with the bindings.
+    => Index creation
+    => Index search
+    => Single connections
+    => Multiple connections
+
+This way the refactoring is a bit easier, even though we are loosing potential for optimization.
+
 
 We are using Interactome Interface for 5 independent reasons:
     - build the laplacian matrix

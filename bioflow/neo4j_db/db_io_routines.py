@@ -226,7 +226,6 @@ def node_extend_once(edge_type_filter, main_connex_only, core_node):
                         connex = True
 
                 node_bulbs_id = get_bulbs_id(node)
-                print 'debug: COMPLEX node type retrieved in expansion', node.element_type
 
                 if node_bulbs_id not in forbidden_bulbs_ids and connex:
                     node_neighbors.append(node_bulbs_id)

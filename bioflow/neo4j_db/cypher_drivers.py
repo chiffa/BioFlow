@@ -21,6 +21,7 @@ class HelloWorldExample(object):
                         "RETURN a.message +', from node ' + id(a)", message=message)
         return result.single()[0]
 
+
 if __name__ == "__main__":
     neo4j_instance = HelloWorldExample('bolt://localhost:7687', 'neo4j', 'sergvcx')
     neo4j_instance.print_greetings('Hello World!')
