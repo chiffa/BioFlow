@@ -1,14 +1,11 @@
 from neo4j.v1 import GraphDatabase
+from bioflow.utils.log_behavior import get_logger
+
+log = get_logger(__name__)
 
 uri = 'bolt://localhost:7687'
 user = 'neo4j'
 password = ''
-
-# the question we need to answer is whether we want to capture the param_dict from the class properties
-# derived from that one
-
-# and I am not sure it is a good idea to keep imitating the bulbs neo4j node = python object.
-# perhaps a meta-driver will be sufficient?
 
 
 class GraphDBPipe(object):
@@ -22,7 +19,7 @@ class GraphDBPipe(object):
     def create(self, node_type, param_dict):
         with self._driver.session() as session:
             new_node = session.write_transaction(self._create, node_type, param_dict)
-            print new_node
+            log.debug(new_node)
 
     @staticmethod
     def _create(tx, node_type, param_dict):
@@ -43,7 +40,7 @@ class GraphDBPipe(object):
     def delete(self, node_id, node_type=None):
         with self._driver.session() as session:
             deleted = session.write_transaction(self._delete, node_id, node_type)
-            print deleted
+            log.debug(deleted)
 
     @staticmethod
     def _delete(tx, node_id, node_type):
@@ -60,7 +57,7 @@ class GraphDBPipe(object):
     def delete_all(self, node_type):
         with self._driver.session() as session:
             supression = session.write_transaction(self._delete_all, node_type)
-            print supression
+            log.debug(supression)
 
     @staticmethod
     def _delete_all(tx, nodetype):
@@ -73,7 +70,7 @@ class GraphDBPipe(object):
         with self._driver.session() as session:
             node = session.write_transaction(self._get, node_type, node_id)
 
-            print node
+            log.debug(node)
 
     @staticmethod
     def _get(tx, node_type, node_id):
@@ -95,12 +92,10 @@ class GraphDBPipe(object):
         else:
             return node[0]
 
-        return result.single()
-
     def find(self, filter_dict, node_type=None):
         with self._driver.session() as session:
             nodes = session.write_transaction(self._find, node_type, filter_dict)
-            print nodes
+            log.debug(nodes)
 
     @staticmethod
     def _find(tx, node_type, filter_dict):
@@ -125,7 +120,7 @@ class GraphDBPipe(object):
     def link(self, node_id_from, node_id_to, link_type=None, params=None):
         with self._driver.session() as session:
             link = session.write_transaction(self._link_create, node_id_from, node_id_to, link_type, params)
-            print link
+            log.debug(link)
 
     @staticmethod
     def _link_create(tx, node_from, node_to, link_type, params):
@@ -145,14 +140,14 @@ class GraphDBPipe(object):
 
         instructions_puck.append("RETURN r")
         instruction = ' '.join(instructions_puck)
-        rel = tx.run(instruction)
+        rels = tx.run(instruction)
 
-        return rel
+        return [rel for rel in rels]
 
     def get_linked(self, node_id, orientation='both', link_type=None, link_param_filter=None):
         with self._driver.session() as session:
             results = session.write_transaction(self._get_linked, node_id, orientation, link_type, link_param_filter)
-            print results
+            log.debug(results)
 
     @staticmethod
     def _get_linked(tx, node_id, orientation, link_type, link_param_filter):
@@ -190,17 +185,16 @@ class GraphDBPipe(object):
     def set_attributes(self, node_id, attributes_dict):
         with self._driver.session() as session:
             edited_node = session.write_transaction(self._set_attributes, node_id, attributes_dict)
-            print edited_node
+            log.debug(edited_node)
 
     @staticmethod
     def _set_attributes(tx, node_id, attributes_dict):
-        instructions_puck = ["MATCH (n)"]
-        instructions_puck.append("WHERE ID(n) = %s" % node_id)
+        instructions_puck = ["MATCH (n) WHERE ID(n) = %s" % node_id]
         for key, value in attributes_dict.iteritems():
             instructions_puck.append("SET n.%s = '%s'" % (key, value))
         instructions_puck.append("RETURN n")
         instruction = ' '.join(instructions_puck)
-        print instruction
+        log.debug(instruction)
         result = tx.run(instruction)
 
         return result.single()
@@ -208,7 +202,7 @@ class GraphDBPipe(object):
     def attach_annotation_tag(self, node_id, annotation_tag, tag_type=None):
         with self._driver.session() as session:
             annot_tag = session.write_transaction(self._attach_annotation_tag, node_id, annotation_tag, tag_type)
-            print annot_tag
+            log.debug(annot_tag)
 
     @staticmethod
     def _attach_annotation_tag(tx, node_id, annotation_tag, tag_type):
@@ -228,7 +222,7 @@ class GraphDBPipe(object):
     def get_from_annotation_tag(self, annotation_tag, tag_type=None):
         with self._driver.session() as session:
             annotated_nodes = session.write_transaction(self._get_from_annotation_tag, annotation_tag, tag_type)
-            print annotated_nodes
+            log.debug(annotated_nodes)
 
     @staticmethod
     def _get_from_annotation_tag(tx, annotation_tag, tag_type):
@@ -245,10 +239,22 @@ class GraphDBPipe(object):
         return [node for node in result]
 
     def batch_insert(self, type_list, param_dicts_list):
-        pass
+        with self._driver.session() as session:
+            tx = session.begin_transaction()
+            new_nodes = []
+            for n_type, n_params in zip(type_list, param_dicts_list):
+                new_nodes.append(self._create(tx, n_type, n_params))
+            tx.commit()
+            log.debug(new_nodes)
 
     def batch_link(self, id_pairs_list, type_list, param_dicts_list):
-        pass
+        with self._driver.session() as session:
+            tx = session.begin_transaction()
+            new_links = []
+            for (_from, _to), n_type, n_params in zip(id_pairs_list, type_list, param_dicts_list):
+                new_links.append(self._link_create(tx, _from, _to, n_type, n_params))
+            tx.commit()
+            log.debug(new_links)
 
 
 if __name__ == "__main__":
@@ -264,3 +270,5 @@ if __name__ == "__main__":
     # neo4j_pipe.set_attributes(1, {"bird": "cookoo"})
     # neo4j_pipe.attach_annotation_tag(1, "Q123541", "UP Acc ID")
     # neo4j_pipe.get_from_annotation_tag("Q123541", "Neo4j ID")
+    # neo4j_pipe.batch_insert(["Protein", "Complex"], [{'a': 1}, {'a': 2, 'b': 3}])
+    # neo4j_pipe.batch_link([(25, 26), (25, 1)], [None, 'reaction'], [None, {"weight": 3, "source": "test"}])
