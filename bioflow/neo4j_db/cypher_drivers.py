@@ -1,9 +1,4 @@
 from neo4j.v1 import GraphDatabase
-import code
-
-
-def interact():
-    code.InteractiveConsole(locals=globals()).interact()
 
 uri = 'bolt://localhost:7687'
 user = 'neo4j'
@@ -25,7 +20,7 @@ class GraphDBPipe(object):
         self._driver.close()
 
     def create(self, node_type, param_dict):
-        with self._driver.session as session:
+        with self._driver.session() as session:
             new_node = session.write_transaction(self._create, node_type, param_dict)
             print new_node
 
@@ -34,7 +29,7 @@ class GraphDBPipe(object):
         instruction_puck = ["CREATE (n:%s)" % node_type]
         set_puck = []
 
-        for key, value in param_dict:
+        for key, value in param_dict.iteritems():
             set_puck.append("SET n.%s = '%s'" % (key, value))
 
         instruction_puck += set_puck
@@ -42,12 +37,11 @@ class GraphDBPipe(object):
         instruction = ' '.join(instruction_puck)
 
         result = tx.run(instruction)
-        # debugging
-        interact()
+
         return result.single()
 
     def delete(self, node_id, node_type=None):
-        with self._driver.session as session:
+        with self._driver.session() as session:
             deleted = session.write_transaction(self._delete, node_id, node_type)
             print deleted
 
@@ -55,11 +49,11 @@ class GraphDBPipe(object):
     def _delete(tx, node_id, node_type):
         if node_type is None:
             result = tx.run("MATCH (n) "
-                            "WHERE ID(n) = %s"
+                            "WHERE ID(n) = %s "
                             "DETACH DELETE n " % node_id)
         else:
             result = tx.run("MATCH (n:%s) "
-                            "WHERE ID(n) = %s"
+                            "WHERE ID(n) = %s "
                             "DETACH DELETE n " % (node_type, node_id))
         return result
 
@@ -72,20 +66,36 @@ class GraphDBPipe(object):
     def _delete_all(tx, nodetype):
         result = tx.run("MATCH (n:%s) "
                         "DETACH DELETE n " % nodetype)
+
         return result
 
-    def get(self, node_id):
+    def get(self, node_id, node_type=None):
         with self._driver.session() as session:
-            node = session.write_transaction(self._get, self._type, node_id)
+            node = session.write_transaction(self._get, node_type, node_id)
+
             print node
 
     @staticmethod
     def _get(tx, node_type, node_id):
-        result = tx.run("MATCH (a:%s) "
-                        "WHERE ID(a) = %s "
-                        "RETURN a" % (node_type, node_id))
+        if node_type is None:
+            result = tx.run("MATCH (n) "
+                            "WHERE ID(n) = %s "
+                            "RETURN n" % node_id)
 
-        return result.single()[0]
+        else:
+            result = tx.run("MATCH (n:%s) "
+                            "WHERE ID(n) = %s "
+                            "RETURN n" % (node_type, node_id))
+
+        node = result.single()
+
+        if node is None:
+            return None
+
+        else:
+            return node[0]
+
+        return result.single()
 
     def find(self, filter_dict, node_type=None):
         with self._driver.session() as session:
@@ -97,7 +107,7 @@ class GraphDBPipe(object):
         if node_type is not None:
             instruction_puck = ["MATCH (a:%s)" % node_type]
         else:
-            instruction_puck = ["MATCH (n)"]
+            instruction_puck = ["MATCH (a)"]
 
         where_puck = []
 
@@ -147,6 +157,7 @@ class GraphDBPipe(object):
     @staticmethod
     def _get_linked(tx, node_id, orientation, link_type, link_param_filter):
         instructions_puck = []
+
         if link_type is None:
             if orientation == 'both':
                 instructions_puck.append("MATCH (a)-[r]-(b)")
@@ -167,39 +178,40 @@ class GraphDBPipe(object):
         if link_param_filter is not None:
             where_puck = []
             for key, value in link_param_filter.iteritems():
-                where_puck.append("WHERE r.%s = '%s'" % (key, value))
+                where_puck.append("AND r.%s = '%s'" % (key, value))
             instructions_puck += where_puck
 
         instructions_puck.append("RETURN b")
         instruction = ' '.join(instructions_puck)
         linked_nodes = tx.run(instruction)
 
-        return linked_nodes
+        return [node for node in linked_nodes]
 
     def set_attributes(self, node_id, attributes_dict):
         with self._driver.session() as session:
-            edited_node = session.write_transaction(self.cypher_edit_node, node_id, attributes_dict)
+            edited_node = session.write_transaction(self._set_attributes, node_id, attributes_dict)
             print edited_node
 
     @staticmethod
-    def cypher_edit_node(tx, node_id, attributes_dict):
+    def _set_attributes(tx, node_id, attributes_dict):
         instructions_puck = ["MATCH (n)"]
         instructions_puck.append("WHERE ID(n) = %s" % node_id)
-        for key, value in attributes_dict:
+        for key, value in attributes_dict.iteritems():
             instructions_puck.append("SET n.%s = '%s'" % (key, value))
         instructions_puck.append("RETURN n")
         instruction = ' '.join(instructions_puck)
+        print instruction
         result = tx.run(instruction)
 
         return result.single()
 
     def attach_annotation_tag(self, node_id, annotation_tag, tag_type=None):
         with self._driver.session() as session:
-            annot_tag = session.write_transaction(self.cypher_attach_annotation_tag, node_id, annotation_tag, tag_type)
+            annot_tag = session.write_transaction(self._attach_annotation_tag, node_id, annotation_tag, tag_type)
             print annot_tag
 
     @staticmethod
-    def cypher_attach_annotation_tag(tx, node_id, annotation_tag, tag_type):
+    def _attach_annotation_tag(tx, node_id, annotation_tag, tag_type):
         if tag_type is None:
             tag_type = 'undefined'
 
@@ -215,11 +227,11 @@ class GraphDBPipe(object):
 
     def get_from_annotation_tag(self, annotation_tag, tag_type=None):
         with self._driver.session() as session:
-            annotated_nodes = session.write_transaction(self.cypher_get_from_annotation_tag, annotation_tag, tag_type)
+            annotated_nodes = session.write_transaction(self._get_from_annotation_tag, annotation_tag, tag_type)
             print annotated_nodes
 
     @staticmethod
-    def cypher_get_from_annotation_tag(tx, annotation_tag, tag_type):
+    def _get_from_annotation_tag(tx, annotation_tag, tag_type):
         if tag_type is None:
             result = tx.run("MATCH (annotnode:Annotation)-[r:annotates]->(target) "
                             "WHERE annotnode.tag = '%s' "
@@ -232,108 +244,23 @@ class GraphDBPipe(object):
 
         return [node for node in result]
 
+    def batch_insert(self, type_list, param_dicts_list):
+        pass
 
-class TestNode(object):
-
-    def __init__(self, uri, user, password):
-        self._driver = GraphDatabase.driver(uri, auth=(user, password))
-        self.node_type = 'Test'
-
-    def close(self):
-        self._driver.close()
-
-    def delete_all(self):
-        with self._driver.session() as session:
-            supression = session.write_transaction(self.cypher_delete_all, self.node_type)
-            print supression
-
-    @staticmethod
-    def cypher_delete_all(tx, nodetype):
-        result = tx.run("MATCH (n:%s) "
-                        "DETACH DELETE n " % nodetype)
-
-        return result
-
-    def create_node(self):
-        with self._driver.session() as session:
-            new_node = session.write_transaction(self.cypher_create_node, self.node_type)
-            print new_node
-
-    @staticmethod
-    def cypher_create_node(tx, nodetype):
-        result = tx.run("CREATE (a:%s) "
-                        "SET a.nodetype = '%s' "
-                        "RETURN a.nodetype + ' ' + id(a)" % (nodetype, nodetype))
-        return result.single()[0]
-
-    def set_attribute(self, node_id, attribute_name, attribute_value):
-        with self._driver.session() as session:
-            edited_node = session.write_transaction(self.cypher_edit_node, node_id, attribute_name, attribute_value)
-            print edited_node
-
-    @staticmethod
-    def cypher_edit_node(tx, node_id, attribute_name, attribute_value):
-        result = tx.run("MATCH (n) "
-                        "WHERE ID(n) = %s "
-                        "SET n.%s = '%s' "
-                        "RETURN n" % (node_id, attribute_name, attribute_value))
-        return result.single()[0]
-
-    def get_linked(self, node_id, link_type=None):
-        with self._driver.session() as session:
-            linked = session.write_transaction(self.cypher_get_linked, node_id, link_type)
-            print linked
-
-    @staticmethod
-    def cypher_get_linked(tx, node_id, link_type):
-        if link_type is None:
-            result = tx.run("MATCH (a)--(b) "
-                            "WHERE ID(a) = %s "
-                            "RETURN b" % node_id)
-
-        else:
-            result = tx.run("MATCH (a)-[r:%s]-(b) "
-                            "WHERE ID(a) = %s "
-                            "RETURN b" % (link_type, node_id))
-
-        return [node for node in result]
-
-    def link(self, node_id_1, node_id_2, link_type=None):
-        with self._driver.session() as session:
-            linked = session.write_transaction(self.cypher_link, node_id_1, node_id_2, link_type)
-            print linked
-
-    @staticmethod
-    def cypher_link(tx, node_id_1, node_id_2, link_type):
-        if link_type is None:
-            link_type = 'default'
-
-        result = tx.run("MATCH (a), (b) "
-                        "WHERE ID(a) = %s AND ID(b) = %s "
-                        "CREATE (a)-[r:%s]->(b) "
-                        "RETURN r" % (node_id_1, node_id_2, link_type))
-
-        return result.single()
-
-
+    def batch_link(self, id_pairs_list, type_list, param_dicts_list):
+        pass
 
 
 if __name__ == "__main__":
-    # neo4j_instance = HelloWorldExample('bolt://localhost:7687', 'neo4j', 'sergvcx')
-    # neo4j_instance.print_greetings('Hello World!')
-
-    # neo4j_instance = TestNode('bolt://localhost:7687', 'neo4j', 'sergvcx')
-    # neo4j_instance.node_type = 'Greeting'
-    # neo4j_instance.create_node()
-    # neo4j_instance.create_node()
-    # neo4j_instance.create_node()
-    # neo4j_instance.link(2, 22)
-    # neo4j_instance.link(2, 23, 'test')
-    # neo4j_instance.get_linked(2)
-    # neo4j_instance.get_linked(2, 'test')
-    # neo4j_instance.attach_annotation_tag(2, 'TEST_ANNOT_TAG', 'TEST_TYPE')
-    # neo4j_instance.get_from_annotation_tag('TEST_ANNOT_TAG', 'TEST_TYPE')
-    # neo4j_instance.delete_all()
-    # neo4j_instance.set_attribute(23, 'kitty', 'meow')
-
-    neo4j_instance = GraphDBPipe()
+    neo4j_pipe = GraphDBPipe()
+    # neo4j_pipe.delete_all('Test')
+    # neo4j_pipe.create('Protein', {"chat": "miau", "dog": "waf"})
+    # neo4j_pipe.create('Complex', {"chat": "miau", "dog": "waf"})
+    # neo4j_pipe.link(1, 3, 'test', {"weight": 2, "source": "Andrei"})
+    # neo4j_pipe.get_linked(1, 'both', 'test', {"source": "Andrei"})  #bugged
+    # neo4j_pipe.delete(3, 'Protein')
+    # neo4j_pipe.get(1, "Complex")
+    # neo4j_pipe.find({"chat": "miau"}, "Protein")
+    # neo4j_pipe.set_attributes(1, {"bird": "cookoo"})
+    # neo4j_pipe.attach_annotation_tag(1, "Q123541", "UP Acc ID")
+    # neo4j_pipe.get_from_annotation_tag("Q123541", "Neo4j ID")
