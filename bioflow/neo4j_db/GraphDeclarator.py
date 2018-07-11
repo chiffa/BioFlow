@@ -5,11 +5,13 @@ from bulbs.neo4jserver import Graph as Neo4jGraph, Config
 import neo4j_object_class_declaration as ddl
 from bioflow.main_configs import neo4j_server
 from bioflow.utils.log_behavior import get_logger
+from cypher_drivers import neo4j_pipe
 import os
 
 
 log = get_logger(__name__)
 
+on_alternative_graph = True
 
 if neo4j_server != 'http://localhost:7474':
     neo4j_server_local = Config(neo4j_server + '/db/data/')
@@ -107,7 +109,7 @@ class Graph(Neo4jGraph):
 
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
 on_unittest = os.environ.get('UNITTESTING') == 'True'
-on_alternative_graph = False
+
 
 if on_rtd or on_unittest:
     log.debug(
@@ -127,24 +129,9 @@ if on_rtd or on_unittest:
 
     DatabaseGraph = Mock()
 
-elif on_alternative_graph:
-
-    from mock import Mock as MagicMock
-
-    class Mock(MagicMock):
-
-        @classmethod
-        def __getattr__(cls, name):
-            print 'method %s was called' % name
-            raise Exception('refactoring')
-
-        @classmethod
-        def __getitem__(cls, name):
-            print 'item %s was requested for' % name
-            raise Exception('refactoring')
-
-    DatabaseGraph = Mock()
-
 else:
-    log.debug('graph database interface is connecting to a real DB')
-    DatabaseGraph = Graph()
+    if on_alternative_graph:
+        DatabaseGraph = neo4j_pipe()
+    else:
+        log.debug('graph database interface is connecting to a real DB')
+        DatabaseGraph = Graph()

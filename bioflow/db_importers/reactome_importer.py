@@ -7,7 +7,7 @@ from bioflow.utils.log_behavior import get_logger
 from bioflow.main_configs import Dumps, reactome_biopax_path, verbosity
 from bioflow.internal_configs import Leg_ID_Filter
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
-from bioflow.neo4j_db.db_io_routines import get_bulbs_id
+from bioflow.neo4j_db.db_io_routines import get_db_id
 from bioflow.bio_db_parsers.reactomeParser import ReactomeParser
 from bioflow.neo4j_db.db_io_routines import stable_get_all
 
@@ -81,7 +81,7 @@ def insert_meta_objects(bulbs_graph_class, meta_id_2_property_dict):
             main_connex=False)
 
         if meta_name in Leg_ID_Filter:
-            ForbiddenIDs.append(get_bulbs_id(primary))
+            ForbiddenIDs.append(get_db_id(primary))
 
         memoization_dict[meta_name] = primary
 

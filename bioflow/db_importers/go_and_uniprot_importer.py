@@ -6,7 +6,7 @@ from bioflow.utils.log_behavior import get_logger
 from bioflow.bio_db_parsers.geneOntologyParser import GOTermsParser
 from bioflow.bio_db_parsers.uniprotParser import UniProtParser
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
-from bioflow.neo4j_db.db_io_routines import memoize_bulbs_type, get_bulbs_id
+from bioflow.neo4j_db.db_io_routines import memoize_bulbs_type, get_db_id
 
 log = get_logger(__name__)
 
@@ -90,7 +90,7 @@ def pull_up_acc_nums_from_reactome():
     acc_num_dict = {}  # acnum to AnnotNode
     for annotation_node in acc_num_annot_nodes:
         if annotation_node is not None:
-            annot_obj = DatabaseGraph.vertices.get(get_bulbs_id(annotation_node))
+            annot_obj = DatabaseGraph.vertices.get(get_db_id(annotation_node))
             acc_num_dict[str(annot_obj.payload)] = annot_obj
 
     if len(acc_num_dict) < 10:

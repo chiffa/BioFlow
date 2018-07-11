@@ -25,7 +25,7 @@ from bioflow.algorithms_bank import conduction_routines as cr
 from bioflow.main_configs import Dumps, Outputs, annotome_rand_samp
 from bioflow.molecular_network.InteractomeInterface import InteractomeInterface
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
-from bioflow.neo4j_db.db_io_routines import get_bulbs_id
+from bioflow.neo4j_db.db_io_routines import get_db_id
 from bioflow.utils.gdfExportInterface import GdfExportInterface
 from bioflow.utils.io_routines import dump_object, undump_object, get_background_bulbs_ids
 from bioflow.utils.log_behavior import get_logger
@@ -334,7 +334,7 @@ class GeneOntologyInterface(object):
             if attached_go_nodes:
                 for go_node in attached_go_nodes:
                     if go_node.Namespace in self.go_namespace_filter:
-                        go_node_bulbs_id = get_bulbs_id(go_node)
+                        go_node_bulbs_id = get_db_id(go_node)
                         uniprot_specific_gos.append(go_node_bulbs_id)
                         self.GO2UP[go_node_bulbs_id].append(uniprot_bulbs_id)
                         self.SeedSet.add(go_node_bulbs_id)
@@ -381,7 +381,7 @@ class GeneOntologyInterface(object):
                 for go_node in related_go_nodes:
                     if go_node.Namespace not in self.go_namespace_filter:
                         continue
-                    node_bulbs_id = get_bulbs_id(go_node)
+                    node_bulbs_id = get_db_id(go_node)
                     if node_bulbs_id not in visited_set:
                         seeds_list.append(node_bulbs_id)
                     if relation_type in self._GOUpTypes:
@@ -396,7 +396,7 @@ class GeneOntologyInterface(object):
                 for go_node in rev_generator:
                     if go_node.Namespace not in self.go_namespace_filter:
                         continue
-                    node_bulbs_id = get_bulbs_id(go_node)
+                    node_bulbs_id = get_db_id(go_node)
                     if relation_type in self._GOUpTypes:
                         local_down_regulation_list.append(node_bulbs_id)
                     else:

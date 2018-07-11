@@ -26,7 +26,7 @@ from bioflow.internal_configs import edge_type_filters, Adjacency_Martix_Dict, \
 from bioflow.algorithms_bank import conduction_routines as cr
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from bioflow.neo4j_db.db_io_routines import expand_from_seed, \
-    erase_custom_fields, node_extend_once, get_bulbs_id, stable_get_all
+    erase_custom_fields, node_extend_once, get_db_id, stable_get_all
 from bioflow.neo4j_db.graph_content import bulbs_names_dict
 
 
@@ -470,7 +470,7 @@ class InteractomeInterface(object):
         up_generator = stable_get_all(DatabaseGraph.UNIPORT)
         if up_generator:
             for up_node in up_generator:
-                bulbs_node_id = get_bulbs_id(up_node)
+                bulbs_node_id = get_db_id(up_node)
                 if bulbs_node_id not in self.reached_uniprots_bulbs_id_list:
                     self.all_uniprots_bulbs_id_list.append(bulbs_node_id)
                     self.bulbs_id_2_display_name[bulbs_node_id] = up_node.displayName
@@ -716,7 +716,7 @@ class InteractomeInterface(object):
             if reactome_bulbs_id_generator is not None:
                 self.Uniprot_attachments[uniprot_bulbs_id] = []
                 for uniprot_alias in reactome_bulbs_id_generator:
-                    self.Uniprot_attachments[uniprot_bulbs_id].append(get_bulbs_id(uniprot_alias))
+                    self.Uniprot_attachments[uniprot_bulbs_id].append(get_db_id(uniprot_alias))
                 uniprot_attachments_counter += 1
                 reactome_attachments_counter += len(self.Uniprot_attachments[uniprot_bulbs_id])
                 log.debug('attached %s Reactome proteins to the node %s',
