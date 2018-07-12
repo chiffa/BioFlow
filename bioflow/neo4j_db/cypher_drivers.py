@@ -81,13 +81,13 @@ class GraphDBPipe(object):
                             "WHERE ID(n) = %s "
                             "RETURN n" % (node_type, node_id))
 
-        node = result.single()
+        node = result.single()['n']
 
         if node is None:
             return None
 
         else:
-            return node[0]
+            return node[0]['n']
 
     def find(self, filter_dict, node_type=None):
         with self._driver.session() as session:
@@ -112,7 +112,7 @@ class GraphDBPipe(object):
         instruction = ' '.join(instruction_puck)
         nodes = tx.run(instruction)
 
-        return [node for node in nodes]
+        return [node['a'] for node in nodes]
 
     def link(self, node_id_from, node_id_to, link_type=None, params=None):
         with self._driver.session() as session:
@@ -139,7 +139,7 @@ class GraphDBPipe(object):
         instruction = ' '.join(instructions_puck)
         rels = tx.run(instruction)
 
-        return [rel for rel in rels]
+        return [rel['r'] for rel in rels]
 
     def get_linked(self, node_id, orientation='both', link_type=None, link_param_filter=None):
         with self._driver.session() as session:
@@ -177,7 +177,7 @@ class GraphDBPipe(object):
         instruction = ' '.join(instructions_puck)
         linked_nodes = tx.run(instruction)
 
-        return [node for node in linked_nodes]
+        return [node['b'] for node in linked_nodes]
 
     def set_attributes(self, node_id, attributes_dict):
         with self._driver.session() as session:
@@ -233,39 +233,61 @@ class GraphDBPipe(object):
                             "WHERE annotnode.tag = '%s' AND annotnode.type = '%s' "
                             "RETURN target" % (annotation_tag, tag_type))
 
-        return [node for node in result]
+        return list(set([node['target'] for node in result]))
 
-    def batch_insert(self, type_list, param_dicts_list):
+    # TODO: add intermediate batch commit (~1000 records)
+    def batch_insert(self, type_list, param_dicts_list, batch_size=1000):
         with self._driver.session() as session:
             tx = session.begin_transaction()
             new_nodes = []
-            for n_type, n_params in zip(type_list, param_dicts_list):
+            for i, (n_type, n_params) in enumerate(zip(type_list, param_dicts_list)):
                 new_nodes.append(self._create(tx, n_type, n_params))
+                if i % batch_size == 0:
+                    tx.commit()
+                    tx = session.begin_transaction()
             tx.commit()
             return new_nodes
 
-    def batch_link(self, id_pairs_list, type_list, param_dicts_list):
+    def batch_link(self, id_pairs_list, type_list, param_dicts_list, batch_size=1000):
         with self._driver.session() as session:
             tx = session.begin_transaction()
             new_links = []
-            for (_from, _to), n_type, n_params in zip(id_pairs_list, type_list, param_dicts_list):
+            for i, (_from, _to), n_type, n_params in enumerate(zip(id_pairs_list, type_list, param_dicts_list)):
                 new_links.append(self._link_create(tx, _from, _to, n_type, n_params))
+                if i % batch_size == 0:
+                    tx.commit()
+                    tx = session.begin_transaction()
             tx.commit()
             return new_links
 
+    def batch_set_attributes(self, id_list, param_dicts_list, batch_size=1000):
+        with self._driver.session() as session:
+            tx = session.begin_transaction()
+            edited_nodes = []
+            for i, (n_id, n_params) in enumerate(zip(id_list, param_dicts_list)):
+                edited_nodes.append(self._set_attributes(tx, n_id, n_params))
+                if i % batch_size == 0:
+                    tx.commit()
+                    tx = session.begin_transaction()
+            tx.commit()
+            return edited_nodes
 
 if __name__ == "__main__":
     neo4j_pipe = GraphDBPipe()
     # neo4j_pipe.delete_all('Test')
     # neo4j_pipe.create('Protein', {"chat": "miau", "dog": "waf"})
-    # neo4j_pipe.create('Complex', {"chat": "miau", "dog": "waf"})
+    # print neo4j_pipe.create('Complex', {"chat": "miau", "dog": "waf"})
     # neo4j_pipe.link(1, 3, 'test', {"weight": 2, "source": "Andrei"})
-    # neo4j_pipe.get_linked(1, 'both', 'test', {"source": "Andrei"})  #bugged
+    # neo4j_pipe.get_linked(1, 'both', 'test', {"source": "Andrei"})
     # neo4j_pipe.delete(3, 'Protein')
-    print neo4j_pipe.get(1, "Complex").id
-    # neo4j_pipe.find({"chat": "miau"}, "Protein")
+    # print neo4j_pipe.get(1, "Complex").id
+    result_list = neo4j_pipe.find({"chat": "miau"})
+    print result_list
+    # print [node.id for node in result_list]
     # neo4j_pipe.set_attributes(1, {"bird": "cookoo"})
-    # neo4j_pipe.attach_annotation_tag(1, "Q123541", "UP Acc ID")
-    # neo4j_pipe.get_from_annotation_tag("Q123541", "Neo4j ID")
+    # print neo4j_pipe.attach_annotation_tag(2, "Q123541", "UP Acc ID")
+    # nodes = neo4j_pipe.get_from_annotation_tag("Q123541", "UP Acc ID")
+    # print nodes[0]._values[0].properties['dog']
     # neo4j_pipe.batch_insert(["Protein", "Complex"], [{'a': 1}, {'a': 2, 'b': 3}])
     # neo4j_pipe.batch_link([(25, 26), (25, 1)], [None, 'reaction'], [None, {"weight": 3, "source": "test"}])
+    # print neo4j_pipe.batch_set_attributes([0, 1, 2, 44, 45], [{'custom': 'Main_connex'}]*5)
