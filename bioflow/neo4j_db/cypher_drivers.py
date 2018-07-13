@@ -264,6 +264,17 @@ class GraphDBPipe(object):
 
         return list(set([node['target'] for node in result]))
 
+    def attach_all_node_annotations(self, node_id, annot_type_2_annot_list):
+        with self._driver.session() as session:
+            tx = session.begin_transaction()
+            annot_nodes = []
+            for annot_type, annot_list in annot_type_2_annot_list.iteritems():
+                for annot_tag in annot_list:
+                    annot_node = self._attach_annotation_tag(tx, node_id, annot_tag, annot_type)
+                    annot_nodes.append(annot_node)
+            tx.commit()
+            return annot_nodes
+
     def batch_insert(self, type_list, param_dicts_list, batch_size=1000):
         with self._driver.session() as session:
             tx = session.begin_transaction()
@@ -309,7 +320,7 @@ if __name__ == "__main__":
     # neo4j_pipe.link(1, 3, 'test', {"weight": 2, "source": "Andrei"})
     # print neo4j_pipe.get(0).properties['custom']
     # print neo4j_pipe.get_all("Protein")
-    print neo4j_pipe.delete(44) # WTF?
+    # print neo4j_pipe.delete(44) # WTF?
     # print neo4j_pipe.count("Annotation")
     # neo4j_pipe.get_linked(1, 'both', 'test', {"source": "Andrei"})
     # neo4j_pipe.delete(3, 'Protein')
@@ -321,6 +332,7 @@ if __name__ == "__main__":
     # print neo4j_pipe.attach_annotation_tag(44, "Q123541", "UP Acc ID")
     # nodes = neo4j_pipe.get_from_annotation_tag("Q123541", "UP Acc ID")
     # print nodes[0]._values[0].properties['dog']
+    # print neo4j_pipe.attach_all_node_annotations(0, {'super': ['wo1', 'wo2'], 'super-duper': ['aka', 'coco']})
     # neo4j_pipe.batch_insert(["Protein", "Complex"], [{'a': 1}, {'a': 2, 'b': 3}])
     # neo4j_pipe.batch_link([(25, 26), (25, 1)], [None, 'reaction'], [None, {"weight": 3, "source": "test"}])
     # print neo4j_pipe.batch_set_attributes([0, 1, 2, 44, 45], [{'custom': 'Main_connex'}]*5)
