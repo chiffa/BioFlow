@@ -1,3 +1,5 @@
+import os
+from pprint import pprint
 from neo4j.v1 import GraphDatabase
 from bioflow.utils.log_behavior import get_logger
 
@@ -5,9 +7,10 @@ log = get_logger(__name__)
 
 uri = 'bolt://localhost:7687'
 user = 'neo4j'
-password = 'sergvcx'
+password = os.environ['NEOPASS']
 
 
+# TODO: add the instructions echo
 class GraphDBPipe(object):
 
     def __init__(self):
@@ -46,12 +49,14 @@ class GraphDBPipe(object):
         if node_type is None:
             result = tx.run("MATCH (n) "
                             "WHERE ID(n) = %s "
-                            "DETACH DELETE n " % node_id)
+                            "OPTIONAL MATCH (n)<-[r:annotates]-(a) "
+                            "DETACH DELETE a, n " % node_id)
         else:
-            result = tx.run("MATCH (n:%s) "
+            result = tx.run("MATCH (n:%s)<-[r:annotates]-(a) "
                             "WHERE ID(n) = %s "
-                            "DETACH DELETE n " % (node_type, node_id))
-        return result
+                            "OPTIONAL MATCH (n)<-[r:annotates]-(a) "
+                            "DETACH DELETE a, n " % node_type, node_id)
+        return [res for res in result]
 
     def delete_all(self, node_type):
         with self._driver.session() as session:
@@ -61,7 +66,8 @@ class GraphDBPipe(object):
     @staticmethod
     def _delete_all(tx, nodetype):
         result = tx.run("MATCH (n:%s) "
-                        "DETACH DELETE n " % nodetype)
+                        "OPTIONAL MATCH (n:)<-[r:annotates]-(a) "
+                        "DETACH DELETE a, n " % nodetype)
         return result
 
     def get(self, node_id, node_type=None):
@@ -81,13 +87,36 @@ class GraphDBPipe(object):
                             "WHERE ID(n) = %s "
                             "RETURN n" % (node_type, node_id))
 
-        node = result.single()['n']
+        node = result.single()
 
         if node is None:
             return None
 
         else:
-            return node[0]['n']
+            return node[0]
+
+    def get_all(self, node_type):
+        with self._driver.session() as session:
+            nodes = session.write_transaction(self._get_all, node_type)
+            return nodes
+
+    @staticmethod
+    def _get_all(tx, node_type):
+        result = tx.run("MATCH (n:%s) "
+                        "RETURN n" % node_type)
+        return [node['n'] for node in result]
+
+    def count(self, node_type):
+        with self._driver.session() as session:
+            nodes_count = session.write_transaction(self._count, node_type)
+            return nodes_count
+
+    @staticmethod
+    def _count(tx, node_type):
+        result = tx.run("MATCH (n:%s) "
+                        "RETURN count(distinct n)" % node_type)
+
+        return result.single()['count(distinct n)']
 
     def find(self, filter_dict, node_type=None):
         with self._driver.session() as session:
@@ -235,7 +264,6 @@ class GraphDBPipe(object):
 
         return list(set([node['target'] for node in result]))
 
-    # TODO: add intermediate batch commit (~1000 records)
     def batch_insert(self, type_list, param_dicts_list, batch_size=1000):
         with self._driver.session() as session:
             tx = session.begin_transaction()
@@ -272,22 +300,28 @@ class GraphDBPipe(object):
             tx.commit()
             return edited_nodes
 
+
 if __name__ == "__main__":
     neo4j_pipe = GraphDBPipe()
     # neo4j_pipe.delete_all('Test')
     # neo4j_pipe.create('Protein', {"chat": "miau", "dog": "waf"})
     # print neo4j_pipe.create('Complex', {"chat": "miau", "dog": "waf"})
     # neo4j_pipe.link(1, 3, 'test', {"weight": 2, "source": "Andrei"})
+    # print neo4j_pipe.get(0).properties['custom']
+    # print neo4j_pipe.get_all("Protein")
+    print neo4j_pipe.delete(44) # WTF?
+    # print neo4j_pipe.count("Annotation")
     # neo4j_pipe.get_linked(1, 'both', 'test', {"source": "Andrei"})
     # neo4j_pipe.delete(3, 'Protein')
     # print neo4j_pipe.get(1, "Complex").id
-    result_list = neo4j_pipe.find({"chat": "miau"})
-    print result_list
+    # result_list = neo4j_pipe.find({"chat": "miau"})
+    # print result_list
     # print [node.id for node in result_list]
     # neo4j_pipe.set_attributes(1, {"bird": "cookoo"})
-    # print neo4j_pipe.attach_annotation_tag(2, "Q123541", "UP Acc ID")
+    # print neo4j_pipe.attach_annotation_tag(44, "Q123541", "UP Acc ID")
     # nodes = neo4j_pipe.get_from_annotation_tag("Q123541", "UP Acc ID")
     # print nodes[0]._values[0].properties['dog']
     # neo4j_pipe.batch_insert(["Protein", "Complex"], [{'a': 1}, {'a': 2, 'b': 3}])
     # neo4j_pipe.batch_link([(25, 26), (25, 1)], [None, 'reaction'], [None, {"weight": 3, "source": "test"}])
     # print neo4j_pipe.batch_set_attributes([0, 1, 2, 44, 45], [{'custom': 'Main_connex'}]*5)
+
