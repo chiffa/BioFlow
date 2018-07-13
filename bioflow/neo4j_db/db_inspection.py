@@ -1,6 +1,6 @@
-from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
+from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph, on_alternative_graph
 from bioflow.utils.log_behavior import get_logger
-from bioflow.neo4j_db.db_io_routines import stable_get_all
+from bioflow.neo4j_db.db_io_routines import _bulb_specific_stable_get_all
 
 log = get_logger(__name__)
 
@@ -33,7 +33,7 @@ def count_nodes(domain):
     :param domain: Domain of the DatabaseGraph.Object whose objects we are going to count
     :return: number of objects in the domain
     """
-    return sum(1 for _ in stable_get_all(domain))
+    return sum(1 for _ in _bulb_specific_stable_get_all(domain))
 
 
 def print_look_up_by_id_for_a_set(domain, id_set):
@@ -80,6 +80,7 @@ def recover_uniprot_chars(up_nodes, are_bulbs_ids):
             up_legacy_ids_2_display_names[node_legacy_id] = display_names_list
 
     return up_legacy_ids_2_display_names
+
 
 if __name__ == "__main__":
     print count_nodes(DatabaseGraph.UNIPORT)

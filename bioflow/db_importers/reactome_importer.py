@@ -9,7 +9,7 @@ from bioflow.internal_configs import Leg_ID_Filter
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from bioflow.neo4j_db.db_io_routines import get_db_id
 from bioflow.bio_db_parsers.reactomeParser import ReactomeParser
-from bioflow.neo4j_db.db_io_routines import stable_get_all
+from bioflow.neo4j_db.db_io_routines import _bulb_specific_stable_get_all
 
 log = get_logger(__name__)
 
@@ -291,7 +291,7 @@ def get_one_meta_set(bulbs_bound_class):
 
     :param bulbs_bound_class:
     """
-    for bulbs_object in stable_get_all(bulbs_bound_class):
+    for bulbs_object in _bulb_specific_stable_get_all(bulbs_bound_class):
         if bulbs_object is not None:
             memoization_dict[bulbs_object.ID] = bulbs_object
 
@@ -301,7 +301,7 @@ def get_all_meta_sets():
     In case the MetaObjects were already inserted, reloads them all to the local dictionary for
     further annotation insertion
     """
-    # TODO: REFACTORING: use shortnames and bulbs_names_dict to translate them
+    # TODO: REFACTORING: use shortnames and neo4j_names_dict to translate them
     list_of_bulbs_classes = [
         DatabaseGraph.DNA,
         DatabaseGraph.DNA_Collection,
@@ -332,7 +332,7 @@ def insert_reactome(skip_import='N'):
     reactome_parser = ReactomeParser(reactome_biopax_path)
     reactome_parser.parse_all()
 
-    # TODO: REFACTORING: use shortnames and bulbs_names_dict to translate them
+    # TODO: REFACTORING: use shortnames and neo4j_names_dict to translate them
     if skip_import == 'N':
 
         insert_cell_locations(reactome_parser.CellularLocations)
@@ -385,6 +385,6 @@ def insert_reactome(skip_import='N'):
 
 if __name__ == "__main__":
     # insert_all()
-    # run_diagnostics(bulbs_names_dict)
-    # clear_all(bulbs_names_dict)
+    # run_diagnostics(neo4j_names_dict)
+    # clear_all(neo4j_names_dict)
     pass

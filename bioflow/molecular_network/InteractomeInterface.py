@@ -26,8 +26,8 @@ from bioflow.internal_configs import edge_type_filters, Adjacency_Martix_Dict, \
 from bioflow.algorithms_bank import conduction_routines as cr
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from bioflow.neo4j_db.db_io_routines import expand_from_seed, \
-    erase_custom_fields, node_extend_once, get_db_id, stable_get_all
-from bioflow.neo4j_db.graph_content import bulbs_names_dict
+    erase_custom_fields, node_extend_once, get_db_id, _bulb_specific_stable_get_all
+from bioflow.neo4j_db.graph_content import neo4j_names_dict
 
 
 l_norm = False
@@ -57,7 +57,7 @@ class InteractomeInterface(object):
     # within the connex part of the graph)
 
     reactions_types_list = ['TemplateReaction', 'Degradation', 'BiochemicalReaction']
-    reactions_types_list = [bulbs_names_dict[short_name][0] for short_name in reactions_types_list]
+    reactions_types_list = [neo4j_names_dict[short_name][0] for short_name in reactions_types_list]
 
     def __init__(self, main_connex_only, full_impact):
         self.connexity_aware = main_connex_only
@@ -287,9 +287,9 @@ class InteractomeInterface(object):
             seeds = set()
             total_reaction_participants = 0
             for ReactionType in self.reactions_types_list:
-                if not stable_get_all(ReactionType):
+                if not _bulb_specific_stable_get_all(ReactionType):
                     continue
-                for Reaction in stable_get_all(ReactionType):
+                for Reaction in _bulb_specific_stable_get_all(ReactionType):
                     if Reaction is None:
                         continue
                     reaction_participants, reaction_particpants_no = node_extend_once(
@@ -467,7 +467,7 @@ class InteractomeInterface(object):
         self.reached_uniprots_bulbs_id_list = list(set(self.reached_uniprots_bulbs_id_list))
         log.info("reached uniprots: %s", len(self.reached_uniprots_bulbs_id_list))
 
-        up_generator = stable_get_all(DatabaseGraph.UNIPORT)
+        up_generator = _bulb_specific_stable_get_all(DatabaseGraph.UNIPORT)
         if up_generator:
             for up_node in up_generator:
                 bulbs_node_id = get_db_id(up_node)

@@ -6,7 +6,7 @@ from bioflow.utils.log_behavior import get_logger
 from bioflow.bio_db_parsers.geneOntologyParser import GOTermsParser
 from bioflow.bio_db_parsers.uniprotParser import UniProtParser
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
-from bioflow.neo4j_db.db_io_routines import memoize_bulbs_type, get_db_id
+from bioflow.neo4j_db.db_io_routines import _bulb_specific_memoize_bulbs_type, get_db_id
 
 log = get_logger(__name__)
 
@@ -247,14 +247,14 @@ def memoize_go_terms():
     """
     loads go terms from the
     """
-    memoize_bulbs_type(DatabaseGraph.GOTerm, GO_term_memoization_dict)
+    _bulb_specific_memoize_bulbs_type(DatabaseGraph.GOTerm, GO_term_memoization_dict)
 
 
 def memoize_uniprots():
     """
     Pre-loads uniprots
     """
-    memoize_bulbs_type(DatabaseGraph.UNIPORT, Uniprot_memoization_dict)
+    _bulb_specific_memoize_bulbs_type(DatabaseGraph.UNIPORT, Uniprot_memoization_dict)
 
 
 if __name__ == "__main__":

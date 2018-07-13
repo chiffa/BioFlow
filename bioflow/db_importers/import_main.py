@@ -50,7 +50,7 @@ def destroy_db():
 
 if __name__ == "__main__":
     pass
-    # # clear_all(bulbs_names_dict)
+    # # clear_all(neo4j_names_dict)
     # run_diagnostics(full_list)
     # insert_reactome()
     # run_diagnostics(full_list)

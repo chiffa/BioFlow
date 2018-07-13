@@ -1,7 +1,7 @@
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph, on_alternative_graph
 
 if on_alternative_graph:
-    bulbs_names_dict = {
+    neo4j_names_dict = {
         'DNA': "DNA",
         'DNA Collection': "DNA_Collection",
         'RNA': "RNA",
@@ -28,7 +28,7 @@ if on_alternative_graph:
     }
 
 else:
-    bulbs_names_dict = {
+    neo4j_names_dict = {
         'DNA': (DatabaseGraph.DNA, "DNA"),
         'DNA Collection': (DatabaseGraph.DNA_Collection, "DNA_Collection"),
         'RNA': (DatabaseGraph.RNA, "RNA"),
@@ -67,4 +67,4 @@ forbidden_verification_list = ['Small Molecule',
                                'UNIPROT'
                                ]
 
-full_list = list(bulbs_names_dict.keys())
+full_list = list(neo4j_names_dict.keys())
