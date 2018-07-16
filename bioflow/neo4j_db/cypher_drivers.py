@@ -10,6 +10,13 @@ user = 'neo4j'
 password = os.environ['NEOPASS']
 
 
+def neo4j_sanitize(string):
+    if isinstance(string, basestring):
+        return string.replace('\'', '\"').replace('\\', '\\\\')
+    else:
+        return string
+
+
 # TODO: add the instructions echo
 class GraphDBPipe(object):
 
@@ -30,14 +37,14 @@ class GraphDBPipe(object):
         set_puck = []
 
         for key, value in param_dict.iteritems():
-            set_puck.append("SET n.%s = '%s'" % (key, value))
+            set_puck.append("SET n.%s = '%s'" % (key, neo4j_sanitize(value)))
 
         instruction_puck += set_puck
         instruction_puck.append("RETURN n")
         instruction = ' '.join(instruction_puck)
         result = tx.run(instruction)
 
-        return result.single()
+        return result.single()['n']
 
     def delete(self, node_id, node_type=None):
         with self._driver.session() as session:
@@ -66,7 +73,7 @@ class GraphDBPipe(object):
     @staticmethod
     def _delete_all(tx, nodetype):
         result = tx.run("MATCH (n:%s) "
-                        "OPTIONAL MATCH (n:)<-[r:annotates]-(a) "
+                        "OPTIONAL MATCH (n)<-[r:annotates]-(a) "
                         "DETACH DELETE a, n " % nodetype)
         return result
 
@@ -133,7 +140,7 @@ class GraphDBPipe(object):
         where_puck = []
 
         for key, value in filter_dict.iteritems():
-            where_puck.append("a.%s = '%s'" % (key, value))
+            where_puck.append("a.%s = '%s'" % (key, neo4j_sanitize(value)))
 
         where_clause = "WHERE " + ' AND '.join(where_puck) + ' '
         instruction_puck.append(where_clause)
@@ -161,7 +168,7 @@ class GraphDBPipe(object):
         if params is not None:
             set_puck = []
             for key, value in params.iteritems():
-                set_puck.append("SET r.%s = '%s'" % (key, value))
+                set_puck.append("SET r.%s = '%s'" % (key, neo4j_sanitize(value)))
             instructions_puck += set_puck
 
         instructions_puck.append("RETURN r")
@@ -199,7 +206,7 @@ class GraphDBPipe(object):
         if link_param_filter is not None:
             where_puck = []
             for key, value in link_param_filter.iteritems():
-                where_puck.append("AND r.%s = '%s'" % (key, value))
+                where_puck.append("AND r.%s = '%s'" % (key, neo4j_sanitize(value)))
             instructions_puck += where_puck
 
         instructions_puck.append("RETURN b")
@@ -217,7 +224,7 @@ class GraphDBPipe(object):
     def _set_attributes(tx, node_id, attributes_dict):
         instructions_puck = ["MATCH (n) WHERE ID(n) = %s" % node_id]
         for key, value in attributes_dict.iteritems():
-            instructions_puck.append("SET n.%s = '%s'" % (key, value))
+            instructions_puck.append("SET n.%s = '%s'" % (key, neo4j_sanitize(value)))
         instructions_puck.append("RETURN n")
         instruction = ' '.join(instructions_puck)
         log.debug(instruction)
@@ -241,7 +248,9 @@ class GraphDBPipe(object):
                         "SET b.tag = '%s' "
                         "SET b.type = '%s' "
                         "CREATE (a)<-[r:annotates]-(b) "
-                        "RETURN b" % (node_id, annotation_tag, tag_type))
+                        "RETURN b" % (node_id,
+                                      neo4j_sanitize(annotation_tag),
+                                      neo4j_sanitize(tag_type)))
 
         return result.single()
 
@@ -255,12 +264,12 @@ class GraphDBPipe(object):
         if tag_type is None:
             result = tx.run("MATCH (annotnode:Annotation)-[r:annotates]->(target) "
                             "WHERE annotnode.tag = '%s' "
-                            "RETURN target" % annotation_tag)
+                            "RETURN target" % neo4j_sanitize(annotation_tag))
 
         else:
             result = tx.run("MATCH (annotnode:Annotation)-[r:annotates]->(target) "
                             "WHERE annotnode.tag = '%s' AND annotnode.type = '%s' "
-                            "RETURN target" % (annotation_tag, tag_type))
+                            "RETURN target" % (neo4j_sanitize(annotation_tag), neo4j_sanitize(tag_type)))
 
         return list(set([node['target'] for node in result]))
 
@@ -269,6 +278,8 @@ class GraphDBPipe(object):
             tx = session.begin_transaction()
             annot_nodes = []
             for annot_type, annot_list in annot_type_2_annot_list.iteritems():
+                if isinstance(annot_list, basestring):
+                    annot_list = [annot_list]
                 for annot_tag in annot_list:
                     annot_node = self._attach_annotation_tag(tx, node_id, annot_tag, annot_type)
                     annot_nodes.append(annot_node)
@@ -320,7 +331,7 @@ if __name__ == "__main__":
     # neo4j_pipe.link(1, 3, 'test', {"weight": 2, "source": "Andrei"})
     # print neo4j_pipe.get(0).properties['custom']
     # print neo4j_pipe.get_all("Protein")
-    # print neo4j_pipe.delete(44) # WTF?
+    print neo4j_pipe.delete_all('Complex')
     # print neo4j_pipe.count("Annotation")
     # neo4j_pipe.get_linked(1, 'both', 'test', {"source": "Andrei"})
     # neo4j_pipe.delete(3, 'Protein')
