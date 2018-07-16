@@ -5,7 +5,7 @@ from bulbs.neo4jserver import Graph as Neo4jGraph, Config
 import neo4j_object_class_declaration as ddl
 from bioflow.main_configs import neo4j_server
 from bioflow.utils.log_behavior import get_logger
-from cypher_drivers import neo4j_pipe
+from cypher_drivers import GraphDBPipe
 import os
 
 
@@ -131,7 +131,7 @@ if on_rtd or on_unittest:
 
 else:
     if on_alternative_graph:
-        DatabaseGraph = neo4j_pipe()
+        DatabaseGraph = GraphDBPipe()
     else:
         log.debug('graph database interface is connecting to a real DB')
         DatabaseGraph = Graph()

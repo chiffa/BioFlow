@@ -492,7 +492,7 @@ def clear_all(instruction_list):
         for name in instruction_list:
             neo4j_class = neo4j_names_dict[name]
             log.info('processing class: %s', neo4j_class)
-            DatabaseGraph.clear_all(neo4j_class)
+            DatabaseGraph.delete_all(neo4j_class)
             log.info('class %s finished processing', neo4j_class)
 
     if on_alternative_graph:
