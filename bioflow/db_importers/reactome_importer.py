@@ -15,7 +15,7 @@ from bioflow.neo4j_db.graph_content import neo4j_names_dict
 log = get_logger(__name__)
 
 # TODO: REFACTORING: put everything that uses memoization dictionary into a class
-# TODO: with the new engine, memoization dictionary makes no more sense
+
 memoization_dict = {}  # accelerated access pointer to the objects
 ForbiddenIDs = []
 
@@ -123,7 +123,14 @@ def insert_meta_objects(neo4j_graph_class, meta_id_2_property_dict):
                             source='Reactome_modification')
 
     def native_way():
+        size = len(meta_id_2_property_dict.keys())
+        log.info('Starting inserting %s with %s elements', neo4j_graph_class, size)
+        breakpoints = 300
         for i, (meta_name, property_dict) in enumerate(meta_id_2_property_dict.iteritems()):
+
+            if i % breakpoints == 0:
+                print '\t %s %% complete' % (float(i)/float(size)*100.0)
+
             meta_properties = {'legacyId': meta_name,
                                'displayName': property_dict['displayName'],
                                'localization': property_dict['cellularLocation'],
@@ -561,10 +568,3 @@ def insert_reactome(skip_import='N'):
     insert_catalysis(reactome_parser.Catalysises)
     insert_modulation(reactome_parser.Modulations)
     insert_pathways(reactome_parser.PathwaySteps, reactome_parser.Pathways)
-
-
-if __name__ == "__main__":
-    # insert_all()
-    # run_diagnostics(neo4j_names_dict)
-    # clear_all(neo4j_names_dict)
-    pass
