@@ -5,8 +5,9 @@ from bioflow import main_configs
 from bioflow.utils.log_behavior import get_logger
 from bioflow.bio_db_parsers.geneOntologyParser import GOTermsParser
 from bioflow.bio_db_parsers.uniprotParser import UniProtParser
-from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
+from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph, on_alternative_graph
 from bioflow.neo4j_db.db_io_routines import _bulb_specific_memoize_bulbs_type, get_db_id
+from bioflow.neo4j_db.graph_content import neo4j_names_dict
 
 log = get_logger(__name__)
 
@@ -25,24 +26,35 @@ def import_gene_ontology(go_terms, go_terms_structure):
     :param go_terms_structure:
     """
     # Create Terms
-    log.info('Starting to importing GO terms')
     go_terms_number = len(go_terms.keys())
-    for i, GO_Term in enumerate(go_terms.keys()):
+    log.info('Starting to importing %s GO terms' % go_terms_number)
+
+    for i, (GO_Term, term) in enumerate(go_terms.iteritems()):
         log.debug('creating GO terms: %s %%',
                   str("{0:.2f}".format(float(i) / float(go_terms_number) * 100)))
         if i*20 % go_terms_number < 20:
             log.info('GO terms import: %s %%',
                      "{0:.2f}".format(float(i) / float(go_terms_number) * 100))
-        GO_term_memoization_dict[GO_Term] = DatabaseGraph.GOTerm.create(
-            ID=go_terms[GO_Term]['id'],
-            Name=go_terms[GO_Term]['name'],
-            displayName=go_terms[GO_Term]['name'],
-            Namespace=go_terms[GO_Term]['namespace'],
-            Definition=go_terms[GO_Term]['def'])
+        if on_alternative_graph:
+
+            GO_term_memoization_dict[GO_Term] = DatabaseGraph.create(neo4j_names_dict['GO Term'],
+                                 {'legacyId': term['id'],
+                                  'Name': term['name'],
+                                  'displayName': term['name'],
+                                  'Namespace': term['namespace'],
+                                  'Definition': term['def']})
+        else:
+            GO_term_memoization_dict[GO_Term] = DatabaseGraph.GOTerm.create(
+                ID=go_terms[GO_Term]['id'],
+                Name=go_terms[GO_Term]['name'],
+                displayName=go_terms[GO_Term]['name'],
+                Namespace=go_terms[GO_Term]['namespace'],
+                Definition=go_terms[GO_Term]['def'])
 
     # Create the structure between them:
-    log.info('Starting to import GO terms links')
     go_links_number = len(go_terms_structure)
+    log.info('Starting to import %s GO terms links' % go_links_number)
+
     for i, relation in enumerate(go_terms_structure):
         log.debug('creating GO terms relations %s %%',
                   str("{0:.2f}".format(float(i) / float(go_links_number) * 100)))
@@ -54,23 +66,54 @@ def import_gene_ontology(go_terms, go_terms_structure):
         go_relation_type = relation[1]
 
         if go_relation_type == 'is_a':
-            DatabaseGraph.is_a_go.create(go_term_1, go_term_2)
+            if on_alternative_graph:
+                DatabaseGraph.link(get_db_id(go_term_1), get_db_id(go_term_2), 'is_a_go')
+            else:
+                DatabaseGraph.is_a_go.create(go_term_1, go_term_2)
+
         if go_relation_type == 'part_of':
-            DatabaseGraph.is_part_of_go.create(go_term_1, go_term_2)
+            if on_alternative_graph:
+                DatabaseGraph.link(get_db_id(go_term_1), get_db_id(go_term_2), 'is_part_of_go')
+            else:
+                DatabaseGraph.is_part_of_go.create(go_term_1, go_term_2)
 
         if 'regul' in go_relation_type:
             if go_relation_type == 'positively_regulates':
-                DatabaseGraph.is_regulant.create(
-                    go_term_1, go_term_2, controlType='ACTIVATES', ID=str(
-                        'GO' + go_term_1.ID + go_term_2.ID))
+                if on_alternative_graph:
+                    DatabaseGraph.link(get_db_id(go_term_1), get_db_id(go_term_2),
+                                       'is_regulant',
+                                       {'controlType': 'ACTIVATES',
+                                        'ID': str('GO' + go_term_1.properties['legacyId'] +
+                                                  go_term_2.properties['legacyId'])})
+                else:
+                    DatabaseGraph.is_regulant.create(
+                        go_term_1, go_term_2,
+                        controlType='ACTIVATES',
+                        ID=str('GO' + go_term_1.ID + go_term_2.ID))
+
             if go_relation_type == 'negatively_regulates':
-                DatabaseGraph.is_regulant.create(
-                    go_term_1, go_term_2, controlType='INHIBITS', ID=str(
-                        'GO' + go_term_1.ID + go_term_2.ID))
+                if on_alternative_graph:
+                    DatabaseGraph.link(get_db_id(go_term_1), get_db_id(go_term_2),
+                                       'is_regulant',
+                                       {'controlType': 'INHIBITS',
+                                        'ID': str('GO' + go_term_1.properties['legacyId'] +
+                                                  go_term_2.properties['legacyId'])})
+                else:
+                    DatabaseGraph.is_regulant.create(
+                        go_term_1, go_term_2,
+                        controlType='INHIBITS',
+                        ID=str('GO' + go_term_1.ID + go_term_2.ID))
+
             else:
-                DatabaseGraph.is_regulant.create(
-                    go_term_1, go_term_2, ID=str(
-                        'GO' + go_term_1.ID + go_term_2.ID))
+                if on_alternative_graph:
+                    DatabaseGraph.link(get_db_id(go_term_1), get_db_id(go_term_2),
+                                       'is_regulant',
+                                       {'ID': str('GO' + go_term_1.properties['legacyId'] +
+                                                  go_term_2.properties['legacyId'])})
+                else:
+                    DatabaseGraph.is_regulant.create(
+                        go_term_1, go_term_2,
+                        ID=str('GO' + go_term_1.ID + go_term_2.ID))
 
 
 def pull_up_acc_nums_from_reactome():
@@ -82,33 +125,56 @@ def pull_up_acc_nums_from_reactome():
     nodes is null (Reactome wasn't imported yet) or a wrong uniprot is crosslinked with a wrong
     reactome
     """
-    acc_num_annot_nodes = DatabaseGraph.AnnotNode.index.lookup(ptype='UniProt')
+    if on_alternative_graph:
+        acc_num_annot_nodes = DatabaseGraph.find({'type': 'UniProt'}, 'Annotation')
+    else:
+        acc_num_annot_nodes = DatabaseGraph.AnnotNode.index.lookup(ptype='UniProt')
+
     if acc_num_annot_nodes is None:
         raise Exception(
             "Reactome was not loaded or contains no acc_num cross-references to Uniprot")
 
-    acc_num_dict = {}  # acnum to AnnotNode
-    for annotation_node in acc_num_annot_nodes:
-        if annotation_node is not None:
-            annot_obj = DatabaseGraph.vertices.get(get_db_id(annotation_node))
-            acc_num_dict[str(annot_obj.payload)] = annot_obj
-
-    if len(acc_num_dict) < 10:
-        raise Exception(
-            "Reactome was not loaded or contains no acc_num cross-references to Uniprot")
-
     reactome_proteins = {}
-    for acc_num in acc_num_dict.keys():
-        reactome_proteins_generator = acc_num_dict[acc_num].bothV()
-        reactome_proteins[acc_num] = []
-        if reactome_proteins_generator is not None:
-            for vertex in reactome_proteins_generator:
-                if vertex is not None:
-                    reactome_proteins[acc_num].append(vertex)
-        if reactome_proteins[acc_num] != 1:
-            log.debug('Cross-linking reactome v.s. acc_num %s mapped to %s proteins',
-                      acc_num, len(reactome_proteins))
+
+    if on_alternative_graph:
+        breakpoints = 300
+        total_nodes = len(acc_num_annot_nodes)
+
+        for i, annotation_node in enumerate(acc_num_annot_nodes):
+
+            if i % breakpoints:
+                log.info("\t cross-linking %.2f %% complete" % (float(i)/float(total_nodes)*100.))
+
+            tag = annotation_node.properties['tag']
+            reactome_proteins[tag] = DatabaseGraph.get_from_annotation_tag(tag, 'UniProt')
+            if reactome_proteins[tag] != 1:
+                log.debug('Cross-linking reactome v.s. acc_num %s mapped to %s proteins',
+                          tag, len(reactome_proteins[tag]))
+
+    else:
+        acc_num_dict = {}  # acnum to AnnotNode
+        for annotation_node in acc_num_annot_nodes:
+            if annotation_node is not None:
+                annot_obj = DatabaseGraph.vertices.get(get_db_id(annotation_node))
+                acc_num_dict[str(annot_obj.payload)] = annot_obj
+
+        if len(acc_num_dict) < 10:
+            raise Exception(
+                "Reactome was not loaded or contains no acc_num cross-references to Uniprot")
+
+        for acc_num in acc_num_dict.keys():
+            reactome_proteins_generator = acc_num_dict[acc_num].bothV()
+            reactome_proteins[acc_num] = []
+            if reactome_proteins_generator is not None:
+                for vertex in reactome_proteins_generator:
+                    if vertex is not None:
+                        reactome_proteins[acc_num].append(vertex)
+            if reactome_proteins[acc_num] != 1:
+                log.debug('Cross-linking reactome v.s. acc_num %s mapped to %s proteins',
+                          acc_num, len(reactome_proteins))
+
     log.info('Cross-linked %s proteins from reactome v.s. Uniprot', len(reactome_proteins))
+
     return reactome_proteins
 
 
@@ -136,8 +202,12 @@ def link_annotation(uniprot_id, p_type, p_load):
     :param p_load: content of the annotation
     """
     prot_node = Uniprot_memoization_dict[uniprot_id]
-    annotation_node = DatabaseGraph.AnnotNode.create(ptype=p_type, payload=p_load)
-    DatabaseGraph.is_annotated.create(prot_node, annotation_node)
+
+    if on_alternative_graph:
+        DatabaseGraph.attach_annotation_tag(prot_node.id, p_load, p_type)
+    else:
+        annotation_node = DatabaseGraph.AnnotNode.create(ptype=p_type, payload=p_load)
+        DatabaseGraph.is_annotated.create(prot_node, annotation_node)
 
 
 def insert_uniprot_annotations(swiss_prot_id, data_container):
@@ -148,6 +218,7 @@ def insert_uniprot_annotations(swiss_prot_id, data_container):
     :param data_container:
     :return:
     """
+    # TODO: single commit annotation insertion would be faster => refactor
     link_annotation(swiss_prot_id, 'UNIPROT_Name',
                     data_container['Names']['Full'])
 
@@ -198,15 +269,25 @@ def import_uniprots(uniprot, reactome_acnum_bindings):
     acc_nums_no = len(reactome_acnum_bindings.keys()) / 100.
     up_no = float(len(uniprot.keys()))
 
-    log.info('Starting to import uniprot nodes')
+    log.info('Starting to import %s uniprot nodes' % up_no)
+
     for sp_id_num, (swiss_prot_id, data_container) in enumerate(uniprot.iteritems()):
+
         set1 = set(data_container['Acnum'])
         set2 = set(reactome_acnum_bindings.keys())
         # Create uniprot terms
-        uniprot_node = DatabaseGraph.UNIPORT.create(
-            ID=swiss_prot_id,
-            displayName=data_container['Names']['Full'],
-            main_connex=False)
+
+        if on_alternative_graph:
+            uniprot_node = DatabaseGraph.create(
+                neo4j_names_dict['UNIPROT'],
+                {'legacyId': swiss_prot_id,
+                 'displayName': data_container['Names']['Full'],
+                 'main_connex': False})
+        else:
+            uniprot_node = DatabaseGraph.UNIPORT.create(
+                ID=swiss_prot_id,
+                displayName=data_container['Names']['Full'],
+                main_connex=False)
 
         log.debug('uniprot %s created @ %s', swiss_prot_id, uniprot_node)
 
@@ -230,14 +311,20 @@ def import_uniprots(uniprot, reactome_acnum_bindings):
         for GO_Term in data_container['GO']:
             if GO_Term in GO_term_memoization_dict.keys():
                 linked_go_term = GO_term_memoization_dict[GO_Term]
-                DatabaseGraph.is_go_annotation.create(uniprot_node, linked_go_term)
+                if on_alternative_graph:
+                    DatabaseGraph.link(get_db_id(uniprot_node), get_db_id(linked_go_term), 'is_go_annotation')
+                else:
+                    DatabaseGraph.is_go_annotation.create(uniprot_node, linked_go_term)
 
         for acnum in data_container['Acnum']:
             proteins = manage_acc_nums(acnum, reactome_acnum_bindings)
             if proteins is not []:
                 for prot in proteins:
                     secondary = prot
-                    DatabaseGraph.is_same.create(uniprot_node, secondary)
+                    if on_alternative_graph:
+                        DatabaseGraph.link(get_db_id(uniprot_node), get_db_id(secondary), 'is_same')
+                    else:
+                        DatabaseGraph.is_same.create(uniprot_node, secondary)
                     is_same_links_no += 1
 
         insert_uniprot_annotations(swiss_prot_id, data_container)
@@ -247,14 +334,22 @@ def memoize_go_terms():
     """
     loads go terms from the
     """
-    _bulb_specific_memoize_bulbs_type(DatabaseGraph.GOTerm, GO_term_memoization_dict)
+    if on_alternative_graph:
+        for node in DatabaseGraph.get_all(neo4j_names_dict['GO Term']):
+            GO_term_memoization_dict[node.properties['legacyId']] = node
+    else:
+        _bulb_specific_memoize_bulbs_type(DatabaseGraph.GOTerm, GO_term_memoization_dict)
 
 
 def memoize_uniprots():
     """
     Pre-loads uniprots
     """
-    _bulb_specific_memoize_bulbs_type(DatabaseGraph.UNIPORT, Uniprot_memoization_dict)
+    if on_alternative_graph:
+        for node in DatabaseGraph.get_all(neo4j_names_dict['UNIPROT']):
+            Uniprot_memoization_dict[node.properties['legacyId']] = node
+    else:
+        _bulb_specific_memoize_bulbs_type(DatabaseGraph.UNIPORT, Uniprot_memoization_dict)
 
 
 if __name__ == "__main__":
