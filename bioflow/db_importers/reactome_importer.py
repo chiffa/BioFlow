@@ -129,7 +129,7 @@ def insert_meta_objects(neo4j_graph_class, meta_id_2_property_dict):
         for i, (meta_name, property_dict) in enumerate(meta_id_2_property_dict.iteritems()):
 
             if i % breakpoints == 0:
-                print '\t %s %% complete' % (float(i)/float(size)*100.0)
+                log.info('\t %.2f %%' % (float(i)/float(size)*100.0))
 
             meta_properties = {'legacyId': meta_name,
                                'displayName': property_dict['displayName'],
@@ -181,8 +181,16 @@ def insert_collections(collections_2_members):
 
     :param collections_2_members:
     """
-    for collection, collection_property_dict in collections_2_members.iteritems():
-        # TODO: add the display name
+
+    breakpoints = 300
+    size = len(collections_2_members.keys())
+
+    for i, (collection, collection_property_dict) in enumerate(collections_2_members.iteritems()):
+
+        if i % breakpoints == 0:
+            log.info('\t %.2f %%' % (float(i)/float(size)*100))
+
+
         for member in collection_property_dict['collectionMembers']:
             if on_alternative_graph:
                 collection_node = memoization_dict[collection]
@@ -208,7 +216,14 @@ def insert_complex_parts(complex_property_dict):
 
     :param complex_property_dict:
     """
-    for key in complex_property_dict.keys():
+    breakpoint = 300
+    size = len(complex_property_dict.keys())
+
+    for i, key in enumerate(complex_property_dict.keys()):
+
+        if i % breakpoint == 0:
+            log.info('\t %.2f %%' % (float(i)/float(size)*100.0))
+
         for part in complex_property_dict[key]['parts']:
             # TODO: remove redundant protection from Stoichiometry
             if 'Stoichiometry' not in part:
@@ -365,14 +380,30 @@ def insert_pathways(pathway_steps, pathways):
     :param pathway_steps:
     :param pathways:
     """
-    for pathway_step in pathway_steps.keys():
+    breakpoints = 300
+    ps_len = len(pathway_steps.keys())
+    p_len = len(pathways.keys())
+
+    log.info('Inserting Pathway steps with %s elements', len(pathway_steps.keys()))
+
+    for i, pathway_step in enumerate(pathway_steps.keys()):
+
+        if i % breakpoints == 0:
+            log.info('\t %.2f %%' % (float(i)/float(ps_len)*100))
+
         if on_alternative_graph:
             memoization_dict[pathway_step] = DatabaseGraph.create('PathwayStep',
                                                                   {'legacyId': pathway_step})
         else:
             memoization_dict[pathway_step] = DatabaseGraph.PathwayStep.create(ID=pathway_step)
 
+    log.info('Inserting Pathways with %s elements', len(pathways.keys()))
+
     for pathway_step in pathways.keys():
+
+        if i % breakpoints == 0:
+            log.info('\t %.2f %%' % (float(i)/float(p_len)*100))
+
         if on_alternative_graph:
             memoization_dict[pathway_step] = DatabaseGraph.create('Pathway',
                                                                   {'legacyId': pathway_step,
@@ -381,7 +412,7 @@ def insert_pathways(pathway_steps, pathways):
             memoization_dict[pathway_step] = DatabaseGraph.Pathway.create(
                 ID=pathway_step, displayName=pathways[pathway_step]['displayName'])
 
-    for pathway_step in pathway_steps.keys():
+    for i, pathway_step in enumerate(pathway_steps.keys()):
 
         for component in pathway_steps[pathway_step]['components']:
             if on_alternative_graph:
@@ -455,7 +486,7 @@ def get_one_meta_set(neo4j_class):
     """
     if on_alternative_graph:
         for node in DatabaseGraph.get_all(neo4j_class):
-            memoization_dict[node.id] = node
+            memoization_dict[node.properties['legacyId']] = node
     else:
         for bulbs_object in _bulb_specific_stable_get_all(neo4j_class):
             if bulbs_object is not None:
@@ -541,13 +572,20 @@ def insert_reactome(skip_import='N'):
             get_db_class_handle('Physical Entity Collection'),
             reactome_parser.PhysicalEntity_Collections)
 
+        log.info('Inserting DNA Collections with %s elements' % len(reactome_parser.Dna_Collections))
         insert_collections(reactome_parser.Dna_Collections)
+        log.info('Inserting RNA Collections with %s elements' % len(reactome_parser.Rna_Collections))
         insert_collections(reactome_parser.Rna_Collections)
+        log.info('Inserting Small Molecule Collections with %s elements' % len(reactome_parser.SmallMolecule_Collections))
         insert_collections(reactome_parser.SmallMolecule_Collections)
+        log.info('Inserting Protein Collections with %s elements' % len(reactome_parser.Protein_Collections))
         insert_collections(reactome_parser.Protein_Collections)
+        log.info('Inserting Complex Collections with %s elements' % len(reactome_parser.Complex_Collections))
         insert_collections(reactome_parser.Complex_Collections)
+        log.info('Inserting Physical Entity Collections with %s elements' % len(reactome_parser.PhysicalEntity_Collections))
         insert_collections(reactome_parser.PhysicalEntity_Collections)
 
+        log.info('Inserting Complexes with %s elements' % (len(reactome_parser.Complexes)))
         insert_complex_parts(reactome_parser.Complexes)
 
         # NOW dump the ForbiddenIDs
@@ -558,13 +596,19 @@ def insert_reactome(skip_import='N'):
     if skip_import == 'M':
         get_all_meta_sets()
 
-    # Meta insert/retrieval finished
+    # print memoization_dict.keys()
 
-    insert_reactions(get_db_class_handle('Template Reaction'), reactome_parser.TemplateReactions)
+    # Meta insert/retrieval finished
+    log.info('Inserting Template Reactions with %s elements' % len(reactome_parser.Dna_Collections))
+    insert_reactions(get_db_class_handle('TemplateReaction'), reactome_parser.TemplateReactions)
+    log.info('Inserting Degradations with %s elements' % len(reactome_parser.Dna_Collections))
     insert_reactions(get_db_class_handle('Degradation'), reactome_parser.Degradations)
+    log.info('Inserting Biochemical Reactions with %s elements' % len(reactome_parser.Dna_Collections))
     insert_reactions(get_db_class_handle('BiochemicalReaction'), reactome_parser.BiochemicalReactions)
 
     # Reaction insert finished
+    log.info('Inserting Catalyses with %s elements' % len(reactome_parser.Catalysises))
     insert_catalysis(reactome_parser.Catalysises)
+    log.info('Inserting Modulations with %s elements' % len(reactome_parser.Modulations))
     insert_modulation(reactome_parser.Modulations)
     insert_pathways(reactome_parser.PathwaySteps, reactome_parser.Pathways)
