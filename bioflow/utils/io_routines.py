@@ -4,6 +4,7 @@ Defines a couple of useful method to perform IO on dumping files
 from pickle import load, dump
 from csv import reader
 from bioflow.main_configs import Dumps
+from time import time
 
 def write_to_csv(filename, array):
     """
@@ -71,6 +72,32 @@ def get_source_bulbs_ids():
 def get_background_bulbs_ids():
     """ retrieves bulbs ids for the elements in the background group """
     return get_bulbs_ids_set(Dumps.background_set_bulbs_ids)
+
+
+def memoize(f):
+
+    memdict = {}
+
+    def internal_function(*args, **kwargs):
+        if args in memdict.keys():
+            print 'memoization triggered'
+            return memdict[args]
+        else:
+            result = f(*args, **kwargs)
+            memdict[args] = result
+            return result
+    return internal_function
+
+
+def time_exection(f):
+
+    def int_function(*args, **kwargs):
+        now = time()
+        result = f(*args, **kwargs)
+        print time() - now
+        return result
+
+    return int_function
 
 
 if __name__ == "__main":
