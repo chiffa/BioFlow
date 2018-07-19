@@ -261,7 +261,7 @@ class GraphDBPipe(object):
 
     @staticmethod
     def _get_from_annotation_tag(tx, annotation_tag, tag_type):
-        if tag_type is None:
+        if tag_type is None or tag_type == '':  # TODO: track back to see where '' as type is inserted
             result = tx.run("MATCH (annotnode:Annotation)-[r:annotates]->(target) "
                             "WHERE annotnode.tag = '%s' "
                             "RETURN target" % neo4j_sanitize(annotation_tag))
@@ -322,6 +322,29 @@ class GraphDBPipe(object):
             tx.commit()
             return edited_nodes
 
+    def batch_retrieve_from_annotation_tags(self, annotation_tags_list, annotations_types, batch_size=50):
+        log.info('Batch retrieval started with %s elements' % len(annotation_tags_list))
+        with self._driver.session() as session:
+            tx = session.begin_transaction()
+            annotated_nodes = []
+            if annotations_types is None or isinstance(annotations_types, basestring):
+                for i, annotation_tag in enumerate(annotation_tags_list):
+                    annotated_nodes.append(self._get_from_annotation_tag(tx, annotation_tag, annotations_types))
+                    if i % batch_size == 0:
+                        log.info('\t %.2f %%' % (float(i)/float(len(annotation_tags_list))*100))
+                        tx.commit()
+                        tx = session.begin_transaction()
+            else:  # we assume it's a list
+                for i, (annot_tag, annot_type) in enumerate(annotation_tags_list, annotations_types):
+                    annotated_nodes.append(self._get_from_annotation_tag(tx, annot_tag, annot_type))
+                    if i % batch_size == 0:
+                        log.info('\t %.2f %%' % (float(i) / float(len(annotation_tags_list)) * 100))
+                        tx.commit()
+                        tx = session.begin_transaction()
+            log.info('\t 100 %%')
+            tx.commit()
+            return annotated_nodes
+
 
 if __name__ == "__main__":
     neo4j_pipe = GraphDBPipe()
@@ -331,7 +354,7 @@ if __name__ == "__main__":
     # neo4j_pipe.link(1, 3, 'test', {"weight": 2, "source": "Andrei"})
     # print neo4j_pipe.get(0).properties['custom']
     # print neo4j_pipe.get_all("Protein")
-    print neo4j_pipe.delete_all('Complex')
+    # print neo4j_pipe.delete_all('Complex')
     # print neo4j_pipe.count("Annotation")
     # neo4j_pipe.get_linked(1, 'both', 'test', {"source": "Andrei"})
     # neo4j_pipe.delete(3, 'Protein')
@@ -341,7 +364,11 @@ if __name__ == "__main__":
     # print [node.id for node in result_list]
     # neo4j_pipe.set_attributes(1, {"bird": "cookoo"})
     # print neo4j_pipe.attach_annotation_tag(44, "Q123541", "UP Acc ID")
-    # nodes = neo4j_pipe.get_from_annotation_tag("Q123541", "UP Acc ID")
+    nodes = neo4j_pipe.get_from_annotation_tag("RNF14", None)
+    print nodes
+    super_nodes = neo4j_pipe.batch_retrieve_from_annotation_tags(['RNF14', 'REM1', 'GAG', 'MZT2A', 'FHIT'], None)
+    for node_set in super_nodes:
+        log.info(node_set)
     # print nodes[0]._values[0].properties['dog']
     # print neo4j_pipe.attach_all_node_annotations(0, {'super': ['wo1', 'wo2'], 'super-duper': ['aka', 'coco']})
     # neo4j_pipe.batch_insert(["Protein", "Complex"], [{'a': 1}, {'a': 2, 'b': 3}])
