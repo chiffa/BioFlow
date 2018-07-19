@@ -5,7 +5,7 @@ from bioflow.bio_db_parsers.PhosphositeParser import parse_phosphosite
 from bioflow.utils.log_behavior import get_logger
 from bioflow.main_configs import phosphosite_path, phosphosite_organism
 from bioflow.neo4j_db.db_io_routines import convert_to_internal_ids
-from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
+from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph, on_alternative_graph
 from time import time
 import numpy as np
 import datetime
@@ -50,12 +50,19 @@ def insert_into_the_database(up_ids_2_inner_ids,
                       datetime.datetime.now() + datetime.timedelta(seconds=secs_before_termination))
             previous_time = time()
 
-        node1 = DatabaseGraph.UNIPORT.get(node1_id)
-        node2 = DatabaseGraph.UNIPORT.get(node2_id)
+        if on_alternative_graph:
 
-        DatabaseGraph.is_interacting.create(node1, node2,
-                                            source=origin,
-                                            weight=float(np.sum(np.array(link_parameter).astype(np.int))))
+            DatabaseGraph.link(node1_id, node2_id, 'is_interacting',
+                               {'source': origin,
+                                'weight': float(np.sum(np.array(link_parameter).astype(np.int)))})
+
+        else:
+            node1 = DatabaseGraph.UNIPORT.get(node1_id)
+            node2 = DatabaseGraph.UNIPORT.get(node2_id)
+
+            DatabaseGraph.is_interacting.create(node1, node2,
+                                                source=origin,
+                                                weight=float(np.sum(np.array(link_parameter).astype(np.int))))
 
 
 def cross_ref_kinases_factors():

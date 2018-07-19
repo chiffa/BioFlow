@@ -5,7 +5,7 @@ from bioflow.bio_db_parsers.ComplexPortalParser import parse_complex_portal
 from bioflow.utils.log_behavior import get_logger
 from bioflow.main_configs import complexes_path
 from bioflow.neo4j_db.db_io_routines import convert_to_internal_ids
-from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
+from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph, on_alternative_graph
 from time import time
 import numpy as np
 import datetime
@@ -32,9 +32,15 @@ def insert_into_the_database(up_ids_2_inner_ids,
 
     for counter, (node_id, new_node) in enumerate(up_ids_2_properties.iteritems()):
 
-        complex_node = DatabaseGraph.COMPLEX.create(ID=node_id,
-                                                    displayName=new_node['displayName'],
-                                                    main_connex=False)
+        if on_alternative_graph:
+            complex_node = DatabaseGraph.create('COMPLEX',
+                                                {'legacyId': node_id,
+                                                 'displayName': new_node['displayName'],
+                                                 'main_connex': False})
+        else:
+            complex_node = DatabaseGraph.COMPLEX.create(ID=node_id,
+                                                        displayName=new_node['displayName'],
+                                                        main_connex=False)
 
         if counter % breakpoints == 0 and counter > 1:
             compops = float(breakpoints)/(time()-previous_time)
@@ -49,11 +55,15 @@ def insert_into_the_database(up_ids_2_inner_ids,
             previous_time = time()
 
         for node2_up in new_node['components']:
-            node2 = DatabaseGraph.UNIPORT.get(up_ids_2_inner_ids[node2_up])
-            # print 'debug: connecting nodes', complex_node, node2
-            DatabaseGraph.is_interacting.create(complex_node, node2,
-                                                source=origin,
-                                                weight=1.0)
+            if on_alternative_graph:
+                DatabaseGraph.link(complex_node.id, up_ids_2_inner_ids[node2_up], 'is_interacting',
+                                   {'source': origin, 'weight': 1.0})
+            else:
+                node2 = DatabaseGraph.UNIPORT.get(up_ids_2_inner_ids[node2_up])
+                # print 'debug: connecting nodes', complex_node, node2
+                DatabaseGraph.is_interacting.create(complex_node, node2,
+                                                    source=origin,
+                                                    weight=1.0)
 
 
 def insert_complexes():
