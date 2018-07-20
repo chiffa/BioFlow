@@ -155,8 +155,8 @@ class UniProtParser(object):
             words = [a for a in line.split(' ') if a != '']
             self._single_up_dict['ID'] = words[1]
         if keyword == 'AC':
-            words = [a for a in line.split(' ') if a != '']
-            for word in words[1:]:
+            words = [a for a in line[5:].split(' ') if a != '']
+            for word in words:
                 self._single_up_dict['Acnum'].append(word.split(';')[0])
         if keyword == 'OX':
             self._single_up_dict['TaxID'] = line.split('NCBI_TaxID=')[1].split(';')[0]
