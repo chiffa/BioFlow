@@ -132,6 +132,7 @@ if on_rtd or on_unittest:
 else:
     if on_alternative_graph:
         DatabaseGraph = GraphDBPipe()
+        DatabaseGraph.build_indexes()
     else:
         log.debug('graph database interface is connecting to a real DB')
         DatabaseGraph = Graph()

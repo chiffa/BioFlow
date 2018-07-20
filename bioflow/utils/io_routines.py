@@ -80,7 +80,6 @@ def memoize(f):
 
     def internal_function(*args, **kwargs):
         if args in memdict.keys():
-            print 'memoization triggered'
             return memdict[args]
         else:
             result = f(*args, **kwargs)

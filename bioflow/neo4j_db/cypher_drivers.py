@@ -345,6 +345,16 @@ class GraphDBPipe(object):
             tx.commit()
             return annotated_nodes
 
+    def build_indexes(self):
+        with self._driver.session() as session:
+            session.write_transaction(self._build_indexes)
+
+    @staticmethod
+    def _build_indexes(tx):
+        tx.run("CREATE INDEX ON :UNIPROT(legacyId)")
+        tx.run("CREATE INDEX ON :Annotation(tag)")
+        tx.run("CREATE INDEX ON :Annotation(tag, type)")
+
 
 if __name__ == "__main__":
     neo4j_pipe = GraphDBPipe()

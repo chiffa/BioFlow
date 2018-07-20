@@ -107,7 +107,6 @@ def node_generator_2_db_ids(node_generator):
     return node_set
 
 
-@memoize
 def look_up_annotation_node(p_load, p_type=''):
     """
     Looks up nodes accessible via the annotation nodes with a given annotation and given
@@ -165,7 +164,7 @@ def look_up_annotation_node(p_load, p_type=''):
         node_generator = DatabaseGraph.AnnotNode.index.lookup(payload=payload)
         return annotations_2_node_chars(node_generator)
 
-@time_exection
+
 def look_up_annotation_set(p_load_list, p_type=''):
     """
     Looks up an set of annotations in the database and finds the Ids of nodes containing SWISSPROT
@@ -188,14 +187,18 @@ def look_up_annotation_set(p_load_list, p_type=''):
             node_legacy_id = node.properties['legacyId']
             node_type = list(node.labels)[0]
             node_display_name = node.properties['displayName']
-            retlist.append((node_type, node_display_name, node_bulbs_id, node_legacy_id))
+            payload = (node_type, node_display_name, node_bulbs_id, node_legacy_id)
+            if node_type == 'UNIPROT':
+                retlist.insert(0, payload)
+            else:
+                retlist.append(payload)
         return retlist
 
-    # if on_alternative_graph:  # In the end, it was not worth it...
-    #     load_2_name_list = [(p_load, transform_annotation_node(p_nodes)) for (p_load, p_nodes) in
-    #                         zip(p_load_list, DatabaseGraph.batch_retrieve_from_annotation_tags(p_load_list, p_type))]
-    # else:
-    load_2_name_list = [(p_load, look_up_annotation_node(p_load, p_type))
+    if on_alternative_graph:  # In the end, it was not worth it...
+        load_2_name_list = [(p_load, transform_annotation_node(p_nodes)) for (p_load, p_nodes) in
+                            zip(p_load_list, DatabaseGraph.batch_retrieve_from_annotation_tags(p_load_list, p_type))]
+    else:
+        load_2_name_list = [(p_load, look_up_annotation_node(p_load, p_type))
                             for p_load in p_load_list]
 
     db_id_list = [db_id_mapping_helper(value) for key, value in load_2_name_list]
@@ -617,7 +620,6 @@ def convert_to_internal_ids(base):
     :param base:
     :return:
     """
-    # TODO: convert to batch-call, it's the limiting importing time factor for now
 
     warn_list, results_tuple_list, results_list = look_up_annotation_set(set(base))
     return_dict = {}
@@ -628,15 +630,15 @@ def convert_to_internal_ids(base):
     for i, (key, match_list) in enumerate(results_tuple_list):
         if i % breakpoints == 0:
             log.info("\t %.2f %%" % (float(i)/float(size)*100))
-            if key not in warn_list:
-                for match in match_list:
-                    if match[0] == 'UNIPROT':
-                        return_dict[key] = match[2]
-                    else:
-                        return_dict[key] = match_list[0][2]
+        print key, match_list
+        if key not in warn_list:
+            for match in match_list:
+                if match[0] == 'UNIPROT':
+                    return_dict[key] = match[2]
+                else:
+                    return_dict[key] = match_list[0][2]
 
-
-    log.debug('TF ID cast converter length: %s', len(return_dict))
+    log.debug('ID cast converter length: %s', len(return_dict))
 
     return return_dict
 
