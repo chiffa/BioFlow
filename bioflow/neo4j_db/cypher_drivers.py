@@ -261,6 +261,7 @@ class GraphDBPipe(object):
 
     @staticmethod
     def _get_from_annotation_tag(tx, annotation_tag, tag_type):
+        annotation_tag = annotation_tag.upper()
         if tag_type is None or tag_type == '':  # TODO: track back to see where '' as type is inserted
             result = tx.run("MATCH (annotnode:Annotation)-[r:annotates]->(target) "
                             "WHERE annotnode.tag = '%s' "

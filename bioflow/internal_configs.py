@@ -13,7 +13,7 @@ edge_type_filters = {
     # Group relation group
     "Same": ["is_same"],
     # Same relation group
-    "Reaction": ["is_Catalysant", "is_reaction_particpant"],
+    "Reaction": ["is_Catalysant", "is_reaction_participant"],
     # Reaction relation group
     "Contact_interaction": ["is_part_of_complex", "is_Regulant"],
     # Contact_interaction relation group

@@ -57,7 +57,8 @@ class InteractomeInterface(object):
     # within the connex part of the graph)
 
     reactions_types_list = ['TemplateReaction', 'Degradation', 'BiochemicalReaction']
-    reactions_types_list = [neo4j_names_dict[short_name][0] for short_name in reactions_types_list]
+    if not on_alternative_graph:
+        reactions_types_list = [neo4j_names_dict[short_name][0] for short_name in reactions_types_list]
 
     def __init__(self, main_connex_only, full_impact):
         self.connexity_aware = main_connex_only
@@ -286,19 +287,31 @@ class InteractomeInterface(object):
             reagent_clusters = []
             seeds = set()
             total_reaction_participants = 0
-            for ReactionType in self.reactions_types_list:
-                if not _bulb_specific_stable_get_all(ReactionType):
-                    continue
-                for Reaction in _bulb_specific_stable_get_all(ReactionType):
-                    if Reaction is None:
-                        continue
-                    reaction_participants, reaction_particpants_no = node_extend_once(
-                        edge_type_filters["Reaction"], self.connexity_aware, Reaction)
-                    total_reaction_participants += reaction_particpants_no
 
-                    if len(reaction_participants) > 1:
-                        reagent_clusters.append(copy(reaction_participants))
-                        seeds.update(reaction_participants)
+            for ReactionType in self.reactions_types_list:
+                if on_alternative_graph:
+                    for Reaction in DatabaseGraph.get_all(ReactionType):
+                        reaction_participants, reaction_participants_no = node_extend_once(
+                            edge_type_filters["Reaction"], self.connexity_aware, Reaction)
+                        total_reaction_participants += reaction_participants_no
+
+                        if len(reaction_participants) > 1:
+                            reagent_clusters.append(copy(reaction_participants))
+                            seeds.update(reaction_participants)
+
+                else:
+                    if not _bulb_specific_stable_get_all(ReactionType):
+                        continue
+                    for Reaction in _bulb_specific_stable_get_all(ReactionType):
+                        if Reaction is None:
+                            continue
+                        reaction_participants, reaction_participants_no = node_extend_once(
+                            edge_type_filters["Reaction"], self.connexity_aware, Reaction)
+                        total_reaction_participants += reaction_participants_no
+
+                        if len(reaction_participants) > 1:
+                            reagent_clusters.append(copy(reaction_participants))
+                            seeds.update(reaction_participants)
 
             return reagent_clusters, seeds, total_reaction_participants
 
@@ -1145,8 +1158,8 @@ class InteractomeInterface(object):
 if __name__ == "__main__":
     interactome_interface_instance = InteractomeInterface(main_connex_only=True,
                                                           full_impact=False)
-    # interactome_interface_instance.full_rebuild()
-    interactome_interface_instance.fast_load()
+    interactome_interface_instance.full_rebuild()
+    # interactome_interface_instance.fast_load()
     # print interactome_interface_instance.pretty_time()
     # print interactome_interface_instance.md5_hash()
 

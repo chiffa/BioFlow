@@ -252,6 +252,7 @@ def erase_custom_fields():
             for node in node_gen:
                 reset_routine(node)
 
+
 # TODO: delete: this should be dead code in the final refactoring version
 def node_extend_once(edge_type_filter, main_connex_only, core_node):
     """
@@ -264,23 +265,34 @@ def node_extend_once(edge_type_filter, main_connex_only, core_node):
     node_neighbors = []
     node_neighbor_no = 0
     for edge_type in edge_type_filter:
-        if core_node.bothV(edge_type) is not None:  # get the next edge type
 
-            # TODO: REFACTOR: connex logic is quite unclear
-            for node in core_node.bothV(edge_type):  # get all the nodes in core_node
-                connex = True   # by default all nodes are connex
+        if on_alternative_graph:
+            for node in DatabaseGraph.get_linked(get_db_id(core_node), link_type=edge_type):
+                node_is_connex = node.properties['main_connex']
+                if (main_connex_only and node_is_connex) or not main_connex_only:
+                    node_neo4j_id = get_db_id(node)
+                    if node_neo4j_id not in forbidden_neo4j_ids:
+                        node_neighbors.append(node_neo4j_id)
+                        node_neighbor_no += 1
 
-                if main_connex_only:  # when we are looking for main connex it is not in the main connex
-                    connex = False
+        else:
+            if core_node.bothV(edge_type) is not None:  # get the next edge type
 
-                    if node.main_connex:  # unless the node from which we are connecting is connex
-                        connex = True
+                # TODO: REFACTOR: connex logic is quite unclear
+                for node in core_node.bothV(edge_type):  # get all the nodes in core_node
+                    connex = True   # by default all nodes are connex
 
-                node_bulbs_id = get_db_id(node)  # get bulbs ID of a new node
+                    if main_connex_only:  # when we are looking for main connex it is not in the main connex
+                        connex = False
 
-                if node_bulbs_id not in forbidden_neo4j_ids and connex:
-                    node_neighbors.append(node_bulbs_id)
-                    node_neighbor_no += 1
+                        if node.main_connex:  # unless the node from which we are connecting is connex
+                            connex = True
+
+                    node_bulbs_id = get_db_id(node)  # get bulbs ID of a new node
+
+                    if node_bulbs_id not in forbidden_neo4j_ids and connex:
+                        node_neighbors.append(node_bulbs_id)
+                        node_neighbor_no += 1
 
     return node_neighbors, node_neighbor_no
 
