@@ -48,7 +48,7 @@ class GeneOntologyInterface(object):
      them for further use.
 
     :param Filter:
-    :param Uniprot_Node_IDs: A list of hte reached_uniprots_bulbs_id_list that will be used
+    :param Uniprot_Node_IDs: A list of hte reached_uniprots_neo4j_id_list that will be used
      for the GO reach and informativity computation. Beyond database and formalism issues,
      this allows to adapt method when limited list of UP is of interest
     :param correction_factor:
@@ -67,7 +67,7 @@ class GeneOntologyInterface(object):
 
         self.interactome_interface_instance = InteractomeInterface(True, False)
         self.interactome_interface_instance.fast_load()
-        init_set = self.interactome_interface_instance.all_uniprots_bulbs_id_list
+        init_set = self.interactome_interface_instance.all_uniprots_neo4j_id_list
 
         if uniprot_node_ids:
             init_set = list(set(init_set).intersection(set(uniprot_node_ids)))
@@ -613,12 +613,12 @@ class GeneOntologyInterface(object):
         :return:
         """
         uniprot_dict = {}
-        for elt in self.interactome_interface_instance.reached_uniprots_bulbs_id_list:
+        for elt in self.interactome_interface_instance.reached_uniprots_neo4j_id_list:
             node = DatabaseGraph.UNIPORT.get(elt)
             alt_id = node.ID
             # TODO: now can be suppressed
             uniprot_dict[alt_id] = (
-                elt, self.interactome_interface_instance.bulbs_id_2_display_name[elt])
+                elt, self.interactome_interface_instance.neo4j_id_2_display_name[elt])
             uniprot_dict[elt] = alt_id
         pickle.dump(uniprot_dict, file(Dumps.Up_dict_dump, 'w'))
         return uniprot_dict
@@ -691,7 +691,7 @@ class GeneOntologyInterface(object):
 
     def set_uniprot_source(self, uniprots):
         """
-        Sets the reached_uniprots_bulbs_id_list on which the circulation computation routines
+        Sets the reached_uniprots_neo4j_id_list on which the circulation computation routines
         will be performed by the otehr methods.Avoids passing as argument large lists of parameters.
 
         :param uniprots: List of node IDs of the uniprots on which we would like to perform
@@ -877,13 +877,13 @@ class GeneOntologyInterface(object):
 
     def export_subsystem(self, uniprot_system, uniprot_subsystem):
         """
-        Exports the subsystem of reached_uniprots_bulbs_id_list and circulation between
+        Exports the subsystem of reached_uniprots_neo4j_id_list and circulation between
         them based on a larger precalculated system.This is possible only of the memoization
         parameter was on during the execution of "build_extended_circulation_system()"
         function execution.
 
         :param uniprot_system: The set of uniprots for which the larger system was calculated
-        :param uniprot_subsystem: the set of reached_uniprots_bulbs_id_list we are interested in
+        :param uniprot_subsystem: the set of reached_uniprots_neo4j_id_list we are interested in
         :raise Exception: if the set of uniprots for which the larger system was calculated
          doesn't correspond to what is stored in the dumps
         """
@@ -906,7 +906,7 @@ class GeneOntologyInterface(object):
             memoized=False,
             no_add=False):
         """
-        Randomly samples the set of reached_uniprots_bulbs_id_list used to create the model.
+        Randomly samples the set of reached_uniprots_neo4j_id_list used to create the model.
 
          This is the null model creation routine
 
@@ -982,7 +982,7 @@ class GeneOntologyInterface(object):
     def get_independent_linear_groups(self):
         """
         Recovers independent linear groups of the GO terms. Independent linear groups are
-        those that share a significant amount of reached_uniprots_bulbs_id_list in common
+        those that share a significant amount of reached_uniprots_neo4j_id_list in common
         """
         self.Indep_Lapl = lil_matrix((len(self.All_GOs), len(self.All_GOs)))
         for GO_list in self.UP2GO_Reachable_nodes.itervalues():

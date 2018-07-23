@@ -32,7 +32,7 @@ def get_interactome_interface():
                                                           full_impact=False)
     interactome_interface_instance.fast_load()
     log.debug("get_interactome state e_p_u_b_i length: %s",
-              len(interactome_interface_instance.entry_point_uniprots_bulbs_ids))
+              len(interactome_interface_instance.entry_point_uniprots_neo4j_ids))
     log.info("interactome interface loaded in %s" % interactome_interface_instance.pretty_time())
     # is the case now
     return interactome_interface_instance
@@ -390,10 +390,10 @@ def compare_to_blank(
 
         log.debug('debug, not random nodes: %s', not_random_nodes)
         log.debug('debug bulbs_id_disp_name: %s',
-                  interactome_interface_instance.bulbs_id_2_display_name.items()[:10])
+                  interactome_interface_instance.neo4j_id_2_display_name.items()[:10])
 
         node_char_list = [
-            [int(nr_node_id), interactome_interface_instance.bulbs_id_2_display_name[nr_node_id]] +
+            [int(nr_node_id), interactome_interface_instance.neo4j_id_2_display_name[nr_node_id]] +
             dictionary_system[nr_node_id] + r_nodes[node_ids == float(nr_node_id)].tolist()
             for nr_node_id in not_random_nodes]
 
@@ -432,11 +432,11 @@ def auto_analyze(source_list,
 
         interactome_interface = get_interactome_interface()
         log.debug("retrieved interactome_interface instance e_p_u_b_i length: %s",
-                  len(interactome_interface.entry_point_uniprots_bulbs_ids))
+                  len(interactome_interface.entry_point_uniprots_neo4j_ids))
 
         interactome_interface.set_uniprot_source(list(_list))
         log.debug(" e_p_u_b_i length after UP_source was set: %s",
-                  len(interactome_interface.entry_point_uniprots_bulbs_ids))
+                  len(interactome_interface.entry_point_uniprots_neo4j_ids))
 
         if background_list:
             interactome_interface.background = background_list
@@ -445,20 +445,20 @@ def auto_analyze(source_list,
 
         if not skip_sampling:
             log.info("spawning a sampler for %s proteins @ %s compops/sec",
-                     len(interactome_interface.entry_point_uniprots_bulbs_ids), estimated_comp_ops)
+                     len(interactome_interface.entry_point_uniprots_neo4j_ids), estimated_comp_ops)
 
-        if len(interactome_interface.entry_point_uniprots_bulbs_ids) < 60:
+        if len(interactome_interface.entry_point_uniprots_neo4j_ids) < 60:
 
             if not skip_sampling:
                 log.info('length: %s \t sampling depth: %s \t, estimated round time: %s min',
-                         len(interactome_interface.entry_point_uniprots_bulbs_ids),
+                         len(interactome_interface.entry_point_uniprots_neo4j_ids),
                          'full',
-                         len(interactome_interface.entry_point_uniprots_bulbs_ids)**2 /
+                         len(interactome_interface.entry_point_uniprots_neo4j_ids) ** 2 /
                          estimated_comp_ops / 60)
 
                 spawn_sampler_pool(
                     processors,
-                    [len(interactome_interface.entry_point_uniprots_bulbs_ids)],
+                    [len(interactome_interface.entry_point_uniprots_neo4j_ids)],
                     [desired_depth],
                     interactome_interface_instance=interactome_interface)
 
@@ -468,32 +468,32 @@ def auto_analyze(source_list,
                 interactome_interface.build_extended_conduction_system(fast_load=True)
 
             nr_nodes, nr_groups, p_val_dict = compare_to_blank(
-                len(interactome_interface.entry_point_uniprots_bulbs_ids),
+                len(interactome_interface.entry_point_uniprots_neo4j_ids),
                 [0.5, 0.6],
                 p_val=0.9, interactome_interface_instance=interactome_interface)
 
 
         else:
-            ceiling = min(205, len(interactome_interface.entry_point_uniprots_bulbs_ids))
+            ceiling = min(205, len(interactome_interface.entry_point_uniprots_neo4j_ids))
             sampling_depth = max((ceiling-5) ** 2 /
-                                 len(interactome_interface.entry_point_uniprots_bulbs_ids),
+                                 len(interactome_interface.entry_point_uniprots_neo4j_ids),
                                  5)
 
             if not skip_sampling:
                 log.info('length: %s \t sampling depth: %s \t, estimated round time: %s min',
-                         len(interactome_interface.entry_point_uniprots_bulbs_ids),
+                         len(interactome_interface.entry_point_uniprots_neo4j_ids),
                          sampling_depth,
-                         len(interactome_interface.entry_point_uniprots_bulbs_ids) *
+                         len(interactome_interface.entry_point_uniprots_neo4j_ids) *
                          sampling_depth / 2 / 60)
 
                 spawn_sampler_pool(processors,
-                                   [len(interactome_interface.entry_point_uniprots_bulbs_ids)],
+                                   [len(interactome_interface.entry_point_uniprots_neo4j_ids)],
                                    [desired_depth],
                                    sparse_rounds=sampling_depth,
                                    interactome_interface_instance=interactome_interface)
 
             log.info('real run characteristics: sys_hash: %s, size: %s, sparse_rounds: %s' % (interactome_interface.md5_hash(),
-                      len(interactome_interface.entry_point_uniprots_bulbs_ids), sampling_depth))
+                                                                                              len(interactome_interface.entry_point_uniprots_neo4j_ids), sampling_depth))
 
             if not from_memoization:
                 interactome_interface.build_extended_conduction_system(sparse_samples=sampling_depth)
@@ -501,7 +501,7 @@ def auto_analyze(source_list,
             else:
                 interactome_interface.build_extended_conduction_system(sparse_samples=sampling_depth, fast_load=True)
             nr_nodes, nr_groups, p_val_dict = compare_to_blank(
-                len(interactome_interface.entry_point_uniprots_bulbs_ids),
+                len(interactome_interface.entry_point_uniprots_neo4j_ids),
                 [0.5, 0.6],
                 p_val=0.9, sparse_rounds=sampling_depth,
                 interactome_interface_instance=interactome_interface)

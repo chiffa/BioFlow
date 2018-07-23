@@ -24,7 +24,7 @@ from bioflow.main_configs import Dumps, Outputs, interactome_rand_samp
 from bioflow.internal_configs import edge_type_filters, Adjacency_Martix_Dict, \
     Conductance_Matrix_Dict
 from bioflow.algorithms_bank import conduction_routines as cr
-from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
+from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph, on_alternative_graph
 from bioflow.neo4j_db.db_io_routines import expand_from_seed, \
     erase_custom_fields, node_extend_once, get_db_id, _bulb_specific_stable_get_all
 from bioflow.neo4j_db.graph_content import neo4j_names_dict
@@ -76,14 +76,14 @@ class InteractomeInterface(object):
         self.cond_eigenvects = np.zeros((4, 4))
         self.cond_eigenvals = np.zeros((4, 4))
 
-        self.bulbs_id_2_matrix_index = {}
-        self.matrix_index_2_bulbs_id = {}
-        self.bulbs_id_2_display_name = {}
-        self.bulbs_id_2_legacy_id = {}
-        self.bulbs_id2_node_type = {}
-        self.bulbs_id_2_localization = {}
-        self.reached_uniprots_bulbs_id_list = []
-        self.all_uniprots_bulbs_id_list = []
+        self.neo4j_id_2_matrix_index = {}
+        self.matrix_index_2_neo4j_id = {}
+        self.neo4j_id_2_display_name = {}
+        self.neo4j_id_2_legacy_id = {}
+        self.neo4j_id_2_node_type = {}
+        self.neo4j_id_2_localization = {}
+        self.reached_uniprots_neo4j_id_list = []
+        self.all_uniprots_neo4j_id_list = []
         self.Uniprot_attachments = {}  # currently maintained for legacy reasons
         self.uniprot_matrix_index_list = []
 
@@ -111,7 +111,7 @@ class InteractomeInterface(object):
         char_set = string.ascii_uppercase + string.digits
         self.random_tag = ''.join(sample(char_set * 6, 6))
 
-        self.entry_point_uniprots_bulbs_ids = []
+        self.entry_point_uniprots_neo4j_ids = []
         self.UP2UP_voltages = {}
         self.uniprots_2_voltage_and_circulation = {}  # does not really seem to be used
         self.current_accumulator = np.zeros((2, 2))
@@ -125,7 +125,7 @@ class InteractomeInterface(object):
         self.background = []
         self.connected_uniprots = []
 
-        self.main_set = self.bulbs_id_2_matrix_index
+        self.main_set = self.neo4j_id_2_matrix_index
 
     def pretty_time(self):
         """
@@ -189,23 +189,23 @@ class InteractomeInterface(object):
         dumps all the elements required for the mapping between the types and ids
          of database entries and matrix columns
         """
-        log.debug("pre-dump e_p_u_b_i length: %s", len(self.entry_point_uniprots_bulbs_ids))
+        log.debug("pre-dump e_p_u_b_i length: %s", len(self.entry_point_uniprots_neo4j_ids))
         log.debug("dumping into: %s", Dumps.interactome_maps)
         dump_object(
             Dumps.interactome_maps,
-            (self.bulbs_id_2_matrix_index,
-             self.matrix_index_2_bulbs_id,
-             self.bulbs_id_2_display_name,
-             self.bulbs_id_2_legacy_id,
-             self.bulbs_id2_node_type,
-             self.bulbs_id_2_localization,
-             self.reached_uniprots_bulbs_id_list,
-             self.all_uniprots_bulbs_id_list,
+            (self.neo4j_id_2_matrix_index,
+             self.matrix_index_2_neo4j_id,
+             self.neo4j_id_2_display_name,
+             self.neo4j_id_2_legacy_id,
+             self.neo4j_id_2_node_type,
+             self.neo4j_id_2_localization,
+             self.reached_uniprots_neo4j_id_list,
+             self.all_uniprots_neo4j_id_list,
              self.Uniprot_attachments,
              self.UP2Chrom,
              self.chromosomes_2_uniprot,
              self.uniprot_matrix_index_list,
-             self.entry_point_uniprots_bulbs_ids))  # TODO: delete here and below entry point u_b_i
+             self.entry_point_uniprots_neo4j_ids))  # TODO: delete here and below entry point u_b_i
 
     def undump_maps(self):
         """
@@ -213,26 +213,26 @@ class InteractomeInterface(object):
         database entries and matrix columns
         """
         log.debug("undumping from %s", Dumps.interactome_maps)
-        self.bulbs_id_2_matrix_index, self.matrix_index_2_bulbs_id, \
-            self.bulbs_id_2_display_name, self.bulbs_id_2_legacy_id, self.bulbs_id2_node_type, \
-            self.bulbs_id_2_localization, self.reached_uniprots_bulbs_id_list,\
-            self.all_uniprots_bulbs_id_list, self.Uniprot_attachments, self.UP2Chrom, \
-            self.chromosomes_2_uniprot, self.uniprot_matrix_index_list,\
-            self.entry_point_uniprots_bulbs_ids = \
+        self.neo4j_id_2_matrix_index, self.matrix_index_2_neo4j_id, \
+        self.neo4j_id_2_display_name, self.neo4j_id_2_legacy_id, self.neo4j_id_2_node_type, \
+        self.neo4j_id_2_localization, self.reached_uniprots_neo4j_id_list, \
+        self.all_uniprots_neo4j_id_list, self.Uniprot_attachments, self.UP2Chrom, \
+        self.chromosomes_2_uniprot, self.uniprot_matrix_index_list, \
+        self.entry_point_uniprots_neo4j_ids = \
             undump_object(Dumps.interactome_maps)
-        log.debug("post-undump e_p_u_b_i length: %s", len(self.entry_point_uniprots_bulbs_ids))
+        log.debug("post-undump e_p_u_b_i length: %s", len(self.entry_point_uniprots_neo4j_ids))
 
     def dump_memoized(self):
         md5 = hashlib.md5(
             json.dumps(
                 sorted(
-                    self.entry_point_uniprots_bulbs_ids),
+                    self.entry_point_uniprots_neo4j_ids),
                 sort_keys=True)).hexdigest()
 
         payload = {
             'UP_hash': md5, 'sys_hash': self.md5_hash(),
-            'size': len(self.entry_point_uniprots_bulbs_ids),
-            'UPs': pickle.dumps(self.entry_point_uniprots_bulbs_ids),
+            'size': len(self.entry_point_uniprots_neo4j_ids),
+            'UPs': pickle.dumps(self.entry_point_uniprots_neo4j_ids),
             'currents': pickle.dumps((self.current_accumulator, self.node_current)),
             'voltages': pickle.dumps(self.uniprots_2_voltage_and_circulation)}
         dump_object(Dumps.Interactome_Analysis_memoized, payload)
@@ -417,7 +417,7 @@ class InteractomeInterface(object):
         """
         Maps Node Database IDs, Legacy IDs, display names and types to matrix row/column indexes;
         """
-
+        # TODO: WTF? memoization wrapper here
         def request_location(_location_buffer_dict, location):
             """
             Just a Buffered lookup of location, since the number of cellular location
@@ -432,53 +432,81 @@ class InteractomeInterface(object):
             if location in _location_buffer_dict.keys():
                 return _location_buffer_dict[location]
             else:
-                generator = DatabaseGraph.Location.index.lookup(ID=location)
-                if generator is not None:
-                    for elt in generator:
-                        _location_buffer_dict[location] = str(elt.displayName)
-                        return str(elt.displayName)
+                if on_alternative_graph:
+                    for location_node in DatabaseGraph.find({'legacyId':location}, 'Location'):
+                        _location_buffer_dict[location] = location_node.properties['displayName']
+                        return location_node.properties['displayName']
+
+                else:
+                    generator = DatabaseGraph.Location.index.lookup(ID=location)
+                    if generator is not None:
+                        for elt in generator:
+                            _location_buffer_dict[location] = str(elt.displayName)
+                            return str(elt.displayName)
 
         #######################################################################
 
         counter = 0
         location_buffer_dict = {}
 
-        self.bulbs_id_2_matrix_index = {}
-        self.matrix_index_2_bulbs_id = {}
+        self.neo4j_id_2_matrix_index = {}
+        self.matrix_index_2_neo4j_id = {}
 
         log.info('nodes in Highest Set: %s', len(self.Highest_Set))
-        for bulbs_node_id in self.Highest_Set:
-            self.bulbs_id_2_matrix_index[bulbs_node_id] = counter
-            self.matrix_index_2_bulbs_id[counter] = bulbs_node_id
-            node = DatabaseGraph.vertices.get(bulbs_node_id)
-            self.bulbs_id_2_display_name[bulbs_node_id] = node.displayName
-            self.bulbs_id2_node_type[bulbs_node_id] = node.element_type
-            self.bulbs_id_2_legacy_id[bulbs_node_id] = node.ID
-            if node.element_type == "UNIPROT":
-                # TODO: there is a problem: there is no UNIPROT nodes reached during the expansion.
-                self.reached_uniprots_bulbs_id_list.append(bulbs_node_id)
-                self.uniprot_matrix_index_list.append(counter)
-            if node.localization is not None:
-                self.bulbs_id_2_localization[bulbs_node_id] = request_location(
-                    location_buffer_dict, node.localization)
+        for neo4j_node_id in self.Highest_Set:
+            self.neo4j_id_2_matrix_index[neo4j_node_id] = counter
+            self.matrix_index_2_neo4j_id[counter] = neo4j_node_id
+            if on_alternative_graph:
+                node = DatabaseGraph.get(neo4j_node_id)
+                self.neo4j_id_2_display_name[neo4j_node_id] = node.properties['displayName']
+                self.neo4j_id_2_node_type[neo4j_node_id] = node.properties['element_type']
+                self.neo4j_id_2_legacy_id[neo4j_node_id] = node.properties['legacyId']
+                if node.element_type == "UNIPROT":
+                    # TODO: there is a problem: there is no UNIPROT nodes reached during the expansion.
+                    self.reached_uniprots_neo4j_id_list.append(neo4j_node_id)
+                    self.uniprot_matrix_index_list.append(counter)
+                if node.localization is not None:
+                    self.neo4j_id_2_localization[neo4j_node_id] = request_location(
+                        location_buffer_dict, node.properties['localization'])
+            else:
+                node = DatabaseGraph.vertices.get(neo4j_node_id)
+                self.neo4j_id_2_display_name[neo4j_node_id] = node.displayName
+                self.neo4j_id_2_node_type[neo4j_node_id] = node.element_type
+                self.neo4j_id_2_legacy_id[neo4j_node_id] = node.ID
+                if node.element_type == "UNIPROT":
+                    # TODO: there is a problem: there is no UNIPROT nodes reached during the expansion.
+                    self.reached_uniprots_neo4j_id_list.append(neo4j_node_id)
+                    self.uniprot_matrix_index_list.append(counter)
+                if node.localization is not None:
+                    self.neo4j_id_2_localization[neo4j_node_id] = request_location(
+                        location_buffer_dict, node.localization)
             counter += 1
 
-        self.all_uniprots_bulbs_id_list += self.reached_uniprots_bulbs_id_list
-        self.reached_uniprots_bulbs_id_list = list(set(self.reached_uniprots_bulbs_id_list))
-        log.info("reached uniprots: %s", len(self.reached_uniprots_bulbs_id_list))
+        self.all_uniprots_neo4j_id_list += self.reached_uniprots_neo4j_id_list
+        self.reached_uniprots_neo4j_id_list = list(set(self.reached_uniprots_neo4j_id_list))
+        log.info("reached uniprots: %s", len(self.reached_uniprots_neo4j_id_list))
 
-        up_generator = _bulb_specific_stable_get_all(DatabaseGraph.UNIPORT)
-        if up_generator:
-            for up_node in up_generator:
-                bulbs_node_id = get_db_id(up_node)
-                if bulbs_node_id not in self.reached_uniprots_bulbs_id_list:
-                    self.all_uniprots_bulbs_id_list.append(bulbs_node_id)
-                    self.bulbs_id_2_display_name[bulbs_node_id] = up_node.displayName
-                    self.bulbs_id2_node_type[bulbs_node_id] = up_node.element_type
-                    self.bulbs_id_2_legacy_id[bulbs_node_id] = up_node.ID
+        if on_alternative_graph:
+            for up_node in DatabaseGraph.get_all('UNIPROT'):
+                neo4j_node_id = get_db_id(up_node)
+                if neo4j_node_id not in self.reached_uniprots_neo4j_id_list:
+                    self.all_uniprots_neo4j_id_list.append(neo4j_node_id)
+                    self.neo4j_id_2_display_name[neo4j_node_id] = up_node.properties['displayName']
+                    self.neo4j_id_2_node_type[neo4j_node_id] = up_node.properties['element_type']
+                    self.neo4j_id_2_legacy_id[neo4j_node_id] = up_node.properties['legacyId']
+        else:
+            up_generator = _bulb_specific_stable_get_all(DatabaseGraph.UNIPORT)
+            if up_generator:
+                for up_node in up_generator:
+                    neo4j_node_id = get_db_id(up_node)
+                    if neo4j_node_id not in self.reached_uniprots_neo4j_id_list:
+                        self.all_uniprots_neo4j_id_list.append(neo4j_node_id)
+                        self.neo4j_id_2_display_name[neo4j_node_id] = up_node.displayName
+                        self.neo4j_id_2_node_type[neo4j_node_id] = up_node.element_type
+                        self.neo4j_id_2_legacy_id[neo4j_node_id] = up_node.ID
 
-        self.all_uniprots_bulbs_id_list = list(set(self.all_uniprots_bulbs_id_list))
-        log.info("analyzable uniprots: %s", len(self.all_uniprots_bulbs_id_list))
+        self.all_uniprots_neo4j_id_list = list(set(self.all_uniprots_neo4j_id_list))
+        log.info("analyzable uniprots: %s", len(self.all_uniprots_neo4j_id_list))
 
 
     def fast_row_insert(self, element, index_type):
@@ -532,8 +560,8 @@ class InteractomeInterface(object):
                 for _val in values:
                     if not edge_drop or np.random.random_sample() > edge_drop:  # TODO: check that no crash occurs
                         _link_indexes = (
-                            self.bulbs_id_2_matrix_index[_key],
-                            self.bulbs_id_2_matrix_index[_val])
+                            self.neo4j_id_2_matrix_index[_key],
+                            self.neo4j_id_2_matrix_index[_val])
                         self.fast_row_insert(_link_indexes, link_type)
 
         self.full_load_ls()
@@ -545,7 +573,7 @@ class InteractomeInterface(object):
 
         self.map_rows_to_names()
 
-        log.info("mapped bulbs_ids_to_ %s", self.pretty_time())
+        log.info("mapped neo4j_ids_to_ %s", self.pretty_time())
 
         log.info("building the ValMatrix %s ", self.pretty_time())
 
@@ -556,8 +584,8 @@ class InteractomeInterface(object):
         for reaction_participant_set in self.ReactLinks:
             for reaction_participant in itertools.combinations(reaction_participant_set, 2):
                 link_indexes = (
-                    self.bulbs_id_2_matrix_index[reaction_participant[0]],
-                    self.bulbs_id_2_matrix_index[reaction_participant[1]])
+                    self.neo4j_id_2_matrix_index[reaction_participant[0]],
+                    self.neo4j_id_2_matrix_index[reaction_participant[1]])
                 self.fast_row_insert(link_indexes, "Reaction")
 
         insert_expansion_links(self.GroupLinks, "Group")
@@ -638,10 +666,15 @@ class InteractomeInterface(object):
                          str("{0:.2f}".format(i / markings_to_do * 10.)))
 
             if connex_component_index == giant_connex_component_index:
-                bulbs_node = DatabaseGraph.vertices.get(self.matrix_index_2_bulbs_id[i])
-                bulbs_node.custom = 'Main_Connex'
-                bulbs_node.main_connex = True
-                bulbs_node.save()
+                if on_alternative_graph:
+                    DatabaseGraph.set_attributes(self.matrix_index_2_neo4j_id[i],
+                                                 {'custom':'Main_connex',
+                                                  'main_connex':True})
+                else:
+                    bulbs_node = DatabaseGraph.vertices.get(self.matrix_index_2_neo4j_id[i])
+                    bulbs_node.custom = 'Main_Connex'
+                    bulbs_node.main_connex = True
+                    bulbs_node.save()
 
         log.info("Marking of %s nodes for connexity was done in %s",
                  str(markings_to_do), str(self.pretty_time()))
@@ -682,7 +715,7 @@ class InteractomeInterface(object):
 
         self.connected_uniprots = [
             NodeID for NodeID,
-            idx in self.bulbs_id_2_matrix_index.iteritems() if idx < (
+            idx in self.neo4j_id_2_matrix_index.iteritems() if idx < (
                 self.laplacian_matrix.shape[0] - 1)]
 
     def get_descriptor_for_index(self, index):
@@ -693,40 +726,55 @@ class InteractomeInterface(object):
         :return: Type, displayName and if a localization is given, returns display name too.
         :rtype: tuple
         """
-        if self.matrix_index_2_bulbs_id[index] in self.bulbs_id_2_localization.keys():
-            return (self.bulbs_id2_node_type[self.matrix_index_2_bulbs_id[index]],
-                    self.bulbs_id_2_display_name[self.matrix_index_2_bulbs_id[index]],
-                    self.bulbs_id_2_localization[self.matrix_index_2_bulbs_id[index]])
+        if self.matrix_index_2_neo4j_id[index] in self.neo4j_id_2_localization.keys():
+            return (self.neo4j_id_2_node_type[self.matrix_index_2_neo4j_id[index]],
+                    self.neo4j_id_2_display_name[self.matrix_index_2_neo4j_id[index]],
+                    self.neo4j_id_2_localization[self.matrix_index_2_neo4j_id[index]])
         else:
-            return (self.bulbs_id2_node_type[self.matrix_index_2_bulbs_id[index]],
-                    self.bulbs_id_2_display_name[self.matrix_index_2_bulbs_id[index]])
+            return (self.neo4j_id_2_node_type[self.matrix_index_2_neo4j_id[index]],
+                    self.neo4j_id_2_display_name[self.matrix_index_2_neo4j_id[index]])
 
     def compute_uniprot_attachments(self):
         """
-        Computes the dictionary of attachments between the reached_uniprots_bulbs_id_list and
+        Computes the dictionary of attachments between the reached_uniprots_neo4j_id_list and
         Reactome proteins
         """
         log.info('attaching reactome proteins to uniprot nodes')
         uniprot_attachments_counter = 0
         reactome_attachments_counter = 0
 
-        for uniprot_bulbs_id in self.reached_uniprots_bulbs_id_list:
-            bulbs_node = DatabaseGraph.UNIPORT.get(uniprot_bulbs_id)
-            reactome_bulbs_id_generator = bulbs_node.bothV("is_same")
-            if reactome_bulbs_id_generator is not None:
-                self.Uniprot_attachments[uniprot_bulbs_id] = []
-                for uniprot_alias in reactome_bulbs_id_generator:
-                    self.Uniprot_attachments[uniprot_bulbs_id].append(get_db_id(uniprot_alias))
-                uniprot_attachments_counter += 1
-                reactome_attachments_counter += len(self.Uniprot_attachments[uniprot_bulbs_id])
-                log.debug('attached %s Reactome proteins to the node %s',
-                          len(self.Uniprot_attachments[uniprot_bulbs_id]), uniprot_bulbs_id)
+        for uniprot_neo4j_id in self.reached_uniprots_neo4j_id_list:
+            if on_alternative_graph:
+                reactome_nodes = DatabaseGraph.get_linked(uniprot_neo4j_id, link_type='is_same')
+                if reactome_nodes != []:
+                    self.Uniprot_attachments[uniprot_neo4j_id] = []
+                    for node in reactome_nodes:
+                        self.Uniprot_attachments[uniprot_neo4j_id].append(get_db_id(node))
+                    uniprot_attachments_counter += 1
+                    reactome_attachments_counter += len(self.Uniprot_attachments[uniprot_neo4j_id])
+                    log.debug('attached %s Reactome proteins to the node %s',
+                                      len(self.Uniprot_attachments[uniprot_neo4j_id]),
+                                      uniprot_neo4j_id)
+                else:
+                    log.debug('No attachment for the node %s', uniprot_neo4j_id)
+
             else:
-                log.debug('No attachment for the node %s', uniprot_bulbs_id)
+                bulbs_node = DatabaseGraph.UNIPORT.get(uniprot_neo4j_id)
+                reactome_bulbs_generator = bulbs_node.bothV("is_same")
+                if reactome_bulbs_generator is not None:
+                    self.Uniprot_attachments[uniprot_neo4j_id] = []
+                    for uniprot_alias in reactome_bulbs_generator:
+                        self.Uniprot_attachments[uniprot_neo4j_id].append(get_db_id(uniprot_alias))
+                    uniprot_attachments_counter += 1
+                    reactome_attachments_counter += len(self.Uniprot_attachments[uniprot_neo4j_id])
+                    log.debug('attached %s Reactome proteins to the node %s',
+                              len(self.Uniprot_attachments[uniprot_neo4j_id]), uniprot_neo4j_id)
+                else:
+                    log.debug('No attachment for the node %s', uniprot_neo4j_id)
 
         log.info('Attached %s reactome protein nodes to %s / %s uniprot nodes',
                  reactome_attachments_counter,
-                 uniprot_attachments_counter, len(self.reached_uniprots_bulbs_id_list))
+                 uniprot_attachments_counter, len(self.reached_uniprots_neo4j_id_list))
 
     def hacky_corr(self):
         """
@@ -736,10 +784,14 @@ class InteractomeInterface(object):
         """
         self.undump_maps()
         self.uniprot_matrix_index_list = []
-        for SP_Id in self.reached_uniprots_bulbs_id_list:
-            bulbs_node = DatabaseGraph.UNIPORT.get(SP_Id)
-            if bulbs_node.main_connex:
-                self.uniprot_matrix_index_list.append(self.bulbs_id_2_matrix_index[SP_Id])
+        for swissprot_neo4j_id in self.reached_uniprots_neo4j_id_list:
+            if on_alternative_graph:
+                if DatabaseGraph.get(swissprot_neo4j_id, 'UNIPROT').properties['main_connex']:
+                    self.uniprot_matrix_index_list.append(self.neo4j_id_2_matrix_index[swissprot_neo4j_id])
+            else:
+                bulbs_node = DatabaseGraph.UNIPORT.get(swissprot_neo4j_id)
+                if bulbs_node.main_connex:
+                    self.uniprot_matrix_index_list.append(self.neo4j_id_2_matrix_index[swissprot_neo4j_id])
         log.info('number of indexed uniprots: %s', len(self.uniprot_matrix_index_list))
         self.dump_maps()
 
@@ -748,7 +800,7 @@ class InteractomeInterface(object):
         Return the MD hash of self to ensure that all the defining properties have been correctly
         defined before dump/retrieval
         """
-        sorted_initial_set = sorted(self.bulbs_id_2_matrix_index.keys())
+        sorted_initial_set = sorted(self.neo4j_id_2_matrix_index.keys())
         connected_ups = sorted(self.connected_uniprots)
         data = [
             self.connexity_aware,
@@ -764,7 +816,7 @@ class InteractomeInterface(object):
 
     def set_uniprot_source(self, uniprots):
         """
-        Sets the reached_uniprots_bulbs_id_list on which the circulation computation routines will
+        Sets the reached_uniprots_neo4j_id_list on which the circulation computation routines will
         be performed by the otehr methods. Avoids passing as argument large lists of parameters.
 
         :param uniprots: List of node IDs of the uniprots on which we would like to
@@ -772,13 +824,13 @@ class InteractomeInterface(object):
         :raise Warning: if the uniprots were not present in the set of GOs for which
         we built the system or had no GO attached to them
         """
-        if not set(uniprots) <= set(self.bulbs_id_2_matrix_index.keys()):
-            log.warn('Following reached uniprots bulbs_ids were not retrieved upon the '
+        if not set(uniprots) <= set(self.neo4j_id_2_matrix_index.keys()):
+            log.warn('Following reached uniprots neo4j_ids were not retrieved upon the '
                      'circulation matrix construction: \n %s',
-                     (set(uniprots) - set(self.bulbs_id_2_matrix_index.keys())))
+                     (set(uniprots) - set(self.neo4j_id_2_matrix_index.keys())))
 
-        self.entry_point_uniprots_bulbs_ids = \
-            [uniprot for uniprot in uniprots if uniprot in self.bulbs_id_2_matrix_index.keys()]
+        self.entry_point_uniprots_neo4j_ids = \
+            [uniprot for uniprot in uniprots if uniprot in self.neo4j_id_2_matrix_index.keys()]
 
     # TODO: extract as the element performing a computation of the network
     # critical control parameters:
@@ -825,7 +877,7 @@ class InteractomeInterface(object):
         if fast_load:
             payload = self.undump_memoized()
             print ''
-            UP_hash = hashlib.md5(json.dumps(sorted(self.entry_point_uniprots_bulbs_ids), sort_keys=True)).hexdigest()
+            UP_hash = hashlib.md5(json.dumps(sorted(self.entry_point_uniprots_neo4j_ids), sort_keys=True)).hexdigest()
             if payload['sys_hash'] == self.md5_hash() and payload['UP_hash'] == UP_hash:
                 self.current_accumulator, self.node_current = pickle.loads(payload['currents'])
                 self.uniprots_2_voltage_and_circulation = pickle.loads(payload['voltages'])
@@ -833,7 +885,7 @@ class InteractomeInterface(object):
             index_current = cr.get_current_through_nodes(self.current_accumulator)
             log.info('current accumulator shape %s', self.current_accumulator.shape)
             self.node_current.update(
-                dict((self.matrix_index_2_bulbs_id[idx], val) for idx, val in
+                dict((self.matrix_index_2_neo4j_id[idx], val) for idx, val in
                      enumerate(index_current)))
 
             return None
@@ -848,7 +900,7 @@ class InteractomeInterface(object):
         if sparse_samples:
             current_accumulator = cr.sample_group_edge_current(
                 self.laplacian_matrix,
-                [self.bulbs_id_2_matrix_index[UP] for UP in self.entry_point_uniprots_bulbs_ids],
+                [self.neo4j_id_2_matrix_index[UP] for UP in self.entry_point_uniprots_neo4j_ids],
                 re_samples=sparse_samples,
                 cancellation=cancellation)
 
@@ -856,15 +908,15 @@ class InteractomeInterface(object):
             current_accumulator, up_pair_2_voltage_current =\
                 cr.group_edge_current_memoized(
                     self.laplacian_matrix,
-                    [self.bulbs_id_2_matrix_index[UP]
-                     for UP in self.entry_point_uniprots_bulbs_ids],
+                    [self.neo4j_id_2_matrix_index[UP]
+                     for UP in self.entry_point_uniprots_neo4j_ids],
                     cancellation=cancellation,
                     # memoized=memoized,
                     memory_source=self.uniprots_2_voltage_and_circulation)
             # self.uniprots_2_voltage_and_circulation.update(up_pair_2_voltage_current)
             self.UP2UP_voltages.update(
-                dict(((self.matrix_index_2_bulbs_id[i],
-                       self.matrix_index_2_bulbs_id[j]),
+                dict(((self.matrix_index_2_neo4j_id[i],
+                       self.matrix_index_2_neo4j_id[j]),
                       voltage)
                      for (i, j), (voltage, current) in up_pair_2_voltage_current.iteritems()))
 
@@ -876,7 +928,7 @@ class InteractomeInterface(object):
         index_current = cr.get_current_through_nodes(self.current_accumulator)
         log.info('current accumulator shape %s, sum %s', current_accumulator.shape, np.sum(current_accumulator))
         self.node_current.update(
-            dict((self.matrix_index_2_bulbs_id[idx], val) for idx, val in enumerate(index_current)))
+            dict((self.matrix_index_2_neo4j_id[idx], val) for idx, val in enumerate(index_current)))
 
         if memoized:
             self.dump_memoized()
@@ -892,7 +944,7 @@ class InteractomeInterface(object):
         """
         characterization_dict = {}
         limit_current = max(node_current.values()) * limit
-        for NodeID, i in self.bulbs_id_2_matrix_index.iteritems():
+        for NodeID, i in self.neo4j_id_2_matrix_index.iteritems():
             if node_current[NodeID] > limit_current:
                 characterization_dict[NodeID] = [node_current[NodeID],
                                                  self.non_norm_laplacian_matrix[i, i]]
@@ -941,29 +993,29 @@ class InteractomeInterface(object):
         characterization_dict = {}
 
         log.info("Laplacian shape %s", self.laplacian_matrix.shape)
-        log.info("Matrix size %s", max(self.matrix_index_2_bulbs_id.iterkeys()))
+        log.info("Matrix size %s", max(self.matrix_index_2_neo4j_id.iterkeys()))
 
         for NodeID in self.node_current.iterkeys():
-            matrix_index = self.bulbs_id_2_matrix_index[NodeID]
+            matrix_index = self.neo4j_id_2_matrix_index[NodeID]
 
-            if NodeID not in self.bulbs_id_2_display_name.keys():
-                log.warning('bulbs id %s does not seem to appear in the main import set', NodeID)
+            if NodeID not in self.neo4j_id_2_display_name.keys():
+                log.warning('neo4j id %s does not seem to appear in the main import set', NodeID)
                 log.warning('corresponding matrix id is %s', matrix_index)
                 continue
 
-            if not self.bulbs_id_2_display_name[NodeID]:
-                log.warning('bulbs id %s maps to a display ID that is void', NodeID)
+            if not self.neo4j_id_2_display_name[NodeID]:
+                log.warning('neo4j id %s maps to a display ID that is void', NodeID)
                 log.warning('corresponding matrix id is %s', matrix_index)
-                self.bulbs_id_2_display_name[NodeID] = "None"
+                self.neo4j_id_2_display_name[NodeID] = "None"
                 continue
 
             characterization_dict[NodeID] = [
                 str(self.node_current[NodeID]),
-                self.bulbs_id2_node_type[NodeID],
-                self.bulbs_id_2_legacy_id[NodeID],
-                self.bulbs_id_2_display_name[NodeID].replace(',', '-'),
+                self.neo4j_id_2_node_type[NodeID],
+                self.neo4j_id_2_legacy_id[NodeID],
+                self.neo4j_id_2_display_name[NodeID].replace(',', '-'),
                 str(self.laplacian_matrix[matrix_index, matrix_index]),
-                str(float(int(NodeID in self.entry_point_uniprots_bulbs_ids))),
+                str(float(int(NodeID in self.entry_point_uniprots_neo4j_ids))),
                 str(p_value_dict[int(NodeID)][0]),
                 str(-np.log10(p_value_dict[int(NodeID)][0])),
                 str(float(p_value_dict[int(NodeID)][1])),
@@ -975,20 +1027,20 @@ class InteractomeInterface(object):
             field_types=node_char_types,
             node_properties_dict=characterization_dict,
             min_current=0.01,
-            index_2_label=self.matrix_index_2_bulbs_id,
-            label_2_index=self.bulbs_id_2_matrix_index,
+            index_2_label=self.matrix_index_2_neo4j_id,
+            label_2_index=self.neo4j_id_2_matrix_index,
             current_matrix=self.current_accumulator)
         gdf_exporter.write()
 
     def export_subsystem(self, uniprot_system, uniprot_subsystem):
         """
-        Exports the subsystem of reached_uniprots_bulbs_id_list and circulation between
+        Exports the subsystem of reached_uniprots_neo4j_id_list and circulation between
          them based on a larger precalculated system.This is possible only of the memoization
          parameter was on during the execution of "build_extended_circulation_system()"
         function execution.
 
         :param uniprot_system: The set of uniprots for which the larger system was calculated
-        :param uniprot_subsystem: the set of reached_uniprots_bulbs_id_list we are interested in
+        :param uniprot_subsystem: the set of reached_uniprots_neo4j_id_list we are interested in
         :raise Exception: if the set of uniprots for which the larger system was calculated
          doesn't correspond to what is stored in the dumps
         """
@@ -1015,7 +1067,7 @@ class InteractomeInterface(object):
             memoized=False,
             no_add=False):
         """
-        Randomly samples the set of reached_uniprots_bulbs_id_list used to create the model.
+        Randomly samples the set of reached_uniprots_neo4j_id_list used to create the model.
          This is the null model creation routine
 
 

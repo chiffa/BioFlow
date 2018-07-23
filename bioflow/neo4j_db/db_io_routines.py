@@ -630,7 +630,6 @@ def convert_to_internal_ids(base):
     for i, (key, match_list) in enumerate(results_tuple_list):
         if i % breakpoints == 0:
             log.info("\t %.2f %%" % (float(i)/float(size)*100))
-        print key, match_list
         if key not in warn_list:
             for match in match_list:
                 if match[0] == 'UNIPROT':

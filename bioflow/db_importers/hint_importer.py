@@ -30,7 +30,7 @@ def get_uniprots_for_hint():
 
 def cross_ref_hint():
     """
-    Pulls Hint relationships and connects reached_uniprots_bulbs_id_list in the database
+    Pulls Hint relationships and connects reached_uniprots_neo4j_id_list in the database
 
     :return:
     """

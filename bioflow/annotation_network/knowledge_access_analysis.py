@@ -37,7 +37,7 @@ def get_go_interface_instance(param_set=ref_param_set):
 
     go_interface_instance = GeneOntologyInterface(*param_set)
     # go_interface_instance = GO_Interface(_filter, interactome_interface_instance.
-    # all_uniprots_bulbs_id_list, _correlation_factors, True, 3)
+    # all_uniprots_neo4j_id_list, _correlation_factors, True, 3)
     go_interface_instance.load()
     log.info(go_interface_instance.pretty_time())
     return go_interface_instance

@@ -49,7 +49,7 @@ def decide_regeneration():
     A script to decide at what point it is better to recompute a new a network rather
     then go through the time it requires to be upickled.
     The current decision is that for the samples of the size of ~ 100
-    reached_uniprots_bulbs_id_list, we are better off unpickling from 4
+    reached_uniprots_neo4j_id_list, we are better off unpickling from 4
     and more by factor 2 and by factor 10 from 9
     Previous experiments have shown that memoization with pickling incurred no noticeable
     delay on samples of up to
