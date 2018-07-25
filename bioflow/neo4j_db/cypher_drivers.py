@@ -323,7 +323,7 @@ class GraphDBPipe(object):
             tx.commit()
             return edited_nodes
 
-    def batch_retrieve_from_annotation_tags(self, annotation_tags_list, annotations_types, batch_size=50):
+    def batch_retrieve_from_annotation_tags(self, annotation_tags_list, annotations_types, batch_size=1000):
         log.info('Batch retrieval started with %s elements' % len(annotation_tags_list))
         with self._driver.session() as session:
             tx = session.begin_transaction()
