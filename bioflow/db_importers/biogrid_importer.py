@@ -37,9 +37,9 @@ def insert_into_the_database(_up_ids_2_inner_ids, _up_ids_2_properties):
             compops = float(breakpoints)/(time() - previous_time)
             mins_before_termination = int((total_pairs-counter)/compops/60)
 
-            log.info("\t %s %% \t %s" % (float(counter)/float(total_pairs)*100, mins_before_termination))
+            log.info("\t %.2f %% done, finishing in %s min" % (float(counter)/float(total_pairs)*100, mins_before_termination))
 
-            log.debug('inserting link %s out of %s; %.2f complete; inserting speed: %.2f; expected finsihing: %s',
+            log.debug('inserting link %s out of %s; %.2f complete; inserting speed: %.2f; expected finsihing: %s mins',
                       counter + 1,
                       total_pairs,
                       counter / float(total_pairs) * 100,
