@@ -92,7 +92,6 @@ if __name__ == "__main__":
     #     '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Veena data/both_HUM.csv',
     #     ''
     #     # '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/TWIST1_ECAD/All_genes.csv'
-    #     )
 
     # get the bulbs ids if the nodes we would like to analyze
     hits_ids = get_source_bulbs_ids()

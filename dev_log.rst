@@ -4,34 +4,10 @@ TODOs for the project in the future:
 Current refactoring:
 --------------------
 
-
-Pull all instances of neo4j usage
-    - mapping of names to nodes
-    - iteration through nodes
-    - parameters retrieval
-    - edge parameters retrieval
-=> the goals are to cut the layers of abstraction that will no more be needed after bulbflow deletion
-
-Usages so far:
-    - Importers
-    - retrieval of Uniprot nodes => mostly to be able to perform a get fromm, an id
-    - retrieving the GO nodes
-    - generators in the location index lookups
-    - generator when getting all the uniprot nodes
-    - massive usage in the db_io_routines
-
-=> Javascriptify wrapper around the dictionary of node properties?
-=> add a "with" statement
-
-
-=> We can actually re-implement the GraphDatabase instance with the bindings.
-    => Index creation
-    => Index search
-    => Single connections
-    => Multiple connections
-
-This way the refactoring is a bit easier, even though we are loosing potential for optimization.
-
+Connex set seems to be limited to 5560 nodes only - this is somewhat problematic. As well 20 mins spend indexing and attaching is way too long.
+=> add connexity into the index
+=> Include batch-update function.
+=> Test if the previous version of the database had the same problem and check where the problem would be coming from, given we have 59868 nodes ad 16k uniprots reached during the expansion.
 
 We are using Interactome Interface for 5 independent reasons:
     - build the laplacian matrix

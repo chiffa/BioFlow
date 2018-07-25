@@ -343,6 +343,8 @@ class InteractomeInterface(object):
                 # TODO: refactor below: edge_type_filter -> edge_type_filters[edge_type]
                 local_list, count_increase = expand_from_seed(
                     element, edge_type_filter, self.connexity_aware)
+                if edge_type_filter == 'is_weakly_interacting':
+                    print element, local_list, self.connexity_aware
 
                 if len(local_list) > 0:
                     clusters[element] = copy(local_list)
@@ -469,25 +471,25 @@ class InteractomeInterface(object):
         for neo4j_node_id in self.Highest_Set:
             self.neo4j_id_2_matrix_index[neo4j_node_id] = counter
             self.matrix_index_2_neo4j_id[counter] = neo4j_node_id
+
             if on_alternative_graph:
                 node = DatabaseGraph.get(neo4j_node_id)
                 self.neo4j_id_2_display_name[neo4j_node_id] = node.properties['displayName']
-                self.neo4j_id_2_node_type[neo4j_node_id] = node.properties['element_type']
+                self.neo4j_id_2_node_type[neo4j_node_id] = list(node.labels)[0]
                 self.neo4j_id_2_legacy_id[neo4j_node_id] = node.properties['legacyId']
-                if node.element_type == "UNIPROT":
-                    # TODO: there is a problem: there is no UNIPROT nodes reached during the expansion.
+                if list(node.labels)[0] == "UNIPROT":
                     self.reached_uniprots_neo4j_id_list.append(neo4j_node_id)
                     self.uniprot_matrix_index_list.append(counter)
-                if node.localization is not None:
+                if 'localization' in node.properties and node.properties['localization'] is not None:
                     self.neo4j_id_2_localization[neo4j_node_id] = request_location(
                         location_buffer_dict, node.properties['localization'])
+
             else:
                 node = DatabaseGraph.vertices.get(neo4j_node_id)
                 self.neo4j_id_2_display_name[neo4j_node_id] = node.displayName
                 self.neo4j_id_2_node_type[neo4j_node_id] = node.element_type
                 self.neo4j_id_2_legacy_id[neo4j_node_id] = node.ID
                 if node.element_type == "UNIPROT":
-                    # TODO: there is a problem: there is no UNIPROT nodes reached during the expansion.
                     self.reached_uniprots_neo4j_id_list.append(neo4j_node_id)
                     self.uniprot_matrix_index_list.append(counter)
                 if node.localization is not None:
@@ -505,7 +507,7 @@ class InteractomeInterface(object):
                 if neo4j_node_id not in self.reached_uniprots_neo4j_id_list:
                     self.all_uniprots_neo4j_id_list.append(neo4j_node_id)
                     self.neo4j_id_2_display_name[neo4j_node_id] = up_node.properties['displayName']
-                    self.neo4j_id_2_node_type[neo4j_node_id] = up_node.properties['element_type']
+                    self.neo4j_id_2_node_type[neo4j_node_id] = list(up_node.labels)[0]
                     self.neo4j_id_2_legacy_id[neo4j_node_id] = up_node.properties['legacyId']
         else:
             up_generator = _bulb_specific_stable_get_all(DatabaseGraph.UNIPORT)
