@@ -442,7 +442,7 @@ class GeneOntologyInterface(object):
                     if not related_go_nodes:
                         continue  # skip in case GO Node has no outgoing relations to other GO nodes
                     for go_node in related_go_nodes:
-                        if go_node.properties['namespace'] not in self.go_namespace_filter:
+                        if go_node.properties['Namespace'] not in self.go_namespace_filter:
                             continue
                         node_bulbs_id = get_db_id(go_node)
                         if node_bulbs_id not in visited_set:
@@ -457,7 +457,7 @@ class GeneOntologyInterface(object):
                     if not rev_generator:
                         continue
                     for go_node in rev_generator:
-                        if go_node.properties['namespace'] not in self.go_namespace_filter:
+                        if go_node.properties['Namespace'] not in self.go_namespace_filter:
                             continue
                         node_bulbs_id = get_db_id(go_node)
                         if relation_type in self._GOUpTypes:
