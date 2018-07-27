@@ -4,10 +4,23 @@ TODOs for the project in the future:
 Current refactoring:
 --------------------
 
+
+
 Connex set seems to be limited to 5560 nodes only - this is somewhat problematic. As well 20 mins spend indexing and attaching is way too long.
 => add connexity into the index
 => Include batch-update function.
 => Test if the previous version of the database had the same problem and check where the problem would be coming from, given we have 59868 nodes ad 16k uniprots reached during the expansion.
+
+=> This was already the case in the latest parser version and most likely due to the
+
+Next steps, in order:
+    - dump of indexed nodes Legacy Ids and a method to compare them (in the "DB inspection" realm)
+    - Delete dead branches, break dependency on bulbs
+    - build a new docker image
+    - proper statistics for the p-value determination - extreme values
+    - flow to a targeted set
+    - weighted targets flow
+    - modification of laplacian
 
 We are using Interactome Interface for 5 independent reasons:
     - build the laplacian matrix

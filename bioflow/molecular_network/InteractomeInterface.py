@@ -759,6 +759,7 @@ class InteractomeInterface(object):
         reactome_attachments_counter = 0
 
         for uniprot_neo4j_id in self.reached_uniprots_neo4j_id_list:
+
             if on_alternative_graph:
                 reactome_nodes = DatabaseGraph.get_linked(uniprot_neo4j_id, link_type='is_same')
                 if reactome_nodes != []:
