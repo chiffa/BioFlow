@@ -68,12 +68,12 @@ if __name__ == "__main__":
     # reactome_acnum_bindings = pull_up_acc_nums_from_reactome()
     # import_uniprots(uniprot, reactome_acnum_bindings)
     #
-    # cross_ref_hint()
-    # cross_ref_bio_grid()
+    cross_ref_hint()
+    cross_ref_bio_grid()
     #
-    # cross_ref_tf_factors('t')
+    cross_ref_tf_factors('t')
     #
-    # cross_ref_kinases_factors()
+    cross_ref_kinases_factors()
     #
     # insert_complexes()
     #

@@ -375,11 +375,11 @@ if __name__ == "__main__":
     # print [node.id for node in result_list]
     # neo4j_pipe.set_attributes(1, {"bird": "cookoo"})
     # print neo4j_pipe.attach_annotation_tag(44, "Q123541", "UP Acc ID")
-    nodes = neo4j_pipe.get_from_annotation_tag("RNF14", None)
+    nodes = neo4j_pipe.get_from_annotation_tag("P09727", None)
     print nodes
-    super_nodes = neo4j_pipe.batch_retrieve_from_annotation_tags(['RNF14', 'REM1', 'GAG', 'MZT2A', 'FHIT'], None)
-    for node_set in super_nodes:
-        log.info(node_set)
+    # super_nodes = neo4j_pipe.batch_retrieve_from_annotation_tags(['RNF14', 'REM1', 'GAG', 'MZT2A', 'FHIT'], None)
+    # for node_set in super_nodes:
+    #     log.info(node_set)
     # print nodes[0]._values[0].properties['dog']
     # print neo4j_pipe.attach_all_node_annotations(0, {'super': ['wo1', 'wo2'], 'super-duper': ['aka', 'coco']})
     # neo4j_pipe.batch_insert(["Protein", "Complex"], [{'a': 1}, {'a': 2, 'b': 3}])
