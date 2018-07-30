@@ -69,7 +69,7 @@ if __name__ == "__main__":
     # import_uniprots(uniprot, reactome_acnum_bindings)
     #
     # cross_ref_hint()
-    cross_ref_bio_grid()
+    # cross_ref_bio_grid()
     #
     # cross_ref_tf_factors('t')
     #
@@ -77,6 +77,6 @@ if __name__ == "__main__":
     #
     # insert_complexes()
     #
-    run_diagnostics(full_list)
+    # run_diagnostics(full_list)
     #
-    # recompute_forbidden_ids(forbidden_verification_list)
+    recompute_forbidden_ids(forbidden_verification_list)

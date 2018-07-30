@@ -479,11 +479,12 @@ def recompute_forbidden_ids(forbidden_entities_list):
     """
     forbidden_ids_list = set()
     for name in forbidden_entities_list:
-        bulbs_class, _ = neo4j_names_dict[name]
         for forbidden_legacy_id in Leg_ID_Filter:
             if on_alternative_graph:
+                bulbs_class = neo4j_names_dict[name]
                 generator = DatabaseGraph.find({"displayName": forbidden_legacy_id}, bulbs_class)
             else:
+                bulbs_class, _ = neo4j_names_dict[name]
                 generator = bulbs_class.index.lookup(displayName=forbidden_legacy_id)
 
             associated_node_ids = node_generator_2_db_ids(generator)

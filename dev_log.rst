@@ -4,7 +4,7 @@ TODOs for the project in the future:
 Current refactoring:
 --------------------
 
-
+Add a mention for what were the parameters of the launch of the analysis - what was build and where the data was loaded from?
 
 Connex set seems to be limited to 5560 nodes only - this is somewhat problematic. As well 20 mins spend indexing and attaching is way too long.
 => add connexity into the index

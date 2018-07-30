@@ -1158,10 +1158,70 @@ class InteractomeInterface(object):
                              "{0:.2f}".format(sample_size * sparse_rounds / 2 / self._time()),
                              self.pretty_time(), sparse_rounds)
 
+    @staticmethod
+    def compare_dumps(dumps_folder_1, dumps_folder_2):
+        neo4j_id_2_matrix_index_1,\
+        matrix_index_2_neo4j_id_1, _,\
+        neo4j_id_2_legacy_id_1, _, _,\
+        reached_uniprots_neo4j_id_list_1,\
+        all_uniprots_neo4j_id_list_1, _, _, _, _,\
+        _ = undump_object(dumps_folder_1+'/dump2.dump')
+
+        adjacency_matrix_1 = undump_object(dumps_folder_1+'/pickleDump3.dump')
+        legacy_id_2_neo4j_id_1 = dict((value, key) for key, value in neo4j_id_2_legacy_id_1.iteritems())
+
+        neo4j_id_2_matrix_index_2, \
+        matrix_index_2_neo4j_id_2, _, \
+        neo4j_id_2_legacy_id_2, _, _, \
+        reached_uniprots_neo4j_id_list_2, \
+        all_uniprots_neo4j_id_list_2, _, _, _, _, \
+        _ = undump_object(dumps_folder_2 + '/dump2.dump')
+
+        adjacency_matrix_2 = undump_object(dumps_folder_2 + '/pickleDump3.dump')
+        legacy_id_2_neo4j_id_2 = dict((value, key) for key, value in neo4j_id_2_legacy_id_2.iteritems())
+
+        leg_ids_1 = set(neo4j_id_2_legacy_id_1[key] for key in neo4j_id_2_matrix_index_1.keys())
+        leg_ids_2 = set(neo4j_id_2_legacy_id_2[key] for key in neo4j_id_2_matrix_index_2.keys())
+
+        first_but_not_second = leg_ids_1 - leg_ids_2
+        second_but_not_first = leg_ids_2 - leg_ids_1
+
+        log.info('nodes indexed by first laplacian but not second: %s' % first_but_not_second)
+        log.info('nodes indexed by second laplacian but not first: %s' % second_but_not_first)
+
+        first_and_second = leg_ids_1.intersection(leg_ids_2)
+
+        for legacy_id in first_and_second:
+            idx1 = neo4j_id_2_matrix_index_1[legacy_id_2_neo4j_id_1[legacy_id]]
+            idx2 = neo4j_id_2_matrix_index_2[legacy_id_2_neo4j_id_2[legacy_id]]
+
+            connections_1 = set(neo4j_id_2_legacy_id_1[matrix_index_2_neo4j_id_1[idx]] for idx in
+                             adjacency_matrix_1[idx1, :].nonzero()[1].tolist())
+            connections_2 = set(neo4j_id_2_legacy_id_2[matrix_index_2_neo4j_id_2[idx]] for idx in
+                             adjacency_matrix_2[idx2, :].nonzero()[1].tolist())
+
+            cons_f_n_s = connections_1 - connections_2
+            cons_s_n_f = connections_2 - connections_1
+
+            if len(cons_f_n_s) != 0:
+                print len(cons_f_n_s)
+                log.info(
+                    'for %s, connected proteins in first laplacian but not second: %s' % legacy_id,
+                    cons_f_n_s)
+
+            if len(cons_s_n_f) != 0:
+                print len(cons_s_n_f)
+                log.info(
+                    'for %s, connected proteins in first laplacian but not second: %s' % legacy_id,
+                    cons_s_n_f)
+
+
 if __name__ == "__main__":
     interactome_interface_instance = InteractomeInterface(main_connex_only=True,
                                                           full_impact=False)
-    interactome_interface_instance.full_rebuild()
+    interactome_interface_instance.compare_dumps('../dumps/human', '../dumps/human')
+
+    # interactome_interface_instance.full_rebuild()
     # interactome_interface_instance.fast_load()
     # print interactome_interface_instance.pretty_time()
     # print interactome_interface_instance.md5_hash()
