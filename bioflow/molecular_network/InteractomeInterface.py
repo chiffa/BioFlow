@@ -683,8 +683,8 @@ class InteractomeInterface(object):
             if connex_component_index == giant_connex_component_index:
                 if on_alternative_graph:
                     DatabaseGraph.set_attributes(self.matrix_index_2_neo4j_id[i],
-                                                 {'custom':'Main_connex',
-                                                  'main_connex':True})
+                                                 {'custom': 'Main_connex',
+                                                  'main_connex': True})
                 else:
                     bulbs_node = DatabaseGraph.vertices.get(self.matrix_index_2_neo4j_id[i])
                     bulbs_node.custom = 'Main_Connex'
@@ -1190,6 +1190,7 @@ class InteractomeInterface(object):
         log.info('nodes indexed by second laplacian but not first: %s' % second_but_not_first)
 
         first_and_second = leg_ids_1.intersection(leg_ids_2)
+        raw_input('press enter to continue')
 
         for legacy_id in first_and_second:
             idx1 = neo4j_id_2_matrix_index_1[legacy_id_2_neo4j_id_1[legacy_id]]
@@ -1203,23 +1204,27 @@ class InteractomeInterface(object):
             cons_f_n_s = connections_1 - connections_2
             cons_s_n_f = connections_2 - connections_1
 
-            if len(cons_f_n_s) != 0:
-                print len(cons_f_n_s)
+            if len(cons_f_n_s) != 0 or len(cons_s_n_f) != 0:
                 log.info(
-                    'for %s, connected proteins in first laplacian but not second: %s' % legacy_id,
-                    cons_f_n_s)
+                    'links for %s in first laplacian: %s in second laplacian: %s' % (legacy_id,
+                                                                                             connections_1,
+                                                                                             connections_2))
+
+            if len(cons_f_n_s) != 0:
+                log.info(
+                    'for %s, connected proteins in first laplacian but not second: %s' % (legacy_id,
+                    cons_f_n_s))
 
             if len(cons_s_n_f) != 0:
-                print len(cons_s_n_f)
                 log.info(
-                    'for %s, connected proteins in first laplacian but not second: %s' % legacy_id,
-                    cons_s_n_f)
+                    'for %s, connected proteins in first laplacian but not second: %s' % (legacy_id,
+                    cons_s_n_f))
 
 
 if __name__ == "__main__":
     interactome_interface_instance = InteractomeInterface(main_connex_only=True,
                                                           full_impact=False)
-    interactome_interface_instance.compare_dumps('../dumps/human', '../dumps/human')
+    interactome_interface_instance.compare_dumps('/home/andrei/mats_compare/old_mat', '/home/andrei/mats_compare/new_mat')
 
     # interactome_interface_instance.full_rebuild()
     # interactome_interface_instance.fast_load()

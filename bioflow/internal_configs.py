@@ -23,7 +23,7 @@ if on_alternative_graph:
         # Contact_interaction relation group
         "BioGRID_Contact_interaction": ["is_weakly_interacting"],
         # possibly same interaction relations group
-        "possibly_same": ["is_same"],
+        "possibly_same": ["is_possibly_same"],
         # TF factors interaction
         "TRRUST_TF_Regulation": ["is_interacting"]}
 
