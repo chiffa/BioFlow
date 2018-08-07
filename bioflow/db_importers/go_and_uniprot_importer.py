@@ -146,7 +146,18 @@ def pull_up_acc_nums_from_reactome():
                 log.info("\t cross-linking %.2f %% complete" % (float(i)/float(total_nodes)*100.))
 
             tag = annotation_node.properties['tag']
-            reactome_proteins[tag] = DatabaseGraph.get_from_annotation_tag(tag, 'UniProt')
+            node = DatabaseGraph.get_from_annotation_tag(tag, 'UniProt')
+            reactome_proteins[tag] = node
+
+            if '-' in tag:
+                reactome_proteins[tag.split('-')[0]] = node
+            if '_' in tag:
+                reactome_proteins[tag.split('_')[0]] = node
+            if '.' in tag:
+                reactome_proteins[tag.split('.')[0]] = node
+            if ',' in tag:
+                reactome_proteins[tag.split(',')[0]] = node
+
             if reactome_proteins[tag] != 1:
                 log.debug('Cross-linking reactome v.s. acc_num %s mapped to %s proteins',
                           tag, len(reactome_proteins[tag]))
