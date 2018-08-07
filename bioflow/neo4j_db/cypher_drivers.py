@@ -232,25 +232,39 @@ class GraphDBPipe(object):
 
         return result.single()
 
-    def attach_annotation_tag(self, node_id, annotation_tag, tag_type=None):
+    def attach_annotation_tag(self, node_id, annotation_tag, tag_type=None, preferential=False):
         with self._driver.session() as session:
-            annot_tag = session.write_transaction(self._attach_annotation_tag, node_id, annotation_tag, tag_type)
+            annot_tag = session.write_transaction(self._attach_annotation_tag, node_id, annotation_tag, tag_type, preferential)
             return annot_tag
 
     @staticmethod
-    def _attach_annotation_tag(tx, node_id, annotation_tag, tag_type):
+    def _attach_annotation_tag(tx, node_id, annotation_tag, tag_type, preferential):
         if tag_type is None:
             tag_type = 'undefined'
 
-        result = tx.run("MATCH (a) "
-                        "WHERE ID(a) = %s "
-                        "CREATE (b:Annotation) "
-                        "SET b.tag = '%s' "
-                        "SET b.type = '%s' "
-                        "CREATE (a)<-[r:annotates]-(b) "
-                        "RETURN b" % (node_id,
-                                      neo4j_sanitize(annotation_tag),
-                                      neo4j_sanitize(tag_type)))
+        if preferential:
+            result = tx.run("MATCH (a) "
+                            "WHERE ID(a) = %s "
+                            "CREATE (b:Annotation) "
+                            "SET b.tag = '%s' "
+                            "SET b.type = '%s' "
+                            "CREATE (a)<-[r:annotates]-(b) "
+                            "SET r.preferential = True "
+                            "RETURN b" % (node_id,
+                                          neo4j_sanitize(annotation_tag),
+                                          neo4j_sanitize(tag_type)))
+
+        else:
+            result = tx.run("MATCH (a) "
+                            "WHERE ID(a) = %s "
+                            "CREATE (b:Annotation) "
+                            "SET b.tag = '%s' "
+                            "SET b.type = '%s' "
+                            "CREATE (a)<-[r:annotates]-(b) "
+                            "SET r.preferential = False "
+                            "RETURN b" % (node_id,
+                                          neo4j_sanitize(annotation_tag),
+                                          neo4j_sanitize(tag_type)))
 
         return result.single()
 
@@ -272,9 +286,34 @@ class GraphDBPipe(object):
                             "WHERE annotnode.tag = '%s' AND annotnode.type = '%s' "
                             "RETURN target" % (neo4j_sanitize(annotation_tag), neo4j_sanitize(tag_type)))
 
-        return list(set([node['target'] for node in result]))
+        return_puck = list(set([node['target'] for node in result]))
 
-    def attach_all_node_annotations(self, node_id, annot_type_2_annot_list):
+        # the issue here is that sometimes the same tag annotates different nodes and we need a way to distinguishing them.
+        # Thus we check if we have more than one Uniprot returned. If yes, we re-run the query checking for
+
+        node_types = [list(node.labels)[0] for node in return_puck]
+
+        if node_types.count('UNIPROT') > 1:
+            # we need to look for preferential links:
+            if tag_type is None or tag_type == '':
+                result = tx.run("MATCH (annotnode:Annotation)-[r:annotates]->(target) "
+                                "WHERE annotnode.tag = '%s' AND r.preferential = True "
+                                "RETURN target" % neo4j_sanitize(annotation_tag))
+
+            else:
+                result = tx.run("MATCH (annotnode:Annotation)-[r:annotates]->(target) "
+                                "WHERE annotnode.tag = '%s' AND annotnode.type = '%s' AND r.preferential = True "
+                                "RETURN target" % (
+                                neo4j_sanitize(annotation_tag), neo4j_sanitize(tag_type)))
+
+            return_puck = list(set([node['target'] for node in result]))
+            node_types = [list(node.labels)[0] for node in return_puck]
+            if node_types.count('UNIPROT') != 1:
+                log.info('Preferential matching failed: for %s, %s' % (annotation_tag, return_puck))
+
+        return return_puck
+
+    def attach_all_node_annotations(self, node_id, annot_type_2_annot_list, preferential=False):
         with self._driver.session() as session:
             tx = session.begin_transaction()
             annot_nodes = []
@@ -282,7 +321,7 @@ class GraphDBPipe(object):
                 if isinstance(annot_list, basestring):
                     annot_list = [annot_list]
                 for annot_tag in annot_list:
-                    annot_node = self._attach_annotation_tag(tx, node_id, annot_tag, annot_type)
+                    annot_node = self._attach_annotation_tag(tx, node_id, annot_tag, annot_type, preferential)
                     annot_nodes.append(annot_node)
             tx.commit()
             return annot_nodes
@@ -356,6 +395,18 @@ class GraphDBPipe(object):
         tx.run("CREATE INDEX ON :Annotation(tag)")
         tx.run("CREATE INDEX ON :Annotation(tag, type)")
 
+    def check_and_clear(self):
+        with self._driver.session() as session:
+            dirty_nodes = session.write_transaction(self._check_and_clear)
+            return dirty_nodes
+
+    @staticmethod
+    def _check_and_clear(tx):
+        result = tx.run("MATCH (p:Protein)-[:annotates]-(a:Annotation) "
+                        "WHERE NOT (p)-[:is_same]-(:UNIPROT) AND NOT a.tag ENDS WITH '_HUMAN'"
+                        "RETURN p ")
+        return [node for node in result]
+
 
 if __name__ == "__main__":
     neo4j_pipe = GraphDBPipe()
@@ -375,7 +426,7 @@ if __name__ == "__main__":
     # print [node.id for node in result_list]
     # neo4j_pipe.set_attributes(1, {"bird": "cookoo"})
     # print neo4j_pipe.attach_annotation_tag(44, "Q123541", "UP Acc ID")
-    nodes = neo4j_pipe.get_from_annotation_tag("P09727", None)
+    nodes = neo4j_pipe.get_from_annotation_tag("MPP4", None)
     print nodes
     # super_nodes = neo4j_pipe.batch_retrieve_from_annotation_tags(['RNF14', 'REM1', 'GAG', 'MZT2A', 'FHIT'], None)
     # for node_set in super_nodes:
@@ -385,4 +436,6 @@ if __name__ == "__main__":
     # neo4j_pipe.batch_insert(["Protein", "Complex"], [{'a': 1}, {'a': 2, 'b': 3}])
     # neo4j_pipe.batch_link([(25, 26), (25, 1)], [None, 'reaction'], [None, {"weight": 3, "source": "test"}])
     # print neo4j_pipe.batch_set_attributes([0, 1, 2, 44, 45], [{'custom': 'Main_connex'}]*5)
+
+    print neo4j_pipe.check_and_clear()
 

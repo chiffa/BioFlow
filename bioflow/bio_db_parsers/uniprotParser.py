@@ -106,10 +106,17 @@ class UniProtParser(object):
             if 'OrderedLocusNames' in word:
                 for subword in word.split('=')[1].strip().split(','):
                     self._single_up_dict['GeneRefs']['OrderedLocusNames'].append(subword.strip())
-            if 'Name=' in word or 'Synonyms=' in word:
+            if 'Name=' in word:
                 for subword in word.split('=')[1].strip().replace(',', ' ').replace(';', ' ').split():
                     if re.match("^[a-zA-Z0-9_.-]*$", subword):
                         self._single_up_dict['GeneRefs']['Names'].append(subword.strip())
+                    else:
+                        if '{' not in subword:
+                            print "rejected %s: doesn't look like a valid name" % subword
+            if 'Synonyms=' in word:
+                for subword in word.split('=')[1].strip().replace(',', ' ').replace(';', ' ').split():
+                    if re.match("^[a-zA-Z0-9_.-]*$", subword):
+                        self._single_up_dict['GeneRefs']['AltNames'].append(subword.strip())
                     else:
                         if '{' not in subword:
                             print "rejected %s: doesn't look like a valid name" % subword

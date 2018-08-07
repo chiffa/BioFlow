@@ -204,7 +204,7 @@ def manage_acc_nums(acc_num, acc_num_2_reactome_proteins):
         return acc_num_2_reactome_proteins[acc_num]
 
 
-def link_annotation(uniprot_id, p_type, p_load):
+def link_annotation(uniprot_id, p_type, p_load, preferential=False):
     """
     Links a uniprot node to an annotation node
 
@@ -215,7 +215,7 @@ def link_annotation(uniprot_id, p_type, p_load):
     prot_node = Uniprot_memoization_dict[uniprot_id]
 
     if on_alternative_graph:
-        DatabaseGraph.attach_annotation_tag(prot_node.id, p_load, p_type)
+        DatabaseGraph.attach_annotation_tag(prot_node.id, p_load, p_type, preferential)
     else:
         annotation_node = DatabaseGraph.AnnotNode.create(ptype=p_type, payload=p_load)
         DatabaseGraph.is_annotated.create(prot_node, annotation_node)
@@ -242,7 +242,10 @@ def insert_uniprot_annotations(swiss_prot_id, data_container):
         link_annotation(swiss_prot_id, 'UNIPROT_Name', name.upper())
 
     for name in data_container['GeneRefs']['Names']:
-        link_annotation(swiss_prot_id, 'UNIPROT_GeneName', name.upper())
+        link_annotation(swiss_prot_id, 'UNIPROT_GeneName', name.upper(), preferential=True)
+
+    for name in data_container['GeneRefs']['AltNames']:
+        link_annotation(swiss_prot_id, 'UNIPROT_AltGeneName', name.upper())
 
     for name in data_container['GeneRefs']['OrderedLocusNames']:
         link_annotation(swiss_prot_id, 'UNIPROT_GeneOL', name.upper())
