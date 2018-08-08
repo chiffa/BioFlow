@@ -50,15 +50,15 @@ def destroy_db():
 
 if __name__ == "__main__":
     pass
-    clear_all(full_list)
-    run_diagnostics(full_list)
-    insert_reactome()
-    run_diagnostics(full_list)
+    # clear_all(full_list)
+    # run_diagnostics(full_list)
+    # insert_reactome()
+    # run_diagnostics(full_list)
+    #
+    # clear_all(['GO Term'])
 
-    clear_all(['GO Term'])
-
-    go_terms, go_terms_structure = GOTermsParser().parse_go_terms(main_configs.gene_ontology_path)
-    import_gene_ontology(go_terms, go_terms_structure)
+    # go_terms, go_terms_structure = GOTermsParser().parse_go_terms(main_configs.gene_ontology_path)
+    # import_gene_ontology(go_terms, go_terms_structure)
 
     memoize_go_terms()
 

@@ -17,7 +17,6 @@ def neo4j_sanitize(string):
         return string
 
 
-# TODO: add the instructions echo
 class GraphDBPipe(object):
 
     def __init__(self):

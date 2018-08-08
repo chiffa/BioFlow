@@ -21,11 +21,41 @@ Uniprot = { SWISSPROT_ID:{
 import re
 import copy
 from bioflow.utils.log_behavior import get_logger
-from bioflow.internal_configs import interesting_lines, interesting_xrefs,\
-    names_to_ignore, uniprot_load_dict
-
 
 log = get_logger(__name__)
+
+interesting_lines = ['ID', 'AC', 'DE', 'GN', 'OX', 'DR']
+
+interesting_xrefs = ['EMBL', 'GO', 'Pfam', 'Ensembl', 'KEGG', 'PDB', 'GeneID', 'SUPFAM']
+
+names_to_ignore = [
+    'Contains',
+    'Allergen',
+    'EC=',
+    'Flags: ',
+    'CD_antigen',
+    'INN=']
+
+uniprot_load_dict = {
+    'Acnum': [],
+    'Names': {
+        'Full': '',
+        'AltNames': []},
+    'GeneRefs': {
+        'Names': [],
+        'AltNames': [],
+        'OrderedLocusNames': [],
+        'ORFNames': []},
+    'Ensembl': [],
+    'KEGG': [],
+    'EMBL': [],
+    'GO': [],
+    'Pfam': [],
+    'SUPFAM': [],
+    'PDB': [],
+    'GeneID': [],
+    'RefSeq': [],
+    'MGI': []}
 
 
 class UniProtParser(object):
@@ -232,6 +262,8 @@ class UniProtParser(object):
             for sub_element in self.uniprot[key]['Acnum']:
                 access_dict[sub_element] = key
             for sub_element in self.uniprot[key]['GeneRefs']['Names']:
+                access_dict[sub_element] = key
+            for sub_element in self.uniprot[key]['GeneRefs']['AltNames']:
                 access_dict[sub_element] = key
             for sub_element in self.uniprot[key]['GeneRefs']['OrderedLocusNames']:
                 access_dict[sub_element] = key

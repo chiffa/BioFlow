@@ -6,19 +6,25 @@ Current refactoring:
 
 Add a clean-up routine
 
+A more sane clean-up routine:
+    - for every annotation, have a historic annotation and a unified annotation (CAPS, trimmed additional details)
+    - perform searches and matching on the unified annotations.
+    - upon cross-referencing the reactome, upon attachment to a uniprot, redirect all pointers to the uniprot
+=> this is not the most important feature for now, if the hacks work, it is the most important part
+
 
 Add a mention for what were the parameters of the launch of the analysis - what was build and where the data was loaded from?
 
 Connex set seems to be limited to 5560 nodes only - this is somewhat problematic. As well 20 mins spend indexing and attaching is way too long.
 => add connexity into the index
 => Include batch-update function.
-=> Test if the previous version of the database had the same problem and check where the problem would be coming from, given we have 59868 nodes ad 16k uniprots reached during the expansion.
+=> Test if the previous version of the database had the same problem and check where the problem would be coming from, given we have 59868 nodes ad 16k uniprots reached during the expansion.=
 
-=> This was already the case in the latest parser version and most likely due to the
+=> This was already the case in the latest parser version and most likely due to some annaccounted issues.
 
 Next steps, in order:
-    - dump of indexed nodes Legacy Ids and a method to compare them (in the "DB inspection" realm)
-    - Delete dead branches, break dependency on bulbs
+    - (DONE) dump of indexed nodes Legacy Ids and a method to compare them (in the "DB inspection" realm)
+    - (TESTING) Delete dead branches, break dependency on bulbs
     - build a new docker image
     - proper statistics for the p-value determination - extreme values
     - flow to a targeted set

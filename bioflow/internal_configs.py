@@ -81,6 +81,7 @@ annotation_nodes_ptypes = [
     'UniProt',
     'UNIPROT_Acnum',
     'UNIPROT_Name',
+    'UNIPROT_AltName'
     'UNIPROT_GeneName',
     'UNIPROT_GeneRefs',
     'UNIPROT_GeneOL',
@@ -91,34 +92,3 @@ annotation_nodes_ptypes = [
     'UNIPROT_PDB',
     'UNIPROT_GeneID', ]
 
-interesting_lines = ['ID', 'AC', 'DE', 'GN', 'OX', 'DR']
-
-interesting_xrefs = ['EMBL', 'GO', 'Pfam', 'Ensembl', 'KEGG', 'PDB', 'GeneID', 'SUPFAM']
-
-names_to_ignore = [
-    'Contains',
-    'Allergen',
-    'EC=',
-    'Flags: ',
-    'CD_antigen',
-    'INN=']
-
-uniprot_load_dict = {
-    'Acnum': [],
-    'Names': {
-        'Full': '',
-        'AltNames': []},
-    'GeneRefs': {
-        'Names': [],
-        'OrderedLocusNames': [],
-        'ORFNames': []},
-    'Ensembl': [],
-    'KEGG': [],
-    'EMBL': [],
-    'GO': [],
-    'Pfam': [],
-    'SUPFAM': [],
-    'PDB': [],
-    'GeneID': [],
-    'RefSeq': [],
-    'MGI': []}
