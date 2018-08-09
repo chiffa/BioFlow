@@ -196,7 +196,10 @@ class UniProtParser(object):
             for word in words:
                 self._single_up_dict['Acnum'].append(word.split(';')[0])
         if keyword == 'OX':
-            self._single_up_dict['TaxID'] = line.split('NCBI_TaxID=')[1].split(';')[0]
+            tentative_tax_id = line.split('NCBI_TaxID=')[1].split(';')[0]
+            if ' ' in tentative_tax_id:
+                tentative_tax_id = tentative_tax_id.split(' ')[0]
+            self._single_up_dict['TaxID'] = tentative_tax_id
         if keyword == 'DE':
             self.parse_name(line)
         if keyword == 'GN':

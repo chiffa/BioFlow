@@ -4,6 +4,8 @@ TODOs for the project in the future:
 Current refactoring:
 --------------------
 
+Right now, there is an issue with the Complex insertion due to their usage of deprecated Accession IDs
+
 Add a clean-up routine
 
 A more sane clean-up routine:
