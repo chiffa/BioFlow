@@ -23,7 +23,7 @@ if on_alternative_graph:
         # Contact_interaction relation group
         "BioGRID_Contact_interaction": ["is_weakly_interacting"],
         # possibly same interaction relations group
-        "possibly_same": ["is_possibly_same"],
+        "possibly_same": ["is_likely_same"],
         # TF factors interaction
         "TRRUST_TF_Regulation": ["is_interacting"]}
 
@@ -83,6 +83,7 @@ annotation_nodes_ptypes = [
     'UNIPROT_Name',
     'UNIPROT_AltName'
     'UNIPROT_GeneName',
+    'UNIPROT_AltGeneName',
     'UNIPROT_GeneRefs',
     'UNIPROT_GeneOL',
     'UNIPROT_GeneORF',

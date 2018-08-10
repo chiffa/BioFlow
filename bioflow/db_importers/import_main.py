@@ -15,7 +15,8 @@ from bioflow.db_importers.phosphosite_importer import cross_ref_kinases_factors
 from bioflow.db_importers.complex_importer import insert_complexes
 from bioflow.db_importers.go_and_uniprot_importer import memoize_go_terms, import_gene_ontology, \
     import_uniprots, pull_up_acc_nums_from_reactome
-from bioflow.neo4j_db.db_io_routines import recompute_forbidden_ids, clear_all, run_diagnostics
+from bioflow.neo4j_db.db_io_routines import recompute_forbidden_ids, clear_all, run_diagnostics,\
+    cross_link_identifiers
 from bioflow.neo4j_db.graph_content import forbidden_verification_list, full_list
 
 # TODO: add the abundance import
@@ -41,6 +42,8 @@ def build_db():
 
     run_diagnostics(full_list)
 
+    cross_link_identifiers()
+
     recompute_forbidden_ids(forbidden_verification_list)
 
 
@@ -60,23 +63,26 @@ if __name__ == "__main__":
     # go_terms, go_terms_structure = GOTermsParser().parse_go_terms(main_configs.gene_ontology_path)
     # import_gene_ontology(go_terms, go_terms_structure)
 
-    memoize_go_terms()
-
-    clear_all(['UNIPROT'])
-
-    uniprot = UniProtParser(main_configs.up_tax_ids).parse_uniprot(main_configs.uniprot_path)
-    reactome_acnum_bindings = pull_up_acc_nums_from_reactome()
-    import_uniprots(uniprot, reactome_acnum_bindings)
-
-    cross_ref_hint()
-    cross_ref_bio_grid()
-
-    cross_ref_tf_factors('t')
-
-    cross_ref_kinases_factors()
-
-    insert_complexes()
-
-    run_diagnostics(full_list)
+    # memoize_go_terms()
     #
-    recompute_forbidden_ids(forbidden_verification_list)
+    # clear_all(['UNIPROT'])
+
+    # uniprot = UniProtParser(main_configs.up_tax_ids).parse_uniprot(main_configs.uniprot_path)
+
+    # reactome_acnum_bindings = pull_up_acc_nums_from_reactome()
+    # import_uniprots(uniprot, reactome_acnum_bindings)
+    #
+    # cross_ref_hint()
+    # cross_ref_bio_grid()
+    #
+    # cross_ref_tf_factors('t')
+    #
+    # cross_ref_kinases_factors()
+
+    # insert_complexes()
+    #
+    # run_diagnostics(full_list)
+    #
+    cross_link_identifiers()
+    #
+    # recompute_forbidden_ids(forbidden_verification_list)

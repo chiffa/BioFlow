@@ -285,12 +285,13 @@ class GraphDBPipe(object):
                             "WHERE annotnode.tag = '%s' AND annotnode.type = '%s' "
                             "RETURN target" % (neo4j_sanitize(annotation_tag), neo4j_sanitize(tag_type)))
 
-        return_puck = list(set([node['target'] for node in result]))
+        pre_return_puck = list(set([node['target'] for node in result]))
+
 
         # the issue here is that sometimes the same tag annotates different nodes and we need a way to distinguishing them.
         # Thus we check if we have more than one Uniprot returned. If yes, we re-run the query checking for
 
-        node_types = [list(node.labels)[0] for node in return_puck]
+        node_types = [list(node.labels)[0] for node in pre_return_puck]
 
         if node_types.count('UNIPROT') > 1:
             # we need to look for preferential links:
@@ -307,8 +308,17 @@ class GraphDBPipe(object):
 
             return_puck = list(set([node['target'] for node in result]))
             node_types = [list(node.labels)[0] for node in return_puck]
+
             if node_types.count('UNIPROT') != 1:
-                log.info('Preferential matching failed: for %s, %s' % (annotation_tag, return_puck))
+                log.info('Preferential matching failed: for %s, \n \t %s \n \t %s' % (annotation_tag,
+                                                                                      return_puck,
+                                                                                      pre_return_puck))
+
+            if node_types.count('UNIPROT') == 0:
+                return_puck = pre_return_puck
+
+        else:
+            return_puck = pre_return_puck
 
         return return_puck
 
@@ -394,16 +404,19 @@ class GraphDBPipe(object):
         tx.run("CREATE INDEX ON :Annotation(tag)")
         tx.run("CREATE INDEX ON :Annotation(tag, type)")
 
-    def check_and_clear(self):
+    def cross_link_on_annotations(self, annotation_type):
         with self._driver.session() as session:
-            dirty_nodes = session.write_transaction(self._check_and_clear)
+            dirty_nodes = session.write_transaction(self._cross_link_on_annotations, annotation_type)
             return dirty_nodes
 
     @staticmethod
-    def _check_and_clear(tx):
-        result = tx.run("MATCH (p:Protein)-[:annotates]-(a:Annotation) "
-                        "WHERE NOT (p)-[:is_same]-(:UNIPROT) AND NOT a.tag ENDS WITH '_HUMAN'"
-                        "RETURN p ")
+    def _cross_link_on_annotations(tx, annotation_type):
+        result = tx.run("MATCH (b:Annotation)--(m:UNIPROT) "
+                        "WHERE a.tag = b.tag AND a.type = '%s' and m.legacyId <> n.legacyId "
+                        "CREATE (m)-[r:is_likely_same]->(n) "
+                        "CREATE (m)<-[k:is_likely_same]-(n) "
+                        "SET r.linked_on = '%s' "
+                        "SET k.linked_on = '%s' " % (annotation_type, annotation_type, annotation_type))
         return [node for node in result]
 
 
@@ -436,5 +449,5 @@ if __name__ == "__main__":
     # neo4j_pipe.batch_link([(25, 26), (25, 1)], [None, 'reaction'], [None, {"weight": 3, "source": "test"}])
     # print neo4j_pipe.batch_set_attributes([0, 1, 2, 44, 45], [{'custom': 'Main_connex'}]*5)
 
-    print neo4j_pipe.check_and_clear()
+    print neo4j_pipe.cross_link_on_annotations()
 

@@ -655,6 +655,11 @@ def convert_to_internal_ids(base):
     return return_dict
 
 
+def cross_link_identifiers():
+    DatabaseGraph.cross_link_on_annotations('UNIPROT_Accnum')
+    DatabaseGraph.cross_link_on_annotations('UNIPROT_Name')
+    DatabaseGraph.cross_link_on_annotations('UNIPROT_GeneName')
+
 
 # Yes, I know what goes below here is ugly and shouldn't be in the
 # production part of the code

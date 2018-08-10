@@ -238,8 +238,11 @@ def insert_uniprot_annotations(swiss_prot_id, data_container):
     for acc_num in data_container['Acnum']:
         link_annotation(swiss_prot_id, 'UNIPROT_Accnum', acc_num)
 
+    for name in data_container['Names']['Names']:
+        link_annotation(swiss_prot_id, 'UNIPROT_Name', name.upper(), preferential=True)
+
     for name in data_container['Names']['AltNames']:
-        link_annotation(swiss_prot_id, 'UNIPROT_Name', name.upper())
+        link_annotation(swiss_prot_id, 'UNIPROT_AltName', name.upper())
 
     for name in data_container['GeneRefs']['Names']:
         link_annotation(swiss_prot_id, 'UNIPROT_GeneName', name.upper(), preferential=True)
