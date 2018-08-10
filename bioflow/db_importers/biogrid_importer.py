@@ -5,7 +5,7 @@ from bioflow.bio_db_parsers.proteinRelParsers import parse_bio_grid
 from bioflow.utils.log_behavior import get_logger
 from bioflow.main_configs import biogrid_path
 from bioflow.neo4j_db.db_io_routines import convert_to_internal_ids
-from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph, on_alternative_graph
+from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from time import time
 import datetime
 
@@ -47,28 +47,14 @@ def insert_into_the_database(_up_ids_2_inner_ids, _up_ids_2_properties):
                       datetime.datetime.now() + datetime.timedelta(minutes=mins_before_termination))
             previous_time = time()
 
-        if on_alternative_graph:
-            if len(link_parameters) > 1:
-                DatabaseGraph.link(node1_id, node2_id, 'is_weakly_interacting',
-                                   {'source': 'BioGRID', 'throughput': link_parameters[0],
-                                    'confidence': float(link_parameters[1])})
-            else:
-                DatabaseGraph.link(node1_id, node2_id, 'is_weakly_interacting',
-                                   {'source': 'BioGRID', 'throughput': link_parameters[0]})
-
+        if len(link_parameters) > 1:
+            DatabaseGraph.link(node1_id, node2_id, 'is_weakly_interacting',
+                               {'source': 'BioGRID', 'throughput': link_parameters[0],
+                                'confidence': float(link_parameters[1])})
         else:
-            node1 = DatabaseGraph.UNIPORT.get(node1_id)
-            node2 = DatabaseGraph.UNIPORT.get(node2_id)
+            DatabaseGraph.link(node1_id, node2_id, 'is_weakly_interacting',
+                               {'source': 'BioGRID', 'throughput': link_parameters[0]})
 
-            if len(link_parameters) > 1:
-                DatabaseGraph.is_weakly_interacting.create(node1, node2,
-                                                           source='BioGRID',
-                                                           throughput=link_parameters[0],
-                                                           confidence=float(link_parameters[1]))
-            else:
-                DatabaseGraph.is_weakly_interacting.create(node1, node2,
-                                                           source='BioGRID',
-                                                           throughput=link_parameters[0])
 
 
 def cross_ref_bio_grid():

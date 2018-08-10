@@ -24,9 +24,9 @@ from bioflow.main_configs import Dumps, Outputs, interactome_rand_samp
 from bioflow.internal_configs import edge_type_filters, adjacency_matrix_weights, \
     laplacian_matrix_weights
 from bioflow.algorithms_bank import conduction_routines as cr
-from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph, on_alternative_graph
+from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from bioflow.neo4j_db.db_io_routines import expand_from_seed, \
-    erase_custom_fields, node_extend_once, get_db_id, _bulb_specific_stable_get_all
+    erase_custom_fields, node_extend_once, get_db_id
 from bioflow.neo4j_db.graph_content import neo4j_names_dict
 
 
@@ -57,8 +57,6 @@ class InteractomeInterface(object):
     # within the connex part of the graph)
 
     reactions_types_list = ['TemplateReaction', 'Degradation', 'BiochemicalReaction']
-    if not on_alternative_graph:
-        reactions_types_list = [neo4j_names_dict[short_name][0] for short_name in reactions_types_list]
 
     def __init__(self, main_connex_only, full_impact):
         self.connexity_aware = main_connex_only
@@ -289,29 +287,14 @@ class InteractomeInterface(object):
             total_reaction_participants = 0
 
             for ReactionType in self.reactions_types_list:
-                if on_alternative_graph:
-                    for Reaction in DatabaseGraph.get_all(ReactionType):
-                        reaction_participants, reaction_participants_no = node_extend_once(
-                            edge_type_filters["Reaction"], self.connexity_aware, Reaction)
-                        total_reaction_participants += reaction_participants_no
+                for Reaction in DatabaseGraph.get_all(ReactionType):
+                    reaction_participants, reaction_participants_no = node_extend_once(
+                        edge_type_filters["Reaction"], self.connexity_aware, Reaction)
+                    total_reaction_participants += reaction_participants_no
 
-                        if len(reaction_participants) > 1:
-                            reagent_clusters.append(copy(reaction_participants))
-                            seeds.update(reaction_participants)
-
-                else:
-                    if not _bulb_specific_stable_get_all(ReactionType):
-                        continue
-                    for Reaction in _bulb_specific_stable_get_all(ReactionType):
-                        if Reaction is None:
-                            continue
-                        reaction_participants, reaction_participants_no = node_extend_once(
-                            edge_type_filters["Reaction"], self.connexity_aware, Reaction)
-                        total_reaction_participants += reaction_participants_no
-
-                        if len(reaction_participants) > 1:
-                            reagent_clusters.append(copy(reaction_participants))
-                            seeds.update(reaction_participants)
+                    if len(reaction_participants) > 1:
+                        reagent_clusters.append(copy(reaction_participants))
+                        seeds.update(reaction_participants)
 
             return reagent_clusters, seeds, total_reaction_participants
 
@@ -443,17 +426,9 @@ class InteractomeInterface(object):
             if location in _location_buffer_dict.keys():
                 return _location_buffer_dict[location]
             else:
-                if on_alternative_graph:
-                    for location_node in DatabaseGraph.find({'legacyId':location}, 'Location'):
-                        _location_buffer_dict[location] = location_node.properties['displayName']
-                        return location_node.properties['displayName']
-
-                else:
-                    generator = DatabaseGraph.Location.index.lookup(ID=location)
-                    if generator is not None:
-                        for elt in generator:
-                            _location_buffer_dict[location] = str(elt.displayName)
-                            return str(elt.displayName)
+                for location_node in DatabaseGraph.find({'legacyId':location}, 'Location'):
+                    _location_buffer_dict[location] = location_node.properties['displayName']
+                    return location_node.properties['displayName']
 
         #######################################################################
 
@@ -468,53 +443,30 @@ class InteractomeInterface(object):
             self.neo4j_id_2_matrix_index[neo4j_node_id] = counter
             self.matrix_index_2_neo4j_id[counter] = neo4j_node_id
 
-            if on_alternative_graph:
-                node = DatabaseGraph.get(neo4j_node_id)
-                self.neo4j_id_2_display_name[neo4j_node_id] = node.properties['displayName']
-                self.neo4j_id_2_node_type[neo4j_node_id] = list(node.labels)[0]
-                self.neo4j_id_2_legacy_id[neo4j_node_id] = node.properties['legacyId']
-                if list(node.labels)[0] == "UNIPROT":
-                    self.reached_uniprots_neo4j_id_list.append(neo4j_node_id)
-                    self.uniprot_matrix_index_list.append(counter)
-                if 'localization' in node.properties and node.properties['localization'] is not None:
-                    self.neo4j_id_2_localization[neo4j_node_id] = request_location(
-                        location_buffer_dict, node.properties['localization'])
+            node = DatabaseGraph.get(neo4j_node_id)
+            self.neo4j_id_2_display_name[neo4j_node_id] = node.properties['displayName']
+            self.neo4j_id_2_node_type[neo4j_node_id] = list(node.labels)[0]
+            self.neo4j_id_2_legacy_id[neo4j_node_id] = node.properties['legacyId']
+            if list(node.labels)[0] == "UNIPROT":
+                self.reached_uniprots_neo4j_id_list.append(neo4j_node_id)
+                self.uniprot_matrix_index_list.append(counter)
+            if 'localization' in node.properties and node.properties['localization'] is not None:
+                self.neo4j_id_2_localization[neo4j_node_id] = request_location(
+                    location_buffer_dict, node.properties['localization'])
 
-            else:
-                node = DatabaseGraph.vertices.get(neo4j_node_id)
-                self.neo4j_id_2_display_name[neo4j_node_id] = node.displayName
-                self.neo4j_id_2_node_type[neo4j_node_id] = node.element_type
-                self.neo4j_id_2_legacy_id[neo4j_node_id] = node.ID
-                if node.element_type == "UNIPROT":
-                    self.reached_uniprots_neo4j_id_list.append(neo4j_node_id)
-                    self.uniprot_matrix_index_list.append(counter)
-                if node.localization is not None:
-                    self.neo4j_id_2_localization[neo4j_node_id] = request_location(
-                        location_buffer_dict, node.localization)
             counter += 1
 
         self.all_uniprots_neo4j_id_list += self.reached_uniprots_neo4j_id_list
         self.reached_uniprots_neo4j_id_list = list(set(self.reached_uniprots_neo4j_id_list))
         log.info("reached uniprots: %s", len(self.reached_uniprots_neo4j_id_list))
 
-        if on_alternative_graph:
-            for up_node in DatabaseGraph.get_all('UNIPROT'):
-                neo4j_node_id = get_db_id(up_node)
-                if neo4j_node_id not in self.reached_uniprots_neo4j_id_list:
-                    self.all_uniprots_neo4j_id_list.append(neo4j_node_id)
-                    self.neo4j_id_2_display_name[neo4j_node_id] = up_node.properties['displayName']
-                    self.neo4j_id_2_node_type[neo4j_node_id] = list(up_node.labels)[0]
-                    self.neo4j_id_2_legacy_id[neo4j_node_id] = up_node.properties['legacyId']
-        else:
-            up_generator = _bulb_specific_stable_get_all(DatabaseGraph.UNIPORT)
-            if up_generator:
-                for up_node in up_generator:
-                    neo4j_node_id = get_db_id(up_node)
-                    if neo4j_node_id not in self.reached_uniprots_neo4j_id_list:
-                        self.all_uniprots_neo4j_id_list.append(neo4j_node_id)
-                        self.neo4j_id_2_display_name[neo4j_node_id] = up_node.displayName
-                        self.neo4j_id_2_node_type[neo4j_node_id] = up_node.element_type
-                        self.neo4j_id_2_legacy_id[neo4j_node_id] = up_node.ID
+        for up_node in DatabaseGraph.get_all('UNIPROT'):
+            neo4j_node_id = get_db_id(up_node)
+            if neo4j_node_id not in self.reached_uniprots_neo4j_id_list:
+                self.all_uniprots_neo4j_id_list.append(neo4j_node_id)
+                self.neo4j_id_2_display_name[neo4j_node_id] = up_node.properties['displayName']
+                self.neo4j_id_2_node_type[neo4j_node_id] = list(up_node.labels)[0]
+                self.neo4j_id_2_legacy_id[neo4j_node_id] = up_node.properties['legacyId']
 
         self.all_uniprots_neo4j_id_list = list(set(self.all_uniprots_neo4j_id_list))
         log.info("analyzable uniprots: %s", len(self.all_uniprots_neo4j_id_list))
@@ -678,15 +630,9 @@ class InteractomeInterface(object):
                          str("{0:.2f}".format(i / markings_to_do * 10.)))
 
             if connex_component_index == giant_connex_component_index:
-                if on_alternative_graph:
-                    DatabaseGraph.set_attributes(self.matrix_index_2_neo4j_id[i],
-                                                 {'custom': 'Main_connex',
-                                                  'main_connex': True})
-                else:
-                    bulbs_node = DatabaseGraph.vertices.get(self.matrix_index_2_neo4j_id[i])
-                    bulbs_node.custom = 'Main_Connex'
-                    bulbs_node.main_connex = True
-                    bulbs_node.save()
+                DatabaseGraph.set_attributes(self.matrix_index_2_neo4j_id[i],
+                                             {'custom': 'Main_connex',
+                                              'main_connex': True})
 
         log.info("Marking of %s nodes for connexity was done in %s",
                  str(markings_to_do), str(self.pretty_time()))
@@ -757,33 +703,18 @@ class InteractomeInterface(object):
 
         for uniprot_neo4j_id in self.reached_uniprots_neo4j_id_list:
 
-            if on_alternative_graph:
-                reactome_nodes = DatabaseGraph.get_linked(uniprot_neo4j_id, link_type='is_same')
-                if reactome_nodes != []:
-                    self.Uniprot_attachments[uniprot_neo4j_id] = []
-                    for node in reactome_nodes:
-                        self.Uniprot_attachments[uniprot_neo4j_id].append(get_db_id(node))
-                    uniprot_attachments_counter += 1
-                    reactome_attachments_counter += len(self.Uniprot_attachments[uniprot_neo4j_id])
-                    log.debug('attached %s Reactome proteins to the node %s',
-                                      len(self.Uniprot_attachments[uniprot_neo4j_id]),
-                                      uniprot_neo4j_id)
-                else:
-                    log.debug('No attachment for the node %s', uniprot_neo4j_id)
-
+            reactome_nodes = DatabaseGraph.get_linked(uniprot_neo4j_id, link_type='is_same')
+            if reactome_nodes != []:
+                self.Uniprot_attachments[uniprot_neo4j_id] = []
+                for node in reactome_nodes:
+                    self.Uniprot_attachments[uniprot_neo4j_id].append(get_db_id(node))
+                uniprot_attachments_counter += 1
+                reactome_attachments_counter += len(self.Uniprot_attachments[uniprot_neo4j_id])
+                log.debug('attached %s Reactome proteins to the node %s',
+                                  len(self.Uniprot_attachments[uniprot_neo4j_id]),
+                                  uniprot_neo4j_id)
             else:
-                bulbs_node = DatabaseGraph.UNIPORT.get(uniprot_neo4j_id)
-                reactome_bulbs_generator = bulbs_node.bothV("is_same")
-                if reactome_bulbs_generator is not None:
-                    self.Uniprot_attachments[uniprot_neo4j_id] = []
-                    for uniprot_alias in reactome_bulbs_generator:
-                        self.Uniprot_attachments[uniprot_neo4j_id].append(get_db_id(uniprot_alias))
-                    uniprot_attachments_counter += 1
-                    reactome_attachments_counter += len(self.Uniprot_attachments[uniprot_neo4j_id])
-                    log.debug('attached %s Reactome proteins to the node %s',
-                              len(self.Uniprot_attachments[uniprot_neo4j_id]), uniprot_neo4j_id)
-                else:
-                    log.debug('No attachment for the node %s', uniprot_neo4j_id)
+                log.debug('No attachment for the node %s', uniprot_neo4j_id)
 
         log.info('Attached %s reactome protein nodes to %s / %s uniprot nodes',
                  reactome_attachments_counter,
@@ -798,13 +729,9 @@ class InteractomeInterface(object):
         self.undump_maps()
         self.uniprot_matrix_index_list = []
         for swissprot_neo4j_id in self.reached_uniprots_neo4j_id_list:
-            if on_alternative_graph:
-                if DatabaseGraph.get(swissprot_neo4j_id, 'UNIPROT').properties['main_connex']:
-                    self.uniprot_matrix_index_list.append(self.neo4j_id_2_matrix_index[swissprot_neo4j_id])
-            else:
-                bulbs_node = DatabaseGraph.UNIPORT.get(swissprot_neo4j_id)
-                if bulbs_node.main_connex:
-                    self.uniprot_matrix_index_list.append(self.neo4j_id_2_matrix_index[swissprot_neo4j_id])
+            if DatabaseGraph.get(swissprot_neo4j_id, 'UNIPROT').properties['main_connex']:
+                self.uniprot_matrix_index_list.append(self.neo4j_id_2_matrix_index[swissprot_neo4j_id])
+
         log.info('number of indexed uniprots: %s', len(self.uniprot_matrix_index_list))
         self.dump_maps()
 

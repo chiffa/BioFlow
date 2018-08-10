@@ -11,8 +11,6 @@ import os
 
 log = get_logger(__name__)
 
-on_alternative_graph = True
-
 if neo4j_server != 'http://localhost:7474':
     neo4j_server_local = Config(neo4j_server + '/db/data/')
 else:
@@ -130,9 +128,6 @@ if on_rtd or on_unittest:
     DatabaseGraph = Mock()
 
 else:
-    if on_alternative_graph:
-        DatabaseGraph = GraphDBPipe()
-        DatabaseGraph.build_indexes()
-    else:
-        log.debug('graph database interface is connecting to a real DB')
-        DatabaseGraph = Graph()
+    DatabaseGraph = GraphDBPipe()
+    DatabaseGraph.build_indexes()
+

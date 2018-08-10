@@ -2,7 +2,6 @@
 Contains internal configurations that the user might want to act upon. For now, not documented in
 the API_doc, just code comments for the maintainers
 """
-from bioflow.neo4j_db.GraphDeclarator import on_alternative_graph
 
 #  Configures the mappings between concrete edge types and meta-types used for confidence
 # calculation
@@ -10,41 +9,24 @@ from bioflow.neo4j_db.GraphDeclarator import on_alternative_graph
 ## TODO: remove the edge_type_filter - it looks pretty deprecated by now.
 # => replace the
 
-if on_alternative_graph:
-    edge_type_filters = {
-        "Group": ["is_part_of_collection"],
-        # Group relation group
-        "Same": ["is_same"],
-        # Same relation group
-        "Reaction": ["is_catalysant", "is_reaction_participant"],
-        # Reaction relation group
-        "Contact_interaction": ["is_part_of_complex", "is_regulant"],
-        # Contact_interaction relation group
-        "HiNT_Contact_interaction": ["is_interacting"],
-        # Contact_interaction relation group
-        "BioGRID_Contact_interaction": ["is_weakly_interacting"],
-        # possibly same interaction relations group
-        "possibly_same": ["is_likely_same"],
-        # TF factors interaction
-        "TRRUST_TF_Regulation": ["is_interacting"]}
 
-else:
-    edge_type_filters = {
-        "Group": ["is_part_of_collection"],
-        # Group relation group
-        "Same": ["is_same"],
-        # Same relation group
-        "Reaction": ["is_Catalysant", "is_reaction_participant"],
-        # Reaction relation group
-        "Contact_interaction": ["is_part_of_complex", "is_Regulant"],
-        # Contact_interaction relation group
-        "HiNT_Contact_interaction": ["is_interacting"],
-        # Contact_interaction relation group
-        "BioGRID_Contact_interaction": ["is_weakly_interacting"],
-        # possibly same interaction relations group
-        "possibly_same": ["is_possibly_same"],
-        # TF factors interaction
-        "TRRUST_TF_Regulation": ["is_interacting"]}
+edge_type_filters = {
+    "Group": ["is_part_of_collection"],
+    # Group relation group
+    "Same": ["is_same"],
+    # Same relation group
+    "Reaction": ["is_catalysant", "is_reaction_participant"],
+    # Reaction relation group
+    "Contact_interaction": ["is_part_of_complex", "is_regulant"],
+    # Contact_interaction relation group
+    "HiNT_Contact_interaction": ["is_interacting"],
+    # Contact_interaction relation group
+    "BioGRID_Contact_interaction": ["is_weakly_interacting"],
+    # possibly same interaction relations group
+    "possibly_same": ["is_likely_same"],
+    # TF factors interaction
+    "TRRUST_TF_Regulation": ["is_interacting"]}
+
 
 
 #  Defines what nodes are to be masked to avoid conduction overload of non-informative nodes

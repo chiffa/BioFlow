@@ -3,8 +3,7 @@ Set of tools to work with HiNT database
 """
 from bioflow.bio_db_parsers.proteinRelParsers import parse_hint
 from bioflow.main_configs import hint_csv_path
-from bioflow.neo4j_db.db_io_routines import _bulb_specific_memoize_bulbs_type
-from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph, on_alternative_graph
+from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from bioflow.utils.log_behavior import get_logger
 
 
@@ -17,12 +16,10 @@ def get_uniprots_for_hint():
 
     :return:
     """
-    if on_alternative_graph:
-        initial_dict = {}
-        for node in DatabaseGraph.get_all('UNIPROT'):
-            initial_dict[node.properties['legacyId']] = node.id
-    else:
-        initial_dict = _bulb_specific_memoize_bulbs_type(DatabaseGraph.UNIPORT)
+    initial_dict = {}
+    for node in DatabaseGraph.get_all('UNIPROT'):
+        initial_dict[node.properties['legacyId']] = node.id
+
     for key in initial_dict.keys():
         initial_dict[key.split('_')[0]] = initial_dict.pop(key)
     return initial_dict
@@ -54,12 +51,8 @@ def cross_ref_hint():
                 if linked_legacyId in uniprot_ref_dict.keys():
                     actual_cross_links += 1
 
-                    if on_alternative_graph:
-                        DatabaseGraph.link(uniprot_ref_dict[legacyId], uniprot_ref_dict[linked_legacyId],
-                                           'is_interacting', {'source': 'HINT'})
-                    else:
-                        DatabaseGraph.is_interacting.create(
-                            uniprot_ref_dict[legacyId], uniprot_ref_dict[linked_legacyId], source='HINT')
+                    DatabaseGraph.link(uniprot_ref_dict[legacyId], uniprot_ref_dict[linked_legacyId],
+                                       'is_interacting', {'source': 'HINT'})
 
 
     log.info('HINT Cross-links: %s, HINT processed nodes: %s',

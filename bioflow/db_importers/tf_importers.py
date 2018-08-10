@@ -6,7 +6,7 @@ from bioflow.bio_db_parsers.tfParsers import parse_marbach, parse_cellnet_grn, p
 from bioflow.utils.log_behavior import get_logger
 from bioflow.main_configs import marbach_mode, marbach_path, cellnet_path, trrust_path
 from bioflow.neo4j_db.db_io_routines import convert_to_internal_ids
-from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph, on_alternative_graph
+from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from time import time
 import datetime
 
@@ -52,31 +52,14 @@ def insert_into_the_database(up_ids_2_inner_ids,
                       datetime.datetime.now() + datetime.timedelta(seconds=secs_before_termination))
             previous_time = time()
 
-        if on_alternative_graph:
-
-            if link_parameter >= strong_interaction_threshold:
-                DatabaseGraph.link(node1_id, node2_id, 'is_interacting',
-                                   {'source': origin,
-                                    'weight': float(link_parameter)})
-            else:
-                DatabaseGraph.link(node1_id, node2_id, 'is_weakly_interacting',
-                                   {'source': origin,
-                                    'weight': float(link_parameter)})
-
+        if link_parameter >= strong_interaction_threshold:
+            DatabaseGraph.link(node1_id, node2_id, 'is_interacting',
+                               {'source': origin,
+                                'weight': float(link_parameter)})
         else:
-
-            node1 = DatabaseGraph.UNIPORT.get(node1_id)
-            node2 = DatabaseGraph.UNIPORT.get(node2_id)
-
-            if link_parameter >= strong_interaction_threshold:
-                DatabaseGraph.is_interacting.create(node1, node2,
-                                                    source=origin,
-                                                    weight=float(link_parameter))
-
-            else:
-                DatabaseGraph.is_weakly_interacting.create(node1, node2,
-                                                           source=origin,
-                                                           weight=float(link_parameter))
+            DatabaseGraph.link(node1_id, node2_id, 'is_weakly_interacting',
+                               {'source': origin,
+                                'weight': float(link_parameter)})
 
 
 def cross_ref_tf_factors(confs='tcm'):
