@@ -8,6 +8,7 @@ from bioflow.neo4j_db.GraphDeclarator import on_alternative_graph
 # calculation
 
 ## TODO: remove the edge_type_filter - it looks pretty deprecated by now.
+# => replace the
 
 if on_alternative_graph:
     edge_type_filters = {
@@ -55,22 +56,22 @@ Leg_ID_Filter = ['H+', 'ATP', 'GTP', 'Pi', 'H2O', 'ADP', 'PPi', 'GDP', 'O2', 'CO
 line_loss = 1e-10
 
 # Coefficients values for the value_Matrix
-Adjacency_Martix_Dict = {
+adjacency_matrix_weights = {
     "Group": 0.5,
     "Same": 1,
     "Reaction": 0.33,
     "Contact_interaction": 0.33,
     "weak_contact": 0.15,
-    "possibly_same": 0.1, }
+    "is_likely_same": 0.1, }
 
 # Coefficients values for the conductance_Matrix
-Conductance_Matrix_Dict = {
+laplacian_matrix_weights = {
     "Group": 0.5,
     "Same": 100,
     "Reaction": 1,
     "Contact_interaction": 1,
     "weak_contact": 0.5,
-    "possibly_same": 0.1, }
+    "is_likely_same": 100, }
 
 # allowed payload types for the annotation nodes
 annotation_nodes_ptypes = [

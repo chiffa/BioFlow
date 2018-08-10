@@ -51,6 +51,10 @@ to create the object anew in case of need.
 
 # correct the overestimation of flow gain for low-edge nodes in the network.
 
+ADD to the documentation:
+    - management of multicast to accession numbers and gene names.
+        - random returns
+        - cross-linked with 'is_likely_similar' links, that are imported to Laplacian with 
 
 Functional:
 -----------

@@ -21,8 +21,8 @@ from bioflow.utils.gdfExportInterface import GdfExportInterface
 from bioflow.utils.io_routines import write_to_csv, dump_object, undump_object
 from bioflow.utils.log_behavior import get_logger
 from bioflow.main_configs import Dumps, Outputs, interactome_rand_samp
-from bioflow.internal_configs import edge_type_filters, Adjacency_Martix_Dict, \
-    Conductance_Matrix_Dict
+from bioflow.internal_configs import edge_type_filters, adjacency_matrix_weights, \
+    laplacian_matrix_weights
 from bioflow.algorithms_bank import conduction_routines as cr
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph, on_alternative_graph
 from bioflow.neo4j_db.db_io_routines import expand_from_seed, \
@@ -526,26 +526,26 @@ class InteractomeInterface(object):
 
         :param element: tuple of indexes designating elements we are willing to link
         :param index_type: type of the insert, so that the matrix coefficient can be
-        looked up in the Adjacency_Martix_Dict or Conductance_Martix_Dict from the configs file
+        looked up in the adjacency_matrix_weights or Conductance_Martix_Dict from the configs file
         """
         self.adjacency_Matrix[element[0], element[1]] =\
             min(self.adjacency_Matrix[element[0], element[1]] +
-                Adjacency_Martix_Dict[index_type],
+                adjacency_matrix_weights[index_type],
                 1)
 
         self.adjacency_Matrix[element[1], element[0]] = \
             min(self.adjacency_Matrix[element[1], element[0]] +
-                Adjacency_Martix_Dict[index_type],
+                adjacency_matrix_weights[index_type],
                 1)
 
         self.laplacian_matrix[element[0], element[1]] -= \
-            Conductance_Matrix_Dict[index_type]
+            laplacian_matrix_weights[index_type]
         self.laplacian_matrix[element[1], element[0]] -= \
-            Conductance_Matrix_Dict[index_type]
+            laplacian_matrix_weights[index_type]
         self.laplacian_matrix[element[1], element[1]] += \
-            Conductance_Matrix_Dict[index_type]
+            laplacian_matrix_weights[index_type]
         self.laplacian_matrix[element[0], element[0]] += \
-            Conductance_Matrix_Dict[index_type]
+            laplacian_matrix_weights[index_type]
 
     def normalize_laplacian(self):
         """
