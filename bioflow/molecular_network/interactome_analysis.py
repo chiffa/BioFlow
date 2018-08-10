@@ -288,7 +288,7 @@ def compare_to_blank(
      dictionaries otherwise
     """
     if interactome_interface_instance is None:
-        interactome_interface_instance = InteractomeInterface(True, False)
+        interactome_interface_instance = InteractomeInterface(True, True)
         interactome_interface_instance.fast_load()
 
     md5_hash = interactome_interface_instance.md5_hash()
@@ -546,7 +546,7 @@ if __name__ == "__main__":
     # auto_analyze([source], desired_depth=5, processors=6,
     #              background_list=background_list, skip_sampling=True)
 
-    local_matrix = InteractomeInterface(main_connex_only=True, full_impact=False)
+    local_matrix = InteractomeInterface(main_connex_only=True, full_impact=True)
     local_matrix.fast_load()
 
     # spawn_sampler_pool(3, [2], [150], interactome_interface_instance=None)

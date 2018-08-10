@@ -135,11 +135,11 @@ def extractmatrix(matrixtype):
     :return:
     """
     if matrixtype == 'interactome':
-        local_matrix = InteractomeInterface(main_connex_only=True, full_impact=False)
+        local_matrix = InteractomeInterface(main_connex_only=True, full_impact=True)
         local_matrix.full_rebuild()
 
     if matrixtype == 'annotome':
-        local_matrix = InteractomeInterface(main_connex_only=True, full_impact=False)
+        local_matrix = InteractomeInterface(main_connex_only=True, full_impact=True)
         local_matrix.fast_load()
         ref_param_set = [['biological_process'], get_background_bulbs_ids(), (1, 1), True, 3]
         annot_matrix = AnnotomeInterface(*ref_param_set)
@@ -194,7 +194,7 @@ def analyze(matrixtype, depth, processors,):
 
     # TODO: CRICIAL: inject background usage when background switch is available.
     # Refer to the analysis pipeline example for an example
-    interactome_interface_instance = InteractomeInterface(main_connex_only=True, full_impact=False)
+    interactome_interface_instance = InteractomeInterface(main_connex_only=True, full_impact=True)
     interactome_interface_instance.fast_load()
     ref_param_set = [['biological_process'], background_bulbs_ids, (1, 1), True, 3]
 

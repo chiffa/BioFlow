@@ -65,7 +65,7 @@ class GeneOntologyInterface(object):
                  correction_factor=(1, 1),
                  ultraspec_clean=True, ultraspec_lvl=3):
 
-        self.interactome_interface_instance = InteractomeInterface(True, False)
+        self.interactome_interface_instance = InteractomeInterface(True, True)
         self.interactome_interface_instance.fast_load()
         init_set = self.interactome_interface_instance.all_uniprots_neo4j_id_list
 

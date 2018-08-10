@@ -1220,7 +1220,7 @@ class InteractomeInterface(object):
 
 if __name__ == "__main__":
     interactome_interface_instance = InteractomeInterface(main_connex_only=True,
-                                                          full_impact=False)
+                                                          full_impact=True)
     interactome_interface_instance.compare_dumps('/home/andrei/mats_compare/old_mat', '/home/andrei/mats_compare/new_mat')
 
     # interactome_interface_instance.full_rebuild()

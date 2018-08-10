@@ -18,7 +18,7 @@ from matplotlib.cm import get_cmap
 log = get_logger(__name__)
 
 
-interactome_interface_instance = InteractomeInterface(True, False)
+interactome_interface_instance = InteractomeInterface(True, True)
 interactome_interface_instance.fast_load()
 
 md5_hash = interactome_interface_instance.md5_hash()

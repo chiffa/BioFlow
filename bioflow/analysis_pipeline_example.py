@@ -41,7 +41,7 @@ def map_and_save_gene_ids(hit_genes_location, all_detectable_genes_location=''):
 
 def rebuild_the_laplacians(all_detectable_genes=[]):
 
-    local_matrix = InteractomeInterface(main_connex_only=True, full_impact=False)
+    local_matrix = InteractomeInterface(main_connex_only=True, full_impact=True)
     local_matrix.full_rebuild()
 
     _filter = ['biological_process']
