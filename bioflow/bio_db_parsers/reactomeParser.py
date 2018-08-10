@@ -223,7 +223,7 @@ class ReactomeParser(object):
                 local_property.attrib.values()[0][1:])
         if '}entityReference' in local_property.tag:
             # print local_property.attrib.values()[0][1:]
-            # TODO: temporary fix
+            # TODO: temporary fix < HAHAHA
             if not "EntityReference" in local_property.attrib.values()[0][1:]:
                 # pass
                 # print local_property.attrib.values()[0][1:]

@@ -378,7 +378,7 @@ class InteractomeInterface(object):
 
         log.info('Entering retrieval of the connection system of physical entities')
 
-        #TODO: following hte addition of the new types, this part now makes little sense.
+        #TODO: following the addition of new tools, this needs to be refactored for more clarity and to eliminate indirect link names dict
 
         self.ReactLinks, self.InitSet, count = get_reaction_blocks()
         print_characteristics('Reactions', self.ReactLinks, self.InitSet, count)
@@ -994,8 +994,7 @@ class InteractomeInterface(object):
         self.build_extended_conduction_system(memoized=False, sourced=True)
         self.export_conduction_system()
 
-    # TODO: remove memoization: it is not really used anywhere
-    # parameters to remove:
+    # TODO: parameters to remove:
     #   chromosome_specific (not now) we might want instead to implement it otherwise later
     #   memoized => we will never use ti
     def randomly_sample(

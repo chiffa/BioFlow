@@ -408,7 +408,6 @@ def insert_reactome(skip_import='N'):
         pickle.dump(ForbiddenIDs, open(Dumps.Forbidden_IDs, 'w'))
 
 
-    # TODO: add insertion log to prevent the impression of hanging
     if skip_import == 'M':
         get_all_meta_sets()
 

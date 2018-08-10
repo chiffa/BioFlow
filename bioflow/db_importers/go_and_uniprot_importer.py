@@ -170,8 +170,6 @@ def insert_uniprot_annotations(swiss_prot_id, data_container):
     link_annotation(swiss_prot_id, 'UNIPROT_Name',
                     data_container['Names']['Full'])
 
-    # TODO: add more extensive annotation insertion
-
     for acc_num in data_container['Acnum']:
         link_annotation(swiss_prot_id, 'UNIPROT_Accnum', acc_num)
 

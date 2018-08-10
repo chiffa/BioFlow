@@ -618,7 +618,6 @@ class GeneOntologyInterface(object):
         for elt in self.interactome_interface_instance.reached_uniprots_neo4j_id_list:
             node = DatabaseGraph.get(elt, 'UNIPROT')
             alt_id = node.properties['legacyId']
-            # TODO: now can be suppressed
             uniprot_dict[alt_id] = (
                 elt, self.interactome_interface_instance.neo4j_id_2_display_name[elt])
             uniprot_dict[elt] = alt_id

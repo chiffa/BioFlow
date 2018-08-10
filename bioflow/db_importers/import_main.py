@@ -19,9 +19,6 @@ from bioflow.neo4j_db.db_io_routines import recompute_forbidden_ids, clear_all, 
     cross_link_identifiers
 from bioflow.neo4j_db.graph_content import forbidden_verification_list, full_list
 
-# TODO: add the abundance import
-# TODO: add the derivative importance contribution
-
 
 def build_db():
     insert_reactome()

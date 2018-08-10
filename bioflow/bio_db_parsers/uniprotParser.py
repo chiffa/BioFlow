@@ -67,10 +67,8 @@ class UniProtParser(object):
         :param tax_ids_to_parse: list of NCBI taxonomy identifiers we are interested in
         :return:
         """
-        # TODO: below: change to self.interesting_xrefs, lines, names; it is an internal behavior
-        # TODO: default to all supported in case provided are left unfilled ( or [] )
 
-        self._ignore = [False, 2]  # TODO: second element of Ignore does not get used. Is it normal?
+        self._ignore = [False, 2]
         self.interesting_lines = interesting_lines
         self.interesting_xrefs = interesting_xrefs
         self.names_to_ignore = names_to_ignore

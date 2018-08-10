@@ -82,7 +82,6 @@ def spawn_sampler_pool(
     :param chromosome_specific:
     :param interactome_interface_instance:
     """
-    # TODO: a better estimation of execution time
     process_pool = Pool(pool_size)
     payload = [
         (sample_size_list,

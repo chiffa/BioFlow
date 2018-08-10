@@ -51,7 +51,7 @@ class UniprotParserTester(unittest.TestCase):
         # dump_object(cls.ref_parses, (cls.uniprot_dict, cls.acces_dict))
         cls.ref_uniprot_dict, cls.ref_acces_dict = undump_object(cls.ref_parses)
 
-    def test_total(self):  # TODO: in future, expand into a more granular set of tests
+    def test_total(self):
         self.assertDictEqual(self.uniprot_dict, self.ref_uniprot_dict)
         self.assertDictEqual(self.acces_dict, self.ref_acces_dict)
 
