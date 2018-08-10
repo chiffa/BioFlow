@@ -410,15 +410,11 @@ class InteractomeInterface(object):
         self.hint_links, self.pre_full_set = n_expansion(self.UPSet, 'HiNT_Contact_interaction',
                                                          'HiNT Links', 5)
 
+        # TODO: rename the links to make more clear that it's sure vs non-sure links connexion
         self.biogrid_links, self.full_set = n_expansion(self.pre_full_set,
                                                         'BioGRID_Contact_interaction',
                                                         'BioGRID Links', 2)
 
-        # add links from TRRUST
-
-        # add links from Marbach
-
-        # add links from Cell Rel
 
         self.Super_Links, self.ExpSet = n_expansion(self.full_set, 'possibly_same',
                                                     'Looks_similar Links')
@@ -608,7 +604,8 @@ class InteractomeInterface(object):
         insert_expansion_links(self.UP_Links, "Same")
         insert_expansion_links(self.hint_links, "Contact_interaction")
         insert_expansion_links(self.biogrid_links, "weak_contact")
-        insert_expansion_links(self.biogrid_links, "possibly_same")
+        if self.full_impact:
+            insert_expansion_links(self.Super_Links, "possibly_same")
 
         self.non_norm_laplacian_matrix = self.laplacian_matrix.copy()
 
