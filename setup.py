@@ -22,7 +22,6 @@ if not on_rtd:
         'scikit-learn',
         'python-Levenshtein',
         'cython',
-        'bulbs',
         'pymongo',
         'requests',
         'click',
@@ -32,7 +31,6 @@ if not on_rtd:
 
 else:
     requirements = [
-        'bulbs',
         'pymongo',
         'click',
         'requests',

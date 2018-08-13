@@ -5,6 +5,16 @@ from pickle import load, dump
 from csv import reader
 from bioflow.main_configs import Dumps
 from time import time
+import subprocess
+
+
+def get_git_revision_hash():
+    return subprocess.check_output(['git', 'rev-parse', 'HEAD'])
+
+
+def get_git_revision_short_hash():
+    return subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD'])
+
 
 def write_to_csv(filename, array):
     """
@@ -100,4 +110,5 @@ def time_exection(f):
 
 
 if __name__ == "__main":
-    pass
+    print get_git_revision_hash()
+    print get_git_revision_short_hash()

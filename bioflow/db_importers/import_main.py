@@ -50,36 +50,36 @@ def destroy_db():
 
 if __name__ == "__main__":
     pass
-    # clear_all(full_list)
-    # run_diagnostics(full_list)
-    # insert_reactome()
-    # run_diagnostics(full_list)
-    #
-    # clear_all(['GO Term'])
+    clear_all(full_list)
+    run_diagnostics(full_list)
+    insert_reactome()
+    run_diagnostics(full_list)
 
-    # go_terms, go_terms_structure = GOTermsParser().parse_go_terms(main_configs.gene_ontology_path)
-    # import_gene_ontology(go_terms, go_terms_structure)
+    clear_all(['GO Term'])
 
-    # memoize_go_terms()
-    #
-    # clear_all(['UNIPROT'])
+    go_terms, go_terms_structure = GOTermsParser().parse_go_terms(main_configs.gene_ontology_path)
+    import_gene_ontology(go_terms, go_terms_structure)
 
-    # uniprot = UniProtParser(main_configs.up_tax_ids).parse_uniprot(main_configs.uniprot_path)
+    memoize_go_terms()
 
-    # reactome_acnum_bindings = pull_up_acc_nums_from_reactome()
-    # import_uniprots(uniprot, reactome_acnum_bindings)
-    #
-    # cross_ref_hint()
-    # cross_ref_bio_grid()
-    #
-    # cross_ref_tf_factors('t')
-    #
-    # cross_ref_kinases_factors()
+    clear_all(['UNIPROT'])
 
-    # insert_complexes()
-    #
-    # run_diagnostics(full_list)
+    uniprot = UniProtParser(main_configs.up_tax_ids).parse_uniprot(main_configs.uniprot_path)
+
+    reactome_acnum_bindings = pull_up_acc_nums_from_reactome()
+    import_uniprots(uniprot, reactome_acnum_bindings)
+
+    cross_ref_hint()
+    cross_ref_bio_grid()
+
+    cross_ref_tf_factors('t')
+
+    cross_ref_kinases_factors()
+
+    insert_complexes()
+
+    run_diagnostics(full_list)
     #
     cross_link_identifiers()
     #
-    # recompute_forbidden_ids(forbidden_verification_list)
+    recompute_forbidden_ids(forbidden_verification_list)

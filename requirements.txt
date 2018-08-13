@@ -3,7 +3,6 @@ scipy
 matplotlib
 scikit-learn
 cython
-bulbs
 pymongo
 requests
 click
