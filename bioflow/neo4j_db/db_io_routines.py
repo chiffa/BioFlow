@@ -360,8 +360,11 @@ def convert_to_internal_ids(base):
 
 
 def cross_link_identifiers():
+    log.info('Cross-linking the identifiers: Uniprot Acnums')
     DatabaseGraph.cross_link_on_annotations('UNIPROT_Accnum')
+    log.info('Cross-linking the identifiers: Uniprot Names')
     DatabaseGraph.cross_link_on_annotations('UNIPROT_Name')
+    log.info('Cross-linking the identifiers: Uniprot Gene Names')
     DatabaseGraph.cross_link_on_annotations('UNIPROT_GeneName')
 
 

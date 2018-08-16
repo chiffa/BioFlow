@@ -4,6 +4,9 @@ TODOs for the project in the future:
 Current refactoring:
 --------------------
 
+Add the informativity evaluation of the UNIPROT Nodes and GO nodes.
+    => list of GOs + in-depth traversal with writing into the database.
+
 Right now, there is an issue with the Complex insertion due to their usage of deprecated Accession IDs
 
 Add a clean-up routine

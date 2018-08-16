@@ -157,14 +157,14 @@ class UniProtParser(object):
         :return:
         """
         if 'RecName: Full=' in line:
-            self._single_up_dict['Names']['Full'] = line.split('RecName: Full=')[1].split(';')[0]
+            self._single_up_dict['Names']['Full'] = line.split('RecName: Full=')[1].split(';')[0].split('{')[0]
             return ''
         if 'AltName: Full=' in line:
             self._single_up_dict['Names']['AltNames'].append(
-                line.split('AltName: Full=')[1].split(';')[0])
+                line.split('AltName: Full=')[1].split(';')[0].split('{')[0])
             return ''
         if 'Short=' in line:
-            self._single_up_dict['Names']['AltNames'].append(line.split('Short=')[1].split(';')[0])
+            self._single_up_dict['Names']['AltNames'].append(line.split('Short=')[1].split(';')[0].split('{')[0])
             return ''
         if self._ignore[0]:
             if self._ignore[1] == 0:

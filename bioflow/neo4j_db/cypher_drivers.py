@@ -411,7 +411,8 @@ class GraphDBPipe(object):
 
     @staticmethod
     def _cross_link_on_annotations(tx, annotation_type):
-        result = tx.run("MATCH (b:Annotation)--(m:UNIPROT) "
+        result = tx.run("MATCH (a:Annotation)--(n:UNIPROT) "
+                        "MATCH (b:Annotation)--(m:UNIPROT) "
                         "WHERE a.tag = b.tag AND a.type = '%s' and m.legacyId <> n.legacyId "
                         "CREATE (m)-[r:is_likely_same]->(n) "
                         "CREATE (m)<-[k:is_likely_same]-(n) "
