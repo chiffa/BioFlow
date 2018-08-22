@@ -16,6 +16,7 @@ import numpy as np
 from scipy.sparse import lil_matrix
 from scipy.sparse.csgraph import connected_components
 from scipy.sparse.linalg import eigsh
+from itertools import chain
 
 from bioflow.utils.gdfExportInterface import GdfExportInterface
 from bioflow.utils.io_routines import write_to_csv, dump_object, undump_object
@@ -93,6 +94,10 @@ class InteractomeInterface(object):
         self.GroupSet = []
         self.sec_links = {}
         self.sec_set = []
+        self.GroupLinks_2 = {}
+        self.GroupSet_2 = []
+        self.sec_links_2 = {}
+        self.sec_set_2 = []
         self.UP_Links = {}
         self.UPSet = []
         self.pre_full_set = []
@@ -386,9 +391,14 @@ class InteractomeInterface(object):
         self.GroupLinks, self.GroupSet = n_expansion(self.InitSet, 'Group', 'Groups')
 
         self.sec_links, self.sec_set = n_expansion(self.GroupSet, 'Contact_interaction',
-                                                   'Secondary Links', 6)
+                                                   'Reaction Links', 5)
 
-        self.UP_Links, self.UPSet = n_expansion(self.sec_set, 'Same', 'Uniprot Links')
+        self.GroupLinks_2, self.GroupSet_2 = n_expansion(self.sec_set, 'Group', 'Groups')
+
+        self.sec_links_2, self.sec_set_2 = n_expansion(self.GroupSet_2, 'Contact_interaction',
+                                                   'Reaction Links', 3)
+
+        self.UP_Links, self.UPSet = n_expansion(self.sec_set_2, 'Same', 'Uniprot Links')
 
         self.hint_links, self.pre_full_set = n_expansion(self.UPSet, 'HiNT_Contact_interaction',
                                                          'HiNT Links', 5)
@@ -399,8 +409,9 @@ class InteractomeInterface(object):
                                                         'BioGRID Links', 2)
 
 
-        self.Super_Links, self.ExpSet = n_expansion(self.full_set, 'possibly_same',
-                                                    'Looks_similar Links')
+        self.Super_Links, self.ExpSet = n_expansion(self.full_set,
+                                                    'possibly_same',
+                                                    'Looks_similar Links', 3)
 
     # TODO: complexity too high (11); needs to be reduced.
     # Easy: this method actually contains two methods.
@@ -553,11 +564,13 @@ class InteractomeInterface(object):
 
         insert_expansion_links(self.GroupLinks, "Group")
         insert_expansion_links(self.sec_links, "Contact_interaction")
+        insert_expansion_links(self.GroupLinks_2, "Group")
+        insert_expansion_links(self.sec_links_2, "Contact_interaction")
         insert_expansion_links(self.UP_Links, "Same")
         insert_expansion_links(self.hint_links, "Contact_interaction")
         insert_expansion_links(self.biogrid_links, "weak_contact")
         if self.full_impact:
-            insert_expansion_links(self.Super_Links, "possibly_same")
+            insert_expansion_links(self.Super_Links, "is_likely_same")
 
         self.non_norm_laplacian_matrix = self.laplacian_matrix.copy()
 
@@ -1109,6 +1122,15 @@ class InteractomeInterface(object):
         first_but_not_second = leg_ids_1 - leg_ids_2
         second_but_not_first = leg_ids_2 - leg_ids_1
 
+        unfold_dict = {}
+        # for node_id in chain(first_but_not_second, second_but_not_first):
+        #     print node_id
+        #     node = DatabaseGraph.find({'legacyId': node_id})[0]
+        #     unfold_dict[node_id] = (node_id, node.properties['displayName'], node.properties.get('forbidden'))
+        #
+        # first_but_not_second = [unfold_dict[node] for node in first_but_not_second]
+        # second_but_not_first = [unfold_dict[node] for node in second_but_not_first]
+
         log.info('nodes indexed by first laplacian but not second: %s' % first_but_not_second)
         log.info('nodes indexed by second laplacian but not first: %s' % second_but_not_first)
 
@@ -1127,27 +1149,45 @@ class InteractomeInterface(object):
             cons_f_n_s = connections_1 - connections_2
             cons_s_n_f = connections_2 - connections_1
 
-            if len(cons_f_n_s) != 0 or len(cons_s_n_f) != 0:
-                log.info(
-                    'links for %s in first laplacian: %s in second laplacian: %s' % (legacy_id,
-                                                                                             connections_1,
-                                                                                             connections_2))
+            cons_f_n_s = [leg_id for leg_id in cons_f_n_s if not DatabaseGraph.check_connection_permutation(legacy_id, leg_id)]
 
-            if len(cons_f_n_s) != 0:
-                log.info(
-                    'for %s, connected proteins in first laplacian but not second: %s' % (legacy_id,
-                    cons_f_n_s))
+            if len(cons_f_n_s):
 
-            if len(cons_s_n_f) != 0:
-                log.info(
-                    'for %s, connected proteins in first laplacian but not second: %s' % (legacy_id,
-                    cons_s_n_f))
+                if not legacy_id in unfold_dict.keys():
+                    node = DatabaseGraph.find({'legacyId': legacy_id})[0]
+                    unfold_dict[legacy_id] = (
+                        legacy_id, node.properties['displayName'], node.properties.get('forbidden', False))
+
+                for node_id in chain(cons_f_n_s):
+                    if not node_id in unfold_dict.keys():
+                        node = DatabaseGraph.find({'legacyId': node_id})[0]
+                        unfold_dict[node_id] = (
+                        node_id, node.properties['displayName'], node.properties.get('forbidden', False))
+
+                cons_f_n_s = [unfold_dict[node] for node in cons_f_n_s if not unfold_dict[node][1]]
+                # cons_s_n_f = [unfold_dict[node] for node in cons_s_n_f if not unfold_dict[node][2]]
+
+                # if len(cons_f_n_s) != 0 or len(cons_s_n_f) != 0:
+                #     log.info(
+                #         'links for %s in first laplacian: %s in second laplacian: %s' % (legacy_id,
+                #                                                                                  connections_1,
+                #                                                                                  connections_2))
+
+                if len(cons_f_n_s) != 0:
+                    log.info(
+                        'for %s, connected proteins in first laplacian but not second: %s' % (unfold_dict[legacy_id],
+                        cons_f_n_s))
+
+                # if len(cons_s_n_f) != 0:
+                #     log.info(
+                #         'for %s, connected proteins in second laplacian but not first: %s' % (unfold_dict[legacy_id],
+                #         cons_s_n_f))
 
 
 if __name__ == "__main__":
     interactome_interface_instance = InteractomeInterface(main_connex_only=True,
                                                           full_impact=True)
-    interactome_interface_instance.compare_dumps('/home/andrei/mats_compare/old_mat', '/home/andrei/mats_compare/new_mat')
+    interactome_interface_instance.compare_dumps('/home/andrei/mats_compare/old_mat', '/home/andrei/mats_compare/new_mats_4')
 
     # interactome_interface_instance.full_rebuild()
     # interactome_interface_instance.fast_load()

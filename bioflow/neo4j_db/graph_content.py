@@ -32,7 +32,7 @@ forbidden_verification_list = ['Small Molecule',
                                'Physical Entity Collection',
                                'Protein',
                                'Protein Collection',
-                               'UNIPROT'
+                               # 'UNIPROT'
                                ]
 
 
