@@ -420,6 +420,78 @@ class GraphDBPipe(object):
                         "SET k.linked_on = '%s' " % (annotation_type, annotation_type, annotation_type))
         return [node for node in result]
 
+    def count_go_annotation_cover(self):
+        with self._driver.session() as session:
+            session.write_transaction(self._count_direct_coverage)
+            session.write_transaction(self._count_indirect_coverage)
+            session.write_transaction(self._count_up_inf_content)
+
+    @staticmethod
+    def _count_direct_coverage(tx):
+        tx.run("MATCH (n:UNIPROT)--(a:GOTerm) "
+               "WITH a, count(distinct n) as dir_links "
+               "SET a.direct_links = dir_links")
+
+    @staticmethod
+    def _count_indirect_coverage(tx):
+        total_up = tx.run("MATCH (n:UNIPROT) RETURN count(distinct n) as tot_links")
+        total_up = total_up.single()['tot_links'] + 1
+
+        # TODO: as of now, there is a bug for GO terms that only annotate a single uniprot.
+
+        tx.run("MATCH (n:UNIPROT)-[:is_go_annotation]-(b:GOTerm) "
+               "OPTIONAL MATCH (n:UNIPROT)-[:is_go_annotation]->(a:GOTerm)-[:is_a_go*]->(b:GOTerm) "
+               "WITH b, count(distinct n) + toInt(1) as tot_links "
+               "SET b.total_links = tot_links - toInt(1)"
+               "SET b.information_content = log(toFloat(%s))/log(toFloat(tot_links))" % (total_up))
+
+
+    @staticmethod
+    def _count_up_inf_content(tx):
+        tx.run("MATCH (n:UNIPROT)-[:is_go_annotation]-(b:GOTerm) "
+               "OPTIONAL MATCH (n:UNIPROT)-[:is_go_annotation]->(a:GOTerm)-[:is_a_go*]->(b:GOTerm) "
+               "WITH n, sum(b.information_content) as tot_inf "
+               "SET n.total_information = tot_inf")
+
+    def get_preferential_gene_names(self):
+        with self._driver.session() as session:
+            name_maps = session.write_transaction(self._get_preferential_gene_names)
+            return name_maps
+
+    @staticmethod
+    def _get_preferential_gene_names(tx):
+        name_maps = tx.run("MATCH (n:UNIPROT)-[r:annotates]-(a:Annotation) "
+                      "WHERE r.preferential = True AND a.type = 'UNIPROT_GeneName' "
+                      "RETURN n, a")
+
+        name_maps = dict((res['n'].properties['legacyId'], res['a'].properties['tag']) for res in name_maps)
+
+        return name_maps
+
+    def check_connection_permutation(self, legacy_id_1, legacy_id_2):
+        with self._driver.session() as session:
+            legal = session.write_transaction(self._check_connection_permutation, legacy_id_1, legacy_id_2)
+            log.info('checking_permutation')
+            return legal
+
+    @staticmethod
+    def _check_connection_permutation(tx, legacy_id_1, legacy_id_2):
+        name_maps_1 = tx.run("MATCH (n:UNIPROT)--(k:UNIPROT)-[:is_likely_same]-(b) "
+                            "WHERE (n.legacyId = '%s' AND b.legacyId = '%s') "
+                            "OR (n.legacyId = '%s' AND b.legacyId = '%s') "
+                            "RETURN n, k, b" % (legacy_id_1, legacy_id_2, legacy_id_2, legacy_id_1))
+
+        legal = len([result for result in name_maps_1])
+
+        if not legal:
+            name_maps_2 = tx.run("MATCH (n:UNIPROT)-[:is_likely_same]-(u:UNIPROT)--(k:UNIPROT)-[:is_likely_same]-(b) "
+                                "WHERE (n.legacyId = '%s' AND b.legacyId = '%s') "
+                                "OR (n.legacyId = '%s' AND b.legacyId = '%s') "
+                                "RETURN n, u, k, b" % (legacy_id_1, legacy_id_2, legacy_id_2, legacy_id_1))
+            legal = len([result for result in name_maps_2])
+
+        return legal
+
 
 if __name__ == "__main__":
     neo4j_pipe = GraphDBPipe()
@@ -428,7 +500,7 @@ if __name__ == "__main__":
     # print neo4j_pipe.create('Complex', {"chat": "miau", "dog": "waf"})
     # neo4j_pipe.link(1, 3, 'test', {"weight": 2, "source": "Andrei"})
     # print neo4j_pipe.get(0).properties['custom']
-    # print neo4j_pipe.get_all("Protein")
+    # print neo4j_pipe.get_all("Protein")[:10]
     # print neo4j_pipe.delete_all('Complex')
     # print neo4j_pipe.count("Annotation")
     # neo4j_pipe.get_linked(1, 'both', 'test', {"source": "Andrei"})
@@ -439,8 +511,8 @@ if __name__ == "__main__":
     # print [node.id for node in result_list]
     # neo4j_pipe.set_attributes(1, {"bird": "cookoo"})
     # print neo4j_pipe.attach_annotation_tag(44, "Q123541", "UP Acc ID")
-    nodes = neo4j_pipe.get_from_annotation_tag("MPP4", None)
-    print nodes
+    # nodes = neo4j_pipe.get_from_annotation_tag("MPP4", None)
+    # print nodes
     # super_nodes = neo4j_pipe.batch_retrieve_from_annotation_tags(['RNF14', 'REM1', 'GAG', 'MZT2A', 'FHIT'], None)
     # for node_set in super_nodes:
     #     log.info(node_set)
@@ -450,5 +522,7 @@ if __name__ == "__main__":
     # neo4j_pipe.batch_link([(25, 26), (25, 1)], [None, 'reaction'], [None, {"weight": 3, "source": "test"}])
     # print neo4j_pipe.batch_set_attributes([0, 1, 2, 44, 45], [{'custom': 'Main_connex'}]*5)
 
-    print neo4j_pipe.cross_link_on_annotations()
+    # print neo4j_pipe.cross_link_on_annotations()
+
+    print neo4j_pipe.count_go_annotation_cover()
 

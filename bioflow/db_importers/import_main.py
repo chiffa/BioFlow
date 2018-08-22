@@ -16,7 +16,7 @@ from bioflow.db_importers.complex_importer import insert_complexes
 from bioflow.db_importers.go_and_uniprot_importer import memoize_go_terms, import_gene_ontology, \
     import_uniprots, pull_up_acc_nums_from_reactome
 from bioflow.neo4j_db.db_io_routines import recompute_forbidden_ids, clear_all, run_diagnostics,\
-    cross_link_identifiers
+    cross_link_identifiers, compute_annotation_informativity
 from bioflow.neo4j_db.graph_content import forbidden_verification_list, full_list
 
 
@@ -40,6 +40,8 @@ def build_db():
     run_diagnostics(full_list)
 
     cross_link_identifiers()
+
+    compute_annotation_informativity()
 
     recompute_forbidden_ids(forbidden_verification_list)
 
@@ -82,4 +84,6 @@ if __name__ == "__main__":
     #
     # cross_link_identifiers()
     #
-    # recompute_forbidden_ids(forbidden_verification_list)
+    # compute_annotation_informativity()
+    #
+    recompute_forbidden_ids(forbidden_verification_list)
