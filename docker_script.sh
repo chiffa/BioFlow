@@ -7,6 +7,8 @@ docker build -t "bioflow:dockerfile" .
 # To run the container:
 docker run -p biflow:dockerfile
 
+# To run the container after the compose: (in the compose directory)
+docker-compose up -d
 
 
 # basically the idea is to create a volume that would be mounted for every new instance and

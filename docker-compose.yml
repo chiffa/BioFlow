@@ -1,0 +1,40 @@
+version: "2"
+services:
+  neo4j:
+    image: neo4j
+    container_name: "neo4j_bioflow"
+    restart: always
+    expose:
+      - 7474
+      - 7687
+    volumes:
+      - $HOME/docker-neo4j/data:/data
+    environment:
+      - NEO4J_AUTH=neo4j/1345
+  mongodb:
+    image: mongo
+    container_name: "mongo_bioflow"
+    restart: always
+    expose:
+      - 27017
+    environment:
+      - MONGO_DATA_DIR=/data/db
+      - MONGO_LOG_DIR=/dev/null
+    volumes:
+      - $HOME/docker-mongo/db:/data/db
+  bioflow:
+    build: .
+    container_name: "bioflow"
+    stdin_open: true
+    tty: true
+    environment:
+      - NEOPASS=1345
+    depends_on:
+      - mongodb
+      - neo4j
+    links:
+      - mongodb
+      - neo4j
+
+
+
