@@ -436,15 +436,13 @@ class GraphDBPipe(object):
     @staticmethod
     def _count_indirect_coverage(tx):
         total_up = tx.run("MATCH (n:UNIPROT) RETURN count(distinct n) as tot_links")
-        total_up = total_up.single()['tot_links'] + 1
-
-        # TODO: as of now, there is a bug for GO terms that only annotate a single uniprot.
+        total_up = total_up.single()['tot_links']
 
         tx.run("MATCH (n:UNIPROT)-[:is_go_annotation]-(b:GOTerm) "
                "OPTIONAL MATCH (n:UNIPROT)-[:is_go_annotation]->(a:GOTerm)-[:is_a_go*]->(b:GOTerm) "
-               "WITH b, count(distinct n) + toInt(1) as tot_links "
-               "SET b.total_links = tot_links - toInt(1)"
-               "SET b.information_content = log(toFloat(%s))/log(toFloat(tot_links))" % (total_up))
+               "WITH b, count(distinct n) as tot_links "
+               "SET b.total_links = tot_links "
+               "SET b.information_content = log(toFloat(%s)/toFloat(tot_links))" % (total_up))
 
 
     @staticmethod
