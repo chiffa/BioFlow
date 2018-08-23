@@ -5,11 +5,10 @@ Created on Jun 15, 2013
 import pickle
 from bioflow.utils.log_behavior import get_logger
 from bioflow.main_configs import Dumps, reactome_biopax_path, verbosity
-from bioflow.internal_configs import Leg_ID_Filter
+from bioflow.internal_configs import Leg_ID_Filter, neo4j_names_dict
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from bioflow.neo4j_db.db_io_routines import get_db_id
 from bioflow.bio_db_parsers.reactomeParser import ReactomeParser
-from bioflow.neo4j_db.graph_content import neo4j_names_dict
 
 log = get_logger(__name__)
 

@@ -34,6 +34,15 @@ Leg_ID_Filter = ['H+', 'ATP', 'GTP', 'Pi', 'H2O', 'ADP', 'PPi', 'GDP', 'O2', 'CO
                  'Ubiquitin', 'cAMP', 'Actin']
 
 
+forbidden_verification_list = ['Small Molecule',
+                               'Small Molecule Collection',
+                               'Physical Entity',
+                               'Physical Entity Collection',
+                               'Protein',
+                               'Protein Collection',
+                               'UNIPROT'
+                               ]
+
 #  Fudge for matrix diagonalization and other solver functions
 line_loss = 1e-10
 
@@ -76,3 +85,30 @@ annotation_nodes_ptypes = [
     'UNIPROT_PDB',
     'UNIPROT_GeneID', ]
 
+neo4j_names_dict = {
+    'DNA': "DNA",
+    'DNA Collection': "DNA_Collection",
+    'RNA': "RNA",
+    'RNA Collection': "RNA_Collection",
+    'Small Molecule': "SmallMolecule",
+    'Small Molecule Collection': "SmallMolecule_Collection",
+    'Protein': "Protein",
+    'Protein Collection': "Protein_Collection",
+    'Complex': "Complex",
+    'Complex Collection': "Complex_Collection",
+    'Physical Entity': "PhysicalEntity",
+    'Physical Entity Collection': "PhysicalEntity_Collection",
+    'TemplateReaction': "Template_Reaction",
+    'Degradation': "Degradation",
+    'BiochemicalReaction': "BiochemicalReaction",
+    'Pathway Step': "Pathway_Step",
+    'Pathway': "Pathway",
+    'Cell Locations': "Location",
+    'Annotations': "AnnotNode",
+    'Modification Feature': "ModificationFeature",
+    'UNIPROT': "UNIPROT",
+    'GO Term': "GOTerm",
+    'COMPLEX': "COMPLEX",
+}
+
+full_list = list(neo4j_names_dict.keys())

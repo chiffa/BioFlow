@@ -17,7 +17,7 @@ from bioflow.db_importers.go_and_uniprot_importer import memoize_go_terms, impor
     import_uniprots, pull_up_acc_nums_from_reactome
 from bioflow.neo4j_db.db_io_routines import recompute_forbidden_ids, clear_all, run_diagnostics,\
     cross_link_identifiers, compute_annotation_informativity
-from bioflow.neo4j_db.graph_content import forbidden_verification_list, full_list
+from bioflow.internal_configs import forbidden_verification_list, full_list
 
 
 def build_db():
@@ -84,6 +84,6 @@ if __name__ == "__main__":
     #
     # cross_link_identifiers()
     #
-    # compute_annotation_informativity()
+    compute_annotation_informativity()
     #
     recompute_forbidden_ids(forbidden_verification_list)

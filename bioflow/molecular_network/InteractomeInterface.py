@@ -23,13 +23,11 @@ from bioflow.utils.io_routines import write_to_csv, dump_object, undump_object
 from bioflow.utils.log_behavior import get_logger
 from bioflow.main_configs import Dumps, Outputs, interactome_rand_samp
 from bioflow.internal_configs import edge_type_filters, adjacency_matrix_weights, \
-    laplacian_matrix_weights
+    laplacian_matrix_weights, neo4j_names_dict
 from bioflow.algorithms_bank import conduction_routines as cr
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from bioflow.neo4j_db.db_io_routines import expand_from_seed, \
     erase_custom_fields, node_extend_once, get_db_id
-from bioflow.neo4j_db.graph_content import neo4j_names_dict
-
 
 l_norm = False
 # edge_drop = 0.2

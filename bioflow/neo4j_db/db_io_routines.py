@@ -10,9 +10,9 @@ from csv import reader, writer
 from pprint import PrettyPrinter, pprint
 from bioflow.main_configs import forbidden_neo4j_ids, Dumps, analysis_protein_ids_csv, \
     background_protein_ids_csv, verbosity
-from bioflow.internal_configs import edge_type_filters, Leg_ID_Filter, annotation_nodes_ptypes
+from bioflow.internal_configs import edge_type_filters, Leg_ID_Filter, annotation_nodes_ptypes, \
+    neo4j_names_dict, forbidden_verification_list, full_list
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
-from bioflow.neo4j_db.graph_content import neo4j_names_dict, full_list, forbidden_verification_list
 from bioflow.utils.log_behavior import get_logger
 from bioflow.utils.io_routines import write_to_csv, memoize, time_exection
 

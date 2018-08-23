@@ -7,7 +7,7 @@ from bioflow.bio_db_parsers.geneOntologyParser import GOTermsParser
 from bioflow.bio_db_parsers.uniprotParser import UniProtParser
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from bioflow.neo4j_db.db_io_routines import get_db_id
-from bioflow.neo4j_db.graph_content import neo4j_names_dict
+from bioflow.internal_configs import neo4j_names_dict
 
 log = get_logger(__name__)
 
