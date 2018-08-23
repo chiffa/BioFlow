@@ -18,8 +18,10 @@ RUN apt-get -yq install libsuitesparse-dev
 RUN apt-get -yq install wget
 RUN apt-get -yq install git
 RUN apt-get -yq install curl
+RUN apt-get -yq install unzip
 #RUN apt-get -yq install nohup
 RUN apt-get -yq install lsof
+RUN apt-get update
 RUN apt-get -yq install libsm6 libxrender1 libfontconfig1 libglib2.0-0
 
 # install minicoda
@@ -40,10 +42,13 @@ RUN conda install python="2.7" cython scikit-learn
 # clone the project into the test environement:
 RUN mkdir /home/ank/datastore
 RUN cd /home/ank
-RUN git clone https://github.com/chiffa/BioFlow.git
+ADD https://github.com/chiffa/BioFlow/archive/master.zip BioFlow.zip
+RUN ls -l
+RUN unzip BioFlow.zip
+RUN /bin/bash -c "cd /BioFlow-master/; ls"
 
 # install project requirements:
-RUN /bin/bash -c "cd /BioFlow/; pip install requirements -r requirements.txt"
+RUN /bin/bash -c "cd /BioFlow-master/; pip install requirements -r requirements.txt"
 
 # TODO: is this still true?
 # you will need to connect to the container and run those commands to get the databases up

@@ -31,12 +31,14 @@ services:
       - NEOPASS=1345
       - NEO4URL=bolt://neo4j:7687
       - MONGOURL=mongodb://mongodb:27017/
+    volumes:
+      - $HOME/bioflow/source:/source
+      - $HOME/bioflow/data:/data
     depends_on:
       - mongodb
       - neo4j
     links:
       - mongodb
       - neo4j
-    # TODO: Add environment variable for the neo4j and mongodb locations => configs?
 
 

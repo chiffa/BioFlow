@@ -3,9 +3,11 @@
 # To build container:
 docker build -t "bioflow:dockerfile" .
 
-
 # To run the container:
 docker run -p biflow:dockerfile
+
+# To build the container after the compose:
+docker-compose build
 
 # To run the container after the compose: (in the compose directory)
 docker-compose up -d
