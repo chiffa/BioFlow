@@ -27,8 +27,9 @@ Sources = parse_config('sources')
 DB_locations = parse_config('online_dbs')
 
 # SERVERS CONFIGURATIONS
-mongo_db_url = Servers['PRODUCTION']['mongodb_server']
-neo4j_server = Servers['PRODUCTION']['server_neo4j']
+
+mongo_db_url = os.getenv('MONGOURL', Servers['PRODUCTION']['mongodb_server'])
+neo4j_server = os.getenv('NEO4URL', Servers['PRODUCTION']['server_neo4j'])
 source_db_paths = compute_full_paths(Sources, DB_locations, Servers['PRODUCTION'])
 verbosity = int(Options['VERBOSITY']['level'])
 
