@@ -84,6 +84,6 @@ if __name__ == "__main__":
     #
     # cross_link_identifiers()
     #
-    compute_annotation_informativity()
+    # compute_annotation_informativity()
     #
-    recompute_forbidden_ids(forbidden_verification_list)
+    # recompute_forbidden_ids(forbidden_verification_list)

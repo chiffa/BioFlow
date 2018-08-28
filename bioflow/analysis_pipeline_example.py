@@ -85,7 +85,8 @@ if __name__ == "__main__":
     #                                                  '')
 
     hits_ids, background_ids = map_and_save_gene_ids(
-        '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/TWIST1_ECAD/Hits.csv',
+        # '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/TWIST1_ECAD/Hits.csv',
+        '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Kp_Km data/top_100_hum.csv',
         '')
 
     # hits_ids, background_ids = map_and_save_gene_ids(

@@ -16,6 +16,8 @@ from bioflow.neo4j_db import db_io_routines
 
 log = get_logger(__name__)
 
+# TODO: implement regression + leftover
+
 pre_dict = {1: 0.80,
             2: 0.89,
             3: 0.92,

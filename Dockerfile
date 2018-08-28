@@ -1,4 +1,4 @@
-FROM ubuntu:14.04
+FROM ubuntu:18.04
 # change to continuumio/anaconda
 
 RUN export DEBIAN_FRONTEND=noninteractive
@@ -26,7 +26,7 @@ RUN apt-get -yq install libsm6 libxrender1 libfontconfig1 libglib2.0-0
 
 # install minicoda
 RUN cd /home/ank
-RUN wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
+ADD https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh miniconda.sh
 RUN bash miniconda.sh -b -p /home/ank/miniconda
 ENV PATH="/home/ank/miniconda/bin:${PATH}"
 RUN hash -r
@@ -34,21 +34,30 @@ RUN conda config --set always_yes yes --set changeps1 no
 RUN conda update -q conda
 RUN rm miniconda.sh
 
-# create and activate test environement:
 RUN conda create -q -n test-environement python="2.7" numpy scipy matplotlib
 RUN /bin/bash -c "source activate test-environement"
 RUN conda install python="2.7" cython scikit-learn
 
+#FROM continuumio/anaconda
+#MAINTAINER "Andrei Kucharavy <ank@andreikucharavy.com>"
+#
+#RUN export DEBIAN_FRONTEND=noninteractive
+#RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
+#
+#RUN apt-get update && \
+#    apt-get -yq install git unzip && \
+#    apt-get -yq install build-essential build-essential libsuitesparse-dev && \
+#    apt-get -yq install lsof libsm6 libxrender1 libfontconfig1 libglib2.0-0
+#
+#RUN /opt/conda/bin/conda install numpy scipy matplotlib -y && \
+#    /opt/conda/bin/conda install cython scikit-learn -y
+
 # clone the project into the test environement:
-RUN mkdir /home/ank/datastore
-RUN cd /home/ank
 ADD https://github.com/chiffa/BioFlow/archive/master.zip BioFlow.zip
-RUN ls -l
 RUN unzip BioFlow.zip
-RUN /bin/bash -c "cd /BioFlow-master/; ls"
 
 # install project requirements:
-RUN /bin/bash -c "cd /BioFlow-master/; pip install requirements -r requirements.txt"
+RUN cd /BioFlow-master/; pip install requirements -r requirements.txt
 
 # TODO: is this still true?
 # you will need to connect to the container and run those commands to get the databases up
