@@ -4,37 +4,20 @@ TODOs for the project in the future:
 Current refactoring:
 --------------------
 
-Add the informativity evaluation of the UNIPROT Nodes and GO nodes.
-    => list of GOs + in-depth traversal with writing into the database.
-
-Right now, there is an issue with the Complex insertion due to their usage of deprecated Accession IDs
-
-Add a clean-up routine
-
-A more sane clean-up routine:
-    - for every annotation, have a historic annotation and a unified annotation (CAPS, trimmed additional details)
-    - perform searches and matching on the unified annotations.
-    - upon cross-referencing the reactome, upon attachment to a uniprot, redirect all pointers to the uniprot
-=> this is not the most important feature for now, if the hacks work, it is the most important part
-
-
 Add a mention for what were the parameters of the launch of the analysis - what was build and where the data was loaded from?
-
-Connex set seems to be limited to 5560 nodes only - this is somewhat problematic. As well 20 mins spend indexing and attaching is way too long.
-=> add connexity into the index
-=> Include batch-update function.
-=> Test if the previous version of the database had the same problem and check where the problem would be coming from, given we have 59868 nodes ad 16k uniprots reached during the expansion.=
-
-=> This was already the case in the latest parser version and most likely due to some annaccounted issues.
 
 Next steps, in order:
     - (DONE) dump of indexed nodes Legacy Ids and a method to compare them (in the "DB inspection" realm)
-    - (TESTING) Delete dead branches, break dependency on bulbs
-    - build a new docker image
+    - (DONE) Delete dead branches, break dependency on bulbs
+        - think if we could do testing for a neo4j build
+    - (DONE) build a new docker image
     - proper statistics for the p-value determination - extreme values
     - flow to a targeted set
     - weighted targets flow
     - modification of laplacian
+    - switch to python 3
+        - Check if travis can do the testing for both samples
+        - Check if we can find the tools that can perform automated conversion.
 
 We are using Interactome Interface for 5 independent reasons:
     - build the laplacian matrix
@@ -57,7 +40,8 @@ to create the object anew in case of need.
 ADD to the documentation:
     - management of multicast to accession numbers and gene names.
         - random returns
-        - cross-linked with 'is_likely_similar' links, that are imported to Laplacian with 
+        - cross-linked with 'is_likely_similar' links, that are imported to Laplacian with
+
 
 Functional:
 -----------
