@@ -62,7 +62,7 @@ laplacian_matrix_weights = {
     "Reaction": 1,
     "Contact_interaction": 1,
     "weak_contact": 0.5,
-    "is_likely_same": 10, }
+    "is_likely_same": 1, }
 
 # allowed payload types for the annotation nodes
 annotation_nodes_ptypes = [

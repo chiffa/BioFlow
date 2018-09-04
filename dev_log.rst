@@ -4,6 +4,13 @@ TODOs for the project in the future:
 Current refactoring:
 --------------------
 
+There still seem to be a problem of regular convergence to the same paths in the network. Potential sources:
+    - borked topology
+    - current intensity between the interconnected nodes (potentially resolved)
+    - tight clusters due to cross-linking that disperse the network
+
+=> Build an export of the sampling current weights to figure out which nodes are offending.
+
 Add a mention for what were the parameters of the launch of the analysis - what was build and where the data was loaded from?
 
 Next steps, in order:

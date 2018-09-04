@@ -977,7 +977,7 @@ class InteractomeInterface(object):
             field_names=node_char_names,
             field_types=node_char_types,
             node_properties_dict=characterization_dict,
-            min_current=0.01,
+            min_current=0.0001,
             index_2_label=self.matrix_index_2_neo4j_id,
             label_2_index=self.neo4j_id_2_matrix_index,
             current_matrix=self.current_accumulator)
