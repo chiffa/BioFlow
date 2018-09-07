@@ -39,28 +39,30 @@ def get_interactome_interface():
 
 
 # TODO: defined only as an auxilary to the spawn_sampler_pool => inline that in the sampler pool
-def spawn_sampler(sample_size_list_plus_iteration_list_plus_args):
+def spawn_sampler(args_puck):
     """
     Spawns a sampler initialized from the default GO_Interface.
 
-    :param sample_size_list_plus_iteration_list_plus_args: combined list of sample sizes and
+    :param args_puck: combined list of sample sizes and
     iterations (required for Pool.map usage)
     """
-    interactome_interface_instance_arg = sample_size_list_plus_iteration_list_plus_args[4]
+    interactome_interface_instance_arg = args_puck[3]
+
     if interactome_interface_instance_arg is None:
         interactome_interface_instance = get_interactome_interface()
     else:
         interactome_interface_instance = interactome_interface_instance_arg
 
-    sample_size_list = sample_size_list_plus_iteration_list_plus_args[0]
-    iteration_list = sample_size_list_plus_iteration_list_plus_args[1]
-    sparse_rounds = sample_size_list_plus_iteration_list_plus_args[2]
-    chromosome_specific = sample_size_list_plus_iteration_list_plus_args[3]  # TODO: remove that
+    sample_size_list = args_puck[0]
+    iteration_list = args_puck[1]
+    sparse_rounds = args_puck[2]
+
     interactome_interface_instance.randomly_sample(
         sample_size_list,
         iteration_list,
         sparse_rounds,
-        chromosome_specific)
+    )
+
     # TODO: remove chromosome-specificity. We are performing this analysis otherwise.
 
 
@@ -69,7 +71,6 @@ def spawn_sampler_pool(
         sample_size_list,
         interaction_list_per_pool,
         sparse_rounds=False,
-        chromosome_specific=False,
         interactome_interface_instance=None):
     """
     Spawns a pool of samplers of the information flow within the GO system
@@ -79,7 +80,6 @@ def spawn_sampler_pool(
     :param interaction_list_per_pool: number of iterations performing the pooling of the samples
      in each list
     :param sparse_rounds:
-    :param chromosome_specific:
     :param interactome_interface_instance:
     """
     process_pool = Pool(pool_size)
@@ -87,7 +87,6 @@ def spawn_sampler_pool(
         (sample_size_list,
          interaction_list_per_pool,
          sparse_rounds,
-         chromosome_specific,
          interactome_interface_instance)]
     log.debug('spawning the sampler with payload %s', payload)
     process_pool.map(spawn_sampler, payload * pool_size)
@@ -146,11 +145,15 @@ def show_test_statistics(
     :param sparse: True if we are showing test statistics of a sparse kernel run
     :return:
     """
+    # TODO: idea for the improved statistics, cluster a test node of degree k with 100 nodes with
+    #  closest degrees
+
     fig = plt.figure()
     fig.set_size_inches(30, 20)
 
     plt.subplot(331)
     plt.title('current through nodes')
+
     bins = np.linspace(
         bi_corr_array[0, :].min(),
         bi_corr_array[0, :].max(), 100)
