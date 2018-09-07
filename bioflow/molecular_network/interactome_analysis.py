@@ -12,7 +12,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from bioflow.algorithms_bank.conduction_routines import perform_clustering
-from bioflow.main_configs import interactome_rand_samp, Outputs, Dumps, estimated_comp_ops
+from bioflow.main_configs import interactome_rand_samp_db, Outputs, Dumps, estimated_comp_ops
 from bioflow.molecular_network.InteractomeInterface import InteractomeInterface
 from bioflow.utils.dataviz import kde_compute
 from bioflow.utils.log_behavior import get_logger
@@ -63,8 +63,6 @@ def spawn_sampler(args_puck):
         sparse_rounds,
     )
 
-    # TODO: remove chromosome-specificity. We are performing this analysis otherwise.
-
 
 def spawn_sampler_pool(
         pool_size,
@@ -110,181 +108,63 @@ def local_indexed_select(bi_array, array_column, selection_span):
     return filtered_bi_array
 
 
-
-# TODO: there is a lot of repetition depending on which values are the biggest,
-# test-sets or real sets. In all, we should be able to reduce it to two functions:
-# scatter plot and histogram with two sets that should go into the dataviz module
-# TODO: too complex (McCabe 14)
-def show_test_statistics(
-        bi_corr_array,
-        mean_correlations,  # shutdown if sparse
-        eigenvalues,        # shutdown if sparse
-        selector,
-        test_bi_corr_array,
-        test_mean_corr,     # shutdown if sparse
-        eigenvalue,         # shutdown fi sparse
-        re_samples,
-        sparse=False):
+def samples_scatter_and_hist(background_curr_deg_conf, true_sample_bi_corr_array):
     """
     A general function that performs demonstration of an example of random samples of
      the same size as our sample and of our sample and conducts the statistical tests
      on wherther any of nodes or functional groups in our sample are non-random
 
-    :param bi_corr_array: [[current, informativity, confusion_potential], ...] -
+    :param background_curr_deg_conf: [[current, informativity, confusion_potential], ...] -
     characteristics of the random samples
-    :param mean_correlations: [[cluster size, average internode connection], ...] -
-    characteristics of clustering random samples with the same parameters
-    :param eigenvalues: eigenvalues associated to the interconnection matrix of random samples
-    :param selector: range on which we would like to visually zoom and plot a histogram
-    :param test_bi_corr_array: [[current, informativity, confusion_potential], ...] -
+    :param true_sample_bi_corr_array: [[current, informativity, confusion_potential], ...] -
     characteristics of the true sample. If none, nothing happens
-    :param test_mean_corr: [[cluster size, average internode connection], ...] -
-    characteristics of clustering the true sample
-    :param eigenvalue: eigenvalues associated to the interconnection matrix of the true sample
-    :param re_samples: how many random samples we analyzed for the default model
-    :param sparse: True if we are showing test statistics of a sparse kernel run
-    :return:
+    :return: None
     """
-    # TODO: idea for the improved statistics, cluster a test node of degree k with 100 nodes with
-    #  closest degrees
 
     fig = plt.figure()
     fig.set_size_inches(30, 20)
 
-    plt.subplot(331)
+    plt.subplot(211)
     plt.title('current through nodes')
 
     bins = np.linspace(
-        bi_corr_array[0, :].min(),
-        bi_corr_array[0, :].max(), 100)
+        background_curr_deg_conf[0, :].min(),
+        background_curr_deg_conf[0, :].max(), 100)
 
-    if test_bi_corr_array is not None:
-        bins = np.linspace(min(bi_corr_array[0, :].min(), test_bi_corr_array[0, :].min()),
-                           max(bi_corr_array[0, :].max(), test_bi_corr_array[0, :].max()),
+    if true_sample_bi_corr_array is not None:
+        bins = np.linspace(min(background_curr_deg_conf[0, :].min(), true_sample_bi_corr_array[0, :].min()),
+                           max(background_curr_deg_conf[0, :].max(), true_sample_bi_corr_array[0, :].max()),
                            100)
-    plt.hist(bi_corr_array[0, :],
+
+    plt.hist(background_curr_deg_conf[0, :],
              bins=bins, histtype='step', log=True, color='b')
-    if test_bi_corr_array is not None:
-        plt.hist(test_bi_corr_array[0, :],
+
+    if true_sample_bi_corr_array is not None:
+        plt.hist(true_sample_bi_corr_array[0, :],
                  bins=bins, histtype='step', log=True, color='r')
 
-    plt.subplot(332)
-    plt.title('test current vs degree')
-    plt.scatter(bi_corr_array[1, :], bi_corr_array[0, :])
-    if test_bi_corr_array is not None:
-        plt.scatter(test_bi_corr_array[1, :], test_bi_corr_array[0, :],
+    plt.subplot(212)
+    plt.scatter(background_curr_deg_conf[1, :], background_curr_deg_conf[0, :])
+
+    if true_sample_bi_corr_array is not None:
+        plt.scatter(true_sample_bi_corr_array[1, :], true_sample_bi_corr_array[0, :],
                     color='r', alpha=0.5)
-    plt.axvspan(selector[0], selector[1], facecolor='0.5', alpha=0.3)
 
-    plt.subplot(333)
-    plt.title('Currently empty')
-
-    plt.subplot(334)
-    plt.title('Gaussian KDE current_info')
-    estimator_function = kde_compute(bi_corr_array[(1, 0), :], 50, re_samples)
-    base_bi_corr = bi_corr_array[(0, 1), :]
-
-    current_info_rel = None
-    current_rel_base = []
-    current_std_base = []
-    if test_bi_corr_array is not None:
-        current_info_rel = estimator_function(test_bi_corr_array[(1, 0), :])
-
-        for point in test_bi_corr_array.T:
-            selector = np.logical_and(base_bi_corr[1, :] > point[1]*0.9, base_bi_corr[1, :] < point[1]*1.1)
-            current_rel_base.append(point[0]/np.mean(base_bi_corr[0, selector]))
-            current_std_base.append((point[0]-np.mean(base_bi_corr[0, selector]))/np.std(base_bi_corr[0, selector]))
-
-        current_rel_base = np.array(current_rel_base)
-        current_std_base = np.array(current_std_base)
-
-    plt.subplot(335)
-    plt.title('Node degree distribution')
-    bins = np.linspace(bi_corr_array[1, :].min(), bi_corr_array[1, :].max(), 100)
-    if test_bi_corr_array is not None:
-        bins = np.linspace(min(bi_corr_array[1, :].min(), test_bi_corr_array[1, :].min()),
-                           max(bi_corr_array[1, :].max(), test_bi_corr_array[1, :].max()),
-                           100)
-    plt.hist(bi_corr_array[1, :],
-             bins=100, histtype='step', log=True, color='b')
-    if test_bi_corr_array is not None:
-        plt.hist(test_bi_corr_array[1, :],
-                 bins=100, histtype='step', log=True, color='r')
-
-    # plt.subplot(336)
-    # plt.title('Density of current in the highlighted area')
-    # if test_bi_corr_array is not None:
-    #     bins = np.linspace(
-    #         min(local_indexed_select(bi_corr_array, 1, selector)[0, :].min(),
-    #             local_indexed_select(test_bi_corr_array, 1, selector)[0, :].min()),
-    #         max(local_indexed_select(bi_corr_array, 1, selector)[0, :].max(),
-    #             local_indexed_select(test_bi_corr_array, 1, selector)[0, :].max()),
-    #         100)
-    # plt.hist(local_indexed_select(bi_corr_array, 1, selector)[0, :],
-    #          bins=bins, histtype='step', log=True, color='b')
-    #
-    # if test_bi_corr_array is not None:
-    #     plt.hist(local_indexed_select(test_bi_corr_array, 1, selector)[0, :],
-    #              bins=100, histtype='step', log=True, color='r')
-
-    # this property is better off viewed as a scatterplot of true points and
-    # default points
-
-    cluster_props = None
-
-    plt.subplot(337)
-    plt.title('Clustering correlation')
-    if not sparse:
-        # plt.scatter(mean_correlations[0, :], mean_correlations[1, :], color = 'b')
-        estimator_function = kde_compute(mean_correlations[(0, 1), :], 50, re_samples)
-        cluster_props = None
-        if test_mean_corr is not None:
-            plt.scatter(test_mean_corr[0, :], test_mean_corr[1, :],
-                        color='k', alpha=0.8)
-            cluster_props = estimator_function(test_mean_corr[(0, 1), :])
-
-    plt.subplot(338)
-    plt.title('Eigvals_hist')
-    if not sparse:
-        bins = np.linspace(eigenvalues.min(), eigenvalues.max(), 100)
-        if test_bi_corr_array is not None:
-            bins = np.linspace(min(eigenvalues.min(), eigenvalue.min()),
-                               max(eigenvalues.max(), eigenvalue.max()),
-                               100)
-        plt.hist(eigenvalues, bins=bins, histtype='step', color='b')
-        if eigenvalue is not None:
-            plt.hist(eigenvalue.tolist() * 3, bins=bins, histtype='step', color='r')
-
-    plt.subplot(339)
-    plt.title('Currently empty')
-
-    # plt.show()
-    plt.savefig(Outputs.interactome_network_stats)
-
-    # pull the groups corresponding to non-random associations.
-    return current_info_rel, cluster_props, current_rel_base, current_std_base
+    plt.show()
+    # plt.savefig(Outputs.interactome_network_stats)
 
 
-# TODO: correct the error: remove the clustering on the sparse round
-def compare_to_blank(
-        blank_model_size,
-        zoom_range_selector,
-        p_val=0.05,
-        sparse_rounds=False,
-        cluster_no=3,
-        interactome_interface_instance=None):
+def compare_to_blank(blank_model_size, p_val=0.05, sparse_rounds=False,
+                     interactome_interface_instance=None):
     """
     Recovers the statistics on the circulation nodes and shows the visual of a circulation system.
     There is no issue with using the same interactome interface instance, because they are forked when
     threads are generated and will not interfere.
 
     :param blank_model_size: the number of uniprots in the blank model
-    :param zoom_range_selector: tuple representing the coverage range for which we would
-     want to see the histogram of current distributions
     :param p_val: desired p_value for the returned terms
     :param sparse_rounds: if set to a number, sparse computation technique would be used
      with the number of rounds equal the integer value of that argument
-    :param cluster_no: specifies the number of cluster_no we want to have
     :param interactome_interface_instance:
     :return: None if no significant nodes, the node and group characteristic
      dictionaries otherwise
@@ -295,117 +175,95 @@ def compare_to_blank(
 
     md5_hash = interactome_interface_instance.md5_hash()
 
-    curr_inf_conf_general = []
+    background_sub_array_list = []
     count = 0
-    mean_correlation_accumulator = []
-    eigenvalues_accumulator = []
 
     log.info("looking to test against:"
-             "\t size: %s \t sys_hash: %s \t sparse_rounds: %s" % (blank_model_size, md5_hash, sparse_rounds))
+             "\t size: %s \t sys_hash: %s \t sparse_rounds: %s" %
+             (blank_model_size, md5_hash, sparse_rounds))
 
     log.info("samples found to test against:\t %s" %
-             interactome_rand_samp.find({'size': blank_model_size, 'sys_hash': md5_hash,
-                                        'sparse_rounds': sparse_rounds}).count())
+             interactome_rand_samp_db.find({'size': blank_model_size,
+                                            'sys_hash': md5_hash,
+                                            'sparse_rounds': sparse_rounds}
+                                            ).count())
 
-    # this part computes the items required for the creation of a blank model
-
-    for i, sample in enumerate(interactome_rand_samp.find(
-            {'size': blank_model_size, 'sys_hash': md5_hash, 'sparse_rounds': sparse_rounds})):
-        if sparse_rounds:
-            log.warning('Blank done on sparse rounds. Clustering will not be performed')
+    for i, sample in enumerate(interactome_rand_samp_db.find(
+                                                            {'size': blank_model_size,
+                                                             'sys_hash': md5_hash,
+                                                             'sparse_rounds': sparse_rounds})):
 
         _, node_currents = pickle.loads(sample['currents'])
-        tensions = pickle.loads(sample['voltages'])
 
-        if not sparse_rounds:
-            _, _, mean_correlations, eigvals = perform_clustering(
-                tensions, cluster_no, show=False)
-
-        else:
-            mean_correlations = np.array([[(0, ), 0, 0]]*cluster_no)
-            eigvals = np.array([-1]*cluster_no)
-
-        mean_correlation_accumulator.append(np.array(mean_correlations))
-        eigenvalues_accumulator.append(eigvals)
         dictionary_system = interactome_interface_instance.format_node_props(node_currents)
-        curr_inf_conf = list(dictionary_system.itervalues())
-        curr_inf_conf_general.append(np.array(curr_inf_conf).T)
+        background_sub_array = list(dictionary_system.values())
+        background_sub_array_list.append(np.array(background_sub_array).T)
         count = i
 
     # This part declares the pre-operators required for the verification of a
     # real sample
 
-    final = np.concatenate(tuple(curr_inf_conf_general), axis=1)
-    final_mean_correlations = np.concatenate(tuple(mean_correlation_accumulator), axis=0).T
-    final_eigenvalues = np.concatenate(tuple(eigenvalues_accumulator), axis=0).T
+    background_array = np.concatenate(tuple(background_sub_array_list), axis=1)
 
     node_currents = interactome_interface_instance.node_current
     dictionary_system = interactome_interface_instance.format_node_props(node_currents)
     curr_inf_conf_tot = np.array(
-        [[int(key)] + list(val) for key, val in dictionary_system.iteritems()]).T
-    node_ids, curr_inf_conf = (curr_inf_conf_tot[0, :],
-                               curr_inf_conf_tot[(1, 2), :])
+        [[int(key)] + list(val) for key, val in dictionary_system.items()]).T
 
-    if not sparse_rounds:
-        group2avg_offdiag, _, mean_correlations, eigenvalue = perform_clustering(
-            interactome_interface_instance.UP2UP_voltages, cluster_no, 'Interactome clustering')
-
-    else:
-        group2avg_offdiag = np.array([[(0, ), 0, 0]]*cluster_no)
-        mean_correlations = np.array([[0, 0]]*cluster_no)
-        eigenvalue = np.array([-1]*cluster_no)
+    node_ids, query_array = (curr_inf_conf_tot[0, :], curr_inf_conf_tot[(1, 2), :])
 
     log.info("stats on  %s samples" % count)
 
-    # TODO: We could and should separate the visualisation from the gaussian
-    # estimators computation
-    r_nodes, r_groups, r_rel_nodes, r_std_nodes = show_test_statistics(
-        final,
-        final_mean_correlations,
-        final_eigenvalues,
-        zoom_range_selector,
-        curr_inf_conf,
-        mean_correlations.T,
-        eigenvalue.T,
-        count,
-        sparse_rounds)
+    background_density = kde_compute(background_array[(1, 0), :], 50, count)
+    base_bi_corr = background_array[(0, 1), :]
 
-    group_char = namedtuple(
-        'Group_Char', [
-            'UPs', 'num_UPs', 'average_connection', 'p_value'])
+    r_rels = []
+    r_std_nodes = []
 
-    if r_nodes is not None:
-        not_random_nodes = [node_id for node_id in node_ids[r_nodes < p_val].tolist()]
+    # TODO: idea for the improved statistics, cluster a test node of degree k with 100 nodes with
+    #  closest degrees
 
-        if not sparse_rounds:
-            not_random_groups = np.concatenate(
-                (group2avg_offdiag,
-                 np.reshape(r_groups, (3, 1))), axis=1)[r_groups < p_val].tolist()
-            not_random_groups = [group_char(*nr_group)
-                                 for nr_group in not_random_groups]
+    samples_scatter_and_hist(background_array, query_array)
 
-        else:
-            not_random_groups = []
+    for entry in query_array.sort():
+        background_set = background_array[np.logical_and(
+            background_array < entry[1] + 10,
+            background_array < entry[1] - 10
+        )]
+        samples_scatter_and_hist(background_set, entry[:, np.newaxis])
 
-        # basically the second element below are the nodes that contribute to the
-        #  information flow through the node that is considered as non-random
+    r_nodes = background_density(query_array[(1, 0), :])  # this is currently used as a p-value, which is problematic.
 
-        log.debug('debug, not random nodes: %s', not_random_nodes)
-        log.debug('debug bulbs_id_disp_name: %s',
-                  interactome_interface_instance.neo4j_id_2_display_name.items()[:10])
+    for point in query_array.T:
+        selector = np.logical_and(base_bi_corr[1, :] > point[1]*0.9, base_bi_corr[1, :] < point[1]*1.1)
+        r_rels.append(point[0]/np.mean(base_bi_corr[0, selector]))
+        r_std_nodes.append((point[0]-np.mean(base_bi_corr[0, selector]))/np.std(base_bi_corr[0, selector]))
 
-        node_char_list = [
-            [int(nr_node_id), interactome_interface_instance.neo4j_id_2_display_name[nr_node_id]] +
-            dictionary_system[nr_node_id] + r_nodes[node_ids == float(nr_node_id)].tolist()
-            for nr_node_id in not_random_nodes]
+    r_rels = np.array(r_rels)
+    r_std_nodes = np.array(r_std_nodes)
 
-        nodes_dict = np.hstack((node_ids[:, np.newaxis], r_nodes[:, np.newaxis], r_rel_nodes[:, np.newaxis], r_std_nodes[:, np.newaxis]))
-        nodes_dict = dict((node[0], (node[1], node[2], node[3])) for node in nodes_dict.tolist())
-        nodes_dict = defaultdict(lambda: (1., 0., 0.), nodes_dict)  # corresponds to the cases of super low flow - never significant
+    not_random_nodes = [node_id for node_id in node_ids[r_nodes < p_val].tolist()]
 
-        return sorted(node_char_list, key=lambda x: x[4]), not_random_groups, nodes_dict
+    # basically the second element below are the nodes that contribute to the
+    #  information flow through the node that is considered as non-random
 
-    return None, None, None
+    log.debug('debug, not random nodes: %s', not_random_nodes)
+    log.debug('debug bulbs_id_disp_name: %s',
+              interactome_interface_instance.neo4j_id_2_display_name.items()[:10])
+
+    node_char_list = [
+        [int(nr_node_id), interactome_interface_instance.neo4j_id_2_display_name[nr_node_id]] +
+        dictionary_system[nr_node_id] + r_nodes[node_ids == float(nr_node_id)].tolist()
+        for nr_node_id in not_random_nodes]
+
+    nodes_dict = np.hstack((node_ids[:, np.newaxis], r_nodes[:, np.newaxis], r_rels[:, np.newaxis], r_std_nodes[:, np.newaxis]))
+    nodes_dict = dict((node[0], (node[1], node[2], node[3])) for node in nodes_dict.tolist())
+    nodes_dict = defaultdict(lambda: (1., 0., 0.), nodes_dict)  # corresponds to the cases of super low flow - never significant
+
+    # TODO: pull the groups corresponding to non-random associations.
+
+    return sorted(node_char_list, key=lambda x: x[4]), nodes_dict
+
 
 
 # TODO: source_list is a single list, not list of lists.
@@ -469,10 +327,9 @@ def auto_analyze(source_list,
             else:
                 interactome_interface.build_extended_conduction_system(fast_load=True)
 
-            nr_nodes, nr_groups, p_val_dict = compare_to_blank(
-                len(interactome_interface.entry_point_uniprots_neo4j_ids),
-                [0.5, 0.6],
-                p_val=0.9, interactome_interface_instance=interactome_interface)
+            nr_nodes, p_val_dict = compare_to_blank(
+                len(interactome_interface.entry_point_uniprots_neo4j_ids), p_val=0.9,
+                interactome_interface_instance=interactome_interface)
 
 
         else:
@@ -502,17 +359,11 @@ def auto_analyze(source_list,
                 # interactome_interface.export_conduction_system()
             else:
                 interactome_interface.build_extended_conduction_system(sparse_samples=sampling_depth, fast_load=True)
-            nr_nodes, nr_groups, p_val_dict = compare_to_blank(
-                len(interactome_interface.entry_point_uniprots_neo4j_ids),
-                [0.5, 0.6],
-                p_val=0.9, sparse_rounds=sampling_depth,
-                interactome_interface_instance=interactome_interface)
+            nr_nodes, p_val_dict = compare_to_blank(
+                len(interactome_interface.entry_point_uniprots_neo4j_ids), p_val=0.9,
+                sparse_rounds=sampling_depth, interactome_interface_instance=interactome_interface)
 
         interactome_interface.export_conduction_system(p_val_dict)
-
-        for group in nr_groups:
-            log.info(group)
-
 
         log.info('\t %s \t %s \t %s \t %s \t %s', 'node id',
             'display name', 'info flow', 'degree', 'p value')

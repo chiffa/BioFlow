@@ -66,7 +66,7 @@ estimated_comp_ops = int(Sources['INTERNAL']['compops'])  # pairwise flows compu
 client = MongoClient(mongo_db_url)
 db = client.BioFlow_database
 annotome_rand_samp = db[pymongo_prefix + "UP_r_samples" + pymongo_suffix]
-interactome_rand_samp = db[
+interactome_rand_samp_db = db[
     pymongo_prefix +
     "Interactome_samples" +
     pymongo_suffix]

@@ -21,7 +21,7 @@ from itertools import chain
 from bioflow.utils.gdfExportInterface import GdfExportInterface
 from bioflow.utils.io_routines import write_to_csv, dump_object, undump_object
 from bioflow.utils.log_behavior import get_logger
-from bioflow.main_configs import Dumps, Outputs, interactome_rand_samp
+from bioflow.main_configs import Dumps, Outputs, interactome_rand_samp_db
 from bioflow.internal_configs import edge_type_filters, adjacency_matrix_weights, \
     laplacian_matrix_weights, neo4j_names_dict
 from bioflow.algorithms_bank import conduction_routines as cr
@@ -1013,7 +1013,7 @@ class InteractomeInterface(object):
             samples_size,
             samples_each_size,
             sparse_rounds=False,
-            chromosome_specific=False,
+            # chromosome_specific=False,
             memoized=False,
             no_add=False):
         """
@@ -1025,8 +1025,6 @@ class InteractomeInterface(object):
         :param samples_each_size: how many times we would like to sample each uniprot number
         :param sparse_rounds:  if we want to use sparse sampling (useful in case of
         large uniprot sets), we would use this option
-        :param chromosome_specific: if we want the sampling to be chromosome-specific,
-        set this parameter to the number of chromosome to sample from
         :param memoized: if set to True, the sampling would be remembered for export. Useful in
         case of the chromosome comparison
         :param no_add: if set to True, the result of sampling will not be added to the
@@ -1040,10 +1038,6 @@ class InteractomeInterface(object):
         if self.background:  # TODO: move that part to the interactome analysis section => Unique Interactome Interface
             self.connected_uniprots = list(
                 set(self.connected_uniprots).intersection(set(self.background)))
-
-        if chromosome_specific:
-            self.connected_uniprots = list(set(self.connected_uniprots).intersection(
-                set(self.chromosomes_2_uniprot[str(chromosome_specific)])))
 
         for sample_size, iterations in zip(samples_size, samples_each_size):
             for i in range(0, iterations):
@@ -1067,12 +1061,12 @@ class InteractomeInterface(object):
                              "\t size: %s \t sys_hash: %s \t sparse_rounds: %s, matrix weight: %s" % (
                                 sample_size, md5, sparse_rounds, np.sum(self.current_accumulator)))
 
-                    interactome_rand_samp.insert(
+                    interactome_rand_samp_db.insert(
                         {
                             'UP_hash': md5,
                             'sys_hash': self.md5_hash(),
                             'size': sample_size,
-                            'chrom': str(chromosome_specific),
+                            'chrom': 'False',
                             'sparse_rounds': sparse_rounds,
                             'UPs': pickle.dumps(analytics_uniprot_list),
                             'currents': pickle.dumps(

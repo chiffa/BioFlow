@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 from scipy import histogram2d
 from csv import reader as csv_reader
 
-from bioflow.main_configs import interactome_rand_samp
+from bioflow.main_configs import interactome_rand_samp_db
 from bioflow.utils.log_behavior import get_logger
 from bioflow.molecular_network.InteractomeInterface import InteractomeInterface
 from bioflow.algorithms_bank.conduction_routines import perform_clustering
@@ -23,7 +23,7 @@ interactome_interface_instance.fast_load()
 
 md5_hash = interactome_interface_instance.md5_hash()
 
-print "samples found to test against:\t %s" % interactome_rand_samp.find({'size': 2,
+print "samples found to test against:\t %s" % interactome_rand_samp_db.find({'size': 2,
                                                                           'sys_hash': md5_hash,
                                                                           'sparse_rounds': False}).count()
 
@@ -40,7 +40,7 @@ values = []
 length_width_accumulator = []
 essentiality_percentage = []
 
-for i, sample in enumerate(interactome_rand_samp.find({'size': 2, 'sys_hash': md5_hash,
+for i, sample in enumerate(interactome_rand_samp_db.find({'size': 2, 'sys_hash': md5_hash,
                                                                   'sparse_rounds': False})):
 
     # if i > 10:

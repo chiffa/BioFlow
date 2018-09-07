@@ -11,7 +11,7 @@ from bioflow.annotation_network.BioKnowledgeInterface \
 from bioflow.annotation_network.knowledge_access_analysis \
     import auto_analyze as knowledge_analysis
 from bioflow.db_importers.import_main import build_db, destroy_db
-from bioflow.main_configs import neo4j_server, annotome_rand_samp, interactome_rand_samp, \
+from bioflow.main_configs import neo4j_server, annotome_rand_samp, interactome_rand_samp_db, \
     analysis_protein_ids_csv
 from bioflow.molecular_network.InteractomeInterface \
     import InteractomeInterface as InteractomeInterface
@@ -57,7 +57,7 @@ if __name__ == "__main__":
 
     # # if needed, clear the mongodb:
     # annotome_rand_samp.drop()
-    # interactome_rand_samp.drop()
+    # interactome_rand_samp_db.drop()
 
     # # setting static folders and urls for the databases
     # set_folders('/home/andrei/support')
@@ -84,10 +84,10 @@ if __name__ == "__main__":
     # hits_ids, background_ids = map_and_save_gene_ids('/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Matrigel vs Collagen/Matrigel_vs_collagen-tumor.tsv',
     #                                                  '')
 
-    hits_ids, background_ids = map_and_save_gene_ids(
-        # '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/TWIST1_ECAD/Hits.csv',
-        '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Kp_Km data/top_100_hum.csv',
-        '')
+    # hits_ids, background_ids = map_and_save_gene_ids(
+    #     # '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/TWIST1_ECAD/Hits.csv',
+    #     '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Kp_Km data/top_100_hum.csv',
+    #     '')
 
     # hits_ids, background_ids = map_and_save_gene_ids(
     #     '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Veena data/both_HUM.csv',

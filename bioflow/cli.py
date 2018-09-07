@@ -10,7 +10,7 @@ from bioflow.utils.io_routines import get_background_bulbs_ids, get_source_bulbs
 from bioflow.annotation_network.knowledge_access_analysis \
     import auto_analyze as knowledge_analysis
 from bioflow.db_importers.import_main import build_db, destroy_db
-from bioflow.main_configs import neo4j_server, annotome_rand_samp, interactome_rand_samp
+from bioflow.main_configs import neo4j_server, annotome_rand_samp, interactome_rand_samp_db
 from bioflow.molecular_network.InteractomeInterface \
     import InteractomeInterface as InteractomeInterface
 from bioflow.molecular_network.interactome_analysis import auto_analyze as interactome_analysis
@@ -169,9 +169,9 @@ def purgemongo(collection):
     """
     if collection == 'all':
         annotome_rand_samp.drop()
-        interactome_rand_samp.drop()
+        interactome_rand_samp_db.drop()
     elif collection == 'interactome':
-        interactome_rand_samp.drop()
+        interactome_rand_samp_db.drop()
     elif collection == 'annotome':
         annotome_rand_samp.drop()
 

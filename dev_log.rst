@@ -10,6 +10,8 @@ There still seem to be a problem of regular convergence to the same paths in the
     - tight clusters due to cross-linking that disperse the network
 
 => Build an export of the sampling current weights to figure out which nodes are offending.
+=> Re-compute eigenvalues of the laplacian and add values to the network weighting nodes
+
 
 Add a mention for what were the parameters of the launch of the analysis - what was build and where the data was loaded from?
 
