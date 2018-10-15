@@ -8,10 +8,15 @@ There still seem to be a problem of regular convergence to the same paths in the
     - borked topology
     - current intensity between the interconnected nodes (potentially resolved)
     - tight clusters due to cross-linking that disperse the network
+=> Solved through statistics computation refactoring
 
 => Build an export of the sampling current weights to figure out which nodes are offending.
 => Re-compute eigenvalues of the laplacian and add values to the network weighting nodes
 
+=> Modify the insertion/retrieval pattern into the mongoDB to separate foreground from background runs
+    - Start with the foreground run
+    - continue with the backgrounds until satisfied
+    - always possible to resume the sampling afterwards
 
 Add a mention for what were the parameters of the launch of the analysis - what was build and where the data was loaded from?
 
@@ -20,7 +25,6 @@ Next steps, in order:
     - (DONE) Delete dead branches, break dependency on bulbs
         - think if we could do testing for a neo4j build
     - (DONE) build a new docker image
-    - proper statistics for the p-value determination - extreme values
     - flow to a targeted set
     - weighted targets flow
     - modification of laplacian
@@ -51,19 +55,32 @@ ADD to the documentation:
         - random returns
         - cross-linked with 'is_likely_similar' links, that are imported to Laplacian with
 
+Documentation:
+    - installation:
+        - docker
+        - Ubuntu
+    - usage:
+        - core command lines
+        - core Python
+        - post-processing for analysis
+    - neo4j manual usage
+        - Cypher
+        - access to non-local neo4j instance
+        - useful commands
+        - what to do if the commands are slow (optimized for use case of the Bioflow, not necessarily best)
 
 Functional:
 -----------
--   Enforce p-value limitation to what is achievable with the background sampling size.
+-   (OK )Enforce p-value limitation to what is achievable with the background sampling size.
 
--   (OK - In testing) Re-inject the p_values following the comparison back into the output and export them as part of
+-   (OK ) Re-inject the p_values following the comparison back into the output and export them as part of
     gdf schema
 
--   (OK - In testing) Normalize the Laplacian (Joel Bader)
+-   (OK - Won't fix) Normalize the Laplacian (Joel Bader)
 
--   (OK - In testing ) Increase the fudge factor to ~ 10% of error (Joel Bader)
+-   (OK - Won't fix) Increase the fudge factor to ~ 10% of error (Joel Bader)
 
--   Integrate the amplification level into the analysis - relative amplitude of perturbation
+-   (OK) Integrate the amplification level into the analysis - relative amplitude of perturbation
 
     -   Would require to fold the hits list into the interface object
 
@@ -99,10 +116,10 @@ Functional:
 
 Structural:
 -----------
--   Create a separate structure for performing the statistical analysis, that is independent from the
+-   (OK) Create a separate structure for performing the statistical analysis, that is independent from the
     wrapper
 
--   (TO BE TESTED) Enforce the single source of the Interface Objects for sampling to simplify
+-   (OK) Enforce the single source of the Interface Objects for sampling to simplify
     consistency enforcing
 
 -   Return the control of the reach-limiter from the Knowledge interface to the current routines (Why?)
@@ -123,13 +140,13 @@ Structural:
     -   As well as "hit" analysis systems, so that they can be retrieved instead of needing to be
         re-generated.
 
--   Move node annotation loading/offloading to an elasticsearch instance, always mapping to uniprots
+-   (Won't fix)Move node annotation loading/offloading to an elasticsearch instance, always mapping to uniprots
 
-- The alteration of the chain of statistics calculation is somewhat hardcore
+-  (OK) The alteration of the chain of statistics calculation is somewhat hardcore
 
 Integration:
 ------------
-- Update to CYPHER and a more recent neo4j instance accessed through bolt
+- (DONE) Update to CYPHER and a more recent neo4j instance accessed through bolt
     - possibility of using a periodic Cypher update (each 500-1000) instead of atomic?
 
 - (Rejected) Consider removing neo4j altogether => Nope, it's a good persistence solution
@@ -147,9 +164,9 @@ Cosmetic:
 
 -   Add the forwarding of the thread number to the progress report
 
--   (MEH) Reformat progress report as a progress bar.
+-   (CLI) Reformat progress report as a progress bar.
 
--   The explanation of the model and its transmission into the published data needs to be easy enough
+-   (DONE) The explanation of the model and its transmission into the published data needs to be easy enough
     to explain why the hits are justified and why they aren't.
 
 

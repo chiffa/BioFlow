@@ -18,6 +18,8 @@ from bioflow.utils.dataviz import kde_compute
 from bioflow.utils.log_behavior import get_logger
 from bioflow.utils.io_routines import get_source_bulbs_ids, get_background_bulbs_ids
 
+from scipy.stats import gumbel_r
+
 log = get_logger(__name__)
 
 
@@ -150,8 +152,10 @@ def samples_scatter_and_hist(background_curr_deg_conf, true_sample_bi_corr_array
         plt.scatter(true_sample_bi_corr_array[1, :], true_sample_bi_corr_array[0, :],
                     color='r', alpha=0.5)
 
-    plt.show()
-    # plt.savefig(Outputs.interactome_network_stats)
+    # plt.show()
+    plt.savefig(Outputs.interactome_network_stats)
+    plt.clf()
+
 
 
 def compare_to_blank(blank_model_size, p_val=0.05, sparse_rounds=False,
@@ -169,6 +173,17 @@ def compare_to_blank(blank_model_size, p_val=0.05, sparse_rounds=False,
     :return: None if no significant nodes, the node and group characteristic
      dictionaries otherwise
     """
+    def get_max_for_each_degree(sample_sub_arrray):
+        degrees = np.unique(sample_sub_arrray[1, :])
+        max_array = []
+
+        for degree in degrees:
+            filter = sample_sub_arrray[1, :] == degree
+            max_array.append([sample_sub_arrray[0, filter].max(), degree])
+
+        m_arr = np.array(max_array)
+        return m_arr.T
+
     if interactome_interface_instance is None:
         interactome_interface_instance = InteractomeInterface(True, True)
         interactome_interface_instance.fast_load()
@@ -176,6 +191,7 @@ def compare_to_blank(blank_model_size, p_val=0.05, sparse_rounds=False,
     md5_hash = interactome_interface_instance.md5_hash()
 
     background_sub_array_list = []
+    max_sub_array_list = []
     count = 0
 
     log.info("looking to test against:"
@@ -195,15 +211,19 @@ def compare_to_blank(blank_model_size, p_val=0.05, sparse_rounds=False,
 
         _, node_currents = pickle.loads(sample['currents'])
 
-        dictionary_system = interactome_interface_instance.format_node_props(node_currents)
+        dictionary_system = interactome_interface_instance.format_node_props(node_currents, limit=0)
         background_sub_array = list(dictionary_system.values())
         background_sub_array_list.append(np.array(background_sub_array).T)
+        max_arr = get_max_for_each_degree(np.array(background_sub_array).T)
+        max_sub_array_list.append(max_arr)
         count = i
 
     # This part declares the pre-operators required for the verification of a
     # real sample
 
     background_array = np.concatenate(tuple(background_sub_array_list), axis=1)
+    max_array = np.concatenate(tuple(max_sub_array_list), axis=1)
+
 
     node_currents = interactome_interface_instance.node_current
     dictionary_system = interactome_interface_instance.format_node_props(node_currents)
@@ -225,14 +245,34 @@ def compare_to_blank(blank_model_size, p_val=0.05, sparse_rounds=False,
 
     samples_scatter_and_hist(background_array, query_array)
 
-    for entry in query_array.sort():
-        background_set = background_array[np.logical_and(
-            background_array < entry[1] + 10,
-            background_array < entry[1] - 10
-        )]
-        samples_scatter_and_hist(background_set, entry[:, np.newaxis])
+    degrees = np.unique(query_array[1, :])
+
+    combined_p_vals = np.ones_like(query_array[1, :])
+
+    for degree in degrees.tolist():
+        filter = query_array[1, :] == degree
+
+        entry = query_array[:, filter]
+        background_set = background_array[:, background_array[1, :] == degree]
+        max_set = max_array[:, max_array[1, :] == degree]
+
+        params = gumbel_r.fit(max_set[0, :])
+        arg = params[:-2]
+        mu = params[-2]
+        beta = params[-1]
+
+        frozen_gumbel = gumbel_r(loc=mu, scale=beta)
+
+        p_vals = 1 - frozen_gumbel.cdf(entry[0, :])
+
+        combined_p_vals[filter] = p_vals
+
+        # TODO: insert into appropriate locations => we will assume that the order is preserved
+
+        # samples_scatter_and_hist(max_set, entry)
 
     r_nodes = background_density(query_array[(1, 0), :])  # this is currently used as a p-value, which is problematic.
+    r_nodes = combined_p_vals
 
     for point in query_array.T:
         selector = np.logical_and(base_bi_corr[1, :] > point[1]*0.9, base_bi_corr[1, :] < point[1]*1.1)
@@ -404,4 +444,4 @@ if __name__ == "__main__":
 
     # spawn_sampler_pool(3, [2], [150], interactome_interface_instance=None)
 
-    local_matrix.randomly_sample([195], [10], sparse_rounds=195)
+    # local_matrix.randomly_sample([195], [10], sparse_rounds=195)
