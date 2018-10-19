@@ -9,7 +9,6 @@ the API_doc, just code comments for the maintainers
 ## TODO: remove the edge_type_filter - it looks pretty deprecated by now.
 # => replace the
 
-
 edge_type_filters = {
     "Group": ["is_part_of_collection"],
     # Group relation group

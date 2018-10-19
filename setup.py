@@ -40,7 +40,7 @@ else:
 
 setup(
     name='BioFlow',
-    version='0.0.4',
+    version='0.2.2',
     description='Information Flow Analyzer for biological networks',
     long_description=long_description,
     url='https://github.com/chiffa/BioFlow',

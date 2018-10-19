@@ -18,7 +18,15 @@ from bioflow.neo4j_db.db_io_routines import look_up_annotation_set, \
     cast_analysis_set_to_bulbs_ids, cast_background_set_to_bulbs_id
 
 
+def print_version(ctx, param, value):
+    if not value or ctx.resilient_parsing:
+        return
+    click.echo('0.2.2')
+    ctx.exit()
+
 @click.group()
+@click.option('--version', '-v', is_flag=True, callback=print_version,
+              expose_value=False, is_eager=True)
 def main():
     pass
 
