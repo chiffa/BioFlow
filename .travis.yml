@@ -33,16 +33,16 @@ install:
     - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib
     - source activate test-environment
     - conda install python=$TRAVIS_PYTHON_VERSION cython scikit-learn coverage pylint
-    - pip install coveralls pyflakes pep8-naming mccabe flake8 codecov
+    - pip install python-coveralls pyflakes pep8-naming mccabe flake8 codecov
     - pip install -r requirements.txt
 
 script:
     - python -m unittests.TestAll
-    - coverage run -m unittests.TestAll
+    - coverage -source bioflow run -m unittests.TestAll
 
 after_success:
+    - coverage report
     - coveralls
-    - codecov
     - flake8 --ignore=E501,N806,E12 --statistics --show-source bioflow
     - flake8 --select=C --max-complexity 10 bioflow
 

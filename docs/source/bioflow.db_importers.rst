@@ -12,6 +12,14 @@ bioflow.db_importers.biogrid_importer module
     :undoc-members:
     :show-inheritance:
 
+bioflow.db_importers.complex_importer module
+--------------------------------------------
+
+.. automodule:: bioflow.db_importers.complex_importer
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 bioflow.db_importers.go_and_uniprot_importer module
 ---------------------------------------------------
 
@@ -36,10 +44,26 @@ bioflow.db_importers.import_main module
     :undoc-members:
     :show-inheritance:
 
+bioflow.db_importers.phosphosite_importer module
+------------------------------------------------
+
+.. automodule:: bioflow.db_importers.phosphosite_importer
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 bioflow.db_importers.reactome_importer module
 ---------------------------------------------
 
 .. automodule:: bioflow.db_importers.reactome_importer
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+bioflow.db_importers.tf_importers module
+----------------------------------------
+
+.. automodule:: bioflow.db_importers.tf_importers
     :members:
     :undoc-members:
     :show-inheritance:

@@ -5,11 +5,9 @@ Status](https://travis-ci.org/chiffa/BioFlow.svg?branch=master)](https://travis-
 [![Coverage
 Status](https://coveralls.io/repos/chiffa/BioFlow/badge.svg?branch=master&service=github)](https://coveralls.io/github/chiffa/BioFlow?branch=master)
 [![Branch
-status](https://img.shields.io/badge/branch_status-0.1.0_release_candidate-yellow.svg)](https://github.com/chiffa/BioFlow/blob/master/README.rst)
-[![Code
-Issues](https://www.quantifiedcode.com/api/v1/project/1c3f8cd001a44319abddab249101b646/badge.svg)](https://www.quantifiedcode.com/app/project/1c3f8cd001a44319abddab249101b646)
+status](https://img.shields.io/badge/branch_status-0.2.2-yellow.svg)](https://github.com/chiffa/BioFlow/blob/master/README.rst)
 [![Duplicate
-Lines](https://img.shields.io/badge/duplicate%20lines-17.66%25-yellowgreen.svg)](http://clonedigger.sourceforge.net/)
+Lines](https://img.shields.io/badge/duplicate%20lines-1.45%25-yellowgreen.svg)](http://clonedigger.sourceforge.net/)
 [![Code
 Health](https://landscape.io/github/chiffa/BioFlow/master/landscape.svg?style=flat)](https://landscape.io/github/chiffa/BioFlow/master)
 
