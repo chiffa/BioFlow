@@ -1015,7 +1015,8 @@ class InteractomeInterface(object):
             sparse_rounds=False,
             # chromosome_specific=False,
             memoized=False,
-            no_add=False):
+            no_add=False,
+            pool_no=None):
         """
         Randomly samples the set of reached_uniprots_neo4j_id_list used to create the model.
          This is the null model creation routine
@@ -1045,7 +1046,7 @@ class InteractomeInterface(object):
                 analytics_uniprot_list = self.connected_uniprots[:sample_size]
 
                 self.set_uniprot_source(analytics_uniprot_list)
-                log.info('sampling characteristics: sys_hash: %s, size: %s, sparse_rounds: %s' % (self.md5_hash(),
+                log.info('sampling pool %s: sampling characteristics: sys_hash: %s, size: %s, sparse_rounds: %s' % (pool_no, self.md5_hash(),
                             sample_size, sparse_rounds))
 
                 self.build_extended_conduction_system(
@@ -1057,9 +1058,9 @@ class InteractomeInterface(object):
                         sort_keys=True)).hexdigest()
 
                 if not no_add:
-                    log.info("Adding a blanc:"
+                    log.info("Sampling pool %s: Adding a blanc:"
                              "\t size: %s \t sys_hash: %s \t sparse_rounds: %s, matrix weight: %s" % (
-                                sample_size, md5, sparse_rounds, np.sum(self.current_accumulator)))
+                                pool_no, sample_size, md5, sparse_rounds, np.sum(self.current_accumulator)))
 
                     interactome_rand_samp_db.insert(
                         {
@@ -1076,13 +1077,15 @@ class InteractomeInterface(object):
                                 self.UP2UP_voltages)})
 
                 if not sparse_rounds:
-                    log.info('Random ID: %s \t Sample size: %s \t iteration: %s\t compops: %s \t '
-                             'time: %s ', self.random_tag, sample_size, i,
+                    log.info('Sampling pool %s: Random ID: %s \t Sample size: %s \t iteration: %s\t compops: %s \t '
+                             'time: %s ',
+                             pool_no, self.random_tag, sample_size, i,
                              "{0:.2f}".format(sample_size * (sample_size - 1) / 2 / self._time()),
                              self.pretty_time())
                 else:
-                    log.info('Random ID: %s \t Sample size: %s \t iteration: %s\t compops: %s \t '
-                             'time: %s, sparse @ %s ', self.random_tag, sample_size, i,
+                    log.info('Sampling pool %s: Random ID: %s \t Sample size: %s \t iteration: %s\t compops: %s \t '
+                             'time: %s, sparse @ %s ',
+                             pool_no, self.random_tag, sample_size, i,
                              "{0:.2f}".format(sample_size * sparse_rounds / 2 / self._time()),
                              self.pretty_time(), sparse_rounds)
 

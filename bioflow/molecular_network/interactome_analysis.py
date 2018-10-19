@@ -58,11 +58,13 @@ def spawn_sampler(args_puck):
     sample_size_list = args_puck[0]
     iteration_list = args_puck[1]
     sparse_rounds = args_puck[2]
+    pool_no = args_puck[-1]
 
     interactome_interface_instance.randomly_sample(
         sample_size_list,
         iteration_list,
         sparse_rounds,
+        pool_no=pool_no
     )
 
 
@@ -70,8 +72,8 @@ def spawn_sampler_pool(
         pool_size,
         sample_size_list,
         interaction_list_per_pool,
-        sparse_rounds=False,
-        interactome_interface_instance=None):
+        interactome_interface_instance,
+        sparse_rounds=False):
     """
     Spawns a pool of samplers of the information flow within the GO system
 
@@ -89,7 +91,9 @@ def spawn_sampler_pool(
          sparse_rounds,
          interactome_interface_instance)]
     log.debug('spawning the sampler with payload %s', payload)
-    process_pool.map(spawn_sampler, payload * pool_size)
+    payload_list = payload*pool_size
+    payload_list = [list(item)+[i] for i, item in enumerate(payload_list)]
+    process_pool.map(spawn_sampler, payload_list)
 
 
 def local_indexed_select(bi_array, array_column, selection_span):

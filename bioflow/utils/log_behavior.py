@@ -113,7 +113,7 @@ def get_logger(logger_name):
     add_handler(_logger, logging.CRITICAL, 'critical.log')
 
     if not on_remote_unittest:  # pragma: no cover
-        ch = logging.StreamHandler(sys.stdout)
+        ch = logging.StreamHandler(sys.stderr)
         if on_unittest or on_dev:
             ch.setLevel(logging.DEBUG)
         else:
