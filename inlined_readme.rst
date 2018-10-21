@@ -1,5 +1,6 @@
+|License Type| |Branch status| |Python version|
 
-|License Type| |Build Status| |Coverage Status| |Branch status| |Duplicate Lines| |Code Health|
+|Build Status| |Coverage Status|  |Duplicate Lines| |Code Health|
 
 BioFlow Project
 ===============
@@ -83,9 +84,13 @@ For more details or usage as a library, refer to the `usage guide
    :target: https://travis-ci.org/chiffa/BioFlow
 .. |Coverage Status| image:: https://coveralls.io/repos/chiffa/BioFlow/badge.svg?branch=master&service=github
    :target: https://coveralls.io/github/chiffa/BioFlow?branch=master
-.. |Branch status| image:: https://img.shields.io/badge/branch_status-0.2.2-yellow.svg
-   :target: https://github.com/chiffa/BioFlow/blob/master/README.rst
+
 .. |Duplicate Lines| image:: https://img.shields.io/badge/duplicate%20lines-11.45%25-yellowgreen.svg
    :target: http://clonedigger.sourceforge.net/
 .. |Code Health| image:: https://landscape.io/github/chiffa/BioFlow/master/landscape.svg?style=flat
    :target: https://landscape.io/github/chiffa/BioFlow/master
+
+.. |Python version| image:: https://img.shields.io/badge/python-2.7-blue.svg
+   :target: https://www.python.org/downloads/release/python-2715/
+.. |Branch Status| image:: https://img.shields.io/badge/status-alpha-red.svg
+   :target: https://www.python.org/downloads/release/python-2715/

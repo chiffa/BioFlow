@@ -55,6 +55,15 @@ ADD to the documentation:
         - random returns
         - cross-linked with 'is_likely_similar' links, that are imported to Laplacian with
 
+Logging and CLI wrappers:
+    - redirect logging to stderr
+    - add version flag (version + commit #)
+    - add autocomplete
+    - dump gdf to stdout?
+    - check option prompts
+    - provide an interface to inform of the program completion (?)
+    - add a spinner for slow processes
+
 Documentation:
     - installation:
         - docker
