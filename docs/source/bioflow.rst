@@ -18,8 +18,8 @@ Subpackages
 Submodules
 ----------
 
-bioflow.analysis_pipeline_example module
-----------------------------------------
+bioflow.analysis\_pipeline\_example module
+------------------------------------------
 
 .. automodule:: bioflow.analysis_pipeline_example
     :members:
@@ -34,24 +34,24 @@ bioflow.cli module
     :undoc-members:
     :show-inheritance:
 
-bioflow.configs_manager module
-------------------------------
+bioflow.configs\_manager module
+-------------------------------
 
 .. automodule:: bioflow.configs_manager
     :members:
     :undoc-members:
     :show-inheritance:
 
-bioflow.internal_configs module
--------------------------------
+bioflow.internal\_configs module
+--------------------------------
 
 .. automodule:: bioflow.internal_configs
     :members:
     :undoc-members:
     :show-inheritance:
 
-bioflow.main_configs module
----------------------------
+bioflow.main\_configs module
+----------------------------
 
 .. automodule:: bioflow.main_configs
     :members:

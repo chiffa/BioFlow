@@ -1,13 +1,16 @@
 [![License
 Type](https://img.shields.io/badge/license-BSD3-blue.svg)](https://github.com/chiffa/BioFlow/blob/master/License-new_BSD.txt)
+[![Branch
+Status](https://img.shields.io/badge/status-alpha-red.svg)](https://www.python.org/downloads/release/python-2715/)
+[![Python
+version](https://img.shields.io/badge/python-2.7-blue.svg)](https://www.python.org/downloads/release/python-2715/)
+
 [![Build
 Status](https://travis-ci.org/chiffa/BioFlow.svg?branch=master)](https://travis-ci.org/chiffa/BioFlow)
 [![Coverage
 Status](https://coveralls.io/repos/chiffa/BioFlow/badge.svg?branch=master&service=github)](https://coveralls.io/github/chiffa/BioFlow?branch=master)
-[![Branch
-status](https://img.shields.io/badge/branch_status-0.2.2-yellow.svg)](https://github.com/chiffa/BioFlow/blob/master/README.rst)
 [![Duplicate
-Lines](https://img.shields.io/badge/duplicate%20lines-1.45%25-yellowgreen.svg)](http://clonedigger.sourceforge.net/)
+Lines](https://img.shields.io/badge/duplicate%20lines-11.45%25-yellowgreen.svg)](http://clonedigger.sourceforge.net/)
 [![Code
 Health](https://landscape.io/github/chiffa/BioFlow/master/landscape.svg?style=flat)](https://landscape.io/github/chiffa/BioFlow/master)
 
