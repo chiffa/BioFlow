@@ -1,11 +1,11 @@
-|License Type| |Python version| |Docs| |Branch status|
+|License Type| |Python version|  |Branch status|
 
 BioFlow Project
 ===============
 
 Information Flow Analysis in biological networks
 
-|Build Status| |Coverage Status|  |Duplicate Lines| |Code Health|
+|Build Status| |Docs| |Coverage Status| |Duplicate Lines| |Code Health|
 
 Description:
 ------------

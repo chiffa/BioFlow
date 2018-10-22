@@ -21,7 +21,7 @@ from bioflow.neo4j_db.db_io_routines import look_up_annotation_set, \
 def print_version(ctx, param, value):
     if not value or ctx.resilient_parsing:
         return
-    click.echo('0.2.2')
+    click.echo('0.2.3')
     ctx.exit()
 
 @click.group()

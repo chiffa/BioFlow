@@ -2,7 +2,6 @@
 Type](https://img.shields.io/badge/license-BSD3-blue.svg)](https://github.com/chiffa/BioFlow/blob/master/License-new_BSD.txt)
 [![Python
 version](https://img.shields.io/badge/python-2.7-blue.svg)](https://www.python.org/downloads/release/python-2715/)
-[![Documentation Status](https://readthedocs.org/projects/bioflow/badge/?version=latest)](https://bioflow.readthedocs.io/en/latest/?badge=latest)
 [![Branch
 Status](https://img.shields.io/badge/status-alpha-red.svg)](https://www.python.org/downloads/release/python-2715/)
 
@@ -13,6 +12,7 @@ Information Flow Analysis in biological networks
 
 [![Build
 Status](https://travis-ci.org/chiffa/BioFlow.svg?branch=master)](https://travis-ci.org/chiffa/BioFlow)
+[![Documentation Status](https://readthedocs.org/projects/bioflow/badge/?version=latest)](https://bioflow.readthedocs.io/en/latest/?badge=latest)
 [![Coverage
 Status](https://coveralls.io/repos/chiffa/BioFlow/badge.svg?branch=master&service=github)](https://coveralls.io/github/chiffa/BioFlow?branch=master)
 [![Duplicate
@@ -82,9 +82,15 @@ Installation walk-through:
 For more information, refer to the [installation
 guide](http://bioflow.readthedocs.org/en/latest/guide.html#installation-and-requirements)
 
-5)  Finally, install BioFlow: :
+5)  Finally, install BioFlow :
 
         > pip install BioFlow
+
+Or, alternatively, in case command line interface is not desired:
+
+    > git clone https://github.com/chiffa/BioFlow.git
+    > cd <installation directory/BioFlow>
+    > pip install -r requirements.txt
 
 ### Docker:
 
@@ -107,6 +113,16 @@ installation directory:
 
 Usage walk-through:
 -------------------
+
+> **warning**
+>
+> While BioFlow provides an interface to download the databases
+> programmatically, the databases are subject to Licenses and Terms that
+> it's up to the end users to respect
+
+For more information about data and config files, refer to the [data and
+database
+guide](http://bioflow.readthedocs.org/en/latest/guide.html#data-and-databases-setup)
 
 ### Python scripts:
 
@@ -178,19 +194,16 @@ desired\_depth
 :   how many samples we would like to generate to compare against
 
 processors
-:   how many threads we would like to launch in parallel (in general 3/4
-    works best)
+:   how many threads we would like to launch in parallel (in general 3/4 works best)
 
 background\_list
 :   list of background Ids
 
 skip\_sampling
-:   if true, skips the sampling of background set and retrieves stored
-    ones instead
+:   if true, skips the sampling of background set and retrieves stored ones instead
 
 from\_memoization
-:   if true, assumes the information flow for the hits sample has
-    already been computed
+:   if true, assumes the information flow for the hits sample has already been computed
 
 BioFlow will print progress to the StdErr from then on and will output
 to the user's home directory, in a folder called 'outputs\_YYYY-MM\_DD
@@ -206,6 +219,11 @@ The .gdf file can be further analysed with more appropriate tools.
 
 ### Command line:
 
+> **warning**
+>
+> Command line interface is currently unstable and is susceptible to
+> throw opaque errors.
+
 Setup environment (likely to take a while top pull all the online
 databases): :
 
@@ -213,16 +231,6 @@ databases): :
     > bioflow downloaddbs
     > bioflow setorg human
     > bioflow loadneo4j
-
-For more information about data and config files, refer to the [data and
-database
-guide](http://bioflow.readthedocs.org/en/latest/guide.html#data-and-databases-setup)
-
-> **warning**
->
-> While BioFlow provides an interface to download the databases
-> programmatically, the databases are subject to Licenses and Terms that
-> it's up to the end users to respect
 
 Set the set of perturbed proteins on which we would want to base our
 analysis :
