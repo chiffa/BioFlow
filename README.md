@@ -1,9 +1,10 @@
 [![License
 Type](https://img.shields.io/badge/license-BSD3-blue.svg)](https://github.com/chiffa/BioFlow/blob/master/License-new_BSD.txt)
-[![Branch
-Status](https://img.shields.io/badge/status-alpha-red.svg)](https://www.python.org/downloads/release/python-2715/)
 [![Python
 version](https://img.shields.io/badge/python-2.7-blue.svg)](https://www.python.org/downloads/release/python-2715/)
+[![Documentation Status](https://readthedocs.org/projects/bioflow/badge/?version=latest)](https://bioflow.readthedocs.io/en/latest/?badge=latest)
+[![Branch
+Status](https://img.shields.io/badge/status-alpha-red.svg)](https://www.python.org/downloads/release/python-2715/)
 
 BioFlow Project
 ===============
@@ -56,10 +57,9 @@ Installation walk-through:
 
 ### Ubuntu desktop:
 
-​1) Install the Anaconda python 2.7 and make it your default python. The
-full process is explained
-[here](https://docs.anaconda.com/anaconda/install/linux/)
-
+1)  Install the Anaconda python 2.7 and make it your default python. The
+    full process is explained
+    [here](https://docs.anaconda.com/anaconda/install/linux/)
 2)  Isnstall libsuitesparse:
 
         > apt-get -y install libsuitesparse-dev
@@ -71,13 +71,13 @@ full process is explained
         > sudo apt-get update
         > sudo apt-get install neo4j
 
-​4) Install MongDB (Assuming Linux 18.04 - if not, see
-[here](https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ubuntu/)):
+4)  Install MongDB (Assuming Linux 18.04 - if not, see
+    [here](https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ubuntu/)):
 
-    > sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 9DA31620334BD75D9DCB49F368818C72E52529D4
-    > echo "deb [ arch=amd64 ] https://repo.mongodb.org/apt/ubuntu bionic/mongodb-org/4.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-4.0.list
-    > sudo apt-get update
-    > sudo apt-get install -y mongodb-org
+        > sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 9DA31620334BD75D9DCB49F368818C72E52529D4
+        > echo "deb [ arch=amd64 ] https://repo.mongodb.org/apt/ubuntu bionic/mongodb-org/4.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-4.0.list
+        > sudo apt-get update
+        > sudo apt-get install -y mongodb-org
 
 For more information, refer to the [installation
 guide](http://bioflow.readthedocs.org/en/latest/guide.html#installation-and-requirements)
@@ -92,7 +92,7 @@ If you want to build locally (notice you need to issue docker commands
 with the actual docker-enabled user; usually prepending sudo to the
 commands):
 
-    > cd <wherever BioFlow got installed>
+    > cd <BioFlow installation folder>
     > docker build -t
     > docker run bioflow
     > docker-compose build
@@ -154,20 +154,43 @@ changed):
 
 Launch the analysis itself for the information flow in the interactome:
 
-    > interactome_analysis([hits_ids],  # list of hits
-                          desired_depth=9,  # how many samples we would like to generate to compare against
-                          processors=3,  # how many threads we would like to launch in parallel (in general 3/4 works best)
-                          background_list=background_bulbs_ids,  # list of background Ids
-                          skip_sampling=False,  # if true, skips the sampling of background set and retrieves stored ones instead
-                          from_memoization=False)  # if true, assumes the information flow for the hits sample has already been computed.
+    > interactome_analysis([hits_ids],
+                          desired_depth=9,
+                          processors=3,
+                          background_list=background_bulbs_ids,
+                          skip_sampling=False,
+                          from_memoization=False)
 
 Launch the analysis itself for the information flow in the annotation
 network (experimental):
 
-    > knowledge_analysis([hits_ids], # list of hits
-                        desired_depth=20, # how many samples we would like to generate to compare against
-                        processors=3,  how many threads we would like to launch in parallel (in general 3/4 works best)
-                        skip_sampling=False) # if true, skips the sampling of background set and retrieves stored ones instead
+    > knowledge_analysis([hits_ids],
+                        desired_depth=20,
+                        processors=3,
+                        skip_sampling=False)
+
+Where:
+
+hits\_ids
+:   list of hits
+
+desired\_depth
+:   how many samples we would like to generate to compare against
+
+processors
+:   how many threads we would like to launch in parallel (in general 3/4
+    works best)
+
+background\_list
+:   list of background Ids
+
+skip\_sampling
+:   if true, skips the sampling of background set and retrieves stored
+    ones instead
+
+from\_memoization
+:   if true, assumes the information flow for the hits sample has
+    already been computed
 
 BioFlow will print progress to the StdErr from then on and will output
 to the user's home directory, in a folder called 'outputs\_YYYY-MM\_DD
