@@ -22,7 +22,6 @@ hl_os_io.mkdir_recursive(output_location)
 hl_os_io.mkdir_recursive(log_location)
 
 Servers = parse_config('servers')
-Options = parse_config('options')
 Sources = parse_config('sources')
 DB_locations = parse_config('online_dbs')
 
@@ -31,7 +30,6 @@ DB_locations = parse_config('online_dbs')
 mongo_db_url = os.getenv('MONGOURL', Servers['PRODUCTION']['mongodb_server'])
 neo4j_server = os.getenv('NEO4URL', Servers['PRODUCTION']['server_neo4j'])
 source_db_paths = compute_full_paths(Sources, DB_locations, Servers['PRODUCTION'])
-verbosity = int(Options['VERBOSITY']['level'])
 
 # Locations of data source files to be passed to parsers
 gene_ontology_path = source_db_paths['GO']
@@ -154,4 +152,4 @@ background_protein_ids_csv = "/home/ank/projects_files/2014/Poly_Pharma/HJ-scree
 
 if __name__ == "__main__":
     pp = PrettyPrinter(indent=4)
-    pp.pprint((Servers, Options, Sources))
+    pp.pprint((Servers, Sources))
