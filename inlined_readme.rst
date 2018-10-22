@@ -84,7 +84,7 @@ user; usually prepending sudo to the commands)::
    > docker-compose up -d
 
 
- If you want to pull from dockerhub or don't have access to BioFlow installation directory::
+If you want to pull from dockerhub or don't have access to BioFlow installation directory::
 
    > wget https://github.com/chiffa/BioFlow/blob/master/docker-compose.yml
    > docker-compose build
@@ -98,7 +98,7 @@ Python scripts:
 ```````````````
 This is the recommended method for using BioFlow.
 
-Import the minimal dependencies: :: python
+Import the minimal dependencies::
 
    > from bioflow.annotation_network.knowledge_access_analysis import auto_analyze as knowledge_analysis
    > from bioflow.molecular_network.interactome_analysis import auto_analyze as interactome_analysis
@@ -121,13 +121,13 @@ Map the hits and the background genes (available through an experimental techniq
 BioFlow expects the csv files to contain one gene per line. It is capable of mapping genes based on
 the following ID types:
 
-   - Gene names
-   - HGCN symbols
-   - PDB Ids
-   - ENSEMBL Ids
-   - RefSeq IDs
-   - Uniprot IDs
-   - Uniprot accession numbers
+- Gene names
+- HGCN symbols
+- PDB Ids
+- ENSEMBL Ids
+- RefSeq IDs
+- Uniprot IDs
+- Uniprot accession numbers
 
 Preferred mapping approach is through HGCN symbols and Gene names.
 
@@ -154,9 +154,9 @@ Launch the analysis itself for the information flow in the annotation network (e
 BioFlow will print progress to the StdErr from then on and will output to the user's home directory,
 in a folder called 'outputs_YYYY-MM_DD <launch time>':
 
-   - .gdf file with the flow network and relevance statistics (Interactome_Analysis_output.gdf)
-   - visualisation of information flow through nodes in the null vs hits sets based on the node degree
-   - list of strongest hits (interactome_stats.tsv)
+- .gdf file with the flow network and relevance statistics (Interactome_Analysis_output.gdf)
+- visualisation of information flow through nodes in the null vs hits sets based on the node degree
+- list of strongest hits (interactome_stats.tsv)
 
 The .gdf file can be further analysed with more appropriate tools.
 
@@ -196,32 +196,32 @@ Post-processing:
 The .gdf file format is one of the standard format for graph exchange. It contains the following
 columns for the nodes:
 
-   - node ID
-   - information current passing through the node
-   - node type
-   - legacy_id (most likely Uniprot ID)
-   - degree of the node
-   - whether it is present or not in the hits list (source)
-   - p-value, comparing the information flow through the node to the flow expected for the random set of genes
-   - -log10(p_value) (p_p-value)
-   - rel_value (information flow relative to the flow expected for a random set of genes)
-   - std_diff (how many standard deviations above the flow for a random set of genes the flow from a hits list is)
+- node ID
+- information current passing through the node
+- node type
+- legacy_id (most likely Uniprot ID)
+- degree of the node
+- whether it is present or not in the hits list (source)
+- p-value, comparing the information flow through the node to the flow expected for the random set of genes
+- -log10(p_value) (p_p-value)
+- rel_value (information flow relative to the flow expected for a random set of genes)
+- std_diff (how many standard deviations above the flow for a random set of genes the flow from a hits list is)
 
 The most common pipleine involves using `Gephi open graph visualization platform <https://gephi.org/>`__:
 
-   - Load the gdf file into gephy
-   - Filter out all the nodes with information flow below 0.05 (Filters > Atrributes > Range > current)
-   - Perform clustering (Statistics > Modularity > Randomize & use weights)
-   - Filter out all the nodes below a significance threshold (Filters > Attributes > Range > p-value)
-   - Set Color nodes based on the Modularity Class (Nodes > Colors > Partition > Modularity Class)
-   - Set node size based on p_p-value (Nodes > Size > Ranking > p_p-value )
-   - Set text color based on whether the node is in the hits list (Nodes > Text Color > Partition > source)
-   - Set text size based on p_p-value (Nodes > Text Size > Ranking > p_p-value)\
-   - Show the lables (T on the bottom left)
-   - Set labes to the legacy IDs (Notepad on the bottom)
-   - Perform a ForeAtlas Node Separation (Layout > Force Atlas 2 > Dissuade Hubs & Prevent Overlap)
-   - Adjust label size
-   - Adjust labels position (Layout > LabelAdjust)
+- Load the gdf file into gephy
+- Filter out all the nodes with information flow below 0.05 (Filters > Atrributes > Range > current)
+- Perform clustering (Statistics > Modularity > Randomize & use weights)
+- Filter out all the nodes below a significance threshold (Filters > Attributes > Range > p-value)
+- Set Color nodes based on the Modularity Class (Nodes > Colors > Partition > Modularity Class)
+- Set node size based on p_p-value (Nodes > Size > Ranking > p_p-value )
+- Set text color based on whether the node is in the hits list (Nodes > Text Color > Partition > source)
+- Set text size based on p_p-value (Nodes > Text Size > Ranking > p_p-value)\
+- Show the lables (T on the bottom left)
+- Set labes to the legacy IDs (Notepad on the bottom)
+- Perform a ForeAtlas Node Separation (Layout > Force Atlas 2 > Dissuade Hubs & Prevent Overlap)
+- Adjust label size
+- Adjust labels position (Layout > LabelAdjust)
 
 
 For more details or usage as a library, refer to the `usage guide

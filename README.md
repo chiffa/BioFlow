@@ -98,12 +98,12 @@ commands):
     > docker-compose build
     > docker-compose up -d
 
-> If you want to pull from dockerhub or don't have access to BioFlow
-> installation directory:
->
->     > wget https://github.com/chiffa/BioFlow/blob/master/docker-compose.yml
->     > docker-compose build
->     > docker-compose up -d
+If you want to pull from dockerhub or don't have access to BioFlow
+installation directory:
+
+    > wget https://github.com/chiffa/BioFlow/blob/master/docker-compose.yml
+    > docker-compose build
+    > docker-compose up -d
 
 Usage walk-through:
 -------------------
@@ -112,14 +112,12 @@ Usage walk-through:
 
 This is the recommended method for using BioFlow.
 
-Import the minimal dependencies: :: python
+Import the minimal dependencies:
 
-> \> from bioflow.annotation\_network.knowledge\_access\_analysis import
-> auto\_analyze as knowledge\_analysis \> from
-> bioflow.molecular\_network.interactome\_analysis import auto\_analyze
-> as interactome\_analysis \> from bioflow.utils.io\_routines import
-> get\_source\_bulbs\_ids \> from bioflow.utils.top\_level import
-> map\_and\_save\_gene\_ids, rebuild\_the\_laplacians
+    > from bioflow.annotation_network.knowledge_access_analysis import auto_analyze as knowledge_analysis
+    > from bioflow.molecular_network.interactome_analysis import auto_analyze as interactome_analysis
+    > from bioflow.utils.io_routines import get_source_bulbs_ids
+    > from bioflow.utils.top_level import map_and_save_gene_ids, rebuild_the_laplacians
 
 Set static folders and urls for the databases & pull the online
 databases:
@@ -139,13 +137,13 @@ technique) to internal IDs:
 BioFlow expects the csv files to contain one gene per line. It is
 capable of mapping genes based on the following ID types:
 
-> -   Gene names
-> -   HGCN symbols
-> -   PDB Ids
-> -   ENSEMBL Ids
-> -   RefSeq IDs
-> -   Uniprot IDs
-> -   Uniprot accession numbers
+-   Gene names
+-   HGCN symbols
+-   PDB Ids
+-   ENSEMBL Ids
+-   RefSeq IDs
+-   Uniprot IDs
+-   Uniprot accession numbers
 
 Preferred mapping approach is through HGCN symbols and Gene names.
 
@@ -175,11 +173,11 @@ BioFlow will print progress to the StdErr from then on and will output
 to the user's home directory, in a folder called 'outputs\_YYYY-MM\_DD
 \<launch time\>':
 
-> -   .gdf file with the flow network and relevance statistics
->     (Interactome\_Analysis\_output.gdf)
-> -   visualisation of information flow through nodes in the null vs
->     hits sets based on the node degree
-> -   list of strongest hits (interactome\_stats.tsv)
+-   .gdf file with the flow network and relevance statistics
+    (Interactome\_Analysis\_output.gdf)
+-   visualisation of information flow through nodes in the null vs hits
+    sets based on the node degree
+-   list of strongest hits (interactome\_stats.tsv)
 
 The .gdf file can be further analysed with more appropriate tools.
 
@@ -220,44 +218,44 @@ printed out to the standard output.
 The .gdf file format is one of the standard format for graph exchange.
 It contains the following columns for the nodes:
 
-> -   node ID
-> -   information current passing through the node
-> -   node type
-> -   legacy\_id (most likely Uniprot ID)
-> -   degree of the node
-> -   whether it is present or not in the hits list (source)
-> -   p-value, comparing the information flow through the node to the
->     flow expected for the random set of genes
-> -   -log10(p\_value) (p\_p-value)
-> -   rel\_value (information flow relative to the flow expected for a
->     random set of genes)
-> -   std\_diff (how many standard deviations above the flow for a
->     random set of genes the flow from a hits list is)
+-   node ID
+-   information current passing through the node
+-   node type
+-   legacy\_id (most likely Uniprot ID)
+-   degree of the node
+-   whether it is present or not in the hits list (source)
+-   p-value, comparing the information flow through the node to the flow
+    expected for the random set of genes
+-   -log10(p\_value) (p\_p-value)
+-   rel\_value (information flow relative to the flow expected for a
+    random set of genes)
+-   std\_diff (how many standard deviations above the flow for a random
+    set of genes the flow from a hits list is)
 
 The most common pipleine involves using [Gephi open graph visualization
 platform](https://gephi.org/):
 
-> -   Load the gdf file into gephy
-> -   Filter out all the nodes with information flow below 0.05 (Filters
->     \> Atrributes \> Range \> current)
-> -   Perform clustering (Statistics \> Modularity \> Randomize & use
->     weights)
-> -   Filter out all the nodes below a significance threshold (Filters
->     \> Attributes \> Range \> p-value)
-> -   Set Color nodes based on the Modularity Class (Nodes \> Colors \>
->     Partition \> Modularity Class)
-> -   Set node size based on p\_p-value (Nodes \> Size \> Ranking \>
->     p\_p-value )
-> -   Set text color based on whether the node is in the hits list
->     (Nodes \> Text Color \> Partition \> source)
-> -   Set text size based on p\_p-value (Nodes \> Text Size \> Ranking
->     \> p\_p-value)
-> -   Show the lables (T on the bottom left)
-> -   Set labes to the legacy IDs (Notepad on the bottom)
-> -   Perform a ForeAtlas Node Separation (Layout \> Force Atlas 2 \>
->     Dissuade Hubs & Prevent Overlap)
-> -   Adjust label size
-> -   Adjust labels position (Layout \> LabelAdjust)
+-   Load the gdf file into gephy
+-   Filter out all the nodes with information flow below 0.05 (Filters
+    \> Atrributes \> Range \> current)
+-   Perform clustering (Statistics \> Modularity \> Randomize & use
+    weights)
+-   Filter out all the nodes below a significance threshold (Filters \>
+    Attributes \> Range \> p-value)
+-   Set Color nodes based on the Modularity Class (Nodes \> Colors \>
+    Partition \> Modularity Class)
+-   Set node size based on p\_p-value (Nodes \> Size \> Ranking \>
+    p\_p-value )
+-   Set text color based on whether the node is in the hits list (Nodes
+    \> Text Color \> Partition \> source)
+-   Set text size based on p\_p-value (Nodes \> Text Size \> Ranking \>
+    p\_p-value)
+-   Show the lables (T on the bottom left)
+-   Set labes to the legacy IDs (Notepad on the bottom)
+-   Perform a ForeAtlas Node Separation (Layout \> Force Atlas 2 \>
+    Dissuade Hubs & Prevent Overlap)
+-   Adjust label size
+-   Adjust labels position (Layout \> LabelAdjust)
 
 For more details or usage as a library, refer to the [usage
 guide](http://bioflow.readthedocs.org/en/latest/guide.html#basic-usage).
