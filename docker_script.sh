@@ -12,6 +12,12 @@ docker-compose build
 # To run the container after the compose: (in the compose directory)
 docker-compose up -d
 
+# to publish to Docker, first tag the branch of interest:
+docker tag XXXXXXXX chiffa/bioflow:latest
+
+# then push to dockerhub
+sudo docker push chiffa/bioflow
+
 
 # basically the idea is to create a volume that would be mounted for every new instance and
 # filled with data for the relevant organisms. Since the data is unlikely to change, the instance
