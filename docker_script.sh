@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
 # To build container:
-docker build -t "bioflow:dockerfile" .
+docker build -t "bioflow" .
 
 # To run the container:
-docker run -p biflow:dockerfile
+docker run bioflow
 
 # To build the container after the compose:
 docker-compose build

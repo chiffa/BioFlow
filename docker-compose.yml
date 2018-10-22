@@ -23,8 +23,7 @@ services:
     volumes:
       - $HOME/docker-mongo/db:/data/db
   bioflow:
-    build: .
-    container_name: "bioflow"
+    image: bioflow
     stdin_open: true
     tty: true
     environment:
