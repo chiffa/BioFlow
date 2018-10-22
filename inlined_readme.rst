@@ -97,6 +97,12 @@ If you want to pull from dockerhub or don't have access to BioFlow installation 
 Usage walk-through:
 -------------------
 
+.. WARNING::
+    While BioFlow provides an interface to download the databases programmatically, the databases are subject to Licenses and Terms that it's up to the end users to respect
+
+For more information about data and config files, refer to the `data and database guide
+<http://bioflow.readthedocs.org/en/latest/guide.html#data-and-databases-setup>`__
+
 Python scripts:
 ```````````````
 This is the recommended method for using BioFlow.
@@ -175,19 +181,16 @@ The .gdf file can be further analysed with more appropriate tools.
 
 Command line:
 `````````````
+
+.. WARNING::
+   Command line interface is currently unstable and is susceptible to throw opaque errors.
+
 Setup environment (likely to take a while top pull all the online databases): ::
 
     > bioflow initialize --~/data_store
     > bioflow downloaddbs
     > bioflow setorg human
     > bioflow loadneo4j
-
-For more information about data and config files, refer to the `data and database guide
-<http://bioflow.readthedocs.org/en/latest/guide.html#data-and-databases-setup>`__
-
-.. WARNING::
-    While BioFlow provides an interface to download the databases programmatically, the databases are subject to Licenses and Terms that it's up to the end users to respect
-
 
 Set the set of perturbed proteins on which we would want to base our analysis ::
 
