@@ -64,10 +64,15 @@ Ubuntu desktop:
 For more information, refer to the `installation guide
 <http://bioflow.readthedocs.org/en/latest/guide.html#installation-and-requirements>`__
 
-5) Finally, install BioFlow: ::
+5) Finally, install BioFlow ::
 
     > pip install BioFlow
 
+Or, alternatively, in case command line interface is not desired::
+
+   > git clone https://github.com/chiffa/BioFlow.git
+   > cd <installation directory/BioFlow>
+   > pip install -r requirements.txt
 
 Docker:
 ```````
