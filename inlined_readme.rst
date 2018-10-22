@@ -180,6 +180,10 @@ Setup environment (likely to take a while top pull all the online databases): ::
 For more information about data and config files, refer to the `data and database guide
 <http://bioflow.readthedocs.org/en/latest/guide.html#data-and-databases-setup>`__
 
+.. WARNING::
+    While BioFlow provides an interface to download the databases programmatically, the databases are subject to Licenses and Terms that it's up to the end users to respect
+
+
 Set the set of perturbed proteins on which we would want to base our analysis ::
 
     > bioflow setsource /home/ank/source_data/perturbed_proteins_ids.csv
@@ -229,7 +233,6 @@ The most common pipleine involves using `Gephi open graph visualization platform
 - Perform a ForeAtlas Node Separation (Layout > Force Atlas 2 > Dissuade Hubs & Prevent Overlap)
 - Adjust label size
 - Adjust labels position (Layout > LabelAdjust)
-
 
 For more details or usage as a library, refer to the `usage guide
 <http://bioflow.readthedocs.org/en/latest/guide.html#basic-usage>`__.

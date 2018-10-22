@@ -218,6 +218,12 @@ For more information about data and config files, refer to the [data and
 database
 guide](http://bioflow.readthedocs.org/en/latest/guide.html#data-and-databases-setup)
 
+> **warning**
+>
+> While BioFlow provides an interface to download the databases
+> programmatically, the databases are subject to Licenses and Terms that
+> it's up to the end users to respect
+
 Set the set of perturbed proteins on which we would want to base our
 analysis :
 
