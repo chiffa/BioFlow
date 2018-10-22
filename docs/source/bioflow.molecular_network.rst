@@ -1,19 +1,19 @@
-bioflow.molecular\_network package
-==================================
+bioflow.molecular_network package
+=================================
 
 Submodules
 ----------
 
-bioflow.molecular\_network.InteractomeInterface module
-------------------------------------------------------
+bioflow.molecular_network.InteractomeInterface module
+-----------------------------------------------------
 
 .. automodule:: bioflow.molecular_network.InteractomeInterface
     :members:
     :undoc-members:
     :show-inheritance:
 
-bioflow.molecular\_network.interactome\_analysis module
--------------------------------------------------------
+bioflow.molecular_network.interactome_analysis module
+-----------------------------------------------------
 
 .. automodule:: bioflow.molecular_network.interactome_analysis
     :members:

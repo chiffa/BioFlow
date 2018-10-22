@@ -1,11 +1,11 @@
-bioflow.algorithms\_bank package
-================================
+bioflow.algorithms_bank package
+===============================
 
 Submodules
 ----------
 
-bioflow.algorithms\_bank.conduction\_routines module
-----------------------------------------------------
+bioflow.algorithms_bank.conduction_routines module
+--------------------------------------------------
 
 .. automodule:: bioflow.algorithms_bank.conduction_routines
     :members:

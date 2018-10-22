@@ -1,27 +1,27 @@
-bioflow.annotation\_network package
-===================================
+bioflow.annotation_network package
+==================================
 
 Submodules
 ----------
 
-bioflow.annotation\_network.BioKnowledgeInterface module
---------------------------------------------------------
+bioflow.annotation_network.BioKnowledgeInterface module
+-------------------------------------------------------
 
 .. automodule:: bioflow.annotation_network.BioKnowledgeInterface
     :members:
     :undoc-members:
     :show-inheritance:
 
-bioflow.annotation\_network.additional module
----------------------------------------------
+bioflow.annotation_network.additional module
+--------------------------------------------
 
 .. automodule:: bioflow.annotation_network.additional
     :members:
     :undoc-members:
     :show-inheritance:
 
-bioflow.annotation\_network.knowledge\_access\_analysis module
---------------------------------------------------------------
+bioflow.annotation_network.knowledge_access_analysis module
+-----------------------------------------------------------
 
 .. automodule:: bioflow.annotation_network.knowledge_access_analysis
     :members:

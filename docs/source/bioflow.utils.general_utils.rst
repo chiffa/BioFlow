@@ -1,35 +1,35 @@
-bioflow.utils.general\_utils package
-====================================
+bioflow.utils.general_utils package
+===================================
 
 Submodules
 ----------
 
-bioflow.utils.general\_utils.dict\_like\_configs\_parser module
----------------------------------------------------------------
+bioflow.utils.general_utils.dict_like_configs_parser module
+-----------------------------------------------------------
 
 .. automodule:: bioflow.utils.general_utils.dict_like_configs_parser
     :members:
     :undoc-members:
     :show-inheritance:
 
-bioflow.utils.general\_utils.high\_level\_os\_io module
--------------------------------------------------------
+bioflow.utils.general_utils.high_level_os_io module
+---------------------------------------------------
 
 .. automodule:: bioflow.utils.general_utils.high_level_os_io
     :members:
     :undoc-members:
     :show-inheritance:
 
-bioflow.utils.general\_utils.internet\_io module
-------------------------------------------------
+bioflow.utils.general_utils.internet_io module
+----------------------------------------------
 
 .. automodule:: bioflow.utils.general_utils.internet_io
     :members:
     :undoc-members:
     :show-inheritance:
 
-bioflow.utils.general\_utils.useful\_wrappers module
-----------------------------------------------------
+bioflow.utils.general_utils.useful_wrappers module
+--------------------------------------------------
 
 .. automodule:: bioflow.utils.general_utils.useful_wrappers
     :members:
