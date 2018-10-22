@@ -44,11 +44,11 @@ Ubuntu desktop:
 1) Install the Anaconda python 2.7 and make it your default python. The full process is explained
 `here <https://docs.anaconda.com/anaconda/install/linux/>`__
 
-2) Isnstall libsuitesparse: ::
+2) Isnstall libsuitesparse::
 
     > apt-get -y install libsuitesparse-dev
 
-3) Install neo4j: ::
+3) Install neo4j::
 
     > wget -O - https://debian.neo4j.org/neotechnology.gpg.key | sudo apt-key add -
     > echo 'deb https://debian.neo4j.org/repo stable/' | sudo tee /etc/apt/sources.list.d/neo4j.list
@@ -56,7 +56,7 @@ Ubuntu desktop:
     > sudo apt-get install neo4j
 
 4) Install MongDB (Assuming Linux 18.04 - if not, see
-`here <https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ubuntu/>`__): ::
+`here <https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ubuntu/>`__)::
 
     > sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 9DA31620334BD75D9DCB49F368818C72E52529D4
     > echo "deb [ arch=amd64 ] https://repo.mongodb.org/apt/ubuntu bionic/mongodb-org/4.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-4.0.list
@@ -75,7 +75,7 @@ Docker:
 ```````
 
 If you want to build locally (notice you need to issue docker commands with the actual docker-enabled
-user; usually prepending sudo to the commands): ::
+user; usually prepending sudo to the commands)::
 
    > cd <wherever BioFlow got installed>
    > docker build -t
@@ -84,7 +84,7 @@ user; usually prepending sudo to the commands): ::
    > docker-compose up -d
 
 
- If you want to pull from dockerhub or don't have access to BioFlow installation directory: ::
+ If you want to pull from dockerhub or don't have access to BioFlow installation directory::
 
    > wget https://github.com/chiffa/BioFlow/blob/master/docker-compose.yml
    > docker-compose build
@@ -105,21 +105,22 @@ Import the minimal dependencies: :: python
    > from bioflow.utils.io_routines import get_source_bulbs_ids
    > from bioflow.utils.top_level import map_and_save_gene_ids, rebuild_the_laplacians
 
-Set static folders and urls for the databases & pull the online databases: :: python
+Set static folders and urls for the databases & pull the online databases::
 
    > set_folders('~/support') # script restart here is required to properly update all the folders
    > pull_online_dbs()
 
-Set the organism (human, S. Cerevisiae): :: python
+Set the organism (human, S. Cerevisiae)::
 
    > build_source_config('human')  # script restart here is required to properly update all the folders
 
-Map the hits and the background genes (available through an experimental technique) to internal IDs: :: python
+Map the hits and the background genes (available through an experimental technique) to internal IDs::
 
    > map_and_save_gene_ids('path_to_hits.csv', 'path_to_background.csv')
 
 BioFlow expects the csv files to contain one gene per line. It is capable of mapping genes based on
 the following ID types:
+
    - Gene names
    - HGCN symbols
    - PDB Ids
@@ -130,11 +131,11 @@ the following ID types:
 
 Preferred mapping approach is through HGCN symbols and Gene names.
 
-Rebuild the laplacians (not required unless background Ids List has been changed): :: python
+Rebuild the laplacians (not required unless background Ids List has been changed)::
 
    > rebuild_the_laplacians(all_detectable_genes=background_bulbs_ids)
 
-Launch the analysis itself for the information flow in the interactome: :: python
+Launch the analysis itself for the information flow in the interactome::
 
    > interactome_analysis([hits_ids],  # list of hits
                          desired_depth=9,  # how many samples we would like to generate to compare against
@@ -143,7 +144,7 @@ Launch the analysis itself for the information flow in the interactome: :: pytho
                          skip_sampling=False,  # if true, skips the sampling of background set and retrieves stored ones instead
                          from_memoization=False)  # if true, assumes the information flow for the hits sample has already been computed.
 
-Launch the analysis itself for the information flow in the annotation network (experimental): :: python
+Launch the analysis itself for the information flow in the annotation network (experimental)::
 
    > knowledge_analysis([hits_ids], # list of hits
                        desired_depth=20, # how many samples we would like to generate to compare against
@@ -152,6 +153,7 @@ Launch the analysis itself for the information flow in the annotation network (e
 
 BioFlow will print progress to the StdErr from then on and will output to the user's home directory,
 in a folder called 'outputs_YYYY-MM_DD <launch time>':
+
    - .gdf file with the flow network and relevance statistics (Interactome_Analysis_output.gdf)
    - visualisation of information flow through nodes in the null vs hits sets based on the node degree
    - list of strongest hits (interactome_stats.tsv)
@@ -193,6 +195,7 @@ Post-processing:
 ````````````````
 The .gdf file format is one of the standard format for graph exchange. It contains the following
 columns for the nodes:
+
    - node ID
    - information current passing through the node
    - node type
@@ -205,6 +208,7 @@ columns for the nodes:
    - std_diff (how many standard deviations above the flow for a random set of genes the flow from a hits list is)
 
 The most common pipleine involves using `Gephi open graph visualization platform <https://gephi.org/>`__:
+
    - Load the gdf file into gephy
    - Filter out all the nodes with information flow below 0.05 (Filters > Atrributes > Range > current)
    - Perform clustering (Statistics > Modularity > Randomize & use weights)

@@ -60,11 +60,11 @@ Installation walk-through:
 full process is explained
 [here](https://docs.anaconda.com/anaconda/install/linux/)
 
-2)  Isnstall libsuitesparse: :
+2)  Isnstall libsuitesparse:
 
         > apt-get -y install libsuitesparse-dev
 
-3)  Install neo4j: :
+3)  Install neo4j:
 
         > wget -O - https://debian.neo4j.org/neotechnology.gpg.key | sudo apt-key add -
         > echo 'deb https://debian.neo4j.org/repo stable/' | sudo tee /etc/apt/sources.list.d/neo4j.list
@@ -73,7 +73,6 @@ full process is explained
 
 ​4) Install MongDB (Assuming Linux 18.04 - if not, see
 [here](https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ubuntu/)):
-:
 
     > sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 9DA31620334BD75D9DCB49F368818C72E52529D4
     > echo "deb [ arch=amd64 ] https://repo.mongodb.org/apt/ubuntu bionic/mongodb-org/4.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-4.0.list
@@ -91,7 +90,7 @@ guide](http://bioflow.readthedocs.org/en/latest/guide.html#installation-and-requ
 
 If you want to build locally (notice you need to issue docker commands
 with the actual docker-enabled user; usually prepending sudo to the
-commands): :
+commands):
 
     > cd <wherever BioFlow got installed>
     > docker build -t
@@ -100,7 +99,7 @@ commands): :
     > docker-compose up -d
 
 > If you want to pull from dockerhub or don't have access to BioFlow
-> installation directory: :
+> installation directory:
 >
 >     > wget https://github.com/chiffa/BioFlow/blob/master/docker-compose.yml
 >     > docker-compose build
@@ -123,64 +122,64 @@ Import the minimal dependencies: :: python
 > map\_and\_save\_gene\_ids, rebuild\_the\_laplacians
 
 Set static folders and urls for the databases & pull the online
-databases: :: python
+databases:
 
-> \> set\_folders('\~/support') \# script restart here is required to
-> properly update all the folders \> pull\_online\_dbs()
+    > set_folders('~/support') # script restart here is required to properly update all the folders
+    > pull_online_dbs()
 
-Set the organism (human, S. Cerevisiae): :: python
+Set the organism (human, S. Cerevisiae):
 
-> \> build\_source\_config('human') \# script restart here is required
-> to properly update all the folders
+    > build_source_config('human')  # script restart here is required to properly update all the folders
 
 Map the hits and the background genes (available through an experimental
-technique) to internal IDs: :: python
+technique) to internal IDs:
 
-> \> map\_and\_save\_gene\_ids('path\_to\_hits.csv',
-> 'path\_to\_background.csv')
+    > map_and_save_gene_ids('path_to_hits.csv', 'path_to_background.csv')
 
 BioFlow expects the csv files to contain one gene per line. It is
-capable of mapping genes based on the following ID types: - Gene names -
-HGCN symbols - PDB Ids - ENSEMBL Ids - RefSeq IDs - Uniprot IDs -
-Uniprot accession numbers
+capable of mapping genes based on the following ID types:
+
+> -   Gene names
+> -   HGCN symbols
+> -   PDB Ids
+> -   ENSEMBL Ids
+> -   RefSeq IDs
+> -   Uniprot IDs
+> -   Uniprot accession numbers
 
 Preferred mapping approach is through HGCN symbols and Gene names.
 
 Rebuild the laplacians (not required unless background Ids List has been
-changed): :: python
+changed):
 
-> \>
-> rebuild\_the\_laplacians(all\_detectable\_genes=background\_bulbs\_ids)
+    > rebuild_the_laplacians(all_detectable_genes=background_bulbs_ids)
 
 Launch the analysis itself for the information flow in the interactome:
-:: python
 
-> \> interactome\_analysis([hits\_ids], \# list of hits
-> :   desired\_depth=9, \# how many samples we would like to generate to
->     compare against processors=3, \# how many threads we would like to
->     launch in parallel (in general 3/4 works best)
->     background\_list=background\_bulbs\_ids, \# list of background Ids
->     skip\_sampling=False, \# if true, skips the sampling of background
->     set and retrieves stored ones instead from\_memoization=False) \#
->     if true, assumes the information flow for the hits sample has
->     already been computed.
->
+    > interactome_analysis([hits_ids],  # list of hits
+                          desired_depth=9,  # how many samples we would like to generate to compare against
+                          processors=3,  # how many threads we would like to launch in parallel (in general 3/4 works best)
+                          background_list=background_bulbs_ids,  # list of background Ids
+                          skip_sampling=False,  # if true, skips the sampling of background set and retrieves stored ones instead
+                          from_memoization=False)  # if true, assumes the information flow for the hits sample has already been computed.
+
 Launch the analysis itself for the information flow in the annotation
-network (experimental): :: python
+network (experimental):
 
-> \> knowledge\_analysis([hits\_ids], \# list of hits
-> :   desired\_depth=20, \# how many samples we would like to generate
->     to compare against processors=3, how many threads we would like to
->     launch in parallel (in general 3/4 works best)
->     skip\_sampling=False) \# if true, skips the sampling of background
->     set and retrieves stored ones instead
->
+    > knowledge_analysis([hits_ids], # list of hits
+                        desired_depth=20, # how many samples we would like to generate to compare against
+                        processors=3,  how many threads we would like to launch in parallel (in general 3/4 works best)
+                        skip_sampling=False) # if true, skips the sampling of background set and retrieves stored ones instead
+
 BioFlow will print progress to the StdErr from then on and will output
 to the user's home directory, in a folder called 'outputs\_YYYY-MM\_DD
-\<launch time\>': - .gdf file with the flow network and relevance
-statistics (Interactome\_Analysis\_output.gdf) - visualisation of
-information flow through nodes in the null vs hits sets based on the
-node degree - list of strongest hits (interactome\_stats.tsv)
+\<launch time\>':
+
+> -   .gdf file with the flow network and relevance statistics
+>     (Interactome\_Analysis\_output.gdf)
+> -   visualisation of information flow through nodes in the null vs
+>     hits sets based on the node degree
+> -   list of strongest hits (interactome\_stats.tsv)
 
 The .gdf file can be further analysed with more appropriate tools.
 
@@ -219,38 +218,46 @@ printed out to the standard output.
 ### Post-processing:
 
 The .gdf file format is one of the standard format for graph exchange.
-It contains the following columns for the nodes: - node ID - information
-current passing through the node - node type - legacy\_id (most likely
-Uniprot ID) - degree of the node - whether it is present or not in the
-hits list (source) - p-value, comparing the information flow through the
-node to the flow expected for the random set of genes - -log10(p\_value)
-(p\_p-value) - rel\_value (information flow relative to the flow
-expected for a random set of genes) - std\_diff (how many standard
-deviations above the flow for a random set of genes the flow from a hits
-list is)
+It contains the following columns for the nodes:
 
-The most common pipleine involves using [Gephi open graph visualization platform](https://gephi.org/):
-:   -   Load the gdf file into gephy
-    -   Filter out all the nodes with information flow below 0.05
-        (Filters \> Atrributes \> Range \> current)
-    -   Perform clustering (Statistics \> Modularity \> Randomize & use
-        weights)
-    -   Filter out all the nodes below a significance threshold (Filters
-        \> Attributes \> Range \> p-value)
-    -   Set Color nodes based on the Modularity Class (Nodes \> Colors
-        \> Partition \> Modularity Class)
-    -   Set node size based on p\_p-value (Nodes \> Size \> Ranking \>
-        p\_p-value )
-    -   Set text color based on whether the node is in the hits list
-        (Nodes \> Text Color \> Partition \> source)
-    -   Set text size based on p\_p-value (Nodes \> Text Size \> Ranking
-        \> p\_p-value)
-    -   Show the lables (T on the bottom left)
-    -   Set labes to the legacy IDs (Notepad on the bottom)
-    -   Perform a ForeAtlas Node Separation (Layout \> Force Atlas 2 \>
-        Dissuade Hubs & Prevent Overlap)
-    -   Adjust label size
-    -   Adjust labels position (Layout \> LabelAdjust)
+> -   node ID
+> -   information current passing through the node
+> -   node type
+> -   legacy\_id (most likely Uniprot ID)
+> -   degree of the node
+> -   whether it is present or not in the hits list (source)
+> -   p-value, comparing the information flow through the node to the
+>     flow expected for the random set of genes
+> -   -log10(p\_value) (p\_p-value)
+> -   rel\_value (information flow relative to the flow expected for a
+>     random set of genes)
+> -   std\_diff (how many standard deviations above the flow for a
+>     random set of genes the flow from a hits list is)
+
+The most common pipleine involves using [Gephi open graph visualization
+platform](https://gephi.org/):
+
+> -   Load the gdf file into gephy
+> -   Filter out all the nodes with information flow below 0.05 (Filters
+>     \> Atrributes \> Range \> current)
+> -   Perform clustering (Statistics \> Modularity \> Randomize & use
+>     weights)
+> -   Filter out all the nodes below a significance threshold (Filters
+>     \> Attributes \> Range \> p-value)
+> -   Set Color nodes based on the Modularity Class (Nodes \> Colors \>
+>     Partition \> Modularity Class)
+> -   Set node size based on p\_p-value (Nodes \> Size \> Ranking \>
+>     p\_p-value )
+> -   Set text color based on whether the node is in the hits list
+>     (Nodes \> Text Color \> Partition \> source)
+> -   Set text size based on p\_p-value (Nodes \> Text Size \> Ranking
+>     \> p\_p-value)
+> -   Show the lables (T on the bottom left)
+> -   Set labes to the legacy IDs (Notepad on the bottom)
+> -   Perform a ForeAtlas Node Separation (Layout \> Force Atlas 2 \>
+>     Dissuade Hubs & Prevent Overlap)
+> -   Adjust label size
+> -   Adjust labels position (Layout \> LabelAdjust)
 
 For more details or usage as a library, refer to the [usage
 guide](http://bioflow.readthedocs.org/en/latest/guide.html#basic-usage).
