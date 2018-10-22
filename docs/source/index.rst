@@ -9,15 +9,6 @@ Usage Guides:
    guide
 
 
-Dev log:
-========
-
-.. toctree::
-   :maxdepth: 2
-
-   developperDecisions
-
-
 API documentation:
 ==================
 

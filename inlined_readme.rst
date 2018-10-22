@@ -74,20 +74,98 @@ For more information, refer to the `installation guide
 Docker:
 ```````
 
+If you want to build locally (notice you need to issue docker commands with the actual docker-enabled
+user; usually prepending sudo to the commands): ::
+
+   > cd <wherever BioFlow got installed>
+   > docker build -t
+   > docker run bioflow
+   > docker-compose build
+   > docker-compose up -d
+
+
+ If you want to pull from dockerhub or don't have access to BioFlow installation directory: ::
+
+   > wget https://github.com/chiffa/BioFlow/blob/master/docker-compose.yml
+   > docker-compose build
+   > docker-compose up -d
+
 
 Usage walk-through:
 -------------------
 
-Fire up the databases ::
+Python scripts:
+```````````````
+This is the recommended method for using BioFlow.
 
-    > /home/ank/neo4j-yeast/bin/neo4j start
-    > nohup /home/ank/mongodb/bin/mongod &
+Import the minimal dependencies: :: python
 
-Setup environment ::
+   > from bioflow.annotation_network.knowledge_access_analysis import auto_analyze as knowledge_analysis
+   > from bioflow.molecular_network.interactome_analysis import auto_analyze as interactome_analysis
+   > from bioflow.utils.io_routines import get_source_bulbs_ids
+   > from bioflow.utils.top_level import map_and_save_gene_ids, rebuild_the_laplacians
 
-    > bioflow initialize --/home/ank/data_store
+Set static folders and urls for the databases & pull the online databases: :: python
+
+   > set_folders('~/support') # script restart here is required to properly update all the folders
+   > pull_online_dbs()
+
+Set the organism (human, S. Cerevisiae): :: python
+
+   > build_source_config('human')  # script restart here is required to properly update all the folders
+
+Map the hits and the background genes (available through an experimental technique) to internal IDs: :: python
+
+   > map_and_save_gene_ids('path_to_hits.csv', 'path_to_background.csv')
+
+BioFlow expects the csv files to contain one gene per line. It is capable of mapping genes based on
+the following ID types:
+   - Gene names
+   - HGCN symbols
+   - PDB Ids
+   - ENSEMBL Ids
+   - RefSeq IDs
+   - Uniprot IDs
+   - Uniprot accession numbers
+
+Preferred mapping approach is through HGCN symbols and Gene names.
+
+Rebuild the laplacians (not required unless background Ids List has been changed): :: python
+
+   > rebuild_the_laplacians(all_detectable_genes=background_bulbs_ids)
+
+Launch the analysis itself for the information flow in the interactome: :: python
+
+   > interactome_analysis([hits_ids],  # list of hits
+                         desired_depth=9,  # how many samples we would like to generate to compare against
+                         processors=3,  # how many threads we would like to launch in parallel (in general 3/4 works best)
+                         background_list=background_bulbs_ids,  # list of background Ids
+                         skip_sampling=False,  # if true, skips the sampling of background set and retrieves stored ones instead
+                         from_memoization=False)  # if true, assumes the information flow for the hits sample has already been computed.
+
+Launch the analysis itself for the information flow in the annotation network (experimental): :: python
+
+   > knowledge_analysis([hits_ids], # list of hits
+                       desired_depth=20, # how many samples we would like to generate to compare against
+                       processors=3,  how many threads we would like to launch in parallel (in general 3/4 works best)
+                       skip_sampling=False) # if true, skips the sampling of background set and retrieves stored ones instead
+
+BioFlow will print progress to the StdErr from then on and will output to the user's home directory,
+in a folder called 'outputs_YYYY-MM_DD <launch time>':
+   - .gdf file with the flow network and relevance statistics (Interactome_Analysis_output.gdf)
+   - visualisation of information flow through nodes in the null vs hits sets based on the node degree
+   - list of strongest hits (interactome_stats.tsv)
+
+The .gdf file can be further analysed with more appropriate tools.
+
+
+Command line:
+`````````````
+Setup environment (likely to take a while top pull all the online databases): ::
+
+    > bioflow initialize --~/data_store
     > bioflow downloaddbs
-    > bioflow setorg yeast
+    > bioflow setorg human
     > bioflow loadneo4j
 
 For more information about data and config files, refer to the `data and database guide
@@ -109,6 +187,38 @@ Perform the analysis::
 
 The results of analysis will be available in the output folder, and printed out to the standard
 output.
+
+
+Post-processing:
+````````````````
+The .gdf file format is one of the standard format for graph exchange. It contains the following
+columns for the nodes:
+   - node ID
+   - information current passing through the node
+   - node type
+   - legacy_id (most likely Uniprot ID)
+   - degree of the node
+   - whether it is present or not in the hits list (source)
+   - p-value, comparing the information flow through the node to the flow expected for the random set of genes
+   - -log10(p_value) (p_p-value)
+   - rel_value (information flow relative to the flow expected for a random set of genes)
+   - std_diff (how many standard deviations above the flow for a random set of genes the flow from a hits list is)
+
+The most common pipleine involves using `Gephi open graph visualization platform <https://gephi.org/>`__:
+   - Load the gdf file into gephy
+   - Filter out all the nodes with information flow below 0.05 (Filters > Atrributes > Range > current)
+   - Perform clustering (Statistics > Modularity > Randomize & use weights)
+   - Filter out all the nodes below a significance threshold (Filters > Attributes > Range > p-value)
+   - Set Color nodes based on the Modularity Class (Nodes > Colors > Partition > Modularity Class)
+   - Set node size based on p_p-value (Nodes > Size > Ranking > p_p-value )
+   - Set text color based on whether the node is in the hits list (Nodes > Text Color > Partition > source)
+   - Set text size based on p_p-value (Nodes > Text Size > Ranking > p_p-value)\
+   - Show the lables (T on the bottom left)
+   - Set labes to the legacy IDs (Notepad on the bottom)
+   - Perform a ForeAtlas Node Separation (Layout > Force Atlas 2 > Dissuade Hubs & Prevent Overlap)
+   - Adjust label size
+   - Adjust labels position (Layout > LabelAdjust)
+
 
 For more details or usage as a library, refer to the `usage guide
 <http://bioflow.readthedocs.org/en/latest/guide.html#basic-usage>`__.
