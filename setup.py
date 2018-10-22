@@ -16,27 +16,27 @@ on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
 if not on_rtd:
     requirements = [
-        'numpy',
-        'scipy',
-        'matplotlib',
-        'scikit-learn',
-        'python-Levenshtein',
-        'cython',
-        'pymongo',
-        'requests',
-        'click',
-        'scikits.sparse',
-        'mock',
-        'requests-ftp']
+        'numpy < 2.0',
+        'scipy < 1.0',
+        'matplotlib < 2.0',
+        'scikit-learn < 0.17',
+        'cython < 0.23',
+        'pymongo < 4.0',
+        'requests < 3.0',
+        'click < 6.0',
+        'scikits.sparse < 0.3',
+        'mock < 2.0',
+        'requests-ftp < 0.4',
+        'neo4j-driver < 2.0',
+    ]
 
 else:
     requirements = [
-        'pymongo',
-        'click',
-        'requests',
-        'click',
-        'mock',
-        'requests-ftp']
+        'pymongo < 4.0',
+        'requests < 3.0',
+        'click < 6.0',
+        'requests-ftp < 0.4',
+        'neo4j-driver < 2.0',]
 
 setup(
     name='BioFlow',
@@ -58,7 +58,7 @@ setup(
         'Topic :: Scientific/Engineering :: Medical Science Apps.',
         'Topic :: Software Development :: Libraries :: Python Modules',
         'Operating System :: POSIX :: Linux',
-        'License :: OSI Approved :: BSD 3-clause license',
+        'License :: OSI Approved :: BSD License',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: Implementation :: CPython',
     ],

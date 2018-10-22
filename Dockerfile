@@ -1,9 +1,9 @@
 FROM ubuntu:18.04
+MAINTAINER "Andrei Kucharavy <ank@andreikucharavy.com>"
 # change to continuumio/anaconda
 
 RUN export DEBIAN_FRONTEND=noninteractive
 RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
-
 
 # create and set-up home directory:
 RUN cd /home
@@ -19,7 +19,6 @@ RUN apt-get -yq install wget
 RUN apt-get -yq install git
 RUN apt-get -yq install curl
 RUN apt-get -yq install unzip
-#RUN apt-get -yq install nohup
 RUN apt-get -yq install lsof
 RUN apt-get update
 RUN apt-get -yq install libsm6 libxrender1 libfontconfig1 libglib2.0-0
@@ -34,23 +33,10 @@ RUN conda config --set always_yes yes --set changeps1 no
 RUN conda update -q conda
 RUN rm miniconda.sh
 
-RUN conda create -q -n test-environement python="2.7" numpy scipy matplotlib
-RUN /bin/bash -c "source activate test-environement"
-RUN conda install python="2.7" cython scikit-learn
-
-#FROM continuumio/anaconda
-#MAINTAINER "Andrei Kucharavy <ank@andreikucharavy.com>"
-#
-#RUN export DEBIAN_FRONTEND=noninteractive
-#RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
-#
-#RUN apt-get update && \
-#    apt-get -yq install git unzip && \
-#    apt-get -yq install build-essential build-essential libsuitesparse-dev && \
-#    apt-get -yq install lsof libsm6 libxrender1 libfontconfig1 libglib2.0-0
-#
-#RUN /opt/conda/bin/conda install numpy scipy matplotlib -y && \
-#    /opt/conda/bin/conda install cython scikit-learn -y
+# create and activate conda environment
+RUN conda create -q -n run-environement python="2.7" numpy=1.9 scipy=0.19 matplotlib=1.4
+RUN /bin/bash -c "source activate run-environement"
+RUN conda install python="2.7" cython=0.22 scikit-learn=0.16
 
 # clone the project into the test environement:
 ADD https://github.com/chiffa/BioFlow/archive/master.zip BioFlow.zip
@@ -58,10 +44,5 @@ RUN unzip BioFlow.zip
 
 # install project requirements:
 RUN cd /BioFlow-master/; pip install requirements -r requirements.txt
-
-# TODO: is this still true?
-# you will need to connect to the container and run those commands to get the databases up
-# /neo4j-yeast/bin/neo4j start
-# /mongodb/bin/mongod &
 
 
