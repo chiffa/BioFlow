@@ -11,6 +11,15 @@ Travis tester:
     - docker-compose
     - databases downloads
 
+Add functions:
+    - allow user to configure where to store the output => add outputs folder to docker-compose
+    - remove ank as point of storage for miniconda in Docker
+    - move configs somewhere saner
+
+Documents:
+    - tell where the user-mapped folders live from Docker
+    - tell the user how to install and map to a local neo4j database
+
 There still seem to be a problem of regular convergence to the same paths in the network. Potential sources:
     - borked topology
     - current intensity between the interconnected nodes (potentially resolved)

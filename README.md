@@ -141,7 +141,7 @@ Import the minimal dependencies:
 
 Set static folders and urls for the databases:
 
-    > set_folders('~/support') # script restart here is required to properly update all the folders
+    > set_folders('/source') # script restart here is required to properly update all the folders
 
 Pull the online databases:
 
