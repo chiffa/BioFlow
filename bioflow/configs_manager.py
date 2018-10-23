@@ -170,7 +170,7 @@ def edit_config_file(conf_shortname, section, parameter, new_value):
 
 
 def set_folders(file_directory,
-                neo4jserver='http://localhost:7474',
+                neo4jserver='bolt://localhost:7687',
                 mongoserver='mongodb://localhost:27017/'):
     if file_directory[0] == r'~':
         file_directory = expanduser(file_directory)
