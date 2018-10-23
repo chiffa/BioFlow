@@ -127,11 +127,11 @@ Set the organism (human, yeast (S. Cerevisiae))::
 
    > build_source_config('human')  # script restart here is required to properly update all the folders
 
-Now, we can import the neo4j database handlers:
+Now, we can import the neo4j database handlers::
 
    > from bioflow.db_importers.import_main import build_db, destroy_db
 
-And build the actual master graph (it will take a while - up to a day)
+And build the actual master graph (it will take a while - up to a day)::
 
    > build_db()
 

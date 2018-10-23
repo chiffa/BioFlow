@@ -153,12 +153,11 @@ Set the organism (human, yeast (S. Cerevisiae)):
 
 Now, we can import the neo4j database handlers:
 
-> \> from bioflow.db\_importers.import\_main import build\_db,
-> destroy\_db
+    > from bioflow.db_importers.import_main import build_db, destroy_db
 
-And build the actual master graph (it will take a while - up to a day)
+And build the actual master graph (it will take a while - up to a day):
 
-> \> build\_db()
+    > build_db()
 
 Now, you can import the core of BioFlow:
 
