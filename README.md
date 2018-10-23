@@ -113,6 +113,10 @@ installation directory:
     > docker-compose build
     > docker-compose up -d
 
+Finally attach to the running container:
+
+    > docker attach bioflow_bioflow
+
 Usage walk-through:
 -------------------
 

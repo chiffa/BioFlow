@@ -93,6 +93,9 @@ If you want to pull from dockerhub or don't have access to BioFlow installation 
    > docker-compose build
    > docker-compose up -d
 
+Finally attach to the running container::
+
+   > docker attach bioflow_bioflow
 
 Usage walk-through:
 -------------------

@@ -41,6 +41,8 @@ RUN conda install python="2.7" cython=0.22 scikit-learn=0.16
 # clone the project into the test environement:
 ADD https://github.com/chiffa/BioFlow/archive/master.zip BioFlow.zip
 RUN unzip BioFlow.zip
+RUN rm Bioflow.zip
+RUN apt-get install -yq nano
 
 # install project requirements:
 RUN cd /BioFlow-master/; pip install requirements -r requirements.txt
