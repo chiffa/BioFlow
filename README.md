@@ -1,9 +1,11 @@
-[![License
-Type](https://img.shields.io/badge/license-BSD3-blue.svg)](https://github.com/chiffa/BioFlow/blob/master/License-new_BSD.txt)
-[![Python
-version](https://img.shields.io/badge/python-2.7-blue.svg)](https://www.python.org/downloads/release/python-2715/)
-[![Branch
-Status](https://img.shields.io/badge/status-alpha-red.svg)](https://www.python.org/downloads/release/python-2715/)
+[![PyPI
+license](https://img.shields.io/pypi/l/BioFlow.svg)](https://pypi.python.org/pypi/BioFlow/)
+[![PyPI Python
+version](https://img.shields.io/pypi/pyversions/BioFlow.svg)](https://pypi.python.org/pypi/BioFlow/)
+[![PyPI
+version](https://img.shields.io/pypi/v/BioFlow.svg)](https://pypi.python.org/pypi/BioFlow/)
+[![PyPI
+status](https://img.shields.io/pypi/status/BioFlow.svg)](https://pypi.python.org/pypi/BioFlow/)
 
 BioFlow Project
 ===============
@@ -114,11 +116,13 @@ installation directory:
 Usage walk-through:
 -------------------
 
-> **warning**
->
-> While BioFlow provides an interface to download the databases
-> programmatically, the databases are subject to Licenses and Terms that
-> it's up to the end users to respect
+<div class="admonition warning">
+
+While BioFlow provides an interface to download the databases
+programmatically, the databases are subject to Licenses and Terms that
+it's up to the end users to respect
+
+</div>
 
 For more information about data and config files, refer to the [data and
 database
@@ -188,26 +192,35 @@ network (experimental):
 Where:
 
 hits\_ids
+
 :   list of hits
 
 desired\_depth
+
 :   how many samples we would like to generate to compare against
 
 processors
-:   how many threads we would like to launch in parallel (in general 3/4 works best)
+
+:   how many threads we would like to launch in parallel (in general 3/4
+    works best)
 
 background\_list
+
 :   list of background Ids
 
 skip\_sampling
-:   if true, skips the sampling of background set and retrieves stored ones instead
+
+:   if true, skips the sampling of background set and retrieves stored
+    ones instead
 
 from\_memoization
-:   if true, assumes the information flow for the hits sample has already been computed
+
+:   if true, assumes the information flow for the hits sample has
+    already been computed
 
 BioFlow will print progress to the StdErr from then on and will output
 to the user's home directory, in a folder called 'outputs\_YYYY-MM\_DD
-\<launch time\>':
+&lt;launch time&gt;':
 
 -   .gdf file with the flow network and relevance statistics
     (Interactome\_Analysis\_output.gdf)
@@ -219,10 +232,12 @@ The .gdf file can be further analysed with more appropriate tools.
 
 ### Command line:
 
-> **warning**
->
-> Command line interface is currently unstable and is susceptible to
-> throw opaque errors.
+<div class="admonition warning">
+
+Command line interface is currently unstable and is susceptible to throw
+opaque errors.
+
+</div>
 
 Setup environment (likely to take a while top pull all the online
 databases): :
@@ -273,26 +288,26 @@ The most common pipleine involves using [Gephi open graph visualization
 platform](https://gephi.org/):
 
 -   Load the gdf file into gephy
--   Filter out all the nodes with information flow below 0.05 (Filters
-    \> Atrributes \> Range \> current)
--   Perform clustering (Statistics \> Modularity \> Randomize & use
+-   Filter out all the nodes with information flow below 0.05
+    (Filters &gt; Atrributes &gt; Range &gt; current)
+-   Perform clustering (Statistics &gt; Modularity &gt; Randomize & use
     weights)
--   Filter out all the nodes below a significance threshold (Filters \>
-    Attributes \> Range \> p-value)
--   Set Color nodes based on the Modularity Class (Nodes \> Colors \>
-    Partition \> Modularity Class)
--   Set node size based on p\_p-value (Nodes \> Size \> Ranking \>
+-   Filter out all the nodes below a significance threshold
+    (Filters &gt; Attributes &gt; Range &gt; p-value)
+-   Set Color nodes based on the Modularity Class (Nodes &gt;
+    Colors &gt; Partition &gt; Modularity Class)
+-   Set node size based on p\_p-value (Nodes &gt; Size &gt; Ranking &gt;
     p\_p-value )
--   Set text color based on whether the node is in the hits list (Nodes
-    \> Text Color \> Partition \> source)
--   Set text size based on p\_p-value (Nodes \> Text Size \> Ranking \>
-    p\_p-value)
+-   Set text color based on whether the node is in the hits list
+    (Nodes &gt; Text Color &gt; Partition &gt; source)
+-   Set text size based on p\_p-value (Nodes &gt; Text Size &gt;
+    Ranking &gt; p\_p-value)
 -   Show the lables (T on the bottom left)
 -   Set labes to the legacy IDs (Notepad on the bottom)
--   Perform a ForeAtlas Node Separation (Layout \> Force Atlas 2 \>
+-   Perform a ForeAtlas Node Separation (Layout &gt; Force Atlas 2 &gt;
     Dissuade Hubs & Prevent Overlap)
 -   Adjust label size
--   Adjust labels position (Layout \> LabelAdjust)
+-   Adjust labels position (Layout &gt; LabelAdjust)
 
 For more details or usage as a library, refer to the [usage
 guide](http://bioflow.readthedocs.org/en/latest/guide.html#basic-usage).

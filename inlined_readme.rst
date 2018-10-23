@@ -1,4 +1,4 @@
-|License Type| |Python version|  |Branch status|
+|PyPI license| |PyPI Python version| |PyPI version| |PyPI status|
 
 BioFlow Project
 ===============
@@ -264,3 +264,12 @@ For more details or usage as a library, refer to the `usage guide
 .. |Docs| image:: https://readthedocs.org/projects/bioflow/badge/?version=latest
    :target: https://bioflow.readthedocs.io/en/latest/?badge=latest
    :alt: Documentation Status
+
+.. |PyPI version| image:: https://img.shields.io/pypi/v/BioFlow.svg
+   :target: https://pypi.python.org/pypi/BioFlow/
+.. |PyPI Python version| image:: https://img.shields.io/pypi/pyversions/BioFlow.svg
+   :target: https://pypi.python.org/pypi/BioFlow/
+.. |PyPI license| image:: https://img.shields.io/pypi/l/BioFlow.svg
+   :target: https://pypi.python.org/pypi/BioFlow/
+.. |PyPI status| image:: https://img.shields.io/pypi/status/BioFlow.svg
+   :target: https://pypi.python.org/pypi/BioFlow/

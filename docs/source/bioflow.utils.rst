@@ -27,48 +27,48 @@ bioflow.utils.gdfExportInterface module
     :undoc-members:
     :show-inheritance:
 
-bioflow.utils.io_routines module
---------------------------------
+bioflow.utils.io\_routines module
+---------------------------------
 
 .. automodule:: bioflow.utils.io_routines
     :members:
     :undoc-members:
     :show-inheritance:
 
-bioflow.utils.linalg_routines module
-------------------------------------
+bioflow.utils.linalg\_routines module
+-------------------------------------
 
 .. automodule:: bioflow.utils.linalg_routines
     :members:
     :undoc-members:
     :show-inheritance:
 
-bioflow.utils.log_behavior module
----------------------------------
+bioflow.utils.log\_behavior module
+----------------------------------
 
 .. automodule:: bioflow.utils.log_behavior
     :members:
     :undoc-members:
     :show-inheritance:
 
-bioflow.utils.remap_IDs module
-------------------------------
+bioflow.utils.remap\_IDs module
+-------------------------------
 
 .. automodule:: bioflow.utils.remap_IDs
     :members:
     :undoc-members:
     :show-inheritance:
 
-bioflow.utils.top_level module
-------------------------------
+bioflow.utils.top\_level module
+-------------------------------
 
 .. automodule:: bioflow.utils.top_level
     :members:
     :undoc-members:
     :show-inheritance:
 
-bioflow.utils.usage_ex-average_path_length module
--------------------------------------------------
+bioflow.utils.usage\_ex\-average\_path\_length module
+-----------------------------------------------------
 
 .. automodule:: bioflow.utils.usage_ex-average_path_length
     :members:
