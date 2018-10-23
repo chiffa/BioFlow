@@ -21,6 +21,9 @@ def neo4j_sanitize(string):
 class GraphDBPipe(object):
 
     def __init__(self):
+        print uri
+        print user
+        print password
         self._driver = GraphDatabase.driver(uri, auth=(user, password))
 
     def close(self):

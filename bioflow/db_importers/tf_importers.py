@@ -2,9 +2,9 @@
 Responsible for the injection of the transcription factor databases into the main space
 """
 
-from bioflow.bio_db_parsers.tfParsers import parse_marbach, parse_cellnet_grn, parse_TRRUST
+from bioflow.bio_db_parsers.tfParsers import parse_TRRUST
 from bioflow.utils.log_behavior import get_logger
-from bioflow.main_configs import marbach_mode, marbach_path, cellnet_path, trrust_path
+from bioflow.main_configs import trrust_path
 from bioflow.neo4j_db.db_io_routines import convert_to_internal_ids
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from time import time
