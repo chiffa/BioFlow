@@ -17,7 +17,7 @@ if __name__ == "__main__":
     # interactome_rand_samp_db.drop()
 
     # # setting static folders and urls for the databases
-    # set_folders('/home/andrei/support-3')
+    # set_folders('/source')
 
     # # pulling the online databases
     # pull_online_dbs()
