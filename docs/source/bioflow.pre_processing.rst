@@ -1,11 +1,11 @@
-bioflow.pre\_processing package
-===============================
+bioflow.pre_processing package
+==============================
 
 Submodules
 ----------
 
-bioflow.pre\_processing.rna\_counts\_analysis module
-----------------------------------------------------
+bioflow.pre_processing.rna_counts_analysis module
+-------------------------------------------------
 
 .. automodule:: bioflow.pre_processing.rna_counts_analysis
     :members:

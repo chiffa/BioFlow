@@ -100,8 +100,9 @@ If you want to build locally (notice you need to issue docker commands
 with the actual docker-enabled user; usually prepending sudo to the
 commands):
 
+    > git clone https://github.com/chiffa/BioFlow.git
     > cd <BioFlow installation folder>
-    > docker build -t
+    > docker build -t "bioflow" .
     > docker run bioflow
     > docker-compose build
     > docker-compose up -d
@@ -120,13 +121,11 @@ Finally attach to the running container:
 Usage walk-through:
 -------------------
 
-<div class="admonition warning">
-
-While BioFlow provides an interface to download the databases
-programmatically, the databases are subject to Licenses and Terms that
-it's up to the end users to respect
-
-</div>
+> **warning**
+>
+> While BioFlow provides an interface to download the databases
+> programmatically, the databases are subject to Licenses and Terms that
+> it's up to the end users to respect
 
 For more information about data and config files, refer to the [data and
 database
@@ -138,23 +137,38 @@ This is the recommended method for using BioFlow.
 
 Import the minimal dependencies:
 
+    > from bioflow.configs_manager import set_folders, build_source_config, pull_online_dbs
+
+Set static folders and urls for the databases:
+
+    > set_folders('~/support') # script restart here is required to properly update all the folders
+
+Pull the online databases:
+
+    > pull_online_dbs()
+
+Set the organism (human, yeast (S. Cerevisiae)):
+
+    > build_source_config('human')  # script restart here is required to properly update all the folders
+
+Now, we can import the neo4j database handlers:
+
+> \> from bioflow.db\_importers.import\_main import build\_db,
+> destroy\_db
+
+And build the actual master graph (it will take a while - up to a day)
+
+> \> build\_db()
+
+Now, you can import the core of BioFlow:
+
     > from bioflow.annotation_network.knowledge_access_analysis import auto_analyze as knowledge_analysis
     > from bioflow.molecular_network.interactome_analysis import auto_analyze as interactome_analysis
     > from bioflow.utils.io_routines import get_source_bulbs_ids
     > from bioflow.utils.top_level import map_and_save_gene_ids, rebuild_the_laplacians
 
-Set static folders and urls for the databases & pull the online
-databases:
-
-    > set_folders('~/support') # script restart here is required to properly update all the folders
-    > pull_online_dbs()
-
-Set the organism (human, S. Cerevisiae):
-
-    > build_source_config('human')  # script restart here is required to properly update all the folders
-
-Map the hits and the background genes (available through an experimental
-technique) to internal IDs:
+And get to the work: map the hits and the background genes (available
+through an experimental technique) to internal IDs:
 
     > map_and_save_gene_ids('path_to_hits.csv', 'path_to_background.csv')
 
@@ -196,35 +210,29 @@ network (experimental):
 Where:
 
 hits\_ids
-
 :   list of hits
 
 desired\_depth
-
 :   how many samples we would like to generate to compare against
 
 processors
-
 :   how many threads we would like to launch in parallel (in general 3/4
     works best)
 
 background\_list
-
 :   list of background Ids
 
 skip\_sampling
-
 :   if true, skips the sampling of background set and retrieves stored
     ones instead
 
 from\_memoization
-
 :   if true, assumes the information flow for the hits sample has
     already been computed
 
 BioFlow will print progress to the StdErr from then on and will output
 to the user's home directory, in a folder called 'outputs\_YYYY-MM\_DD
-&lt;launch time&gt;':
+\<launch time\>':
 
 -   .gdf file with the flow network and relevance statistics
     (Interactome\_Analysis\_output.gdf)
@@ -236,12 +244,10 @@ The .gdf file can be further analysed with more appropriate tools.
 
 ### Command line:
 
-<div class="admonition warning">
-
-Command line interface is currently unstable and is susceptible to throw
-opaque errors.
-
-</div>
+> **warning**
+>
+> Command line interface is currently unstable and is susceptible to
+> throw opaque errors.
 
 Setup environment (likely to take a while top pull all the online
 databases): :
@@ -292,26 +298,26 @@ The most common pipleine involves using [Gephi open graph visualization
 platform](https://gephi.org/):
 
 -   Load the gdf file into gephy
--   Filter out all the nodes with information flow below 0.05
-    (Filters &gt; Atrributes &gt; Range &gt; current)
--   Perform clustering (Statistics &gt; Modularity &gt; Randomize & use
+-   Filter out all the nodes with information flow below 0.05 (Filters
+    \> Atrributes \> Range \> current)
+-   Perform clustering (Statistics \> Modularity \> Randomize & use
     weights)
--   Filter out all the nodes below a significance threshold
-    (Filters &gt; Attributes &gt; Range &gt; p-value)
--   Set Color nodes based on the Modularity Class (Nodes &gt;
-    Colors &gt; Partition &gt; Modularity Class)
--   Set node size based on p\_p-value (Nodes &gt; Size &gt; Ranking &gt;
+-   Filter out all the nodes below a significance threshold (Filters \>
+    Attributes \> Range \> p-value)
+-   Set Color nodes based on the Modularity Class (Nodes \> Colors \>
+    Partition \> Modularity Class)
+-   Set node size based on p\_p-value (Nodes \> Size \> Ranking \>
     p\_p-value )
--   Set text color based on whether the node is in the hits list
-    (Nodes &gt; Text Color &gt; Partition &gt; source)
--   Set text size based on p\_p-value (Nodes &gt; Text Size &gt;
-    Ranking &gt; p\_p-value)
+-   Set text color based on whether the node is in the hits list (Nodes
+    \> Text Color \> Partition \> source)
+-   Set text size based on p\_p-value (Nodes \> Text Size \> Ranking \>
+    p\_p-value)
 -   Show the lables (T on the bottom left)
 -   Set labes to the legacy IDs (Notepad on the bottom)
--   Perform a ForeAtlas Node Separation (Layout &gt; Force Atlas 2 &gt;
+-   Perform a ForeAtlas Node Separation (Layout \> Force Atlas 2 \>
     Dissuade Hubs & Prevent Overlap)
 -   Adjust label size
--   Adjust labels position (Layout &gt; LabelAdjust)
+-   Adjust labels position (Layout \> LabelAdjust)
 
 For more details or usage as a library, refer to the [usage
 guide](http://bioflow.readthedocs.org/en/latest/guide.html#basic-usage).

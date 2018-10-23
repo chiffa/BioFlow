@@ -2,6 +2,7 @@
 Top-Level scripts, examples of analysis pipelines.
 """
 from bioflow.configs_manager import set_folders, build_source_config, pull_online_dbs
+from bioflow.db_importers.import_main import build_db, destroy_db
 # from bioflow.annotation_network.knowledge_access_analysis import auto_analyze as knowledge_analysis
 # from bioflow.molecular_network.interactome_analysis import auto_analyze as interactome_analysis
 # from bioflow.utils.io_routines import get_source_bulbs_ids

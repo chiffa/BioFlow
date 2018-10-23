@@ -4,6 +4,13 @@ TODOs for the project in the future:
 Current refactoring:
 --------------------
 
+Travis tester:
+    - unittest
+    - docker from Githubs
+    - pip install
+    - docker-compose
+    - databases downloads
+
 There still seem to be a problem of regular convergence to the same paths in the network. Potential sources:
     - borked topology
     - current intensity between the interconnected nodes (potentially resolved)

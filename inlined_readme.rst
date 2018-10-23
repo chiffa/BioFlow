@@ -80,8 +80,9 @@ Docker:
 If you want to build locally (notice you need to issue docker commands with the actual docker-enabled
 user; usually prepending sudo to the commands)::
 
+   > git clone https://github.com/chiffa/BioFlow.git
    > cd <BioFlow installation folder>
-   > docker build -t
+   > docker build -t "bioflow" .
    > docker run bioflow
    > docker-compose build
    > docker-compose up -d
@@ -112,21 +113,36 @@ This is the recommended method for using BioFlow.
 
 Import the minimal dependencies::
 
+   > from bioflow.configs_manager import set_folders, build_source_config, pull_online_dbs
+
+Set static folders and urls for the databases::
+
+   > set_folders('~/support') # script restart here is required to properly update all the folders
+
+Pull the online databases::
+
+   > pull_online_dbs()
+
+Set the organism (human, yeast (S. Cerevisiae))::
+
+   > build_source_config('human')  # script restart here is required to properly update all the folders
+
+Now, we can import the neo4j database handlers:
+
+   > from bioflow.db_importers.import_main import build_db, destroy_db
+
+And build the actual master graph (it will take a while - up to a day)
+
+   > build_db()
+
+Now, you can import the core of BioFlow::
+
    > from bioflow.annotation_network.knowledge_access_analysis import auto_analyze as knowledge_analysis
    > from bioflow.molecular_network.interactome_analysis import auto_analyze as interactome_analysis
    > from bioflow.utils.io_routines import get_source_bulbs_ids
    > from bioflow.utils.top_level import map_and_save_gene_ids, rebuild_the_laplacians
 
-Set static folders and urls for the databases & pull the online databases::
-
-   > set_folders('~/support') # script restart here is required to properly update all the folders
-   > pull_online_dbs()
-
-Set the organism (human, S. Cerevisiae)::
-
-   > build_source_config('human')  # script restart here is required to properly update all the folders
-
-Map the hits and the background genes (available through an experimental technique) to internal IDs::
+And get to the work: map the hits and the background genes (available through an experimental technique) to internal IDs::
 
    > map_and_save_gene_ids('path_to_hits.csv', 'path_to_background.csv')
 
