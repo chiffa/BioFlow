@@ -34,13 +34,22 @@ def url_to_local_path(url, path, rename=None):
         if rename is not None:
             new_path = join(path, rename)
 
-    r = requests.get(url, stream=True)
+    if not url[:3] == 'ftp':
 
-    if r.status_code == 200:
+        r = requests.get(url, stream=True)
+
+    else:
+        # print 'debug firing'
+        requests_ftp.monkeypatch_session()
+        s = requests.Session()
+        r = s.retr(url)
+
+    if r.status_code in ['226', 200, 226, '200']:
         with open(new_path, 'wb') as f:
             r.raw.decode_content = True
             shutil.copyfileobj(r.raw, f)
     else:
+        # print r.status_code
         raise Exception(
             "Something is wrong with the url provided: %s.\n Please attempt downloading files manually" %
             url)

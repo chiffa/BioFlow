@@ -9,6 +9,8 @@ from pymongo import MongoClient
 from bioflow.configs_manager import parse_config, compute_full_paths
 from bioflow.utils.general_utils import high_level_os_io as hl_os_io
 from datetime import datetime
+from pprint import pprint
+
 
 current_run_start_time = str(datetime.now())
 current_run_start_time = current_run_start_time.replace(':', '.')
@@ -30,6 +32,8 @@ DB_locations = parse_config('online_dbs')
 mongo_db_url = os.getenv('MONGOURL', Servers['PRODUCTION']['mongodb_server'])
 neo4j_server = os.getenv('NEO4URL', Servers['PRODUCTION']['server_neo4j'])
 source_db_paths = compute_full_paths(Sources, DB_locations, Servers['PRODUCTION'])
+
+pprint(source_db_paths)
 
 # Locations of data source files to be passed to parsers
 gene_ontology_path = source_db_paths['GO']
