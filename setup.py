@@ -27,7 +27,7 @@ if not on_rtd:
         'scikits.sparse < 0.3',
         'mock < 2.0',
         'requests-ftp < 0.4',
-        'neo4j-driver < 2.0',
+        'neo4j-driver < 1.6',
     ]
 
 else:
@@ -36,7 +36,8 @@ else:
         'requests < 3.0',
         'click < 6.0',
         'requests-ftp < 0.4',
-        'neo4j-driver < 2.0',]
+        'neo4j-driver < 1.6',
+    ]
 
 setup(
     name='BioFlow',

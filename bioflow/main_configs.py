@@ -42,6 +42,7 @@ biogrid_path = source_db_paths['BIOGRID']
 # marbach_path = source_db_paths['MARBACH']
 # marbach_mode = Sources['MARBACH']['mode']
 # marbach_sig = Sources['MARBACH']['significance']
+# TODO: set to active only if in Human
 trrust_path = source_db_paths['TRRUST']
 trrust_sig = Sources['TRRUST']['significance']
 # cellnet_path = source_db_paths['CELLNET']
