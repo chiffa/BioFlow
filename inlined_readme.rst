@@ -96,7 +96,7 @@ If you want to pull from dockerhub or don't have access to BioFlow installation 
 
 Finally attach to the running container::
 
-   > docker attach bioflow_bioflow
+   > docker attach bioflow_bioflow_1
 
 Usage walk-through:
 -------------------

@@ -4,6 +4,10 @@ TODOs for the project in the future:
 Current refactoring:
 --------------------
 
+Problems uncovered with user while testing the Docker integration:
+ -
+
+
 Travis tester:
     - unittest
     - docker from Githubs
