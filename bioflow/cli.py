@@ -2,27 +2,13 @@
 Contains the access to the command line interface of the application.
 """
 import click
-from bioflow.configs_manager import set_folders, build_source_config, \
-    pull_online_dbs
-from bioflow.annotation_network.BioKnowledgeInterface \
-    import GeneOntologyInterface as AnnotomeInterface
-from bioflow.utils.io_routines import get_background_bulbs_ids, get_source_bulbs_ids
-from bioflow.annotation_network.knowledge_access_analysis \
-    import auto_analyze as knowledge_analysis
-from bioflow.db_importers.import_main import build_db, destroy_db
-from bioflow.main_configs import neo4j_server, annotome_rand_samp, interactome_rand_samp_db
-from bioflow.molecular_network.InteractomeInterface \
-    import InteractomeInterface as InteractomeInterface
-from bioflow.molecular_network.interactome_analysis import auto_analyze as interactome_analysis
-from bioflow.neo4j_db.db_io_routines import look_up_annotation_set, \
-    cast_analysis_set_to_bulbs_ids, cast_background_set_to_bulbs_id
 
-
-def print_version(ctx, param, value):
+def print_version(ctx, value):
     if not value or ctx.resilient_parsing:
         return
     click.echo('0.2.3')
     ctx.exit()
+
 
 @click.group()
 @click.option('--version', '-v', is_flag=True, callback=print_version,
@@ -32,8 +18,9 @@ def main():
 
 
 @click.command()
-@click.option('--path', prompt='Please provide the path where the data will be stored')
-@click.option('--neo4jserver', default='http://localhost:7474',
+@click.option('--path', default='/source',
+              prompt='Please provide the path where the data will be stored')
+@click.option('--neo4jserver', default='bolt://localhost:7687',
               prompt='Please provide the address and port on which neo4j is currently serving')
 @click.option('--mongoserver', default='mongodb://localhost:27017/',
               prompt='Please provide the address and port on which mongodb is currently serving')
@@ -46,6 +33,7 @@ def initialize(path, neo4jserver, mongoserver):
     :param mongoserver: mongodb server adress and port
     :return:
     """
+    from bioflow.configs_manager import set_folders
     set_folders(path, neo4jserver, mongoserver)
 
 
@@ -54,19 +42,19 @@ def initialize(path, neo4jserver, mongoserver):
                                 'Please make sure you initialized the project and you are ready'
                                 'to wait for a while for hte download to complete. '
                                 'Some files are large (up to 3 Gb).'
-                                'You can perform this step manually (cf documentation).'
-                                'Are you sure you want to continue?')
+                                'You can perform this step manually (cf documentation).')
 def downloaddbs():
     """
     Downloads the databases automatically
 
     :return:
     """
+    from bioflow.configs_manager import pull_online_dbs
     pull_online_dbs()
 
 
 @click.command()
-@click.option('--organism', type=click.Choice(['mouse', 'human', 'yeast']))
+@click.option('--organism', type=click.Choice(['mouse', 'human', 'yeast']), default='human')
 def setorg(organism):
     """
     Sets organism-specific configurations
@@ -74,6 +62,7 @@ def setorg(organism):
     :param organism:
     :return:
     """
+    from bioflow.configs_manager import build_source_config
     build_source_config(organism)
 
 
@@ -88,8 +77,8 @@ def purgeneo4j():
     :return:
     """
     print 'neo4j will start purging the master database. It will take some time to finish.' \
-          ' Please do not close the shell. You can supervise the progress through' \
-          ' %s/webadmin interface' % neo4j_server
+          ' Please do not close the shell'
+    from bioflow.db_importers.import_main import destroy_db
     destroy_db()
 
 
@@ -103,67 +92,39 @@ def loadneo4j():
     :return:
     """
     print 'neo4j will start loading data into the master database. It will take a couple ' \
-          'of hours to finish. Please do not close the shell. You can supervise the progress' \
-          ' through %s/webadmin interface' % neo4j_server
+          'of hours to finish. Please do not close the shell.'
+    from bioflow.db_importers.import_main import build_db
     build_db()
 
 
 @click.command()
-@click.argument('source')
-def setsource(source):
+@click.argument('source', help='IDs of the genes considered as hits')
+@click.option('background', default='', help='IDs of all genes detectable by a method')
+def sethits(source, background):
     """
-    Sets the source to analyze
+    Sets the source and background files that will be uses in the analysis. Preferred formats
+    are HGCN gene names (TP53), Uniprot gene names (P53_HUMAN) or Uniprot Accession numbers (
+    P04637).
+    Other sources, such as ENSEMBL or PDB IDs.
     :param source:
-    :return:
-    """
-    cast_analysis_set_to_bulbs_ids(source)
-
-
-@click.command()
-@click.argument('background')
-@click.argument('source')
-def setbackground(background, source):
-    """
-    Sets the background that would be later used in the analysis
     :param background:
-    :param source:
     :return:
     """
-    cast_background_set_to_bulbs_id(background, source)
+    from bioflow.utils.top_level import map_and_save_gene_ids
+    map_and_save_gene_ids(source, background)
 
 
 @click.command()
-@click.option('--interactome', 'matrixtype', flag_value='interactome',
-              default=True)
-@click.option('--annotome', 'matrixtype', flag_value='annotome')
-def extractmatrix(matrixtype):
+def rebuildlaplacians():
     """
-    Extracts the matrix interface object for the computation routine.
-    :param matrixtype:
+    Extracts the Laplacian matrices from the master graph database.
     :return:
     """
-    if matrixtype == 'interactome':
-        local_matrix = InteractomeInterface(main_connex_only=True, full_impact=True)
-        local_matrix.full_rebuild()
+    from bioflow.utils.top_level import rebuild_the_laplacians
+    from bioflow.utils.io_routines import get_background_bulbs_ids
 
-    if matrixtype == 'annotome':
-        local_matrix = InteractomeInterface(main_connex_only=True, full_impact=True)
-        local_matrix.fast_load()
-        ref_param_set = [['biological_process'], get_background_bulbs_ids(), (1, 1), True, 3]
-        annot_matrix = AnnotomeInterface(*ref_param_set)
-        annot_matrix.full_rebuild()
-
-
-@click.command()
-@click.argument('idlist')
-def mapids(idlist):
-    """
-    Maps the identifiers from the list to the bulbs node numbers in the database
-
-    :param idlist:
-    :return:
-    """
-    print look_up_annotation_set(idlist)
+    background_bulbs_ids = get_background_bulbs_ids()
+    rebuild_the_laplacians(all_detectable_genes=background_bulbs_ids)
 
 
 @click.command()
@@ -175,6 +136,8 @@ def purgemongo(collection):
     :param collection:
     :return:
     """
+    from bioflow.main_configs import annotome_rand_samp, interactome_rand_samp_db
+
     if collection == 'all':
         annotome_rand_samp.drop()
         interactome_rand_samp_db.drop()
@@ -185,38 +148,57 @@ def purgemongo(collection):
 
 
 @click.command()
-@click.option('--matrixtype', type=click.Choice(['interactome', 'annotome']))
-@click.option('--depth', default=24)  # defaults
-@click.option('--processors', default=3)  # defaults
-def analyze(matrixtype, depth, processors,):
+@click.option('--depth', default=24, help='random samples used to infer flow pattern significance')
+@click.option('--processors', default=3, help='processor cores used in flow patterns calculation')
+@click.option('--skipsampling', default=False, help='if True, skips random sampling step')
+@click.option('--skiphitflow', default=False, help='if True, skips hits sample flow computation ')
+def interactomeanalysis(depth, processors, skipsampling, skiphitflow):
     """
-    Performs an analysis of the type given by matrixtype with the given background set and
+    Performs interactome analysis given background set given earlier.
 
-    :param matrixtype:
     :param depth:
     :param processors:
+    :param skipsampling:
+    :param skiphitflow:
     :return:
     """
+    from bioflow.utils.io_routines import get_background_bulbs_ids, get_source_bulbs_ids
+    from bioflow.molecular_network.interactome_analysis import auto_analyze as interactome_analysis
+
     source_bulbs_ids = get_source_bulbs_ids()
     background_bulbs_ids = get_background_bulbs_ids()
 
-    # TODO: CRICIAL: inject background usage when background switch is available.
-    # Refer to the analysis pipeline example for an example
-    interactome_interface_instance = InteractomeInterface(main_connex_only=True, full_impact=True)
-    interactome_interface_instance.fast_load()
-    ref_param_set = [['biological_process'], background_bulbs_ids, (1, 1), True, 3]
+    interactome_analysis([source_bulbs_ids],
+                         desired_depth=depth,
+                         processors=processors,
+                         background_list=background_bulbs_ids,
+                         skip_sampling=skipsampling,
+                         from_memoization=skiphitflow)
 
-    if matrixtype == 'interactome':
-        interactome_analysis(source_bulbs_ids, depth, processors, background_bulbs_ids)
 
-    elif matrixtype == 'annotome':
-        knowledge_analysis(source=source_bulbs_ids,
-                           desired_depth=depth,
-                           processors=processors,
-                           param_set=ref_param_set)
+@click.command()
+@click.option('--depth', default=24, help='random samples used to infer flow pattern significance')
+@click.option('--processors', default=3, help='processor cores used in flow patterns calculation')
+@click.option('--skipsampling', default=False, help='if True, skips random sampling step')
+def knowledgeanalysis(depth, processors, skipsampling):
+    """
+    Performs annotome analysis given background set given earlier.
 
-    print "analsysis is finished, current results are stored " \
-          "in the outputs directory"
+    :param depth:
+    :param processors:
+    :param skipsampling:
+    :return:
+    """
+    from bioflow.utils.io_routines import get_source_bulbs_ids
+    from bioflow.annotation_network.knowledge_access_analysis \
+        import auto_analyze as knowledge_analysis
+
+    source_bulbs_ids = get_source_bulbs_ids()
+
+    knowledge_analysis([source_bulbs_ids],
+                       desired_depth=depth,
+                       processors=processors,
+                       skip_sampling=skipsampling)
 
 
 main.add_command(initialize)
@@ -224,12 +206,11 @@ main.add_command(setorg)
 main.add_command(downloaddbs)
 main.add_command(purgeneo4j)
 main.add_command(loadneo4j)
-main.add_command(extractmatrix)
-main.add_command(mapids)
-main.add_command(analyze)
+main.add_command(rebuildlaplacians)
 main.add_command(purgemongo)
-main.add_command(setsource)
-main.add_command(setbackground)
+main.add_command(sethits)
+main.add_command(interactomeanalysis)
+main.add_command(knowledgeanalysis)
 
 
 if __name__ == '__main__':

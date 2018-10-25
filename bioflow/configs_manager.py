@@ -19,13 +19,11 @@ configs_rootdir = os.path.abspath(
         os.path.dirname(__file__),
         'configs/'))
 
-conf_files_shortnames = ['servers', 'options', 'sources', 'predictions', 'online_dbs']
+conf_files_shortnames = ['servers', 'sources', 'online_dbs']
 conf_files_locations = dict([(name, join(configs_rootdir, name + '.ini'))
                              for name in conf_files_shortnames])
 
-ref_orgs_shortnames = [
-    shortname.strip() for shortname in
-    ini_configs2dict(conf_files_locations['options'])['ORGANISMS']['allowed'].split(',')]
+ref_orgs_shortnames = ['mouse', 'human', 'yeast']
 ref_orgs_locations = dict([(name, join(configs_rootdir, 'reference', name + '.ini'))
                            for name in ref_orgs_shortnames])
 
@@ -46,6 +44,7 @@ def build_source_config(organism_shortname):
     else:
         write_path = join(configs_rootdir, 'sources.ini')
         copy_file(ref_orgs_locations[organism_shortname], write_path)
+        log.info('Active organism set to %s' % organism_shortname)
 
 
 def pull_online_dbs():
@@ -181,7 +180,8 @@ def set_folders(file_directory,
         abspath(file_directory))
     edit_config_file('servers', 'PRODUCTION', 'server_neo4j', neo4jserver)
     edit_config_file('servers', 'PRODUCTION', 'mongodb_server', mongoserver)
-    build_source_config('yeast')
+    build_source_config('human')
+    log.info('Download folders and servers configs are set')
 
 
 if __name__ == "__main__":
