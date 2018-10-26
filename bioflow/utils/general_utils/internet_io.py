@@ -42,14 +42,21 @@ def url_to_local_path(url, path, rename=None):
         # print 'debug firing'
         requests_ftp.monkeypatch_session()
         s = requests.Session()
-        r = s.retr(url)
+        r = s.get(url)
+        # print r.status_code
+        # print r.content
 
     if r.status_code in ['226', 200, 226, '200']:
-        with open(new_path, 'wb') as f:
-            r.raw.decode_content = True
-            shutil.copyfileobj(r.raw, f)
+        if not url[:3] == 'ftp':
+            with open(new_path, 'wb') as f:
+                r.raw.decode_content = True
+                shutil.copyfileobj(r.raw, f)
+        else:
+            with open(new_path, 'wb') as f:
+                f.write(r.content)
+
     else:
-        # print r.status_code
+        print r.status_code
         raise Exception(
             "Something is wrong with the url provided: %s.\n Please attempt downloading files manually" %
             url)

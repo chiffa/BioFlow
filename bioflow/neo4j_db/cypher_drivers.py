@@ -24,7 +24,10 @@ class GraphDBPipe(object):
         self._driver = GraphDatabase.driver(uri, auth=(user, password))
 
     def close(self):
-        self._driver.close()
+        try:
+            self._driver.close()
+        except TypeError:
+            pass
 
     def create(self, node_type, param_dict):
         with self._driver.session() as session:
@@ -311,7 +314,7 @@ class GraphDBPipe(object):
             node_types = [list(node.labels)[0] for node in return_puck]
 
             if node_types.count('UNIPROT') != 1:
-                log.info('Preferential matching failed: for %s, \n \t %s \n \t %s' % (annotation_tag,
+                log.debug('Preferential matching failed: for %s, \n \t %s \n \t %s' % (annotation_tag,
                                                                                       return_puck,
                                                                                       pre_return_puck))
 
@@ -523,5 +526,5 @@ if __name__ == "__main__":
 
     # print neo4j_pipe.cross_link_on_annotations()
 
-    print neo4j_pipe.count_go_annotation_cover()
+    # print neo4j_pipe.count_go_annotation_cover()
 

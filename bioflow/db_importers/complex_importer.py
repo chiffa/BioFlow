@@ -50,8 +50,9 @@ def insert_into_the_database(up_ids_2_inner_ids,
             previous_time = time()
 
         for node2_up in new_node['components']:
-            DatabaseGraph.link(complex_node.id, up_ids_2_inner_ids[node2_up], 'is_interacting',
-                               {'source': origin, 'weight': 1.0})
+            if node2_up in up_ids_2_inner_ids.keys():
+                DatabaseGraph.link(complex_node.id, up_ids_2_inner_ids[node2_up], 'is_interacting',
+                                   {'source': origin, 'weight': 1.0})
 
 
 def insert_complexes():

@@ -127,10 +127,8 @@ def look_up_annotation_set(p_load_list, p_type=''):
     db_id_list = [db_id_mapping_helper(value) for key, value in load_2_name_list]
 
     not_found_list = [key for key, value in load_2_name_list if value == []]
-    for warnId in not_found_list:
-        log.debug('Following ID has no corresponding entry in the database: %s', warnId)
-    log.info('%s IDs out of %s have not been found', len(not_found_list), len(p_load_list))
-    log.info('IDs of missing proteins: %s', not_found_list)
+    log.debug('%s IDs out of %s have not been found', len(not_found_list), len(p_load_list))
+    log.debug('IDs of missing proteins: %s', not_found_list)
     return not_found_list, load_2_name_list, db_id_list
 
 
@@ -290,8 +288,7 @@ def recompute_forbidden_ids(forbidden_entities_list):
             associated_node_ids = node_generator_2_db_ids(generator)
             forbidden_ids_list.update(associated_node_ids)
 
-    log.info('recomputed %s forbidden IDs. \n Dumping them to %s',
-             len(forbidden_ids_list), Dumps.Forbidden_IDs)
+    log.info('recomputed %s forbidden IDs.' % len(forbidden_ids_list))
 
     for f_id in forbidden_ids_list:
         DatabaseGraph.set_attributes(f_id, {'forbidden': True})
