@@ -2,7 +2,7 @@
 Top-Level scripts, examples of analysis pipelines.
 """
 from bioflow.configs_manager import set_folders, build_source_config, pull_online_dbs
-# from bioflow.db_importers.import_main import build_db, destroy_db
+from bioflow.db_importers.import_main import build_db, destroy_db
 # from bioflow.annotation_network.knowledge_access_analysis import auto_analyze as knowledge_analysis
 # from bioflow.molecular_network.interactome_analysis import auto_analyze as interactome_analysis
 # from bioflow.utils.io_routines import get_source_bulbs_ids
@@ -17,13 +17,13 @@ if __name__ == "__main__":
     # interactome_rand_samp_db.drop()
 
     # # setting static folders and urls for the databases
-    # set_folders('/source')
+    # set_folders('/home/andrei/support')
 
     # # pulling the online databases
     # pull_online_dbs()
 
     # # setting the organism to XXXX
-    build_source_config('human')
+    # build_source_config('human')
 
     # raise Exception('planned interrupt')
 
@@ -32,11 +32,11 @@ if __name__ == "__main__":
     # main_configs update
     ##########################################
 
-    # # # clearing the database, if required
-    # destroy_db()
+    # clearing the database, if required
+    destroy_db()
 
-    # # building the neo4j database
-    # build_db()
+    # building the neo4j database
+    build_db()
 
     background_bulbs_ids = []
 
