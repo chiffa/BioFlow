@@ -116,7 +116,7 @@ installation directory:
 
 Finally attach to the running container:
 
-    > docker attach bioflow_bioflow
+    > docker attach bioflow_bioflow_1
 
 Usage walk-through:
 -------------------
@@ -158,6 +158,10 @@ Now, we can import the neo4j database handlers:
 And build the actual master graph (it will take a while - up to a day):
 
     > build_db()
+
+Note that whenever neo4j drivers are imported, at the exit a connection
+exception is raised. It does not however mean that the execution of the
+program has failed.
 
 Now, you can import the core of BioFlow:
 

@@ -3,7 +3,7 @@ from bioflow.annotation_network.BioKnowledgeInterface import \
 from bioflow.molecular_network.InteractomeInterface import \
     InteractomeInterface as InteractomeInterface
 from bioflow.neo4j_db.db_io_routines import cast_analysis_set_to_bulbs_ids, \
-    cast_background_set_to_bulbs_id
+    cast_background_set_to_bulbs_id, writer, Dumps
 from bioflow.utils.io_routines import get_source_bulbs_ids, get_background_bulbs_ids
 
 
@@ -20,6 +20,7 @@ def map_and_save_gene_ids(hit_genes_location, all_detectable_genes_location=''):
 
     else:
         all_detectable_genes_ids = []
+        writer(open(Dumps.background_set_bulbs_ids, 'w'), delimiter='\n').writerow(all_detectable_genes_ids)
 
     return hit_genes_ids, all_detectable_genes_ids
 

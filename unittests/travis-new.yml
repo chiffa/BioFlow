@@ -1,0 +1,22 @@
+jobs:
+  include:
+    - stage: "Tests"
+      name: "Unittests"
+      script: ./unit-tests
+    - stage: "external dependencies tests"
+      name: "DB pull attempt"
+      script: ./db-tests
+    - stage: "Base Docker"
+      name: "test the basic Docker functionality"
+      script: ./base-docker-test
+    - stage: "pipgit"
+      name: "test the basic Docker functionality"
+      script: ./pip-git-test
+      script: ./pip-git-docker-test
+    - stage: "truepip"
+      name: "test the Pip fully"
+      script: ./pip-test
+      script: ./pip-docker-test
+    - stage: "currentdeps"
+      name: "testing the latest versions of package dependencies"
+      script: ./docker-latests-depst-test

@@ -8,7 +8,11 @@ services:
       - 7474
       - 7687
     volumes:
-      - $HOME/bioflow/docker-neo4j/db-data:/data
+      - type: bind
+        source: $HOME/bioflow/docker-neo4j/db-data
+        target: /data
+        bind:
+          propagate: rshared
     environment:
       - NEO4J_AUTH=neo4j/1345
   mongodb:
@@ -21,7 +25,11 @@ services:
       - MONGO_DATA_DIR=/data/db
       - MONGO_LOG_DIR=/dev/null
     volumes:
-      - $HOME/bioflow/docker-mongo/db-data:/data/db
+      - type: bind
+        source: $HOME/bioflow/docker-mongo/db-data
+        target: /data/db
+        bind:
+          propagate: rshared
   bioflow:
     image: bioflow
     stdin_open: true
@@ -31,9 +39,21 @@ services:
       - NEO4URL=bolt://neo4j:7687
       - MONGOURL=mongodb://mongodb:27017/
     volumes:
-      - $HOME/bioflow/source:/source
-      - $HOME/bioflow/input:/input
-      - $HOME/bioflow/input:/output
+      - type: bind
+        source: $HOME/bioflow/source
+        target: /source
+        bind:
+          propagate: rshared
+      - type: bind
+        source: $HOME/bioflow/input
+        target: /input
+        bind:
+          propagate: rshared
+      - type: bind
+        source: $HOME/bioflow/input
+        target: /output
+        bind:
+          propagate: rshared
     depends_on:
       - mongodb
       - neo4j
