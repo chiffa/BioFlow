@@ -5,6 +5,7 @@ from setuptools import setup, find_packages  # Always prefer setuptools over dis
 from codecs import open  # To use a consistent encoding
 from os import path
 import os
+from bioflow import __version__, __author__, __author_mail__
 
 here = path.abspath(path.dirname(__file__))
 
@@ -41,13 +42,13 @@ else:
 
 setup(
     name='BioFlow',
-    version='0.2.3',
+    version=__version__,
     description='Information Flow Analysis in biological networks',
     long_description=long_description,
     long_description_content_type="text/markdown",
     url='https://github.com/chiffa/BioFlow',
-    author='Andrei Kucharavy',
-    author_email='andrei.chiffa136@gmail.com',
+    author=__author__,
+    author_email=__author_mail__,
     license='BSD',
     classifiers=[
         'Development Status :: 3 - Alpha',
