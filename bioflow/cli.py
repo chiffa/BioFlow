@@ -98,11 +98,15 @@ def loadneo4j():
 
 
 @click.command()
-@click.argument('source', help='IDs of the genes considered as hits')
-@click.option('background', default='', help='IDs of all genes detectable by a method')
+@click.option('--background', default='', help='path to file of IDs of all genes detectable by a method')
+@click.argument('source')
 def sethits(source, background):
     """
-    Sets the source and background files that will be uses in the analysis. Preferred formats
+    Sets the source and background files that will be uses in the analysis.
+
+    The argument source is a path to a file containing the IDs of all genes considered as a hit
+
+    Preferred formats
     are HGCN gene names (TP53), Uniprot gene names (P53_HUMAN) or Uniprot Accession numbers (
     P04637).
     Other sources, such as ENSEMBL or PDB IDs.
