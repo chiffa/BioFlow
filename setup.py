@@ -24,7 +24,7 @@ if not on_rtd:
         'cython < 0.23',
         'pymongo < 4.0',
         'requests < 3.0',
-        'click < 6.0',
+        'click < 8.0',
         'scikits.sparse < 0.3',
         'mock < 2.0',
         'requests-ftp < 0.4',
@@ -35,7 +35,7 @@ else:
     requirements = [
         'pymongo < 4.0',
         'requests < 3.0',
-        'click < 6.0',
+        'click < 8.0',
         'requests-ftp < 0.4',
         'neo4j-driver < 1.6',
     ]

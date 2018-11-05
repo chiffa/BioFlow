@@ -27,6 +27,7 @@ def main():
 def initialize(path, neo4jserver, mongoserver):
     """
     Initialized the working environement
+    \f
 
     :param path: path where the external data sources are expected to be stored
     :param neo4jserver: neo4j server adress and port
@@ -46,6 +47,7 @@ def initialize(path, neo4jserver, mongoserver):
 def downloaddbs():
     """
     Downloads the databases automatically
+    \f
 
     :return:
     """
@@ -58,6 +60,7 @@ def downloaddbs():
 def setorg(organism):
     """
     Sets organism-specific configurations
+    \f
 
     :param organism:
     :return:
@@ -73,6 +76,7 @@ def setorg(organism):
 def purgeneo4j():
     """
     Wipes the neo4j organism-specific database
+    \f
 
     :return:
     """
@@ -88,6 +92,7 @@ def purgeneo4j():
 def loadneo4j():
     """
     Loads the information from external database into the master repositry inside neo4j
+    \f
 
     :return:
     """
@@ -110,6 +115,8 @@ def sethits(source, background):
     are HGCN gene names (TP53), Uniprot gene names (P53_HUMAN) or Uniprot Accession numbers (
     P04637).
     Other sources, such as ENSEMBL or PDB IDs.
+    \f
+
     :param source:
     :param background:
     :return:
@@ -122,6 +129,8 @@ def sethits(source, background):
 def rebuildlaplacians():
     """
     Extracts the Laplacian matrices from the master graph database.
+    \f
+
     :return:
     """
     from bioflow.utils.top_level import rebuild_the_laplacians
@@ -136,6 +145,7 @@ def rebuildlaplacians():
 def purgemongo(collection):
     """
     purges the mongodb collection currently used to store all the information.
+    \f
 
     :param collection:
     :return:
@@ -159,6 +169,7 @@ def purgemongo(collection):
 def interactomeanalysis(depth, processors, skipsampling, skiphitflow):
     """
     Performs interactome analysis given background set given earlier.
+    \f
 
     :param depth:
     :param processors:
@@ -187,6 +198,7 @@ def interactomeanalysis(depth, processors, skipsampling, skiphitflow):
 def knowledgeanalysis(depth, processors, skipsampling):
     """
     Performs annotome analysis given background set given earlier.
+    \f
 
     :param depth:
     :param processors:
