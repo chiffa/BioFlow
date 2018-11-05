@@ -1,4 +1,4 @@
-version: "2"
+version: "3.2"
 services:
   neo4j:
     image: neo4j
@@ -10,7 +10,7 @@ services:
     volumes:
       - type: bind
         source: $HOME/bioflow/docker-neo4j/db-data
-        target: /data
+        target: "/data"
         bind:
           propagate: rshared
     environment:
@@ -27,7 +27,7 @@ services:
     volumes:
       - type: bind
         source: $HOME/bioflow/docker-mongo/db-data
-        target: /data/db
+        target: "/data/db"
         bind:
           propagate: rshared
   bioflow:
