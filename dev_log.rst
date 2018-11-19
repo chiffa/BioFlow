@@ -5,8 +5,18 @@ Current refactoring:
 --------------------
 
 Problems uncovered with user while testing the Docker integration:
- -
+    - explain how directories on the OS are mapped to the directories on the Docker
+    - Suggest that in case you are using Mac/OSX, you need to manually increase memory allocated to Docker to at least 16 GBs:
+        - 2 GB for each database
+        - + ~7GB for each processor used to perform random sampling
 
+    CRICITAL: MATPLOTLIB DOES NOT WORK WITH CURRENT DOCKERFILE IF FIGURE IS CREATED
+    CRITICAL: ascii in gdf export crashes
+
+
+Potential problems with pip installation:
+    - the configs/dump files modified by the user
+        => Move them to the ~/bioflow/ directory
 
 Travis tester:
     - unittest
