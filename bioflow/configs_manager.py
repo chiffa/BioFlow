@@ -110,7 +110,7 @@ def compute_full_paths(sources_parse_dict, online_dbs_parse_dict, servers_parse_
 
     for source_name, source_contents in sources_parse_dict.items():
 
-        if source_name == 'INTERNAL':
+        if source_name in ['INTERNAL', 'META']:
             continue
 
         if not online_dbs_parse_dict[source_name] or \

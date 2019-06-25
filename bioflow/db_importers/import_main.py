@@ -32,10 +32,11 @@ def build_db():
 
     cross_ref_hint()
     cross_ref_bio_grid()
-
-    cross_ref_tf_factors('t')
     cross_ref_kinases_factors()
-    insert_complexes()
+
+    if main_configs.organism_meta_flag == 'Human':
+        cross_ref_tf_factors('t')
+        insert_complexes()
 
     run_diagnostics(full_list)
 

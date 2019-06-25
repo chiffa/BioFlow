@@ -3,7 +3,7 @@ Imports the complexes and insert them into the neo4j database
 """
 from bioflow.bio_db_parsers.ComplexPortalParser import parse_complex_portal
 from bioflow.utils.log_behavior import get_logger
-from bioflow.main_configs import complexes_path
+from bioflow.main_configs import complexes_path, organism_meta_flag
 from bioflow.neo4j_db.db_io_routines import convert_to_internal_ids
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from time import time
@@ -61,6 +61,10 @@ def insert_complexes():
 
     :return:
     """
+
+    if organism_meta_flag != 'Human':
+        raise Exception('Complexes data unavailable for organisms other than human!')
+
     log.info('Starting Complex Portal parsing')
 
     up_ids_2_properties, up_ids = parse_complex_portal(complexes_path)

@@ -49,11 +49,10 @@ if organism_meta_flag == 'Human':
     trrust_sig = Sources['TRRUST']['significance']
     # cellnet_path = source_db_paths['CELLNET']
     # cellnet_sig = Sources['CELLNET']['significance']
+    complexes_path = source_db_paths['COMPLEXPORTAL']
 
 phosphosite_path = source_db_paths['PHOSPHOSITE']
 phosphosite_organism = Sources['PHOSPHOSITE']['organism']
-
-complexes_path = source_db_paths['COMPLEXPORTAL']
 
 # TAXONOMY IDs for Uniprot parsing:
 up_tax_ids = [tax_id.strip() for tax_id in Sources['UNIPROT'][

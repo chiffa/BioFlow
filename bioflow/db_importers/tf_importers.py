@@ -4,7 +4,7 @@ Responsible for the injection of the transcription factor databases into the mai
 
 from bioflow.bio_db_parsers.tfParsers import parse_TRRUST
 from bioflow.utils.log_behavior import get_logger
-from bioflow.main_configs import trrust_path
+from bioflow.main_configs import trrust_path, organism_meta_flag
 from bioflow.neo4j_db.db_io_routines import convert_to_internal_ids
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from time import time
@@ -68,6 +68,9 @@ def cross_ref_tf_factors(confs='tcm'):
 
     :return:
     """
+
+    if organism_meta_flag != 'Human':
+        raise Exception('TF data unavailable for organisms other than human!')
 
     if 't' in confs:
         log.info('Starting TRRUST Parsing')
