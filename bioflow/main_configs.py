@@ -39,14 +39,16 @@ uniprot_path = source_db_paths['UNIPROT']
 hint_csv_path = source_db_paths['HINT']  # attention, for me it is tab-separated
 biogrid_path = source_db_paths['BIOGRID']
 
-# marbach_path = source_db_paths['MARBACH']
-# marbach_mode = Sources['MARBACH']['mode']
-# marbach_sig = Sources['MARBACH']['significance']
-# TODO: set to active only if in Human
-trrust_path = source_db_paths['TRRUST']
-trrust_sig = Sources['TRRUST']['significance']
-# cellnet_path = source_db_paths['CELLNET']
-# cellnet_sig = Sources['CELLNET']['significance']
+organism_meta_flag = Sources['META']['organism']
+
+if organism_meta_flag == 'Human':
+    # marbach_path = source_db_paths['MARBACH']
+    # marbach_mode = Sources['MARBACH']['mode']
+    # marbach_sig = Sources['MARBACH']['significance']
+    trrust_path = source_db_paths['TRRUST']
+    trrust_sig = Sources['TRRUST']['significance']
+    # cellnet_path = source_db_paths['CELLNET']
+    # cellnet_sig = Sources['CELLNET']['significance']
 
 phosphosite_path = source_db_paths['PHOSPHOSITE']
 phosphosite_organism = Sources['PHOSPHOSITE']['organism']

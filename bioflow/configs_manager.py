@@ -30,7 +30,7 @@ ref_orgs_locations = dict([(name, join(configs_rootdir, 'reference', name + '.in
 
 def build_source_config(organism_shortname):
     """
-    Writes a bioflow file based on the string organism argument
+    Copies BioFlow reference config file for an organism to the active config file
 
     :param organism_shortname: string falling into one of the three categories. if not valid, an custom
     exception is raised
@@ -83,7 +83,6 @@ def pull_online_dbs():
         if DB_type == 'MARBACH':
             log.info('cleaning up local marbach databse')
             marbach_post_proc(local)
-
 
 
 def parse_config(configfile_shortname):

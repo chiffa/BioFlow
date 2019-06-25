@@ -4,6 +4,9 @@ TODOs for the project in the future:
 Current refactoring:
 --------------------
 
+YEAST:
+    DISABLE TRRUST/human/mouse-specific imports
+
 Problems uncovered with user while testing the Docker integration:
     - explain how directories on the OS are mapped to the directories on the Docker
     - Suggest that in case you are using Mac/OSX, you need to manually increase memory allocated to Docker to at least 16 GBs:
