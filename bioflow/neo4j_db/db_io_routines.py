@@ -409,7 +409,7 @@ if __name__ == "__main__":
     # print reslist
 
     # compute_annotation_informativity()
-    pull_up_inf_density()
+    # pull_up_inf_density()
 
     # run_diagnostics(full_list)
     # memoize_bulbs_type(neo4j_names_dict['UNIPROT'][0])
@@ -422,4 +422,5 @@ if __name__ == "__main__":
     # writer(open(Dumps.analysis_set_bulbs_ids, 'w'), delimiter='\n').writerow(proteins)
     # print proteins
 
-    # bulbs_id = lookup('UNIPROT', 'Q16206')
+    bulbs_id = look_up_annotation_set(['FAA4'])
+    print bulbs_id

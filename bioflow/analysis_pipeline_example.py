@@ -20,7 +20,7 @@ if __name__ == "__main__":
     # set_folders('/home/andrei/support')
 
     # # pulling the online databases
-    # pull_online_dbs()
+    pull_online_dbs()
 
     # # setting the organism to XXXX
     # build_source_config('yeast')

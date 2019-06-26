@@ -58,6 +58,8 @@ def pull_online_dbs():
 
     for DB_type, location_dict in write_dirs.iteritems():
 
+        print DB_type
+
         if 'inactive' in location_dict.keys() and location_dict['inactive'] == 'True':
             continue
 

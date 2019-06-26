@@ -51,6 +51,11 @@ if organism_meta_flag == 'Human':
     # cellnet_sig = Sources['CELLNET']['significance']
     complexes_path = source_db_paths['COMPLEXPORTAL']
 
+else:
+    trrust_path = None
+    trrust_sig = None
+    complexes_path = None
+
 phosphosite_path = source_db_paths['PHOSPHOSITE']
 phosphosite_organism = Sources['PHOSPHOSITE']['organism']
 
