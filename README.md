@@ -21,6 +21,7 @@ Status](https://coveralls.io/repos/chiffa/BioFlow/badge.svg?branch=master&servic
 Lines](https://img.shields.io/badge/duplicate%20lines-11.45%25-yellowgreen.svg)](http://clonedigger.sourceforge.net/)
 [![Code
 Health](https://landscape.io/github/chiffa/BioFlow/master/landscape.svg?style=flat)](https://landscape.io/github/chiffa/BioFlow/master)
+[![Total alerts](https://img.shields.io/lgtm/alerts/g/chiffa/BioFlow.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/chiffa/BioFlow/alerts/)
 
 Description:
 ------------
