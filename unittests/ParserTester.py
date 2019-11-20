@@ -66,7 +66,7 @@ class ReactomeParseTester(unittest.TestCase):
     def setUpClass(cls):
         cls.actual_parser = ReactomeParser(cls.reactome_to_parse)
         cls.actual_parser.parse_all()
-        # print cls.actual_parser.parsed
+        # print(cls.actual_parser.parsed)
         # dump_object(cls.ref_parse, cls.actual_parser)
         cls.ref_parser = undump_object(cls.ref_parse)
         # to parse
@@ -93,15 +93,15 @@ class ReactomeParseTester(unittest.TestCase):
                              self.ref_parser.DnaRefs)
 
     def test_RnaRefs(self):
-        self.assertDictEqual(self.actual_parser.RnaRefs,
+        self.assertCountEqual(self.actual_parser.RnaRefs,
                              self.ref_parser.RnaRefs)
 
     def test_SmallMoleculeRefs(self):
-        self.assertDictEqual(self.actual_parser.SmallMoleculeRefs,
+        self.assertCountEqual(self.actual_parser.SmallMoleculeRefs,
                              self.ref_parser.SmallMoleculeRefs)
 
     def test_ProteinRefs(self):
-        self.assertDictEqual(self.actual_parser.ProteinRefs,
+        self.assertCountEqual(self.actual_parser.ProteinRefs,
                              self.ref_parser.ProteinRefs)
 
     def test_ModificationFeatures(self):
@@ -115,21 +115,21 @@ class ReactomeParseTester(unittest.TestCase):
                              self.ref_parser.Dna_Collections)
 
     def test_Rna(self):
-        self.assertDictEqual(self.actual_parser.Rnas,
+        self.assertCountEqual(self.actual_parser.Rnas,
                              self.ref_parser.Rnas)
-        self.assertDictEqual(self.actual_parser.Rna_Collections,
+        self.assertCountEqual(self.actual_parser.Rna_Collections,
                              self.ref_parser.Rna_Collections)
 
     def test_SmallMolecules(self):
-        self.assertDictEqual(self.actual_parser.SmallMolecules,
+        self.assertCountEqual(self.actual_parser.SmallMolecules,
                              self.ref_parser.SmallMolecules)
-        self.assertDictEqual(self.actual_parser.SmallMolecule_Collections,
+        self.assertCountEqual(self.actual_parser.SmallMolecule_Collections,
                              self.ref_parser.SmallMolecule_Collections)
 
     def test_Proteins(self):
-        self.assertDictEqual(self.actual_parser.Proteins,
+        self.assertCountEqual(self.actual_parser.Proteins,
                              self.ref_parser.Proteins)
-        self.assertDictEqual(self.actual_parser.Protein_Collections,
+        self.assertCountEqual(self.actual_parser.Protein_Collections,
                              self.ref_parser.Protein_Collections)
 
     def test_PhysicalEntities(self):

@@ -106,8 +106,12 @@ class GdfExportTester(unittest.TestCase):
     def test_GDF_export(self):
         with open(self.test_location, 'rt') as tested, \
                 open(self.reference_location, 'rt') as reference:
+            set1 = set()
+            set2 = set()
             for line1, line2 in zip(tested, reference):
-                self.assertItemsEqual(line1, line2)
+                set1.add(line1)
+                set2.add(line2)
+            self.assertCountEqual(set1, set2)
 
     def test_GDF_exceptions(self):
         pass
