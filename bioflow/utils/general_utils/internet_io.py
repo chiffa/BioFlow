@@ -9,7 +9,7 @@ import shutil
 import zipfile
 import gzip
 # import tarfile
-import StringIO
+import io
 import requests_ftp
 import hashlib
 
@@ -56,7 +56,7 @@ def url_to_local_path(url, path, rename=None):
                 f.write(r.content)
 
     else:
-        print r.status_code
+        print(r.status_code)
         raise Exception(
             "Something is wrong with the url provided: %s.\n Please attempt downloading files manually" %
             url)
@@ -75,7 +75,7 @@ def url_to_local_p_zip(url, path):
     r = requests.get(url, stream=True)
     if r.status_code == 200:
         r.raw.decode_content = True
-        z = zipfile.ZipFile(StringIO.StringIO(r.content))
+        z = zipfile.ZipFile(io.StringIO(r.content))
         z.extractall(path)  # This is unsafe as hell
 
     else:
@@ -100,7 +100,7 @@ def url_to_local_p_gz(url, path):
     if r.status_code in ['226', 200, 226, '200']:
         r.raw.decode_content = True
         f_out = open(path, 'wb')
-        f_in = gzip.GzipFile(fileobj=StringIO.StringIO((r.content)))
+        f_in = gzip.GzipFile(fileobj=io.StringIO((r.content)))
         f_out.writelines(f_in)
         f_out.close()
         f_in.close()
@@ -176,4 +176,4 @@ if __name__ == "__main__":
     pth = abspath('../../../dumps/uniprot_sprot.dat')
     url_to_local(pull_url, pth)
 
-    print check_hash(pth, '439f9bf72102af7184d631d0476997d3', hashlib.md5())
+    print(check_hash(pth, '439f9bf72102af7184d631d0476997d3', hashlib.md5()))

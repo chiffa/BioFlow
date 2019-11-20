@@ -204,10 +204,10 @@ def get_current_through_nodes(triu_current_matrix):
     outgoing_current = np.array((negative_current + negative_current.T).sum(axis=1)).flatten()/2
 
     if np.any(outgoing_current):
-        print 'incoming', incoming_current
-        print 'outgoing', outgoing_current
-        print 'diff', incoming_current + outgoing_current
-        print np.any(incoming_current + outgoing_current > 0.)
+        print('incoming', incoming_current)
+        print('outgoing', outgoing_current)
+        print('diff', incoming_current + outgoing_current)
+        print(np.any(incoming_current + outgoing_current > 0.))
         raise Exception('debug: assumption failed....')
 
     ret = list(incoming_current)
@@ -329,8 +329,8 @@ def master_edge_current(conductivity_laplacian, index_list,
         for _ in repeat(None, sampling_depth):
             idx_list_c = copy(index_list)
             random.shuffle(idx_list_c)
-            list_of_pairs += zip(idx_list_c[:len(idx_list_c) / 2],
-                                 idx_list_c[len(idx_list_c) / 2:])
+            list_of_pairs += list(zip(idx_list_c[:len(idx_list_c) / 2],
+                                 idx_list_c[len(idx_list_c) / 2:]))
     else:
         list_of_pairs = [(i, j) for i, j in combinations(set(index_list), 2)]
 
@@ -361,7 +361,7 @@ def master_edge_current(conductivity_laplacian, index_list,
         # if counter % total_pairs/breakpoints == 0:
         #     log.debug('getting pairwise flow %s out of %s', counter + 1, total_pairs)
 
-        if memory_source and tuple(sorted((i, j))) in memory_source.keys():
+        if memory_source and tuple(sorted((i, j))) in list(memory_source.keys()):
             potential_diff, current_upper = memory_source[tuple(sorted((i, j)))]
 
         else:
@@ -492,13 +492,13 @@ def perform_clustering(inter_node_tension, cluster_number, show='undefined clust
     :param show:
     """
     index_group = list(set([item
-                            for key in inter_node_tension.iterkeys()
+                            for key in inter_node_tension.keys()
                             for item in key]))
     local_index = dict((UP, i) for i, UP in enumerate(index_group))
     rev_idx = dict((i, UP) for i, UP in enumerate(index_group))
     relations_matrix = lil_matrix((len(index_group), len(index_group)))
 
-    for (UP1, UP2), tension in inter_node_tension.iteritems():
+    for (UP1, UP2), tension in inter_node_tension.items():
         # TODO: change the metric used to cluster the nodes.
         relations_matrix[local_index[UP1], local_index[UP2]] = -1.0 / tension
         relations_matrix[local_index[UP2], local_index[UP1]] = -1.0 / tension

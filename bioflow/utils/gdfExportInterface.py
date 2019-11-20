@@ -92,7 +92,7 @@ class GdfExportInterface(object):
         Write the nodes with associated informations
 
         """
-        for nodename, nodeprops in self.node_properties.iteritems():
+        for nodename, nodeprops in self.node_properties.items():
             if self.mincurrent and float(nodeprops[0]) > self.mincurrent:
                 self.target_file.write(
                     str(nodename) + ', ' + ', '.join(nodeprops) + '\n')

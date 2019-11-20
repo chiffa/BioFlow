@@ -16,8 +16,8 @@ class GoParserTester(unittest.TestCase):
         cls.terms, cls.term_rels = GOTermsParser().parse_go_terms(cls.ref_obo)
 
     def test_proper_parsing(self):
-        self.assertIn('0000001', self.terms.keys())
-        self.assertIn('0000002', self.terms.keys())
+        self.assertIn('0000001', list(self.terms.keys()))
+        self.assertIn('0000002', list(self.terms.keys()))
 
     def test_namespaces(self):
         self.assertEqual('biological_process', self.terms['0000001']['namespace'])
@@ -31,10 +31,10 @@ class GoParserTester(unittest.TestCase):
         self.assertIn(('0000002', 'is_a', '0007005'), self.term_rels)
 
     def test_obsolescence(self):
-        self.assertNotIn('0000039', self.terms.keys())
+        self.assertNotIn('0000039', list(self.terms.keys()))
 
     def test_chebi_parsing(self):
-        self.assertIn('CHEBI', self.terms['0000036'].keys())
+        self.assertIn('CHEBI', list(self.terms['0000036'].keys()))
         self.assertIn('22221', self.terms['0000036']['CHEBI'])
 
 

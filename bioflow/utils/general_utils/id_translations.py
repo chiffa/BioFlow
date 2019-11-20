@@ -11,7 +11,7 @@ def retrieve_id_translation_table(id_list, id_ptable=None):
 
     output_collector = []
 
-    print translated_list[1]
+    print(translated_list[1])
 
     for key, value in translated_list[1]:
         # print key
@@ -31,7 +31,7 @@ def retrieve_base_table(path, header=False):
     with open(path, 'r') as source:
         reader = csv_reader(source)
         if header:
-            reader.next()
+            next(reader)
         for line in reader:
             output_collector.append(line)
     output_collector = [val for sublist in output_collector for val in sublist]

@@ -330,7 +330,7 @@ class InteractomeInterface(object):
                 local_list, count_increase = expand_from_seed(
                     element, edge_type_filter, self.connexity_aware)
                 if edge_type_filter == 'is_weakly_interacting':
-                    print element, local_list, self.connexity_aware
+                    print(element, local_list, self.connexity_aware)
 
                 if len(local_list) > 0:
                     clusters[element] = copy(local_list)
@@ -432,7 +432,7 @@ class InteractomeInterface(object):
             :return: displayName of the requested location
             """
             location = str(location)
-            if location in _location_buffer_dict.keys():
+            if location in list(_location_buffer_dict.keys()):
                 return _location_buffer_dict[location]
             else:
                 for location_node in DatabaseGraph.find({'legacyId':location}, 'Location'):
@@ -528,7 +528,7 @@ class InteractomeInterface(object):
         """
 
         def insert_expansion_links(link_dict, link_type):
-            for _key, values in link_dict.iteritems():
+            for _key, values in link_dict.items():
                 for _val in values:
                     if not edge_drop or np.random.random_sample() > edge_drop:  # TODO: check that no crash occurs
                         _link_indexes = (
@@ -684,7 +684,7 @@ class InteractomeInterface(object):
 
         self.connected_uniprots = [
             NodeID for NodeID,
-            idx in self.neo4j_id_2_matrix_index.iteritems() if idx < (
+            idx in self.neo4j_id_2_matrix_index.items() if idx < (
                 self.laplacian_matrix.shape[0] - 1)]
 
     def get_descriptor_for_index(self, index):
@@ -695,7 +695,7 @@ class InteractomeInterface(object):
         :return: Type, displayName and if a localization is given, returns display name too.
         :rtype: tuple
         """
-        if self.matrix_index_2_neo4j_id[index] in self.neo4j_id_2_localization.keys():
+        if self.matrix_index_2_neo4j_id[index] in list(self.neo4j_id_2_localization.keys()):
             return (self.neo4j_id_2_node_type[self.matrix_index_2_neo4j_id[index]],
                     self.neo4j_id_2_display_name[self.matrix_index_2_neo4j_id[index]],
                     self.neo4j_id_2_localization[self.matrix_index_2_neo4j_id[index]])
@@ -781,7 +781,7 @@ class InteractomeInterface(object):
                      (set(uniprots) - set(self.neo4j_id_2_matrix_index.keys())))
 
         self.entry_point_uniprots_neo4j_ids = \
-            [uniprot for uniprot in uniprots if uniprot in self.neo4j_id_2_matrix_index.keys()]
+            [uniprot for uniprot in uniprots if uniprot in list(self.neo4j_id_2_matrix_index.keys())]
 
     # TODO: extract as the element performing a computation of the network
     # critical control parameters:
@@ -827,7 +827,7 @@ class InteractomeInterface(object):
 
         if fast_load:
             payload = self.undump_memoized()
-            print ''
+            print('')
             UP_hash = hashlib.md5(json.dumps(sorted(self.entry_point_uniprots_neo4j_ids), sort_keys=True)).hexdigest()
             if payload['sys_hash'] == self.md5_hash() and payload['UP_hash'] == UP_hash:
                 self.current_accumulator, self.node_current = pickle.loads(payload['currents'])
@@ -869,7 +869,7 @@ class InteractomeInterface(object):
                 dict(((self.matrix_index_2_neo4j_id[i],
                        self.matrix_index_2_neo4j_id[j]),
                       voltage)
-                     for (i, j), (voltage, current) in up_pair_2_voltage_current.iteritems()))
+                     for (i, j), (voltage, current) in up_pair_2_voltage_current.items()))
 
         if incremental:
             self.current_accumulator = self.current_accumulator + current_accumulator
@@ -895,7 +895,7 @@ class InteractomeInterface(object):
         """
         characterization_dict = {}
         limit_current = max(node_current.values()) * limit
-        for NodeID, i in self.neo4j_id_2_matrix_index.iteritems():
+        for NodeID, i in self.neo4j_id_2_matrix_index.items():
             if node_current[NodeID] > limit_current:
                 characterization_dict[NodeID] = [node_current[NodeID],
                                                  self.non_norm_laplacian_matrix[i, i]]
@@ -944,12 +944,12 @@ class InteractomeInterface(object):
         characterization_dict = {}
 
         log.info("Laplacian shape %s", self.laplacian_matrix.shape)
-        log.info("Matrix size %s", max(self.matrix_index_2_neo4j_id.iterkeys()))
+        log.info("Matrix size %s", max(self.matrix_index_2_neo4j_id.keys()))
 
-        for NodeID in self.node_current.iterkeys():
+        for NodeID in self.node_current.keys():
             matrix_index = self.neo4j_id_2_matrix_index[NodeID]
 
-            if NodeID not in self.neo4j_id_2_display_name.keys():
+            if NodeID not in list(self.neo4j_id_2_display_name.keys()):
                 log.warning('neo4j id %s does not seem to appear in the main import set', NodeID)
                 log.warning('corresponding matrix id is %s', matrix_index)
                 continue
@@ -1099,7 +1099,7 @@ class InteractomeInterface(object):
         _ = undump_object(dumps_folder_1+'/dump2.dump')
 
         adjacency_matrix_1 = undump_object(dumps_folder_1+'/pickleDump3.dump')
-        legacy_id_2_neo4j_id_1 = dict((value, key) for key, value in neo4j_id_2_legacy_id_1.iteritems())
+        legacy_id_2_neo4j_id_1 = dict((value, key) for key, value in neo4j_id_2_legacy_id_1.items())
 
         neo4j_id_2_matrix_index_2, \
         matrix_index_2_neo4j_id_2, _, \
@@ -1109,10 +1109,10 @@ class InteractomeInterface(object):
         _ = undump_object(dumps_folder_2 + '/dump2.dump')
 
         adjacency_matrix_2 = undump_object(dumps_folder_2 + '/pickleDump3.dump')
-        legacy_id_2_neo4j_id_2 = dict((value, key) for key, value in neo4j_id_2_legacy_id_2.iteritems())
+        legacy_id_2_neo4j_id_2 = dict((value, key) for key, value in neo4j_id_2_legacy_id_2.items())
 
-        leg_ids_1 = set(neo4j_id_2_legacy_id_1[key] for key in neo4j_id_2_matrix_index_1.keys())
-        leg_ids_2 = set(neo4j_id_2_legacy_id_2[key] for key in neo4j_id_2_matrix_index_2.keys())
+        leg_ids_1 = set(neo4j_id_2_legacy_id_1[key] for key in list(neo4j_id_2_matrix_index_1.keys()))
+        leg_ids_2 = set(neo4j_id_2_legacy_id_2[key] for key in list(neo4j_id_2_matrix_index_2.keys()))
 
         first_but_not_second = leg_ids_1 - leg_ids_2
         second_but_not_first = leg_ids_2 - leg_ids_1
@@ -1130,7 +1130,7 @@ class InteractomeInterface(object):
         log.info('nodes indexed by second laplacian but not first: %s' % second_but_not_first)
 
         first_and_second = leg_ids_1.intersection(leg_ids_2)
-        raw_input('press enter to continue')
+        input('press enter to continue')
 
         for legacy_id in first_and_second:
             idx1 = neo4j_id_2_matrix_index_1[legacy_id_2_neo4j_id_1[legacy_id]]
@@ -1148,13 +1148,13 @@ class InteractomeInterface(object):
 
             if len(cons_f_n_s):
 
-                if not legacy_id in unfold_dict.keys():
+                if not legacy_id in list(unfold_dict.keys()):
                     node = DatabaseGraph.find({'legacyId': legacy_id})[0]
                     unfold_dict[legacy_id] = (
                         legacy_id, node.properties['displayName'], node.properties.get('forbidden', False))
 
                 for node_id in chain(cons_f_n_s):
-                    if not node_id in unfold_dict.keys():
+                    if not node_id in list(unfold_dict.keys()):
                         node = DatabaseGraph.find({'legacyId': node_id})[0]
                         unfold_dict[node_id] = (
                         node_id, node.properties['displayName'], node.properties.get('forbidden', False))

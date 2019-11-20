@@ -71,8 +71,8 @@ def my_timer(message='', previous_time=[]):
     :return:
     """
     if not previous_time:
-        print 'set timer'
+        print('set timer')
         previous_time.append(time())
     else:
-        print '%s timer reset. Time since previous %s' % (message, time() - previous_time[0])
+        print('%s timer reset. Time since previous %s' % (message, time() - previous_time[0]))
         previous_time[0] = time()

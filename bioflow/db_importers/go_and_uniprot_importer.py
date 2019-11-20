@@ -26,10 +26,10 @@ def import_gene_ontology(go_terms, go_terms_structure):
     :param go_terms_structure:
     """
     # Create Terms
-    go_terms_number = len(go_terms.keys())
+    go_terms_number = len(list(go_terms.keys()))
     log.info('Starting to importing %s GO terms' % go_terms_number)
 
-    for i, (GO_Term, term) in enumerate(go_terms.iteritems()):
+    for i, (GO_Term, term) in enumerate(go_terms.items()):
         log.debug('creating GO terms: %s %%',
                   str("{0:.2f}".format(float(i) / float(go_terms_number) * 100)))
         if i*20 % go_terms_number < 20:
@@ -140,9 +140,9 @@ def manage_acc_nums(acc_num, acc_num_2_reactome_proteins):
     :param acc_num_2_reactome_proteins: Dictionary mapping accession numbers to protein IDs
     :return: protein list if acession number has been buffered, nothing otherwise
     """
-    if acc_num not in acc_num_2_reactome_proteins.keys():
+    if acc_num not in list(acc_num_2_reactome_proteins.keys()):
         return []
-    if acc_num in acc_num_2_reactome_proteins.keys():
+    if acc_num in list(acc_num_2_reactome_proteins.keys()):
         return acc_num_2_reactome_proteins[acc_num]
 
 
@@ -215,12 +215,12 @@ def import_uniprots(uniprot, reactome_acnum_bindings):
 
     cross_links = 0
     is_same_links_no = 0
-    acc_nums_no = len(reactome_acnum_bindings.keys()) / 100.
-    up_no = float(len(uniprot.keys()))
+    acc_nums_no = len(list(reactome_acnum_bindings.keys())) / 100.
+    up_no = float(len(list(uniprot.keys())))
 
     log.info('Starting to import %s uniprot nodes' % up_no)
 
-    for sp_id_num, (swiss_prot_id, data_container) in enumerate(uniprot.iteritems()):
+    for sp_id_num, (swiss_prot_id, data_container) in enumerate(uniprot.items()):
 
         set1 = set(data_container['Acnum'])
         set2 = set(reactome_acnum_bindings.keys())
@@ -252,7 +252,7 @@ def import_uniprots(uniprot, reactome_acnum_bindings):
 
         # Insert references to GOs
         for GO_Term in data_container['GO']:
-            if GO_Term in GO_term_memoization_dict.keys():
+            if GO_Term in list(GO_term_memoization_dict.keys()):
                 linked_go_term = GO_term_memoization_dict[GO_Term]
                 DatabaseGraph.link(get_db_id(uniprot_node), get_db_id(linked_go_term), 'is_go_annotation')
 

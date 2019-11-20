@@ -22,7 +22,7 @@ data_dump_location = '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Kp_Km data/a
 
 with open(translation_file_location, 'r') as source:
     reader = csv_reader(source, delimiter='\t')
-    print reader.next()
+    print(next(reader))
     for line in reader:
         if line[0] and line[1]:
             if int(line[3]):
@@ -39,7 +39,7 @@ low_conf_trans = []
 if gene_to_id_file_location:
     with open(gene_to_id_file_location, 'r') as source:
         reader = csv_reader(source, delimiter='\t')
-        print reader.next()
+        print(next(reader))
         for line in reader:
             genes_to_ids_dict[line[2]] = line[0]
 
@@ -50,13 +50,13 @@ with open(data_source_location, 'r') as source:
         word = line[0]
         if gene_to_id_file_location:
             word = genes_to_ids_dict.get(word, 'None found')
-        if word in high_conf_translation_dict.keys():
+        if word in list(high_conf_translation_dict.keys()):
             high_conf_trans.append(high_conf_translation_dict[word])
-        if word in low_conf_translation_dict.keys():
+        if word in list(low_conf_translation_dict.keys()):
             low_conf_trans.append(low_conf_translation_dict[word])
 
-print "out of %s, %s were translated with high confidence, %s with low and %s were not found" % \
-      (i, len(high_conf_trans), len(low_conf_trans), i-len(high_conf_trans)-len(low_conf_trans))
+print("out of %s, %s were translated with high confidence, %s with low and %s were not found" % \
+      (i, len(high_conf_trans), len(low_conf_trans), i-len(high_conf_trans)-len(low_conf_trans)))
 
 with open(data_dump_location, 'w') as destination:
     writer = csv_writer(destination)

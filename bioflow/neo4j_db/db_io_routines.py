@@ -373,9 +373,9 @@ def compute_annotation_informativity():
 def pull_up_inf_density():
     # cur_list = [node for node in DatabaseGraph.get_all('UNIPROT') if node.properties.get('total_information', 0)]
     name_maps = DatabaseGraph.get_preferential_gene_names()
-    print "rank \t informativity \t UNIPROT ID \t gene name"
+    print("rank \t informativity \t UNIPROT ID \t gene name")
     for i, node in enumerate(sorted(DatabaseGraph.get_all('UNIPROT'), key=lambda nde: nde.properties.get('total_information', 0), reverse=True)):
-        print "%4.d \t %.2f \t %s \t %s" % (i+1, node.properties.get('total_information', 0), node.properties['legacyId'], name_maps.get(node.properties['legacyId'], None))
+        print("%4.d \t %.2f \t %s \t %s" % (i+1, node.properties.get('total_information', 0), node.properties['legacyId'], name_maps.get(node.properties['legacyId'], None)))
 
 
 # Yes, I know what goes below here is ugly and shouldn't be in the
@@ -423,4 +423,4 @@ if __name__ == "__main__":
     # print proteins
 
     bulbs_id = look_up_annotation_set(['FAA4'])
-    print bulbs_id
+    print(bulbs_id)

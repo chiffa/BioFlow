@@ -9,7 +9,7 @@ def parse_complex_portal(complex_portal_file):
 
         for sub_node in subnode_list:
 
-            if sub_node in new_nodes[complex_name].keys():
+            if sub_node in list(new_nodes[complex_name].keys()):
                 unpacked_subnodes += unpack_complex_contents(sub_node)
 
             else:
@@ -27,7 +27,7 @@ def parse_complex_portal(complex_portal_file):
 
     with open(complex_portal_file, 'rb') as source:
         reader = csv_reader(source, delimiter='\t')
-        header = reader.next()
+        header = next(reader)
         for line in reader:
             legacy_id = line[0]
             display_name = line[1]
@@ -38,7 +38,7 @@ def parse_complex_portal(complex_portal_file):
 
     # print new_nodes
 
-    for node in new_nodes.itervalues():
+    for node in new_nodes.values():
         node['components'] = unpack_complex_contents(node['ID'])
         base += node['components']
 

@@ -23,9 +23,9 @@ interactome_interface_instance.fast_load()
 
 md5_hash = interactome_interface_instance.md5_hash()
 
-print "samples found to test against:\t %s" % interactome_rand_samp_db.find({'size': 2,
+print("samples found to test against:\t %s" % interactome_rand_samp_db.find({'size': 2,
                                                                           'sys_hash': md5_hash,
-                                                                          'sparse_rounds': False}).count()
+                                                                          'sparse_rounds': False}).count())
 
 essential_genes_bulbs_ids = []
 
@@ -49,10 +49,10 @@ for i, sample in enumerate(interactome_rand_samp_db.find({'size': 2, 'sys_hash':
     _, nodes_current_dict = pickle.loads(sample['currents'])
     tensions = pickle.loads(sample['voltages'])
 
-    io_nodes, tension = (tensions.keys()[0], tensions.values()[0])
+    io_nodes, tension = (list(tensions.keys())[0], list(tensions.values())[0])
     # this actually should be a multiplication - we divide to normalize to 1 volt, after counting for 1 amp
 
-    nodes_current = np.sort(np.array(nodes_current_dict.values()).astype(np.float))[-100:] * tension
+    nodes_current = np.sort(np.array(list(nodes_current_dict.values())).astype(np.float))[-100:] * tension
 
     # not the most efficient implementation, but oh well
     essential_max_current = 0
@@ -72,9 +72,9 @@ for i, sample in enumerate(interactome_rand_samp_db.find({'size': 2, 'sys_hash':
         nodes_current = nodes_current[nodes_current < 0.999]
         shape_characteristic = 1. / nodes_current
 
-        print '\n\n\n>>>>>>>>>>>>>'
-        print 'sample ', i
-        print 'length/width', length_by_width
+        print('\n\n\n>>>>>>>>>>>>>')
+        print('sample ', i)
+        print('length/width', length_by_width)
         # alternative width is max. But in this case we might to remove everything close enough to 0
         # mean_width = 1./np.mean(nodes_current[nodes_current > 0.1])
         mean_width = 1. / np.mean(nodes_current[nodes_current > 0.2])
@@ -88,9 +88,9 @@ for i, sample in enumerate(interactome_rand_samp_db.find({'size': 2, 'sys_hash':
             length /= mean_width
             mean_width = 1
 
-        print 'width', mean_width
-        print 'length', length
-        print 'essentiality', essential_max_current
+        print('width', mean_width)
+        print('length', length)
+        print('essentiality', essential_max_current)
         # print 'io nodes:\t', nodes_current_dict[io_nodes[0]] * tension, nodes_current_dict[io_nodes[1]] * tension
 
         # print 'resistance:\t', total_resistance
@@ -163,8 +163,8 @@ plt.show()
 
 _length = np.array(length_width_accumulator)[:, 0]
 
-print 'average length', np.mean(_length[_length > 1.99])
-print 'std length', np.std(_length[_length > 1.99])
+print('average length', np.mean(_length[_length > 1.99]))
+print('std length', np.std(_length[_length > 1.99]))
 
 data = np.array(_length[_length > 1.99])
 fltr = np.logical_not(np.isnan(data))
@@ -178,8 +178,8 @@ plt.show()
 
 _width = np.array(length_width_accumulator)[:, 1]
 
-print 'average width', np.mean(_width[_length > 1.99])
-print 'std width', np.std(_width[_length > 1.99])
+print('average width', np.mean(_width[_length > 1.99]))
+print('std width', np.std(_width[_length > 1.99]))
 
 data = np.array(_width[_length > 1.99])
 fltr = np.logical_not(np.isnan(data))

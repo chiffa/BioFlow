@@ -80,8 +80,8 @@ def purgeneo4j():
 
     :return:
     """
-    print 'neo4j will start purging the master database. It will take some time to finish.' \
-          ' Please do not close the shell'
+    print('neo4j will start purging the master database. It will take some time to finish.' \
+          ' Please do not close the shell')
     from bioflow.db_importers.import_main import destroy_db
     destroy_db()
 
@@ -96,8 +96,8 @@ def loadneo4j():
 
     :return:
     """
-    print 'neo4j will start loading data into the master database. It will take a couple ' \
-          'of hours to finish. Please do not close the shell.'
+    print('neo4j will start loading data into the master database. It will take a couple ' \
+          'of hours to finish. Please do not close the shell.')
     from bioflow.db_importers.import_main import build_db
     build_db()
 

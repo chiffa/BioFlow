@@ -56,17 +56,17 @@ def pull_online_dbs():
     write_dirs = ini_configs2dict(conf_files_locations['online_dbs'])
     base_folder = ini_configs2dict(conf_files_locations['servers'])['PRODUCTION']['base_folder']
 
-    for DB_type, location_dict in write_dirs.iteritems():
+    for DB_type, location_dict in write_dirs.items():
 
-        print DB_type
+        print(DB_type)
 
-        if 'inactive' in location_dict.keys() and location_dict['inactive'] == 'True':
+        if 'inactive' in list(location_dict.keys()) and location_dict['inactive'] == 'True':
             continue
 
         local = location_dict['local'].replace('$DB_HOME$', base_folder)
         onlines = [location.strip() for location in location_dict['online'].split(',')]
 
-        if 'rename' in location_dict.keys():
+        if 'rename' in list(location_dict.keys()):
             renames = [location.strip() for location in location_dict['rename'].split(',')]
 
             for online, rename in zip(onlines, renames):
@@ -110,23 +110,23 @@ def compute_full_paths(sources_parse_dict, online_dbs_parse_dict, servers_parse_
     base_folder = servers_parse_dict['base_folder']
     paths_dict = {}
 
-    for source_name, source_contents in sources_parse_dict.items():
+    for source_name, source_contents in list(sources_parse_dict.items()):
 
         if source_name in ['INTERNAL', 'META']:
             continue
 
         if not online_dbs_parse_dict[source_name] or \
-                ('inactive' in online_dbs_parse_dict[source_name].keys() and
+                ('inactive' in list(online_dbs_parse_dict[source_name].keys()) and
                  online_dbs_parse_dict[source_name]['inactive'] == 'True'):
             log.exception('attempt to load an inactive source type %s', source_name)
             continue
 
         pre_location = online_dbs_parse_dict[source_name]['local'].replace('$DB_HOME$', base_folder)
 
-        if 'file' in source_contents.keys():
+        if 'file' in list(source_contents.keys()):
             paths_dict[source_name] = join(pre_location, source_contents['file'])
 
-        elif 'name_pattern' in source_contents.keys():
+        elif 'name_pattern' in list(source_contents.keys()):
             target = ''
 
             if not os.path.exists(pre_location):

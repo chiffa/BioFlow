@@ -11,7 +11,7 @@
 #
 # All configuration values have a default; values that are commented out
 # serve to show the default.
-from __future__ import print_function
+
 import sys
 import os
 from mock import Mock as MagicMock
@@ -105,8 +105,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'BioFlow'
-copyright = u'2013-%s, %s' % (__current_year__, __author__)
+project = 'BioFlow'
+copyright = '2013-%s, %s' % (__current_year__, __author__)
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

@@ -18,7 +18,7 @@ def parse_bio_grid(bio_grid):
 
     with open(bio_grid, 'rb') as source_file:
         biogrid_reader = csv_reader(source_file, 'excel-tab')
-        biogrid_reader.next()
+        next(biogrid_reader)
         for fields in biogrid_reader:
             ret_dict[tuple(fields[7:9])] = [fields[17]]
             if fields[18] != '-':
@@ -40,7 +40,7 @@ def parse_hint(_hint_csv):
 
     with open(_hint_csv, 'r') as source_file:
         hint_reader = csv_reader(source_file, delimiter='\t')
-        hint_reader.next()
+        next(hint_reader)
         for i, fields in enumerate(hint_reader):
             if fields[2] != fields[3]:
                 local_relations[fields[3]].append(fields[2])

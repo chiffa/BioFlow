@@ -22,7 +22,10 @@ class TestLogs(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        wipe_dir(log_location)
+        try:
+            wipe_dir(log_location)
+        except OSError:
+            pass
 
     def test_file_creation(self):
         self.assertTrue(os.path.isdir(log_location))

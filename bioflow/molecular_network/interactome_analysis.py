@@ -232,7 +232,7 @@ def compare_to_blank(blank_model_size, p_val=0.05, sparse_rounds=False,
     node_currents = interactome_interface_instance.node_current
     dictionary_system = interactome_interface_instance.format_node_props(node_currents)
     curr_inf_conf_tot = np.array(
-        [[int(key)] + list(val) for key, val in dictionary_system.items()]).T
+        [[int(key)] + list(val) for key, val in list(dictionary_system.items())]).T
 
     node_ids, query_array = (curr_inf_conf_tot[0, :], curr_inf_conf_tot[(1, 2), :])
 
@@ -293,7 +293,7 @@ def compare_to_blank(blank_model_size, p_val=0.05, sparse_rounds=False,
 
     log.debug('debug, not random nodes: %s', not_random_nodes)
     log.debug('debug bulbs_id_disp_name: %s',
-              interactome_interface_instance.neo4j_id_2_display_name.items()[:10])
+              list(interactome_interface_instance.neo4j_id_2_display_name.items())[:10])
 
     node_char_list = [
         [int(nr_node_id), interactome_interface_instance.neo4j_id_2_display_name[nr_node_id]] +

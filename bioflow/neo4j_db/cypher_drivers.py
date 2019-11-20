@@ -12,7 +12,7 @@ password = os.environ['NEOPASS']
 
 
 def neo4j_sanitize(string):
-    if isinstance(string, basestring):
+    if isinstance(string, str):
         return string.replace('\'', '\"').replace('\\', '\\\\')
     else:
         return string
@@ -39,7 +39,7 @@ class GraphDBPipe(object):
         instruction_puck = ["CREATE (n:%s)" % node_type]
         set_puck = []
 
-        for key, value in param_dict.iteritems():
+        for key, value in param_dict.items():
             set_puck.append("SET n.%s = '%s'" % (key, neo4j_sanitize(value)))
 
         instruction_puck += set_puck
@@ -142,7 +142,7 @@ class GraphDBPipe(object):
 
         where_puck = []
 
-        for key, value in filter_dict.iteritems():
+        for key, value in filter_dict.items():
             where_puck.append("a.%s = '%s'" % (key, neo4j_sanitize(value)))
 
         where_clause = "WHERE " + ' AND '.join(where_puck) + ' '
@@ -170,7 +170,7 @@ class GraphDBPipe(object):
 
         if params is not None:
             set_puck = []
-            for key, value in params.iteritems():
+            for key, value in params.items():
                 set_puck.append("SET r.%s = '%s'" % (key, neo4j_sanitize(value)))
             instructions_puck += set_puck
 
@@ -208,7 +208,7 @@ class GraphDBPipe(object):
 
         if link_param_filter is not None:
             where_puck = []
-            for key, value in link_param_filter.iteritems():
+            for key, value in link_param_filter.items():
                 where_puck.append("AND r.%s = '%s'" % (key, neo4j_sanitize(value)))
             instructions_puck += where_puck
 
@@ -226,7 +226,7 @@ class GraphDBPipe(object):
     @staticmethod
     def _set_attributes(tx, node_id, attributes_dict):
         instructions_puck = ["MATCH (n) WHERE ID(n) = %s" % node_id]
-        for key, value in attributes_dict.iteritems():
+        for key, value in attributes_dict.items():
             instructions_puck.append("SET n.%s = '%s'" % (key, neo4j_sanitize(value)))
         instructions_puck.append("RETURN n")
         instruction = ' '.join(instructions_puck)
@@ -330,8 +330,8 @@ class GraphDBPipe(object):
         with self._driver.session() as session:
             tx = session.begin_transaction()
             annot_nodes = []
-            for annot_type, annot_list in annot_type_2_annot_list.iteritems():
-                if isinstance(annot_list, basestring):
+            for annot_type, annot_list in annot_type_2_annot_list.items():
+                if isinstance(annot_list, str):
                     annot_list = [annot_list]
                 for annot_tag in annot_list:
                     annot_node = self._attach_annotation_tag(tx, node_id, annot_tag, annot_type, preferential)
@@ -380,7 +380,7 @@ class GraphDBPipe(object):
         with self._driver.session() as session:
             tx = session.begin_transaction()
             annotated_nodes = []
-            if annotations_types is None or isinstance(annotations_types, basestring):
+            if annotations_types is None or isinstance(annotations_types, str):
                 for i, annotation_tag in enumerate(annotation_tags_list):
                     annotated_nodes.append(self._get_from_annotation_tag(tx, annotation_tag, annotations_types))
                     if i % batch_size == 0:

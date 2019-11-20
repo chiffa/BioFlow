@@ -3,7 +3,7 @@ An interface declaration required by bulbs module
 """
 from bioflow.main_configs import neo4j_server
 from bioflow.utils.log_behavior import get_logger
-from cypher_drivers import GraphDBPipe
+from .cypher_drivers import GraphDBPipe
 import os
 
 

@@ -89,7 +89,7 @@ def memoize(f):
     memdict = {}
 
     def internal_function(*args, **kwargs):
-        if args in memdict.keys():
+        if args in list(memdict.keys()):
             return memdict[args]
         else:
             result = f(*args, **kwargs)
@@ -103,12 +103,12 @@ def time_exection(f):
     def int_function(*args, **kwargs):
         now = time()
         result = f(*args, **kwargs)
-        print time() - now
+        print(time() - now)
         return result
 
     return int_function
 
 
 if __name__ == "__main":
-    print get_git_revision_hash()
-    print get_git_revision_short_hash()
+    print(get_git_revision_hash())
+    print(get_git_revision_short_hash())

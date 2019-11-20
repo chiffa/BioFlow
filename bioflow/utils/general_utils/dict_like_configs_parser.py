@@ -4,7 +4,7 @@ ConfigParser
 
 :@author: Andrei Kucharavy
 """
-import ConfigParser
+import configparser
 
 
 def ini_configs2dict(path):
@@ -14,7 +14,7 @@ def ini_configs2dict(path):
     :param path:
     :return:
     """
-    stock_parser = ConfigParser.SafeConfigParser()
+    stock_parser = configparser.SafeConfigParser()
     stock_parser_output = stock_parser.read(path)
     if not stock_parser_output:
         raise IOError('Cannot load configs file from %s' % path)
@@ -32,10 +32,10 @@ def dict2init_configs(path, confdict):
     :param path:
     :return:
     """
-    base_writer = ConfigParser.SafeConfigParser()
-    for section, section_contents in confdict.iteritems():
+    base_writer = configparser.SafeConfigParser()
+    for section, section_contents in confdict.items():
         base_writer.add_section(section)
-        for parameter, parameter_value in section_contents.iteritems():
+        for parameter, parameter_value in section_contents.items():
             base_writer.set(section, parameter, parameter_value)
 
     with open(path, 'w') as configfile:

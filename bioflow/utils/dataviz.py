@@ -151,7 +151,7 @@ if __name__ == "__main__":
     better_2d_density_plot(x_dat, y_dat)
     plt.show()
 
-    pos = range(5)
+    pos = list(range(5))
     data = [normal(size=100) for i in pos]
     fig = plt.figure()
     ax = fig.add_subplot(111)

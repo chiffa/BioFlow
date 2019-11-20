@@ -136,8 +136,8 @@ def show_eigenvals_and_eigenvects(eigenvals, eigenvects, biggest_limit,
             'Index \t value \t Descriptor']
         local_set = set()
         # the couple of lines below a kind a little bit esoteric...
-        for index, value in reversed(zip(biggest_eigenvects[:, i],
-                                         absolute[biggest_eigenvects[:, i], i])):
+        for index, value in reversed(list(zip(biggest_eigenvects[:, i],
+                                         absolute[biggest_eigenvects[:, i], i]))):
             if int(value ** 2 * 1000) > 0:
                 local_set.add(index)
                 string_to_render.append('\t'.join([str(index), str(
@@ -188,8 +188,8 @@ def analyze_eigenvects(
              len(triangular_upper_nonzero_idxs[0]))
 
     # permute the off-diagonal terms
-    nonzero_coordinates = zip(triangular_upper_nonzero_idxs[0].tolist(),
-                              triangular_upper_nonzero_idxs[1].tolist())
+    nonzero_coordinates = list(zip(triangular_upper_nonzero_idxs[0].tolist(),
+                              triangular_upper_nonzero_idxs[1].tolist()))
     shuffle(nonzero_coordinates)
 
     if len(nonzero_coordinates) > permutations_limiter:

@@ -355,7 +355,7 @@ def compare_to_blank(
         mean_correlation_accumulator.append(np.array(mean_correlations))
         eigenvalues_accumulator.append(eigenvalues)
         dict_system = go_interface_instance.format_node_props(node_currents)
-        curr_inf_conf = list(dict_system.itervalues())
+        curr_inf_conf = list(dict_system.values())
         curr_inf_conf_general.append(np.array(curr_inf_conf).T)
         count = i
         if dict_system == {}:
@@ -374,7 +374,7 @@ def compare_to_blank(
     node_currents = go_interface_instance.node_current
     dict_system = go_interface_instance.format_node_props(node_currents)
     curr_inf_conf_tot = np.array(
-        [[int(key)] + list(val) for key, val in dict_system.iteritems()]).T
+        [[int(key)] + list(val) for key, val in dict_system.items()]).T
     go_node_ids, curr_inf_conf = (
         curr_inf_conf_tot[0, :], curr_inf_conf_tot[ (1, 2, 3), :])  # fails here when no significant terms to print
     log.info('blank comparison: %s', curr_inf_conf.shape)
@@ -414,7 +414,7 @@ def compare_to_blank(
 
         log.debug('not random nodes: %s', not_random_nodes)
         log.debug('bulbs_id_disp_name: %s',
-                  go_interface_instance.GO2UP_Reachable_nodes.items()[:10])
+                  list(go_interface_instance.GO2UP_Reachable_nodes.items())[:10])
         # basically the second element below are the nodes that contribute to the information
         #  flow through the node that is considered as non-random
 
