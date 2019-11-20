@@ -1,12 +1,12 @@
-numpy < 2.0
-scipy < 1.0
-matplotlib < 2.0
-scikit-learn < 0.17
-cython < 0.23
-pymongo < 4.0
-requests < 3.0
-click < 8.0
-scikits.sparse < 0.3
-mock < 2.0
-requests-ftp < 0.4
-neo4j-driver < 1.6
+numpy
+scipy
+matplotlib
+scikit-learn
+cython
+pymongo
+requests
+click
+scikits.sparse
+mock
+requests-ftp
+neo4j-driver
