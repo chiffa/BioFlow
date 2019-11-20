@@ -213,7 +213,7 @@ def annotation_ids_from_csv(source_csv):
     :return:
     """
     analysis_bulbs_ids = []
-    with open(source_csv) as src:
+    with open(source_csv, 'rt') as src:
         csv_reader = reader(src)
         for row in csv_reader:
             analysis_bulbs_ids = analysis_bulbs_ids + row
@@ -231,8 +231,8 @@ def cast_analysis_set_to_bulbs_ids(analysis_set_csv_location=analysis_protein_id
     analysis_bulbs_ids = annotation_ids_from_csv(analysis_set_csv_location)
     analysis_bulbs_ids = [ret for ret in analysis_bulbs_ids]
     source = look_up_annotation_set(analysis_bulbs_ids)
-    PrettyPrinter(indent=4, stream=open(Dumps.analysis_set_display_names, 'w')).pprint(source[1])
-    writer(open(Dumps.analysis_set_bulbs_ids, 'w'), delimiter='\n').writerow(source[2])
+    PrettyPrinter(indent=4, stream=open(Dumps.analysis_set_display_names, 'wb')).pprint(source[1])
+    writer(open(Dumps.analysis_set_bulbs_ids, 'wb'), delimiter='\n').writerow(source[2])
 
 
 def cast_background_set_to_bulbs_id(background_set_csv_location=background_protein_ids_csv,
@@ -252,7 +252,7 @@ def cast_background_set_to_bulbs_id(background_set_csv_location=background_prote
         background_bulbs_ids = list(set(ret for ret in background_bulbs_ids))
 
     source = look_up_annotation_set(background_bulbs_ids)
-    writer(open(Dumps.background_set_bulbs_ids, 'w'), delimiter='\n').writerow(source[2])
+    writer(open(Dumps.background_set_bulbs_ids, 'wb'), delimiter='\n').writerow(source[2])
 
 
 def neo4j_memoize_type(node_type, dict_to_load_into=None):
@@ -293,7 +293,7 @@ def recompute_forbidden_ids(forbidden_entities_list):
     for f_id in forbidden_ids_list:
         DatabaseGraph.set_attributes(f_id, {'forbidden': True})
 
-    pickle.dump(forbidden_ids_list, open(Dumps.Forbidden_IDs, 'w'))
+    pickle.dump(forbidden_ids_list, open(Dumps.Forbidden_IDs, 'wb'))
 
 
 def clear_all(instruction_list):

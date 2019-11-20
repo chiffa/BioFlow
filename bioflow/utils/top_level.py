@@ -20,7 +20,8 @@ def map_and_save_gene_ids(hit_genes_location, all_detectable_genes_location=''):
 
     else:
         all_detectable_genes_ids = []
-        writer(open(Dumps.background_set_bulbs_ids, 'w'), delimiter='\n').writerow(all_detectable_genes_ids)
+        writer(open(Dumps.background_set_bulbs_ids, 'wb'), delimiter='\n').writerow(
+            all_detectable_genes_ids)
 
     return hit_genes_ids, all_detectable_genes_ids
 

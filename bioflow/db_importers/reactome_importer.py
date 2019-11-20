@@ -404,7 +404,7 @@ def insert_reactome(skip_import='N'):
         insert_complex_parts(reactome_parser.Complexes)
 
         # NOW dump the ForbiddenIDs
-        pickle.dump(ForbiddenIDs, open(Dumps.Forbidden_IDs, 'w'))
+        pickle.dump(ForbiddenIDs, open(Dumps.Forbidden_IDs, 'wt'))
 
 
     if skip_import == 'M':

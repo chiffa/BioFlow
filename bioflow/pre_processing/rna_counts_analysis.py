@@ -46,7 +46,7 @@ def load_rna_counts_table(rna_source, experiments_to_load):
     table = []
 
     log.info('loading RNA counts table from %s', rna_source)
-    with open(rna_source, 'rb') as source_file:
+    with open(rna_source, 'rt') as source_file:
         rdr = reader(source_file, 'excel-tab')
         next(rdr)  # skipping the headers
         for row in rdr:

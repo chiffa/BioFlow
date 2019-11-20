@@ -9,7 +9,7 @@ def parse_TRRUST(trrust_file):
     base = []
     ret_dict = {}
 
-    with open(trrust_file, 'rb') as source:
+    with open(trrust_file, 'rt') as source:
         reader = csv_reader(source, delimiter='\t')
         for line in reader:
             interaction_from = line[0]
@@ -30,7 +30,7 @@ def parse_cellnet_grn(cellnet_file):
     base = []
     ret_dict = {}
 
-    with open(cellnet_file, 'rb') as source:
+    with open(cellnet_file, 'rt') as source:
         reader = csv_reader(source, delimiter=',')
         header = next(reader)
         # print header
@@ -59,7 +59,7 @@ def parse_marbach(marbach_prefix, parse_mode='mean'):
     """
 
     def open_marbach(marbach_file, insertion_index):
-        with open(marbach_file, 'rb') as source:
+        with open(marbach_file, 'rt') as source:
             reader = csv_reader(source, delimiter='\t')
             for line in reader:
                 interaction_from = line[0]

@@ -415,7 +415,7 @@ def auto_analyze(source_list,
         for node in nr_nodes:
             log.info('\t %s \t %s \t %s \t %s \t %s', *node)
 
-        with open(Outputs.interactome_network_output, 'w') as output:
+        with open(Outputs.interactome_network_output, 'wt') as output:
             writer = csv_writer(output, delimiter='\t')
             writer.writerow(['node id', 'display name', 'info flow', 'degree', 'p value'])
             for node in nr_nodes:

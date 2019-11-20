@@ -224,7 +224,7 @@ class UniProtParser(object):
         :return: uniprot parse dictionary
         """
         self._single_up_dict = copy.deepcopy(uniprot_load_dict)
-        source_file = open(source_path, "r")
+        source_file = open(source_path, "rt")
         line_counter = 0
         while True:
             line = source_file.readline()

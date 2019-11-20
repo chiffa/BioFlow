@@ -29,7 +29,7 @@ print("samples found to test against:\t %s" % interactome_rand_samp_db.find({'si
 
 essential_genes_bulbs_ids = []
 
-with open(Dumps.analysis_set_bulbs_ids, 'r') as source:
+with open(Dumps.analysis_set_bulbs_ids, 'rt') as source:
     reader = csv_reader(source)
     for line in reader:
         essential_genes_bulbs_ids += line
@@ -244,4 +244,4 @@ plt.show()
 
 # pickle.dump(length_accumulator, open('step_length.dmp', 'w'))
 # pickle.dump(width_accumulator, open('width_length.dmp', 'w'))
-pickle.dump(length_width_accumulator, open('w_l_accumulator.dmp', 'w'))
+pickle.dump(length_width_accumulator, open('w_l_accumulator.dmp', 'wb'))

@@ -38,7 +38,7 @@ def parse_hint(_hint_csv):
     """
     local_relations = defaultdict(list)
 
-    with open(_hint_csv, 'r') as source_file:
+    with open(_hint_csv, 'rt') as source_file:
         hint_reader = csv_reader(source_file, delimiter='\t')
         next(hint_reader)
         for i, fields in enumerate(hint_reader):

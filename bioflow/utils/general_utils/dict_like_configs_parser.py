@@ -38,5 +38,5 @@ def dict2init_configs(path, confdict):
         for parameter, parameter_value in section_contents.items():
             base_writer.set(section, parameter, parameter_value)
 
-    with open(path, 'w') as configfile:
+    with open(path, 'wt') as configfile:
         base_writer.write(configfile)

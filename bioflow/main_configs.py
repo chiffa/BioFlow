@@ -147,7 +147,7 @@ class Outputs(object):
 #  Declares overloaded IDs, pickles from the dumps of already computed
 forbidden_neo4j_ids = []
 if path.isfile(Dumps.Forbidden_IDs):
-    forbidden_neo4j_ids = pickle.load(open(Dumps.Forbidden_IDs, 'r'))
+    forbidden_neo4j_ids = pickle.load(open(Dumps.Forbidden_IDs, 'rb'))
 
 
 # Where the RNA counts bioflow, hits and background deduced from it are to be found  #

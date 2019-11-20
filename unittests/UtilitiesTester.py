@@ -104,8 +104,8 @@ class GdfExportTester(unittest.TestCase):
         wipe_dir(cls.test_location)
 
     def test_GDF_export(self):
-        with open(self.test_location, 'r') as tested, \
-                open(self.reference_location, 'r') as reference:
+        with open(self.test_location, 'rt') as tested, \
+                open(self.reference_location, 'rt') as reference:
             for line1, line2 in zip(tested, reference):
                 self.assertItemsEqual(line1, line2)
 

@@ -28,7 +28,7 @@ def retrieve_id_translation_table(id_list, id_ptable=None):
 def retrieve_base_table(path, header=False):
     output_collector = []
 
-    with open(path, 'r') as source:
+    with open(path, 'rt') as source:
         reader = csv_reader(source)
         if header:
             next(reader)
@@ -40,7 +40,7 @@ def retrieve_base_table(path, header=False):
 
 def write_mapping_table(path, data_table, header=False):
 
-    with open(path, 'w') as sink:
+    with open(path, 'wt') as sink:
         writer = csv_writer(sink)
         if header:
             writer.writerow(['Source ID', 'DB ID', 'UNIPROT_ID'])

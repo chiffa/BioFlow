@@ -39,7 +39,7 @@ class GdfExportInterface(object):
             current_matrix,
             directed=False):
         mkdir_recursive(target_fname)
-        self.target_file = open(target_fname, 'w')
+        self.target_file = open(target_fname, 'wt')
         self.field_types = field_types
         self.field_names = field_names
         self.node_properties = node_properties_dict

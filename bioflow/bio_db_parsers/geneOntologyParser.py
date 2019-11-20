@@ -94,7 +94,7 @@ class GOTermsParser(object):
         :return: dict containing term parse, list containing inter-term relationship (turtle)
         triplets
         """
-        with open(source_file_path, "r") as go_terms_source:
+        with open(source_file_path, "rt") as go_terms_source:
             for line in go_terms_source:
                 if line == '[Term]\n':
                     self.start_block()

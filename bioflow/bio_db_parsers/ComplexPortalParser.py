@@ -25,7 +25,7 @@ def parse_complex_portal(complex_portal_file):
     base = []
     new_nodes = {}
 
-    with open(complex_portal_file, 'rb') as source:
+    with open(complex_portal_file, 'rt') as source:
         reader = csv_reader(source, delimiter='\t')
         header = next(reader)
         for line in reader:
