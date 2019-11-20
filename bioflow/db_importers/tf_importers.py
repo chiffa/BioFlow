@@ -84,26 +84,26 @@ def cross_ref_tf_factors(confs='tcm'):
 
         log.info('Database insertion finished. TRRUST import finished')
 
-    if 'c' in confs:
-        log.info('Starting CellNet Parsing')
-        up_ids_2_properties, up_ids = parse_cellnet_grn(cellnet_path)
+    # if 'c' in confs:
+    #     log.info('Starting CellNet Parsing')
+    #     up_ids_2_properties, up_ids = parse_cellnet_grn(cellnet_path)
+    #
+    #     log.info('CellNet parsed, starting translation of UP identifiers to internal database identifiers')
+    #     up_ids_2_inner_ids = convert_to_internal_ids(up_ids)
+    #
+    #     log.info('UP identifier conversion finished, starting database insertion for %s links' % len(list(up_ids_2_properties.keys())))
+    #     insert_into_the_database(up_ids_2_inner_ids, up_ids_2_properties, 10, 'CellNet')
+    #
+    #     log.info('Database insertion finished. CellNet import finished')
 
-        log.info('CellNet parsed, starting translation of UP identifiers to internal database identifiers')
-        up_ids_2_inner_ids = convert_to_internal_ids(up_ids)
-
-        log.info('UP identifier conversion finished, starting database insertion for %s links' % len(list(up_ids_2_properties.keys())))
-        insert_into_the_database(up_ids_2_inner_ids, up_ids_2_properties, 10, 'CellNet')
-
-        log.info('Database insertion finished. CellNet import finished')
-
-    if 'm' in confs:
-        log.info('Starting Marbach Parsing')
-        up_ids_2_properties, up_ids = parse_marbach(marbach_path, marbach_mode)
-
-        log.info('Marbach parsed, starting translation of UP identifiers to internal database identifiers')
-        up_ids_2_inner_ids = convert_to_internal_ids(up_ids)
-
-        log.info('UP identifier conversion finished, starting database insertion for %s links' % len(list(up_ids_2_properties.keys())))
-        insert_into_the_database(up_ids_2_inner_ids, up_ids_2_properties, 10, 'Marbach2016')
-
-        log.info('Database insertion finished. Marbach import finished')
+    # if 'm' in confs:
+    #     log.info('Starting Marbach Parsing')
+    #     up_ids_2_properties, up_ids = parse_marbach(marbach_path, marbach_mode)
+    #
+    #     log.info('Marbach parsed, starting translation of UP identifiers to internal database identifiers')
+    #     up_ids_2_inner_ids = convert_to_internal_ids(up_ids)
+    #
+    #     log.info('UP identifier conversion finished, starting database insertion for %s links' % len(list(up_ids_2_properties.keys())))
+    #     insert_into_the_database(up_ids_2_inner_ids, up_ids_2_properties, 10, 'Marbach2016')
+    #
+    #     log.info('Database insertion finished. Marbach import finished')

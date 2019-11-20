@@ -621,7 +621,7 @@ class GeneOntologyInterface(object):
             uniprot_dict[alt_id] = (
                 elt, self.interactome_interface_instance.neo4j_id_2_display_name[elt])
             uniprot_dict[elt] = alt_id
-        pickle.dump(uniprot_dict, file(Dumps.Up_dict_dump, 'w'))
+        pickle.dump(uniprot_dict, open(Dumps.Up_dict_dump, 'w'))
         return uniprot_dict
 
     def filter_out_too_specific(self):

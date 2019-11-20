@@ -293,7 +293,7 @@ def recompute_forbidden_ids(forbidden_entities_list):
     for f_id in forbidden_ids_list:
         DatabaseGraph.set_attributes(f_id, {'forbidden': True})
 
-    pickle.dump(forbidden_ids_list, file(Dumps.Forbidden_IDs, 'w'))
+    pickle.dump(forbidden_ids_list, open(Dumps.Forbidden_IDs, 'w'))
 
 
 def clear_all(instruction_list):

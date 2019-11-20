@@ -6,7 +6,6 @@ Performs IO from the setup .ini files and casts into relevant Python Dictionarie
 from os.path import join, abspath, expanduser
 import os
 from shutil import copy as copy_file
-from string import lower
 from bioflow.utils.general_utils.dict_like_configs_parser import ini_configs2dict, dict2init_configs
 from bioflow.utils.general_utils.high_level_os_io import mkdir_recursive
 from bioflow.utils.general_utils.internet_io import url_to_local, marbach_post_proc
@@ -71,14 +70,14 @@ def pull_online_dbs():
 
             for online, rename in zip(onlines, renames):
                 log.info('loading %s database from %s to %s',
-                         lower(DB_type), location_dict['online'], local)
+                         DB_type.lower(), location_dict['online'], local)
                 mkdir_recursive(local)
                 url_to_local(online, local, rename=rename)
 
         else:
             for online in onlines:
                 log.info('loading %s database from %s to %s',
-                         lower(DB_type), location_dict['online'], local)
+                         DB_type.lower(), location_dict['online'], local)
                 mkdir_recursive(local)
                 url_to_local(online, local)
 

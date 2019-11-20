@@ -25,7 +25,7 @@ def write_to_csv(filename, array):
     :param array: array to dump
     :type array: numpy.array
     """
-    dump_file = file(filename, 'w')
+    dump_file = open(filename, 'w')
     dump_file.write(array)
     dump_file.close()
 
@@ -40,7 +40,7 @@ def dump_object(dump_filename, object_to_dump):
     :param object_to_dump: object to be pickled and dumped
     :type object_to_dump: pickable object
     """
-    dump_file = file(dump_filename, 'w')
+    dump_file = open(dump_filename, 'w')
     dump(object_to_dump, dump_file)
     dump_file.close()
 
@@ -54,7 +54,7 @@ def undump_object(dump_filename):
     :return: the undumped object
     :rtype: object
     """
-    dump_file = file(dump_filename, 'r')
+    dump_file = open(dump_filename, 'r')
     return load(dump_file)
 
 
