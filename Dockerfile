@@ -33,9 +33,9 @@ RUN conda update -q conda
 RUN rm miniconda.sh
 
 # create and activate conda environment
-RUN conda create -q -n run-environement python="2.7" numpy=1.9 scipy=0.19 matplotlib=1.4
+RUN conda create -q -n run-environement python="3.7" numpy scipy matplotlib
 RUN /bin/bash -c "source activate run-environement"
-RUN conda install python="2.7" cython=0.22 scikit-learn=0.16
+RUN conda install python="3.7" cython scikit-learn
 
 # clone the project into the test environement:
 ADD https://github.com/chiffa/BioFlow/archive/master.zip BioFlow.zip
