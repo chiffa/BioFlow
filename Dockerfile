@@ -24,7 +24,7 @@ RUN apt-get update
 RUN apt-get -yq install libsm6 libxrender1 libfontconfig1 libglib2.0-0
 
 # install minicoda
-ADD https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh miniconda.sh
+ADD https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh miniconda.sh
 RUN bash miniconda.sh -b -p /miniconda
 ENV PATH="/miniconda/bin:${PATH}"
 RUN hash -r
@@ -44,4 +44,6 @@ RUN rm BioFlow.zip
 RUN apt-get install -yq nano
 
 # install project requirements:
+RUN which pip
+RUN cat /BioFlow-master/requirements.txt
 RUN cd /BioFlow-master/; pip install requirements -r requirements.txt
