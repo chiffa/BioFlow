@@ -42,6 +42,9 @@ forbidden_verification_list = ['Small Molecule',
                                'UNIPROT'
                                ]
 
+
+# TODO: Those need to be used to a module that is user-modifiable
+
 #  Fudge for matrix diagonalization and other solver functions
 line_loss = 1e-10
 

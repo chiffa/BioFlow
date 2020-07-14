@@ -498,7 +498,11 @@ class GraphDBPipe(object):
 if __name__ == "__main__":
     neo4j_pipe = GraphDBPipe()
     # neo4j_pipe.delete_all('Test')
-    # neo4j_pipe.create('Protein', {"chat": "miau", "dog": "waf"})
+    neo4j_pipe.delete_all('RNA')
+    neo4j_pipe.delete_all('Annotation')
+    neo4j_pipe.delete_all('Location')
+    neo4j_pipe.delete_all('Protein')
+    print(neo4j_pipe.create('Protein', {"chat": "miau", "dog": "waf"}))
     # print neo4j_pipe.create('Complex', {"chat": "miau", "dog": "waf"})
     # neo4j_pipe.link(1, 3, 'test', {"weight": 2, "source": "Andrei"})
     # print neo4j_pipe.get(0).properties['custom']

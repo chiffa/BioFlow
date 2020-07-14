@@ -62,6 +62,13 @@ def insert_meta_objects(neo4j_graph_class, meta_id_2_property_dict):
                            'localization': property_dict['cellularLocation'],
                            'main_connex': False}
         primary = DatabaseGraph.create(neo4j_graph_class, meta_properties)
+        print(primary)
+        print(dir(primary))
+        print(primary._properties, '\n',
+              primary.values(), '\n',
+              primary.labels, '\n',
+              primary.keys(), '\n',
+              primary.items())
 
         if meta_name in Leg_ID_Filter:
             ForbiddenIDs.append(get_db_id(primary))

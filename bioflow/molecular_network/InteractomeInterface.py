@@ -136,6 +136,7 @@ class InteractomeInterface(object):
         :return: tuple containing the time since the creation of the Matrix_getter object and
          since the last cal of function formatted as string
         """
+        # TODO: datetime deltatime with strf
         it, pt = (round(time() - self.init_time),
                   round(time() - self.partial_time))
         pload = 'total: %s m %s s, \t partial: %s m %s s' % (
@@ -244,7 +245,7 @@ class InteractomeInterface(object):
         """ undumps memoized analysis """
         return undump_object(Dumps.Interactome_Analysis_memoized)
 
-    # TODO: we can refactor that element as a separate object, responsible only for
+    # TODO: we should refactor that element as a separate object, responsible only for
     # laplacian_pulling
     # in it's current state, the complexity of this is too high (17)
     def full_load_ls(self):
@@ -412,7 +413,7 @@ class InteractomeInterface(object):
                                                     'Looks_similar Links', 3)
 
     # TODO: complexity too high (11); needs to be reduced.
-    # Easy: this method actually contains two methods.
+    # This method actually contains two methods.
     #   1) One that pulls the uniprots reachable within the reactome routes
     #   2) Second one that pulls all the uniprots from
     #
@@ -483,7 +484,7 @@ class InteractomeInterface(object):
 
     def fast_row_insert(self, element, index_type):
         """
-        Performs an correct insertion of an edge to the matrix.
+        Performs an correct insertion of an edge - indicative weight to the matrix.
 
         :param element: tuple of indexes designating elements we are willing to link
         :param index_type: type of the insert, so that the matrix coefficient can be
@@ -650,7 +651,7 @@ class InteractomeInterface(object):
 
     def full_rebuild(self):
         """
-        Performs the initial loading routines that set up in place the sytem of dump files
+        Performs the initial loading routines that set up in place the system of dump files
         to allow fast loading in the future
         """
         connexity_aware = self.connexity_aware
@@ -731,7 +732,7 @@ class InteractomeInterface(object):
                  reactome_attachments_counter,
                  uniprot_attachments_counter, len(self.reached_uniprots_neo4j_id_list))
 
-    def hacky_corr(self):
+    def deprecated_hacky_corr(self):
         """
         Hacky method that should remain unused but by the devs.
         Generate the uniprot_matrix_index_list from the loaded Uniprot List.
@@ -787,7 +788,7 @@ class InteractomeInterface(object):
     # critical control parameters:
     #   - memoized => dismiss
     #   - sourced => dismiss
-    #   - incremental => to be kept. So taht we can calculate the bacground even better
+    #   - incremental => to be kept. So that we can calculate the background even better
     #   - cancellation => to be kept
     #   - sparse_samples => to be kept
     #   - factor in the sampling run into this

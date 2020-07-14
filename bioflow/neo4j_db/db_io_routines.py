@@ -29,7 +29,7 @@ def get_db_id(neo4j_node):
     return neo4j_node.id
 
 
-# TODO: REFACTOR: offload annotations to ElasticSearch engine
+# TODO: WILL NOT IMPLEMENT: offload annotations to ElasticSearch engine
 def get_attached_annotations(neo4j_node_id):
     """
     Recovers ids of annotation nodes attached the the node with a given bulbs id
@@ -146,7 +146,7 @@ def erase_custom_fields():
         _node.save()
 
     # TODO: redundant implementation - remove one of them
-    # TODO: could be accelerated by batching - do it.
+    # TODO: could be accelerated by batching
 
     node_gen = DatabaseGraph.find({"custom": "Main_Connex"})
     if len(node_gen) > 0:
@@ -183,7 +183,7 @@ def node_extend_once(edge_type_filter, main_connex_only, core_node):
     return node_neighbors, node_neighbor_no
 
 
-# TODO: add a directionality argument
+# TODO: WILL NOT IMPLEMENT: add direction notion.
 def expand_from_seed(seed_node_id, edge_filter, main_connex_only):
     """
     Recovers all the nodes accessible in one jump from a seed_node with a given database ID by
@@ -204,6 +204,7 @@ def expand_from_seed(seed_node_id, edge_filter, main_connex_only):
                 node_neighbors.append(linked_node.id)
 
     return node_neighbors, len(node_neighbors)
+
 
 def annotation_ids_from_csv(source_csv):
     """

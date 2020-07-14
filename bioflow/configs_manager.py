@@ -1,7 +1,7 @@
 """
-:created: Dec 15, 2013
-:author: Andrei Kucharavy
 Performs IO from the setup .ini files and casts into relevant Python Dictionaries
+Performs as well some basic functions based on those config files, such as pulling down the
+databases from online
 """
 from os.path import join, abspath, expanduser
 import os
@@ -185,6 +185,8 @@ def set_folders(file_directory,
 
 
 if __name__ == "__main__":
+    # TODO: perform search and modify it to home/<user>/bioflow/sources and make it
+    #  user-configurable
     set_folders('/home/andrei/sources')
     build_source_config('human')
     pull_online_dbs()

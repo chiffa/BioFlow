@@ -1,8 +1,6 @@
 """
-Tools for a mkore sane conversion between dicts and configfiles, based on the Python 2.y default
+Tools for a more sane conversion between dicts and configfiles, based on the Python's default
 ConfigParser
-
-:@author: Andrei Kucharavy
 """
 import configparser
 

@@ -205,8 +205,7 @@ def compare_to_blank(blank_model_size, p_val=0.05, sparse_rounds=False,
     log.info("samples found to test against:\t %s" %
              interactome_rand_samp_db.find({'size': blank_model_size,
                                             'sys_hash': md5_hash,
-                                            'sparse_rounds': sparse_rounds}
-                                            ).count())
+                                            'sparse_rounds': sparse_rounds}).count())
 
     for i, sample in enumerate(interactome_rand_samp_db.find(
                                                             {'size': blank_model_size,
@@ -271,7 +270,7 @@ def compare_to_blank(blank_model_size, p_val=0.05, sparse_rounds=False,
 
         combined_p_vals[filter] = p_vals
 
-        # TODO: insert into appropriate locations => we will assume that the order is preserved
+        # TODO: insert into appropriate locations => we assume that the order is preserved
 
         # samples_scatter_and_hist(max_set, entry)
 
@@ -319,10 +318,11 @@ def auto_analyze(source_list,
     """
     Automatically analyzes the itneractome synergetic action of the RNA_seq results
 
-    :param source_list::
-    :param desired_depth:
-    :param processors:
-    :param background_list
+    :param source_list: python list of "hit" physical entities
+    :param desired_depth: desired sampling depth
+    :param processors: number of processes that will be loaded. as a rule of thumb,
+    for max performance, use N-1 processors, where N is the number of physical cores on the machine
+    :param background_list list of physical entities that an experimental method can retrieve
     :param skip_sampling: if true, will skip background sampling step
     """
     # noinspection PyTypeChecker

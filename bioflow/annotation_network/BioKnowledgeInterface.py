@@ -596,11 +596,12 @@ class GeneOntologyInterface(object):
         nz_list = copy(
             list(zip(list(base_matrix.nonzero()[0]), list(base_matrix.nonzero()[1]))))
 
+
+        # TODO: change that to
         for idx1, idx2 in nz_list:
             min_inf = min(
-                self.GO2_Pure_Inf[
-                    self.Num2GO[idx1]], self.GO2_Pure_Inf[
-                    self.Num2GO[idx2]])
+                self.GO2_Pure_Inf[self.Num2GO[idx1]],
+                self.GO2_Pure_Inf[self.Num2GO[idx2]])
             base_matrix[idx1, idx2] = -min_inf
             base_matrix[idx2, idx1] = -min_inf
             base_matrix[idx2, idx2] += min_inf

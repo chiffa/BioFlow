@@ -200,6 +200,7 @@ if __name__ == "__main__":
     exp_groups = [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
     test_groups_to_compare = [[0, 1], [0, 2]]
 
+    # TODO: unittest
     run_analysis_suite(
         rna_source,
         9,

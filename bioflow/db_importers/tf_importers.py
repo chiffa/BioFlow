@@ -68,9 +68,9 @@ def cross_ref_tf_factors(confs='tcm'):
 
     :return:
     """
-
+    # TODO:
     if organism_meta_flag != 'Human':
-        raise Exception('TF data unavailable for organisms other than human!')
+        raise Exception('TF data unavailable for organisms other than human. Disable TF import in import_main.py')
 
     if 't' in confs:
         log.info('Starting TRRUST Parsing')

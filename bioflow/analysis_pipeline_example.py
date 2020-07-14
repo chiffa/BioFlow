@@ -3,24 +3,26 @@ Top-Level scripts, examples of analysis pipelines.
 """
 from bioflow.configs_manager import set_folders, build_source_config, pull_online_dbs
 from bioflow.db_importers.import_main import build_db, destroy_db
-# from bioflow.annotation_network.knowledge_access_analysis import auto_analyze as knowledge_analysis
-# from bioflow.molecular_network.interactome_analysis import auto_analyze as interactome_analysis
-# from bioflow.utils.io_routines import get_source_bulbs_ids
-# from bioflow.utils.top_level import map_and_save_gene_ids, rebuild_the_laplacians
+from bioflow.annotation_network.knowledge_access_analysis import auto_analyze as knowledge_analysis
+from bioflow.molecular_network.interactome_analysis import auto_analyze as interactome_analysis
+from bioflow.utils.io_routines import get_source_bulbs_ids
+from bioflow.utils.top_level import map_and_save_gene_ids, rebuild_the_laplacians
+from bioflow.utils.log_behavior import clear_logs
 
 if __name__ == "__main__":
-    # # first, let's clear logs:
+    # first, let's clear logs:
     # clear_logs()
 
-    # # if needed, clear the mongodb:
-    # annotome_rand_samp.drop()
-    # interactome_rand_samp_db.drop()
+    # if needed, clear the mongodb:
+    from bioflow.main_configs import annotome_rand_samp, interactome_rand_samp_db
+    annotome_rand_samp.drop()
+    interactome_rand_samp_db.drop()
 
     # # setting static folders and urls for the databases
     # set_folders('/home/andrei/support')
 
     # # pulling the online databases
-    pull_online_dbs()
+    # pull_online_dbs()
 
     # # setting the organism to XXXX
     # build_source_config('yeast')
@@ -36,9 +38,9 @@ if __name__ == "__main__":
     # destroy_db()
 
     # building the neo4j database
-    build_db()
+    # build_db()
 
-    background_bulbs_ids = []
+    # background_bulbs_ids = []
 
     # hits_ids, background_ids = map_and_save_gene_ids('/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Matrigel vs Collagen/Matrigel_vs_collagen-tumor.tsv',
     #                                                  '')

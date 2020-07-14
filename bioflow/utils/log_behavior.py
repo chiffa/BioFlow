@@ -8,7 +8,7 @@ import logging.handlers
 import sys
 from shutil import rmtree
 
-
+# TODO: give user control where to put the logs in
 log_location = path.join(path.abspath(
         path.join(path.dirname(__file__), os.pardir)), 'logs')
 
@@ -63,7 +63,7 @@ def wipe_dir(_path):  # pragma: no cover
     for sub_path in os.listdir(directory_name):
         if os.path.isdir(sub_path):
             return False
-    rmtree(directory_name)
+    rmtree(directory_name, ignore_errors=True)
     return True
 
 
