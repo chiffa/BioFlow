@@ -67,21 +67,21 @@ def import_gene_ontology(go_terms, go_terms_structure):
                 DatabaseGraph.link(get_db_id(go_term_1), get_db_id(go_term_2),
                                    'is_regulant',
                                    {'controlType': 'ACTIVATES',
-                                    'ID': str('GO' + go_term_1.properties['legacyId'] +
-                                              go_term_2.properties['legacyId'])})
+                                    'ID': str('GO' + go_term_1._properties['legacyId'] +
+                                              go_term_2._properties['legacyId'])})
 
             if go_relation_type == 'negatively_regulates':
                 DatabaseGraph.link(get_db_id(go_term_1), get_db_id(go_term_2),
                                    'is_regulant',
                                    {'controlType': 'INHIBITS',
-                                    'ID': str('GO' + go_term_1.properties['legacyId'] +
-                                              go_term_2.properties['legacyId'])})
+                                    'ID': str('GO' + go_term_1._properties['legacyId'] +
+                                              go_term_2._properties['legacyId'])})
 
             else:
                 DatabaseGraph.link(get_db_id(go_term_1), get_db_id(go_term_2),
                                    'is_regulant',
-                                   {'ID': str('GO' + go_term_1.properties['legacyId'] +
-                                              go_term_2.properties['legacyId'])})
+                                   {'ID': str('GO' + go_term_1._properties['legacyId'] +
+                                              go_term_2._properties['legacyId'])})
 
 
 def pull_up_acc_nums_from_reactome():
@@ -109,7 +109,7 @@ def pull_up_acc_nums_from_reactome():
         if i % breakpoints:
             log.info("\t cross-linking %.2f %% complete" % (float(i)/float(total_nodes)*100.))
 
-        tag = annotation_node.properties['tag']
+        tag = annotation_node._properties['tag']
         node = DatabaseGraph.get_from_annotation_tag(tag, 'UniProt')
         reactome_proteins[tag] = node
 
@@ -272,7 +272,7 @@ def memoize_go_terms():
     loads go terms from the
     """
     for node in DatabaseGraph.get_all(neo4j_names_dict['GO Term']):
-        GO_term_memoization_dict[node.properties['legacyId']] = node
+        GO_term_memoization_dict[node._properties['legacyId']] = node
 
 
 def memoize_uniprots():
@@ -280,7 +280,7 @@ def memoize_uniprots():
     Pre-loads uniprots
     """
     for node in DatabaseGraph.get_all(neo4j_names_dict['UNIPROT']):
-        Uniprot_memoization_dict[node.properties['legacyId']] = node
+        Uniprot_memoization_dict[node._properties['legacyId']] = node
 
 
 if __name__ == "__main__":

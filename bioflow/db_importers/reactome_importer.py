@@ -125,8 +125,8 @@ def insert_collections(collections_2_members):
             DatabaseGraph.link(collection_node.id,
                                member_node.id,
                                'is_part_of_collection',
-                               {'custom_from': collection_node.properties['legacyId'],
-                                'custom_to': member_node.properties['legacyId'],
+                               {'custom_from': collection_node._properties['legacyId'],
+                                'custom_to': member_node._properties['legacyId'],
                                 'source': 'Reactome_collection'})
 
 
@@ -150,8 +150,8 @@ def insert_complex_parts(complex_property_dict):
                 complex_node = memoization_dict[key]
                 part_node = memoization_dict[part]
                 DatabaseGraph.link(complex_node.id, part_node.id, 'is_part_of_complex',
-                                   {'custom_from': complex_node.properties['legacyId'],
-                                    'custom_to': part_node.properties['legacyId'],
+                                   {'custom_from': complex_node._properties['legacyId'],
+                                    'custom_to': part_node._properties['legacyId'],
                                     'source': 'Reactome_complex'})
 
 
@@ -181,8 +181,8 @@ def insert_reactions(neo4j_graph_class, property_source_dict):
                                        elt_node.id,
                                        'is_reaction_participant',
                                        {'side': property_name,
-                                        'custom_from': reaction_node.properties['legacyId'],
-                                        'custom_to': reaction_node.properties['legacyId'],
+                                        'custom_from': reaction_node._properties['legacyId'],
+                                        'custom_to': reaction_node._properties['legacyId'],
                                         'source': 'Reactome_reaction'})
 
 
@@ -214,8 +214,8 @@ def insert_catalysis(catalysises_dict):
                     'is_catalysant',
                     {'legacyId': catalysis,
                         'controlType': catalysis_properties['ControlType'],
-                        'custom_from': controller.properties['legacyId'],
-                        'custom_to': controlled.properties['legacyId'],
+                        'custom_from': controller._properties['legacyId'],
+                        'custom_to': controlled._properties['legacyId'],
                         'source': 'Reactome_catalysis'})
 
             else:
@@ -246,8 +246,8 @@ def insert_modulation(modulations_dict):
             'is_regulant',
             {'legacyID': modulation,
              'controlType': modulation_property_dict['controlType'],
-             'custom_from': controller.properties['legacyId'],
-             'custom_to': controlled.properties['legacyId']
+             'custom_from': controller._properties['legacyId'],
+             'custom_to': controlled._properties['legacyId']
              }
         )
 
@@ -331,7 +331,7 @@ def get_one_meta_set(neo4j_class):
     :param neo4j_class:
     """
     for node in DatabaseGraph.get_all(neo4j_class):
-        memoization_dict[node.properties['legacyId']] = node
+        memoization_dict[node._properties['legacyId']] = node
 
 
 def get_all_meta_sets():
