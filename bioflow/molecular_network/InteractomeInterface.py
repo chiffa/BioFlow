@@ -22,6 +22,7 @@ from bioflow.utils.gdfExportInterface import GdfExportInterface
 from bioflow.utils.io_routines import write_to_csv, dump_object, undump_object
 from bioflow.utils.log_behavior import get_logger
 from bioflow.main_configs import Dumps, Outputs, interactome_rand_samp_db
+from bioflow.user_configs import internal_storage
 from bioflow.internal_configs import edge_type_filters, adjacency_matrix_weights, \
     laplacian_matrix_weights, neo4j_names_dict
 from bioflow.algorithms_bank import conduction_routines as cr
@@ -1183,8 +1184,11 @@ class InteractomeInterface(object):
 if __name__ == "__main__":
     interactome_interface_instance = InteractomeInterface(main_connex_only=True,
                                                           full_impact=True)
-    interactome_interface_instance.compare_dumps('/home/andrei/mats_compare/old_mat',
-                                                 '/home/andrei/mats_compare/new_mats_4')
+
+    interactome_interface_instance.compare_dumps(
+        os.path.join(internal_storage, 'mats_compare/old_mat'),
+        os.path.join(internal_storage, 'mats_compare/new_mats_4')
+    )
 
     # interactome_interface_instance.full_rebuild()
     # interactome_interface_instance.fast_load()

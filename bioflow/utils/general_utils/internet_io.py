@@ -75,7 +75,7 @@ def url_to_local_p_zip(url, path):
     r = requests.get(url, stream=True)
     if r.status_code == 200:
         r.raw.decode_content = True
-        z = zipfile.ZipFile(io.StringIO(r.content))
+        z = zipfile.ZipFile(io.BytesIO(r.content))
         z.extractall(path)  # This is unsafe as hell
 
     else:
@@ -100,7 +100,7 @@ def url_to_local_p_gz(url, path):
     if r.status_code in ['226', 200, 226, '200']:
         r.raw.decode_content = True
         f_out = open(path, 'wb')
-        f_in = gzip.GzipFile(fileobj=io.StringIO((r.content)))
+        f_in = gzip.GzipFile(fileobj=io.BytesIO((r.content)))
         f_out.writelines(f_in)
         f_out.close()
         f_in.close()

@@ -8,18 +8,21 @@ from bioflow.molecular_network.interactome_analysis import auto_analyze as inter
 from bioflow.utils.io_routines import get_source_bulbs_ids
 from bioflow.utils.top_level import map_and_save_gene_ids, rebuild_the_laplacians
 from bioflow.utils.log_behavior import clear_logs
+from bioflow.user_configs import sources_location
 
 if __name__ == "__main__":
+    pass  # for syntactic reasons
+
     # first, let's clear logs:
     # clear_logs()
 
-    # if needed, clear the mongodb:
-    from bioflow.main_configs import annotome_rand_samp, interactome_rand_samp_db
-    annotome_rand_samp.drop()
-    interactome_rand_samp_db.drop()
+    # # if needed, clear the mongodb:
+    # from bioflow.main_configs import annotome_rand_samp, interactome_rand_samp_db
+    # annotome_rand_samp.drop()
+    # interactome_rand_samp_db.drop()
 
-    # # setting static folders and urls for the databases
-    # set_folders('/home/andrei/support')
+    # setting static folders and urls for the databases
+    # set_folders(sources_location)
 
     # # pulling the online databases
     # pull_online_dbs()
@@ -35,15 +38,16 @@ if __name__ == "__main__":
     ##########################################
 
     # clearing the database, if required
-    # destroy_db()
+    destroy_db()
 
     # building the neo4j database
-    # build_db()
+    build_db()
 
     # background_bulbs_ids = []
 
-    # hits_ids, background_ids = map_and_save_gene_ids('/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Matrigel vs Collagen/Matrigel_vs_collagen-tumor.tsv',
-    #                                                  '')
+    # hits_ids, background_ids = map_and_save_gene_ids(
+    #     '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Matrigel vs Collagen/Matrigel_vs_collagen-tumor.tsv',
+    #     '')
 
     # hits_ids, background_ids = map_and_save_gene_ids(
     #       '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/TWIST1_ECAD/Hits.csv',

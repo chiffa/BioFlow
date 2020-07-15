@@ -5,6 +5,7 @@ import xml.etree.ElementTree as ET
 from collections import defaultdict
 from bioflow.utils.log_behavior import get_logger
 from bioflow import main_configs
+import os
 
 
 log = get_logger(__name__)
@@ -464,8 +465,11 @@ class ReactomeParser(object):
 
         log.info('Reactome parser finished parsing xml tree to dict collection')
 
+
 if __name__ == "__main__":
-    source_file = "/home/andrei/PycharmProjects/bioflow/unittests/UT_examples/reactome_extract.owl"
+    source_file = 'unittests/UT_examples/reactome_extract.owl'
+    # log.debug(os.path.abspath(source_file))
+    # print(os.path.abspath(source_file))
     # source_file = main_configs.reactome_biopax_path
     RP = ReactomeParser(source_file)
     RP.parse_all()
