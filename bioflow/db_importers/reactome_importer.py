@@ -82,8 +82,8 @@ def insert_meta_objects(neo4j_graph_class, meta_id_2_property_dict):
             DatabaseGraph.link(primary.id,
                                secondary.id,
                                'is_localized',
-                               {'custom_from': primary.properties['legacyId'],
-                                'custom_to': secondary.properties['legacyId']})
+                               {'custom_from': primary._properties['legacyId'],
+                                'custom_to': secondary._properties['legacyId']})
 
         if 'modification' in list(property_dict.keys()):
             for modification in property_dict['modification']:
@@ -98,8 +98,8 @@ def insert_meta_objects(neo4j_graph_class, meta_id_2_property_dict):
                     DatabaseGraph.link(primary.id,
                                        located_modification.id,
                                        'is_able_to_modify',
-                                       {'custom_from': primary.properties['legacyId'],
-                                        'custom_to': located_modification.properties['legacyId'],
+                                       {'custom_from': primary._properties['legacyId'],
+                                        'custom_to': located_modification._properties['legacyId'],
                                         'source': 'Reactome_modification'})
 
 

@@ -28,6 +28,9 @@ agnostic bindings
  - TODO: weighted targets flow
  - TODO: modification of the Laplacian weights by the end user.
 
+ - TODO: provide the interface for overlaying the molecular maps to check for signatures/compare
+samples
+
 Bulk Backlog:
 -------------
 

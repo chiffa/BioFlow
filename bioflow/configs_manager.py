@@ -10,6 +10,7 @@ from bioflow.utils.general_utils.dict_like_configs_parser import ini_configs2dic
 from bioflow.utils.general_utils.high_level_os_io import mkdir_recursive
 from bioflow.utils.general_utils.internet_io import url_to_local, marbach_post_proc
 from bioflow.utils.log_behavior import get_logger
+from bioflow.user_configs import sources_location
 
 log = get_logger(__name__)
 
@@ -187,7 +188,7 @@ def set_folders(file_directory,
 if __name__ == "__main__":
     # TODO: perform search and modify it to home/<user>/bioflow/sources and make it
     #  user-configurable
-    set_folders('/home/andrei/sources')
+    set_folders(sources_location)
     build_source_config('human')
     pull_online_dbs()
     # pp = PrettyPrinter(indent=4)
