@@ -22,7 +22,7 @@ from bioflow.utils.gdfExportInterface import GdfExportInterface
 from bioflow.utils.io_routines import write_to_csv, dump_object, undump_object
 from bioflow.utils.log_behavior import get_logger
 from bioflow.main_configs import Dumps, Outputs, interactome_rand_samp_db
-from bioflow.user_configs import internal_storage, molecular_edge_filter
+from bioflow.user_configs import internal_storage, biogrid_only
 from bioflow.internal_configs import edge_type_filters, adjacency_matrix_weights, \
     laplacian_matrix_weights, neo4j_names_dict
 from bioflow.algorithms_bank import conduction_routines as cr
@@ -386,8 +386,6 @@ class InteractomeInterface(object):
         # TODO: following the addition of new tools, this needs to be refactored for more clarity
         #       and to eliminate indirect link names dict
 
-        # TOOD: there could have been an opportunity to insert the link filtering here,
-        #       but it looks like it would break the expansion
         self.ReactLinks, self.InitSet, count = get_reaction_blocks()
         print_characteristics('Reactions', self.ReactLinks, self.InitSet, count)
 
@@ -425,7 +423,7 @@ class InteractomeInterface(object):
         """
         Maps Node Database IDs, Legacy IDs, display names and types to matrix row/column indexes;
         """
-        # TODO: WTF? memoization wrapper here
+        # TODO: memoization wrapper needed here
         def request_location(_location_buffer_dict, location):
             """
             Just a Buffered lookup of location, since the number of cellular location
@@ -559,21 +557,24 @@ class InteractomeInterface(object):
         self.adjacency_Matrix = lil_matrix((load_len, load_len))
         self.laplacian_matrix = lil_matrix((load_len, load_len))
 
-        # TODO: basically wrapping a second dynamic dictionary here
-        for reaction_participant_set in self.ReactLinks:
-            for reaction_participant in itertools.combinations(reaction_participant_set, 2):
-                link_indexes = (
-                    self.neo4j_id_2_matrix_index[reaction_participant[0]],
-                    self.neo4j_id_2_matrix_index[reaction_participant[1]])
-                self.fast_row_insert(link_indexes, "Reaction")
+        # TODO: if the BioGRID tag is true, this will be reduced to the weak_contact links
+        if not biogrid_only:
+            for reaction_participant_set in self.ReactLinks:
+                for reaction_participant in itertools.combinations(reaction_participant_set, 2):
+                    link_indexes = (
+                        self.neo4j_id_2_matrix_index[reaction_participant[0]],
+                        self.neo4j_id_2_matrix_index[reaction_participant[1]])
+                    self.fast_row_insert(link_indexes, "Reaction")
 
-        insert_expansion_links(self.GroupLinks, "Group")
-        insert_expansion_links(self.sec_links, "Contact_interaction")
-        insert_expansion_links(self.GroupLinks_2, "Group")
-        insert_expansion_links(self.sec_links_2, "Contact_interaction")
-        insert_expansion_links(self.UP_Links, "Same")
-        insert_expansion_links(self.hint_links, "Contact_interaction")
+            insert_expansion_links(self.GroupLinks, "Group")
+            insert_expansion_links(self.sec_links, "Contact_interaction")
+            insert_expansion_links(self.GroupLinks_2, "Group")
+            insert_expansion_links(self.sec_links_2, "Contact_interaction")
+            insert_expansion_links(self.UP_Links, "Same")
+            insert_expansion_links(self.hint_links, "Contact_interaction")
+
         insert_expansion_links(self.biogrid_links, "weak_contact")
+
         if self.full_impact:
             insert_expansion_links(self.Super_Links, "is_likely_same")
 
@@ -768,7 +769,7 @@ class InteractomeInterface(object):
             cr.line_loss,
             l_norm,
             edge_drop,
-            molecular_edge_filter]
+            biogrid_only]
         md5 = hashlib.md5(json.dumps(data, sort_keys=True)).hexdigest()
 
         return str(md5)

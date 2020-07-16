@@ -35,6 +35,8 @@ samples
  - TODO: pull inlined updates printing from evoGANs project.
     => Currently the percentages are managed by log.info(calls)
     => Providing an in-line update would require a print(<log message>, end='\r')
+    => Change log management so that the info gets logged into a file without rising to the
+surface and couple all the log.debug with a "print"
 
 (Bigger refactors)
  - TODO: refactor the entire edge typing upon insertion, retrieval upon construction of

@@ -40,10 +40,10 @@ if __name__ == "__main__":
     # # clearing the database, if required
     # destroy_db()
 
-    # building the neo4j database
-    build_db()
+    # # building the neo4j database
+    # build_db()
 
-    # background_bulbs_ids = []
+    background_bulbs_ids = []
 
     # hits_ids, background_ids = map_and_save_gene_ids(
     #     '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Matrigel vs Collagen/Matrigel_vs_collagen-tumor.tsv',
@@ -65,7 +65,7 @@ if __name__ == "__main__":
 
     # background_bulbs_ids = get_background_bulbs_ids()
 
-    # rebuild_the_laplacians(all_detectable_genes=background_bulbs_ids)
+    rebuild_the_laplacians(all_detectable_genes=background_bulbs_ids)
 
     # # perform the interactome analysis
     # interactome_analysis([hits_ids],
