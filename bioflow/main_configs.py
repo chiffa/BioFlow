@@ -122,6 +122,7 @@ class Dumps(object):
 
     RNA_seq_counts_compare = prefix + prefix_2 + '/RNA_seq_compare' + postfix
 
+    # TODO: this has nothing to do with in the configs either
     analysis_set_display_names = prefix + prefix_2 + '/current_analysis_set_name_maps.txt'
     analysis_set_bulbs_ids = prefix + prefix_2 + '/current_analysis_set_bulbs_id_list.csv'
     background_set_bulbs_ids = prefix + prefix_2 + '/current_background_set_bulbs_id_list.csv'
@@ -148,8 +149,10 @@ class Outputs(object):
 #  Declares overloaded IDs, pickles from the dumps of already computed
 forbidden_neo4j_ids = []
 if path.isfile(Dumps.Forbidden_IDs):
-    forbidden_neo4j_ids = pickle.load(open(Dumps.Forbidden_IDs, 'rb'))
-
+    try:
+        forbidden_neo4j_ids = pickle.load(open(Dumps.Forbidden_IDs, 'rb'))
+    except Exception as e:
+        print('exception encountered: %s' % (e))
 
 # TODO: cut this away
 # Where the RNA counts bioflow, hits and background deduced from it are to be found  #

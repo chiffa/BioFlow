@@ -466,7 +466,7 @@ class GraphDBPipe(object):
                       "WHERE r.preferential = True AND a.type = 'UNIPROT_GeneName' "
                       "RETURN n, a")
 
-        name_maps = dict((res['n'].properties['legacyId'], res['a'].properties['tag']) for res in name_maps)
+        name_maps = dict((res['n']._properties['legacyId'], res['a']._properties['tag']) for res in name_maps)
 
         return name_maps
 
@@ -505,7 +505,7 @@ if __name__ == "__main__":
     print(neo4j_pipe.create('Protein', {"chat": "miau", "dog": "waf"}))
     # print neo4j_pipe.create('Complex', {"chat": "miau", "dog": "waf"})
     # neo4j_pipe.link(1, 3, 'test', {"weight": 2, "source": "Andrei"})
-    # print neo4j_pipe.get(0).properties['custom']
+    # print neo4j_pipe.get(0)._properties['custom']
     # print neo4j_pipe.get_all("Protein")[:10]
     # print neo4j_pipe.delete_all('Complex')
     # print neo4j_pipe.count("Annotation")
@@ -522,7 +522,7 @@ if __name__ == "__main__":
     # super_nodes = neo4j_pipe.batch_retrieve_from_annotation_tags(['RNF14', 'REM1', 'GAG', 'MZT2A', 'FHIT'], None)
     # for node_set in super_nodes:
     #     log.info(node_set)
-    # print nodes[0]._values[0].properties['dog']
+    # print nodes[0]._values[0]._properties['dog']
     # print neo4j_pipe.attach_all_node_annotations(0, {'super': ['wo1', 'wo2'], 'super-duper': ['aka', 'coco']})
     # neo4j_pipe.batch_insert(["Protein", "Complex"], [{'a': 1}, {'a': 2, 'b': 3}])
     # neo4j_pipe.batch_link([(25, 26), (25, 1)], [None, 'reaction'], [None, {"weight": 3, "source": "test"}])

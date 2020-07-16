@@ -62,13 +62,22 @@ def insert_meta_objects(neo4j_graph_class, meta_id_2_property_dict):
                            'localization': property_dict['cellularLocation'],
                            'main_connex': False}
         primary = DatabaseGraph.create(neo4j_graph_class, meta_properties)
-        print(primary)
-        print(dir(primary))
-        print(primary._properties, '\n',
-              primary.values(), '\n',
-              primary.labels, '\n',
-              primary.keys(), '\n',
-              primary.items())
+        log.debug(primary)
+        log.debug(dir(primary))
+        log.debug("%s\n%s\n%s\n%s\n%s" %
+                  (primary._properties,
+                  primary.values(),
+                  primary.labels,
+                  primary.keys(),
+                  primary.items()))
+
+        # print(primary)
+        # print(dir(primary))
+        # print(primary._properties, '\n',
+        #       primary.values(), '\n',
+        #       primary.labels, '\n',
+        #       primary.keys(), '\n',
+        #       primary.items())
 
         if meta_name in Leg_ID_Filter:
             ForbiddenIDs.append(get_db_id(primary))
@@ -411,7 +420,9 @@ def insert_reactome(skip_import='N'):
         insert_complex_parts(reactome_parser.Complexes)
 
         # NOW dump the ForbiddenIDs
-        pickle.dump(ForbiddenIDs, open(Dumps.Forbidden_IDs, 'wt'))
+        # # TODO: the forbidden IDs are no more calculated here - this can be deleted
+        # pickle.dump(ForbiddenIDs, open(Dumps.Forbidden_IDs, 'wb'))
+        # raise Exception('pickle debug')
 
 
     if skip_import == 'M':

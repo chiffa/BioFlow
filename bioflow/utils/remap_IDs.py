@@ -67,7 +67,7 @@ with open(data_source_location, 'rt') as source:
 print("out of %s, %s were translated with high confidence, %s with low and %s were not found" % \
       (i, len(high_conf_trans), len(low_conf_trans), i-len(high_conf_trans)-len(low_conf_trans)))
 
-with open(data_dump_location, 'wb') as destination:
+with open(data_dump_location, 'wt') as destination:
     writer = csv_writer(destination)
     writer.writerows((word for word in high_conf_trans))
 

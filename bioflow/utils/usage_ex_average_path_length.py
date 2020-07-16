@@ -23,12 +23,15 @@ interactome_interface_instance.fast_load()
 
 md5_hash = interactome_interface_instance.md5_hash()
 
+# we will need to populate the database first
+# here as well is where we will be doing filtering by the edge type
 print("samples found to test against:\t %s" % interactome_rand_samp_db.find({'size': 2,
                                                                           'sys_hash': md5_hash,
                                                                           'sparse_rounds': False}).count())
 
 essential_genes_bulbs_ids = []
 
+# TODO: retrieve the list of the essential gens for yeast
 with open(Dumps.analysis_set_bulbs_ids, 'rt') as source:
     reader = csv_reader(source)
     for line in reader:
@@ -40,8 +43,11 @@ values = []
 length_width_accumulator = []
 essentiality_percentage = []
 
-for i, sample in enumerate(interactome_rand_samp_db.find({'size': 2, 'sys_hash': md5_hash,
-                                                                  'sparse_rounds': False})):
+# we will need to modify the sys_hash to take in account that we are using only one type of
+# connections
+for i, sample in enumerate(interactome_rand_samp_db.find({'size': 2,
+                                                          'sys_hash': md5_hash,
+                                                          'sparse_rounds': False})):
 
     # if i > 10:
     #     break
@@ -242,6 +248,6 @@ plt.xlabel('length of the pathway')
 plt.ylabel('width of the pathway')
 plt.show()
 
-# pickle.dump(length_accumulator, open('step_length.dmp', 'w'))
-# pickle.dump(width_accumulator, open('width_length.dmp', 'w'))
+# pickle.dump(length_accumulator, open('step_length.dmp', 'wb'))
+# pickle.dump(width_accumulator, open('width_length.dmp', 'wb'))
 pickle.dump(length_width_accumulator, open('w_l_accumulator.dmp', 'wb'))

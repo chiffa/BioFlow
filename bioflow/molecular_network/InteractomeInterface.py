@@ -22,7 +22,7 @@ from bioflow.utils.gdfExportInterface import GdfExportInterface
 from bioflow.utils.io_routines import write_to_csv, dump_object, undump_object
 from bioflow.utils.log_behavior import get_logger
 from bioflow.main_configs import Dumps, Outputs, interactome_rand_samp_db
-from bioflow.user_configs import internal_storage
+from bioflow.user_configs import internal_storage, molecular_edge_filter
 from bioflow.internal_configs import edge_type_filters, adjacency_matrix_weights, \
     laplacian_matrix_weights, neo4j_names_dict
 from bioflow.algorithms_bank import conduction_routines as cr
@@ -383,8 +383,11 @@ class InteractomeInterface(object):
 
         log.info('Entering retrieval of the connection system of physical entities')
 
-        #TODO: following the addition of new tools, this needs to be refactored for more clarity and to eliminate indirect link names dict
+        # TODO: following the addition of new tools, this needs to be refactored for more clarity
+        #       and to eliminate indirect link names dict
 
+        # TOOD: there could have been an opportunity to insert the link filtering here,
+        #       but it looks like it would break the expansion
         self.ReactLinks, self.InitSet, count = get_reaction_blocks()
         print_characteristics('Reactions', self.ReactLinks, self.InitSet, count)
 
@@ -438,8 +441,8 @@ class InteractomeInterface(object):
                 return _location_buffer_dict[location]
             else:
                 for location_node in DatabaseGraph.find({'legacyId':location}, 'Location'):
-                    _location_buffer_dict[location] = location_node.properties['displayName']
-                    return location_node.properties['displayName']
+                    _location_buffer_dict[location] = location_node._properties['displayName']
+                    return location_node._properties['displayName']
 
         #######################################################################
 
@@ -455,15 +458,15 @@ class InteractomeInterface(object):
             self.matrix_index_2_neo4j_id[counter] = neo4j_node_id
 
             node = DatabaseGraph.get(neo4j_node_id)
-            self.neo4j_id_2_display_name[neo4j_node_id] = node.properties['displayName']
+            self.neo4j_id_2_display_name[neo4j_node_id] = node._properties['displayName']
             self.neo4j_id_2_node_type[neo4j_node_id] = list(node.labels)[0]
-            self.neo4j_id_2_legacy_id[neo4j_node_id] = node.properties['legacyId']
+            self.neo4j_id_2_legacy_id[neo4j_node_id] = node._properties['legacyId']
             if list(node.labels)[0] == "UNIPROT":
                 self.reached_uniprots_neo4j_id_list.append(neo4j_node_id)
                 self.uniprot_matrix_index_list.append(counter)
-            if 'localization' in node.properties and node.properties['localization'] is not None:
+            if 'localization' in node._properties and node._properties['localization'] is not None:
                 self.neo4j_id_2_localization[neo4j_node_id] = request_location(
-                    location_buffer_dict, node.properties['localization'])
+                    location_buffer_dict, node._properties['localization'])
 
             counter += 1
 
@@ -475,9 +478,9 @@ class InteractomeInterface(object):
             neo4j_node_id = get_db_id(up_node)
             if neo4j_node_id not in self.reached_uniprots_neo4j_id_list:
                 self.all_uniprots_neo4j_id_list.append(neo4j_node_id)
-                self.neo4j_id_2_display_name[neo4j_node_id] = up_node.properties['displayName']
+                self.neo4j_id_2_display_name[neo4j_node_id] = up_node._properties['displayName']
                 self.neo4j_id_2_node_type[neo4j_node_id] = list(up_node.labels)[0]
-                self.neo4j_id_2_legacy_id[neo4j_node_id] = up_node.properties['legacyId']
+                self.neo4j_id_2_legacy_id[neo4j_node_id] = up_node._properties['legacyId']
 
         self.all_uniprots_neo4j_id_list = list(set(self.all_uniprots_neo4j_id_list))
         log.info("analyzable uniprots: %s", len(self.all_uniprots_neo4j_id_list))
@@ -491,6 +494,7 @@ class InteractomeInterface(object):
         :param index_type: type of the insert, so that the matrix coefficient can be
         looked up in the adjacency_matrix_weights or Conductance_Martix_Dict from the configs file
         """
+        # TODO: here is one of the locations where a filter on the edges can be inserted
         self.adjacency_Matrix[element[0], element[1]] =\
             min(self.adjacency_Matrix[element[0], element[1]] +
                 adjacency_matrix_weights[index_type],
@@ -555,6 +559,7 @@ class InteractomeInterface(object):
         self.adjacency_Matrix = lil_matrix((load_len, load_len))
         self.laplacian_matrix = lil_matrix((load_len, load_len))
 
+        # TODO: basically wrapping a second dynamic dictionary here
         for reaction_participant_set in self.ReactLinks:
             for reaction_participant in itertools.combinations(reaction_participant_set, 2):
                 link_indexes = (
@@ -742,7 +747,7 @@ class InteractomeInterface(object):
         self.undump_maps()
         self.uniprot_matrix_index_list = []
         for swissprot_neo4j_id in self.reached_uniprots_neo4j_id_list:
-            if DatabaseGraph.get(swissprot_neo4j_id, 'UNIPROT').properties['main_connex']:
+            if DatabaseGraph.get(swissprot_neo4j_id, 'UNIPROT')._properties['main_connex']:
                 self.uniprot_matrix_index_list.append(self.neo4j_id_2_matrix_index[swissprot_neo4j_id])
 
         log.info('number of indexed uniprots: %s', len(self.uniprot_matrix_index_list))
@@ -762,7 +767,8 @@ class InteractomeInterface(object):
             connected_ups,
             cr.line_loss,
             l_norm,
-            edge_drop]
+            edge_drop,
+            molecular_edge_filter]
         md5 = hashlib.md5(json.dumps(data, sort_keys=True)).hexdigest()
 
         return str(md5)
@@ -1123,7 +1129,8 @@ class InteractomeInterface(object):
         # for node_id in chain(first_but_not_second, second_but_not_first):
         #     print node_id
         #     node = DatabaseGraph.find({'legacyId': node_id})[0]
-        #     unfold_dict[node_id] = (node_id, node.properties['displayName'], node.properties.get('forbidden'))
+        #     unfold_dict[node_id] = (node_id, node._properties['displayName'],
+        #     node._properties.get('forbidden'))
         #
         # first_but_not_second = [unfold_dict[node] for node in first_but_not_second]
         # second_but_not_first = [unfold_dict[node] for node in second_but_not_first]
@@ -1153,13 +1160,13 @@ class InteractomeInterface(object):
                 if not legacy_id in list(unfold_dict.keys()):
                     node = DatabaseGraph.find({'legacyId': legacy_id})[0]
                     unfold_dict[legacy_id] = (
-                        legacy_id, node.properties['displayName'], node.properties.get('forbidden', False))
+                        legacy_id, node._properties['displayName'], node._properties.get('forbidden', False))
 
                 for node_id in chain(cons_f_n_s):
                     if not node_id in list(unfold_dict.keys()):
                         node = DatabaseGraph.find({'legacyId': node_id})[0]
                         unfold_dict[node_id] = (
-                        node_id, node.properties['displayName'], node.properties.get('forbidden', False))
+                        node_id, node._properties['displayName'], node._properties.get('forbidden', False))
 
                 cons_f_n_s = [unfold_dict[node] for node in cons_f_n_s if not unfold_dict[node][1]]
                 # cons_s_n_f = [unfold_dict[node] for node in cons_s_n_f if not unfold_dict[node][2]]

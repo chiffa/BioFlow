@@ -31,6 +31,16 @@ agnostic bindings
  - TODO: provide the interface for overlaying the molecular maps to check for signatures/compare
 samples
 
+ - TODO: add a mail signalling to indicate the termination or crash of the execution
+ - TODO: pull inlined updates printing from evoGANs project.
+    => Currently the percentages are managed by log.info(calls)
+    => Providing an in-line update would require a print(<log message>, end='\r')
+
+(Bigger refactors)
+ - TODO: refactor the entire edge typing upon insertion, retrieval upon construction of
+laplacian/adjacency matrix and setting of Laplacian weights
+ - TODO: refactor the setting parsing and supplying
+
 Bulk Backlog:
 -------------
 

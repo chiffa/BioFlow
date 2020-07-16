@@ -140,14 +140,14 @@ class UniProtParser(object):
                         self._single_up_dict['GeneRefs']['Names'].append(subword.strip())
                     else:
                         if '{' not in subword:
-                            print("rejected %s: doesn't look like a valid name" % subword)
+                            log.debug("rejected %s: doesn't look like a valid name" % subword)
             if 'Synonyms=' in word:
                 for subword in word.split('=')[1].strip().replace(',', ' ').replace(';', ' ').split():
                     if re.match("^[a-zA-Z0-9_.-]*$", subword):
                         self._single_up_dict['GeneRefs']['AltNames'].append(subword.strip())
                     else:
                         if '{' not in subword:
-                            print("rejected %s: doesn't look like a valid name" % subword)
+                            log.debug("rejected %s: doesn't look like a valid name" % subword)
 
     def parse_name(self, line):
         """

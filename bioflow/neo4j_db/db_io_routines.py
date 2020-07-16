@@ -40,7 +40,7 @@ def get_attached_annotations(neo4j_node_id):
     list_of_annotations = []
     annotation_node_generator = DatabaseGraph.get_linked(neo4j_node_id, link_type="is_annotated")
     if not annotation_node_generator:
-        log.debug("node %s has not annotations attached to it", neo4j_node_id)
+        log.debug("node %s has no annotations attached to it", neo4j_node_id)
         return []
     else:
         for rel_node in annotation_node_generator:
@@ -85,9 +85,9 @@ def look_up_annotation_node(p_load, p_type=''):
     retlist = []
     for node in nodes:
         node_bulbs_id = get_db_id(node)
-        node_legacy_id = node.properties['legacyId']
+        node_legacy_id = node._properties['legacyId']
         node_type = list(node.labels)[0]
-        node_display_name = node.properties['displayName']
+        node_display_name = node._properties['displayName']
         retlist.append((node_type, node_display_name, node_bulbs_id, node_legacy_id))
     return retlist
 
@@ -111,9 +111,9 @@ def look_up_annotation_set(p_load_list, p_type=''):
         retlist = []
         for node in neo4j_native_nodes:
             node_bulbs_id = get_db_id(node)
-            node_legacy_id = node.properties['legacyId']
+            node_legacy_id = node._properties['legacyId']
             node_type = list(node.labels)[0]
-            node_display_name = node.properties['displayName']
+            node_display_name = node._properties['displayName']
             payload = (node_type, node_display_name, node_bulbs_id, node_legacy_id)
             if node_type == 'UNIPROT':
                 retlist.insert(0, payload)
@@ -173,7 +173,7 @@ def node_extend_once(edge_type_filter, main_connex_only, core_node):
     for edge_type in edge_type_filter:
 
         for node in DatabaseGraph.get_linked(get_db_id(core_node), link_type=edge_type):
-            node_is_connex = node.properties['main_connex']
+            node_is_connex = node._properties['main_connex']
             if (main_connex_only and node_is_connex) or not main_connex_only:
                 node_neo4j_id = get_db_id(node)
                 if node_neo4j_id not in forbidden_neo4j_ids:
@@ -198,7 +198,7 @@ def expand_from_seed(seed_node_id, edge_filter, main_connex_only):
     """
     node_neighbors = []
     for edge_type in edge_filter:
-        seed_node_is_connex = DatabaseGraph.get(seed_node_id).properties['main_connex']
+        seed_node_is_connex = DatabaseGraph.get(seed_node_id)._properties['main_connex']
         for linked_node in DatabaseGraph.get_linked(seed_node_id, 'both', edge_type):
             if linked_node.id not in forbidden_neo4j_ids and (seed_node_is_connex or not main_connex_only):
                 node_neighbors.append(linked_node.id)
@@ -232,8 +232,8 @@ def cast_analysis_set_to_bulbs_ids(analysis_set_csv_location=analysis_protein_id
     analysis_bulbs_ids = annotation_ids_from_csv(analysis_set_csv_location)
     analysis_bulbs_ids = [ret for ret in analysis_bulbs_ids]
     source = look_up_annotation_set(analysis_bulbs_ids)
-    PrettyPrinter(indent=4, stream=open(Dumps.analysis_set_display_names, 'wb')).pprint(source[1])
-    writer(open(Dumps.analysis_set_bulbs_ids, 'wb'), delimiter='\n').writerow(source[2])
+    PrettyPrinter(indent=4, stream=open(Dumps.analysis_set_display_names, 'wt')).pprint(source[1])
+    writer(open(Dumps.analysis_set_bulbs_ids, 'wt'), delimiter='\n').writerow(source[2])
 
 
 def cast_background_set_to_bulbs_id(background_set_csv_location=background_protein_ids_csv,
@@ -253,7 +253,7 @@ def cast_background_set_to_bulbs_id(background_set_csv_location=background_prote
         background_bulbs_ids = list(set(ret for ret in background_bulbs_ids))
 
     source = look_up_annotation_set(background_bulbs_ids)
-    writer(open(Dumps.background_set_bulbs_ids, 'wb'), delimiter='\n').writerow(source[2])
+    writer(open(Dumps.background_set_bulbs_ids, 'wt'), delimiter='\n').writerow(source[2])
 
 
 def neo4j_memoize_type(node_type, dict_to_load_into=None):
@@ -306,9 +306,9 @@ def clear_all(instruction_list):
 
     for name in instruction_list:
         neo4j_class = neo4j_names_dict[name]
-        log.info('processing class: %s', neo4j_class)
+        log.info('deleting class from neo4j: %s', neo4j_class)
         DatabaseGraph.delete_all(neo4j_class)
-        log.info('class %s finished processing', neo4j_class)
+        log.info('class %s deleted', neo4j_class)
 
 
 def run_diagnostics(instructions_list):
@@ -372,11 +372,12 @@ def compute_annotation_informativity():
 
 
 def pull_up_inf_density():
-    # cur_list = [node for node in DatabaseGraph.get_all('UNIPROT') if node.properties.get('total_information', 0)]
+    # cur_list = [node for node in DatabaseGraph.get_all('UNIPROT') if node._properties.get(
+    # 'total_information', 0)]
     name_maps = DatabaseGraph.get_preferential_gene_names()
     print("rank \t informativity \t UNIPROT ID \t gene name")
-    for i, node in enumerate(sorted(DatabaseGraph.get_all('UNIPROT'), key=lambda nde: nde.properties.get('total_information', 0), reverse=True)):
-        print("%4.d \t %.2f \t %s \t %s" % (i+1, node.properties.get('total_information', 0), node.properties['legacyId'], name_maps.get(node.properties['legacyId'], None)))
+    for i, node in enumerate(sorted(DatabaseGraph.get_all('UNIPROT'), key=lambda nde: nde._properties.get('total_information', 0), reverse=True)):
+        print("%4.d \t %.2f \t %s \t %s" % (i+1, node._properties.get('total_information', 0), node._properties['legacyId'], name_maps.get(node._properties['legacyId'], None)))
 
 
 # Yes, I know what goes below here is ugly and shouldn't be in the

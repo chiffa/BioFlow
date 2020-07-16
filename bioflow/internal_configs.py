@@ -3,6 +3,7 @@ Contains internal configurations that the user might want to act upon. For now, 
 the API_doc, just code comments for the maintainers
 """
 
+
 #  Configures the mappings between concrete edge types and meta-types used for confidence
 # calculation
 
@@ -26,6 +27,8 @@ edge_type_filters = {
     # TF factors interaction
     "TRRUST_TF_Regulation": ["is_interacting"]}
 
+
+# if
 
 
 #  Defines what nodes are to be masked to avoid conduction overload of non-informative nodes
@@ -55,7 +58,8 @@ adjacency_matrix_weights = {
     "Reaction": 0.33,
     "Contact_interaction": 0.33,
     "weak_contact": 0.15,
-    "is_likely_same": 0.1, }
+    "is_likely_same": 0.1,
+    "skipped": 0}
 
 # Coefficients values for the conductance_Matrix
 laplacian_matrix_weights = {
@@ -64,7 +68,8 @@ laplacian_matrix_weights = {
     "Reaction": 1,
     "Contact_interaction": 1,
     "weak_contact": 0.5,
-    "is_likely_same": 1, }
+    "is_likely_same": 1,
+    "skipped": 0}
 
 # allowed payload types for the annotation nodes
 annotation_nodes_ptypes = [

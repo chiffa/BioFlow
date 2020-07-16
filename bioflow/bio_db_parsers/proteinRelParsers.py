@@ -16,7 +16,7 @@ def parse_bio_grid(bio_grid):
     ret_dict = {}
     base = []
 
-    with open(bio_grid, 'rb') as source_file:
+    with open(bio_grid, 'rt') as source_file:
         biogrid_reader = csv_reader(source_file, 'excel-tab')
         next(biogrid_reader)
         for fields in biogrid_reader:
