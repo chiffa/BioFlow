@@ -26,10 +26,10 @@ def import_gene_ontology(go_terms, go_terms_structure):
     :param go_terms_structure:
     """
     # Create Terms
-    go_terms_number = len(go_terms.keys())
+    go_terms_number = len(list(go_terms.keys()))
     log.info('Starting to importing %s GO terms' % go_terms_number)
 
-    for i, (GO_Term, term) in enumerate(go_terms.iteritems()):
+    for i, (GO_Term, term) in enumerate(go_terms.items()):
         log.debug('creating GO terms: %s %%',
                   str("{0:.2f}".format(float(i) / float(go_terms_number) * 100)))
         if i*20 % go_terms_number < 20:
@@ -67,21 +67,21 @@ def import_gene_ontology(go_terms, go_terms_structure):
                 DatabaseGraph.link(get_db_id(go_term_1), get_db_id(go_term_2),
                                    'is_regulant',
                                    {'controlType': 'ACTIVATES',
-                                    'ID': str('GO' + go_term_1.properties['legacyId'] +
-                                              go_term_2.properties['legacyId'])})
+                                    'ID': str('GO' + go_term_1._properties['legacyId'] +
+                                              go_term_2._properties['legacyId'])})
 
             if go_relation_type == 'negatively_regulates':
                 DatabaseGraph.link(get_db_id(go_term_1), get_db_id(go_term_2),
                                    'is_regulant',
                                    {'controlType': 'INHIBITS',
-                                    'ID': str('GO' + go_term_1.properties['legacyId'] +
-                                              go_term_2.properties['legacyId'])})
+                                    'ID': str('GO' + go_term_1._properties['legacyId'] +
+                                              go_term_2._properties['legacyId'])})
 
             else:
                 DatabaseGraph.link(get_db_id(go_term_1), get_db_id(go_term_2),
                                    'is_regulant',
-                                   {'ID': str('GO' + go_term_1.properties['legacyId'] +
-                                              go_term_2.properties['legacyId'])})
+                                   {'ID': str('GO' + go_term_1._properties['legacyId'] +
+                                              go_term_2._properties['legacyId'])})
 
 
 def pull_up_acc_nums_from_reactome():
@@ -109,7 +109,7 @@ def pull_up_acc_nums_from_reactome():
         if i % breakpoints:
             log.info("\t cross-linking %.2f %% complete" % (float(i)/float(total_nodes)*100.))
 
-        tag = annotation_node.properties['tag']
+        tag = annotation_node._properties['tag']
         node = DatabaseGraph.get_from_annotation_tag(tag, 'UniProt')
         reactome_proteins[tag] = node
 
@@ -140,9 +140,9 @@ def manage_acc_nums(acc_num, acc_num_2_reactome_proteins):
     :param acc_num_2_reactome_proteins: Dictionary mapping accession numbers to protein IDs
     :return: protein list if acession number has been buffered, nothing otherwise
     """
-    if acc_num not in acc_num_2_reactome_proteins.keys():
+    if acc_num not in list(acc_num_2_reactome_proteins.keys()):
         return []
-    if acc_num in acc_num_2_reactome_proteins.keys():
+    if acc_num in list(acc_num_2_reactome_proteins.keys()):
         return acc_num_2_reactome_proteins[acc_num]
 
 
@@ -215,12 +215,12 @@ def import_uniprots(uniprot, reactome_acnum_bindings):
 
     cross_links = 0
     is_same_links_no = 0
-    acc_nums_no = len(reactome_acnum_bindings.keys()) / 100.
-    up_no = float(len(uniprot.keys()))
+    acc_nums_no = len(list(reactome_acnum_bindings.keys())) / 100.
+    up_no = float(len(list(uniprot.keys())))
 
     log.info('Starting to import %s uniprot nodes' % up_no)
 
-    for sp_id_num, (swiss_prot_id, data_container) in enumerate(uniprot.iteritems()):
+    for sp_id_num, (swiss_prot_id, data_container) in enumerate(uniprot.items()):
 
         set1 = set(data_container['Acnum'])
         set2 = set(reactome_acnum_bindings.keys())
@@ -252,7 +252,7 @@ def import_uniprots(uniprot, reactome_acnum_bindings):
 
         # Insert references to GOs
         for GO_Term in data_container['GO']:
-            if GO_Term in GO_term_memoization_dict.keys():
+            if GO_Term in list(GO_term_memoization_dict.keys()):
                 linked_go_term = GO_term_memoization_dict[GO_Term]
                 DatabaseGraph.link(get_db_id(uniprot_node), get_db_id(linked_go_term), 'is_go_annotation')
 
@@ -272,7 +272,7 @@ def memoize_go_terms():
     loads go terms from the
     """
     for node in DatabaseGraph.get_all(neo4j_names_dict['GO Term']):
-        GO_term_memoization_dict[node.properties['legacyId']] = node
+        GO_term_memoization_dict[node._properties['legacyId']] = node
 
 
 def memoize_uniprots():
@@ -280,7 +280,7 @@ def memoize_uniprots():
     Pre-loads uniprots
     """
     for node in DatabaseGraph.get_all(neo4j_names_dict['UNIPROT']):
-        Uniprot_memoization_dict[node.properties['legacyId']] = node
+        Uniprot_memoization_dict[node._properties['legacyId']] = node
 
 
 if __name__ == "__main__":

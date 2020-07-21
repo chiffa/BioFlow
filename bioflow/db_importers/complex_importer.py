@@ -27,10 +27,10 @@ def insert_into_the_database(up_ids_2_inner_ids,
     """
 
     breakpoints = 300
-    total_pairs = len(up_ids_2_properties.keys())
+    total_pairs = len(list(up_ids_2_properties.keys()))
     previous_time = time()
 
-    for counter, (node_id, new_node) in enumerate(up_ids_2_properties.iteritems()):
+    for counter, (node_id, new_node) in enumerate(up_ids_2_properties.items()):
 
         complex_node = DatabaseGraph.create('COMPLEX',
                                             {'legacyId': node_id,
@@ -50,7 +50,7 @@ def insert_into_the_database(up_ids_2_inner_ids,
             previous_time = time()
 
         for node2_up in new_node['components']:
-            if node2_up in up_ids_2_inner_ids.keys():
+            if node2_up in list(up_ids_2_inner_ids.keys()):
                 DatabaseGraph.link(complex_node.id, up_ids_2_inner_ids[node2_up], 'is_interacting',
                                    {'source': origin, 'weight': 1.0})
 
@@ -72,7 +72,7 @@ def insert_complexes():
     log.info('Complex Portal parsed, starting translation of UP identifiers to internal database identifiers')
     up_ids_2_inner_ids = convert_to_internal_ids(up_ids)
 
-    log.info('UP identifier conversion finished, starting database insertion for %s complexes' % len(up_ids_2_properties.keys()))
+    log.info('UP identifier conversion finished, starting database insertion for %s complexes' % len(list(up_ids_2_properties.keys())))
     insert_into_the_database(up_ids_2_inner_ids, up_ids_2_properties, 'ComplexPortal')
 
     log.info('Database insertion finished. Complex Portal import finished')

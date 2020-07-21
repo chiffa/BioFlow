@@ -4,6 +4,7 @@ Contains the access to the command line interface of the application.
 import click
 
 def print_version(ctx, value):
+    # TODO: this is a variable that needs to be pulled elsewhere and folded into "about
     if not value or ctx.resilient_parsing:
         return
     click.echo('0.2.3')
@@ -80,8 +81,8 @@ def purgeneo4j():
 
     :return:
     """
-    print 'neo4j will start purging the master database. It will take some time to finish.' \
-          ' Please do not close the shell'
+    print('neo4j will start purging the master database. It will take some time to finish.' \
+          ' Please do not close the shell')
     from bioflow.db_importers.import_main import destroy_db
     destroy_db()
 
@@ -96,8 +97,8 @@ def loadneo4j():
 
     :return:
     """
-    print 'neo4j will start loading data into the master database. It will take a couple ' \
-          'of hours to finish. Please do not close the shell.'
+    print('neo4j will start loading data into the master database. It will take a couple ' \
+          'of hours to finish. Please do not close the shell.')
     from bioflow.db_importers.import_main import build_db
     build_db()
 
@@ -227,7 +228,8 @@ main.add_command(purgemongo)
 main.add_command(sethits)
 main.add_command(interactomeanalysis)
 main.add_command(knowledgeanalysis)
-
+# TODO: add an "about" command that would output the version and build number, ref to the paper,
+#  license and an "2013-2020 Andrei Kucharavy all rights reserved".
 
 if __name__ == '__main__':
     main()

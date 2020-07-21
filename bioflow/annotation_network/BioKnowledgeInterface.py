@@ -34,12 +34,12 @@ log = get_logger(__name__)
 
 
 def _characterise(_object):
-    print 'Object of size %s and type %s' % (len(_object), type(_object))
+    print('Object of size %s and type %s' % (len(_object), type(_object)))
 
 
 def _characterise_mat(matrix):
-    print 'Matrix of shape %s, type %s and has %s non-zero terms, min is %s, max is %s' % \
-          (matrix.shape, type(matrix), len(matrix.nonzero()[0]), '<>', '<>')
+    print('Matrix of shape %s, type %s and has %s non-zero terms, min is %s, max is %s' % \
+          (matrix.shape, type(matrix), len(matrix.nonzero()[0]), '<>', '<>'))
 
 
 class GeneOntologyInterface(object):
@@ -293,9 +293,9 @@ class GeneOntologyInterface(object):
             raise Exception(
                 "Wrong Filtering attempted to be recovered from storage")
         if self.InitSet != initial_set:
-            print len(self.InitSet)
-            print len(initial_set)
-            print traceback.print_stack()
+            print(len(self.InitSet))
+            print(len(initial_set))
+            print(traceback.print_stack())
             log.critical("Wrong initial_set attempted to be recovered from storage")
             raise Exception(
                 "Wrong initial_set attempted to be recovered from storage")
@@ -329,12 +329,12 @@ class GeneOntologyInterface(object):
             uniprot_specific_gos = []
 
             up_node = DatabaseGraph.get(uniprot_neo4j_id)
-            self.UP_Names[uniprot_neo4j_id] = [up_node.properties['legacyId'],
-                                               up_node.properties['displayName']]
+            self.UP_Names[uniprot_neo4j_id] = [up_node._properties['legacyId'],
+                                               up_node._properties['displayName']]
             attached_go_nodes = DatabaseGraph.get_linked(uniprot_neo4j_id,
                                                          link_type='is_go_annotation')
             for go_node in attached_go_nodes:
-                if go_node.properties['Namespace'] in self.go_namespace_filter:
+                if go_node._properties['Namespace'] in self.go_namespace_filter:
                     go_node_neo4j_id = get_db_id(go_node)
                     uniprot_specific_gos.append(go_node_neo4j_id)
                     self.GO2UP[go_node_neo4j_id].append(uniprot_neo4j_id)
@@ -371,9 +371,9 @@ class GeneOntologyInterface(object):
             local_up_regulation_list = []
             local_down_regulation_list = []
             gene_ontology_node = DatabaseGraph.get(node_id, 'GOTerm')
-            self.GO_Names[node_id] = str(gene_ontology_node.properties['displayName'])
-            self.GO_Legacy_IDs[node_id] = str(gene_ontology_node.properties['legacyId'])
-            self.rev_GO_IDs[gene_ontology_node.properties['legacyId']] = node_id
+            self.GO_Names[node_id] = str(gene_ontology_node._properties['displayName'])
+            self.GO_Legacy_IDs[node_id] = str(gene_ontology_node._properties['legacyId'])
+            self.rev_GO_IDs[gene_ontology_node._properties['legacyId']] = node_id
 
             for relation_type in chain(self._GOUpTypes, self._GORegTypes):
                 related_go_nodes = DatabaseGraph.get_linked(node_id, 'out', relation_type)
@@ -381,7 +381,7 @@ class GeneOntologyInterface(object):
                 if not related_go_nodes:
                     continue  # skip in case GO Node has no outgoing relations to other GO nodes
                 for go_node in related_go_nodes:
-                    if go_node.properties['Namespace'] not in self.go_namespace_filter:
+                    if go_node._properties['Namespace'] not in self.go_namespace_filter:
                         continue
                     node_bulbs_id = get_db_id(go_node)
                     if node_bulbs_id not in visited_set:
@@ -396,7 +396,7 @@ class GeneOntologyInterface(object):
                 if not rev_generator:
                     continue
                 for go_node in rev_generator:
-                    if go_node.properties['Namespace'] not in self.go_namespace_filter:
+                    if go_node._properties['Namespace'] not in self.go_namespace_filter:
                         continue
                     node_bulbs_id = get_db_id(go_node)
                     if relation_type in self._GOUpTypes:
@@ -429,7 +429,7 @@ class GeneOntologyInterface(object):
 
             """
             base_matrix = lil_matrix((len(self.All_GOs), len(self.All_GOs)))
-            for node, package in self.Reachable_nodes_dict.iteritems():
+            for node, package in self.Reachable_nodes_dict.items():
                 fw_nodes = package[0]
                 if include_reg:
                     fw_nodes += package[1]
@@ -447,7 +447,7 @@ class GeneOntologyInterface(object):
 
             """
             base_matrix = lil_matrix((len(self.All_GOs), len(self.All_GOs)))
-            for node, package in self.Reachable_nodes_dict.iteritems():
+            for node, package in self.Reachable_nodes_dict.items():
                 fw_nodes = package[0]
                 if include_reg:
                     fw_nodes += package[1]
@@ -471,7 +471,7 @@ class GeneOntologyInterface(object):
             raise Exception("Wrong value provided for entropy computation")
         if not self.total_Entropy:
             self.total_Entropy = - \
-                math.log(1 / float(len(self.UP2GO_Dict.keys())), 2)
+                math.log(1 / float(len(list(self.UP2GO_Dict.keys()))), 2)
         if number == 1.0:
             return 2 * self.total_Entropy
         return pow(-self.correction_factor[0] * self.total_Entropy /
@@ -491,9 +491,9 @@ class GeneOntologyInterface(object):
             :param reach:
             :raise Exception:
             """
-            dict_len = {key: [len(val), len(step_reach[key].keys())]
-                        for key, val in reach.iteritems()}
-            for key, val in dict_len.iteritems():
+            dict_len = {key: [len(val), len(list(step_reach[key].keys()))]
+                        for key, val in reach.items()}
+            for key, val in dict_len.items():
                 if val[1] != val[0]:
                     log.critical(
                         'Reach exploration results not equivalent! Please report the error.')
@@ -509,7 +509,7 @@ class GeneOntologyInterface(object):
             :raise Exception:
             """
             summer = 0
-            for key, val_list in _val_dict.iteritems():
+            for key, val_list in _val_dict.items():
                 summer += filter_function(key) * len(val_list)
             return summer
 
@@ -519,12 +519,12 @@ class GeneOntologyInterface(object):
         dir_reg_path = lil_matrix(dir_reg_path)
 
         self.GO2UP_Reachable_nodes = dict(
-            (el, []) for el in self.Reachable_nodes_dict.keys())
+            (el, []) for el in list(self.Reachable_nodes_dict.keys()))
         self.GO2UP_Reachable_nodes.update(self.GO2UP)
 
         pre_go2up_step_reachable_nodes = \
             dict((key, dict((v, 0) for v in val))
-                 for key, val in self.GO2UP_Reachable_nodes.iteritems())
+                 for key, val in self.GO2UP_Reachable_nodes.items())
         # when called on possibly un-encoutenred items, anticipate a default
         # value of 10 000
 
@@ -543,15 +543,15 @@ class GeneOntologyInterface(object):
                      idx1,
                      idx2]) for key,
                 val in pre_go2up_step_reachable_nodes[
-                    self.Num2GO[idx1]].iteritems())
-            for k, v in step_reach_upgrade.iteritems():
+                    self.Num2GO[idx1]].items())
+            for k, v in step_reach_upgrade.items():
                 pre_go2up_step_reachable_nodes[
                     self.Num2GO[idx2]][k] = min(
                     pre_go2up_step_reachable_nodes[
                         self.Num2GO[idx2]].setdefault(
                         k, 100000), v)
 
-        for key, val in self.GO2UP_Reachable_nodes.iteritems():
+        for key, val in self.GO2UP_Reachable_nodes.items():
             self.GO2UP_Reachable_nodes[key] = list(set(val))
 
         verify_equivalence_of_reaches(
@@ -561,13 +561,13 @@ class GeneOntologyInterface(object):
         # Now we need to invert the reach to get the set of all the primary and
         # derived GO terms that describe a UP
         self.UP2GO_Reachable_nodes = dict(
-            (key, []) for key in self.UP2GO_Dict.keys())
+            (key, []) for key in list(self.UP2GO_Dict.keys()))
         self.UP2GO_step_Reachable_nodes = dict(
-            (key, defaultdict(list)) for key in self.UP2GO_Dict.keys())
+            (key, defaultdict(list)) for key in list(self.UP2GO_Dict.keys()))
         self.GO2UP_step_Reachable_nodes = dict(
-            (key, defaultdict(list)) for key in pre_go2up_step_reachable_nodes.keys())
-        for key, val_dict in pre_go2up_step_reachable_nodes.iteritems():
-            for k, v in val_dict.iteritems():
+            (key, defaultdict(list)) for key in list(pre_go2up_step_reachable_nodes.keys()))
+        for key, val_dict in pre_go2up_step_reachable_nodes.items():
+            for k, v in val_dict.items():
                 self.GO2UP_step_Reachable_nodes[key][v].append(k)
                 self.UP2GO_step_Reachable_nodes[k][v].append(key)
                 self.UP2GO_Reachable_nodes[k].append(key)
@@ -575,11 +575,11 @@ class GeneOntologyInterface(object):
         # and finally we compute the pure and weighted informativity for each
         # term
         self.GO2_Pure_Inf = dict((key, self.calculate_informativity(len(val)))
-                                 for key, val in self.GO2UP_Reachable_nodes.iteritems())
+                                 for key, val in self.GO2UP_Reachable_nodes.items())
         self.GO2_Weighted_Ent = dict(
             (key,
              self.calculate_informativity(special_sum(val_dict)))
-            for key, val_dict in self.GO2UP_step_Reachable_nodes.iteritems())
+            for key, val_dict in self.GO2UP_step_Reachable_nodes.items())
 
     def get_laplacians(self):
         """
@@ -594,13 +594,14 @@ class GeneOntologyInterface(object):
         """
         base_matrix = -copy(self.dir_adj_matrix)
         nz_list = copy(
-            zip(list(base_matrix.nonzero()[0]), list(base_matrix.nonzero()[1])))
+            list(zip(list(base_matrix.nonzero()[0]), list(base_matrix.nonzero()[1]))))
 
+
+        # TODO: change that to
         for idx1, idx2 in nz_list:
             min_inf = min(
-                self.GO2_Pure_Inf[
-                    self.Num2GO[idx1]], self.GO2_Pure_Inf[
-                    self.Num2GO[idx2]])
+                self.GO2_Pure_Inf[self.Num2GO[idx1]],
+                self.GO2_Pure_Inf[self.Num2GO[idx2]])
             base_matrix[idx1, idx2] = -min_inf
             base_matrix[idx2, idx1] = -min_inf
             base_matrix[idx2, idx2] += min_inf
@@ -617,11 +618,11 @@ class GeneOntologyInterface(object):
         uniprot_dict = {}
         for elt in self.interactome_interface_instance.reached_uniprots_neo4j_id_list:
             node = DatabaseGraph.get(elt, 'UNIPROT')
-            alt_id = node.properties['legacyId']
+            alt_id = node._properties['legacyId']
             uniprot_dict[alt_id] = (
                 elt, self.interactome_interface_instance.neo4j_id_2_display_name[elt])
             uniprot_dict[elt] = alt_id
-        pickle.dump(uniprot_dict, file(Dumps.Up_dict_dump, 'w'))
+        pickle.dump(uniprot_dict, open(Dumps.Up_dict_dump, 'wb'))
         return uniprot_dict
 
     def filter_out_too_specific(self):
@@ -634,7 +635,7 @@ class GeneOntologyInterface(object):
         self.ultraspec_cleaned = True
         ultraspec_go_terms = list(GO
                                   for GO, reach
-                                  in self.GO2UP_Reachable_nodes.iteritems()
+                                  in self.GO2UP_Reachable_nodes.items()
                                   if len(reach) < self.ultraspec_lvl)
         for GO in ultraspec_go_terms:
             self.GO2_Pure_Inf[GO] = rep_val
@@ -667,7 +668,7 @@ class GeneOntologyInterface(object):
             set(self.InitSet) - set(self.UPs_without_GO))
         up2idxs = dict((UP, fixed_index + Idx)
                        for Idx, UP in enumerate(self_connectable_uniprots))
-        idx2ups = dict((Idx, UP) for UP, Idx in up2idxs.iteritems())
+        idx2ups = dict((Idx, UP) for UP, Idx in up2idxs.items())
         self.inflated_Laplacian = lil_matrix(
             (self.laplacian_matrix.shape[0] + len(self_connectable_uniprots),
              self.laplacian_matrix.shape[1] + len(self_connectable_uniprots)))
@@ -706,7 +707,7 @@ class GeneOntologyInterface(object):
                         'or have no GO terms attached to them.', len(na_set), len(set(uniprots)))
             log.debug('full list of uniprots that cannot be analyzed: \n%s', na_set)
         self.analytic_uniprots = [
-            uniprot for uniprot in uniprots if uniprot in self.UP2GO_Dict.keys()]
+            uniprot for uniprot in uniprots if uniprot in list(self.UP2GO_Dict.keys())]
 
     def build_extended_conduction_system(
             self,
@@ -747,7 +748,7 @@ class GeneOntologyInterface(object):
             for _ in range(0, sparse_samples):
                 _length = copy(self.analytic_uniprots)
                 random.shuffle(_length)
-                iterator += zip(_length[:len(_length) / 2], _length[len(_length) / 2:])
+                iterator += list(zip(_length[:len(_length) / 2], _length[len(_length) / 2:]))
                 self.uncomplete_compute = True
         else:
             iterator = combinations(self.analytic_uniprots, 2)
@@ -814,7 +815,7 @@ class GeneOntologyInterface(object):
         """
         char_dict = {}
         limiting_current = max(node_current.values()) * limit
-        for go_term in self.GO2Num.iterkeys():
+        for go_term in self.GO2Num.keys():
 
             if node_current[go_term] > limiting_current:
                 char_dict[go_term] = [
@@ -851,7 +852,7 @@ class GeneOntologyInterface(object):
             log.warning('Links between the elements should not be trusted: the computations was '
                         'sampling and was not complete')
 
-        for GO in self.GO2Num.iterkeys():
+        for GO in self.GO2Num.keys():
             char_dict[GO] = [str(self.node_current[GO]),
                              'GO', self.GO_Legacy_IDs[GO],
                              self.GO_Names[GO].replace(',', '-'),
@@ -986,7 +987,7 @@ class GeneOntologyInterface(object):
         those that share a significant amount of reached_uniprots_neo4j_id_list in common
         """
         self.Indep_Lapl = lil_matrix((len(self.All_GOs), len(self.All_GOs)))
-        for GO_list in self.UP2GO_Reachable_nodes.itervalues():
+        for GO_list in self.UP2GO_Reachable_nodes.values():
             for GO1, GO2 in combinations(GO_list, 2):
                 idx1, idx2 = (self.GO2Num[GO1], self.GO2Num[GO2])
                 self.Indep_Lapl[idx1, idx2] += -1

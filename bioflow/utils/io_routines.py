@@ -25,7 +25,7 @@ def write_to_csv(filename, array):
     :param array: array to dump
     :type array: numpy.array
     """
-    dump_file = file(filename, 'w')
+    dump_file = open(filename, 'wt')
     dump_file.write(array)
     dump_file.close()
 
@@ -40,7 +40,7 @@ def dump_object(dump_filename, object_to_dump):
     :param object_to_dump: object to be pickled and dumped
     :type object_to_dump: pickable object
     """
-    dump_file = file(dump_filename, 'w')
+    dump_file = open(dump_filename, 'wb')
     dump(object_to_dump, dump_file)
     dump_file.close()
 
@@ -54,7 +54,8 @@ def undump_object(dump_filename):
     :return: the undumped object
     :rtype: object
     """
-    dump_file = file(dump_filename, 'r')
+    dump_file = open(dump_filename, 'rb')
+    print(dump_filename)
     return load(dump_file)
 
 
@@ -66,7 +67,7 @@ def get_bulbs_ids_set(location):
 
     """
     bulbs_ids = []
-    with open(location) as src:
+    with open(location, 'rt') as src:
         csv_reader = reader(src)
         for row in csv_reader:
             bulbs_ids = bulbs_ids + row
@@ -89,7 +90,7 @@ def memoize(f):
     memdict = {}
 
     def internal_function(*args, **kwargs):
-        if args in memdict.keys():
+        if args in list(memdict.keys()):
             return memdict[args]
         else:
             result = f(*args, **kwargs)
@@ -103,12 +104,14 @@ def time_exection(f):
     def int_function(*args, **kwargs):
         now = time()
         result = f(*args, **kwargs)
-        print time() - now
+        print(time() - now)
         return result
 
     return int_function
 
 
 if __name__ == "__main":
-    print get_git_revision_hash()
-    print get_git_revision_short_hash()
+    # TODO: actually inject the revision hashes into the execution pipeline in order to allow for
+    #  reproductible execution
+    print(get_git_revision_hash())
+    print(get_git_revision_short_hash())

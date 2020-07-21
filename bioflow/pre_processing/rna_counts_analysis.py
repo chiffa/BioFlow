@@ -46,9 +46,9 @@ def load_rna_counts_table(rna_source, experiments_to_load):
     table = []
 
     log.info('loading RNA counts table from %s', rna_source)
-    with open(rna_source, 'rb') as source_file:
+    with open(rna_source, 'rt') as source_file:
         rdr = reader(source_file, 'excel-tab')
-        rdr.next()  # skipping the headers
+        next(rdr)  # skipping the headers
         for row in rdr:
             gene_names.append(np.array([row[0], '']))
             counts_for_gene = [float(f)
@@ -137,7 +137,7 @@ def significantly_different_genes(
                                            len(experiment_groups[bi_group[1]])) /
                      2)
         sorted_p_vals = np.sort(p_val, axis=0)
-        lower_index = np.array(range(0, sorted_p_vals.shape[0])) *\
+        lower_index = np.array(list(range(0, sorted_p_vals.shape[0]))) *\
             target_p_value / sorted_p_vals.shape[0]
         pre_filter_mask = sorted_p_vals <= lower_index
         filter_mask = pre_filter_mask
@@ -200,6 +200,7 @@ if __name__ == "__main__":
     exp_groups = [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
     test_groups_to_compare = [[0, 1], [0, 2]]
 
+    # TODO: unittest
     run_analysis_suite(
         rna_source,
         9,

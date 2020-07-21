@@ -32,7 +32,7 @@ class TestRnaCountsProcessor(unittest.TestCase):
         _, _, table = RCP.load_rna_counts_table(self.counts_ref, 6)
         comp_array = RCP.counts_filter(table, [[0, 1, 2], [3, 4, 5]], 5)
         ref_array = np.array([1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]).astype(np.bool_)
-        self.assertItemsEqual(comp_array, ref_array)
+        self.assertCountEqual(comp_array, ref_array)
 
     def test_rpkm_conversion(self):
         _, lengths, data = RCP.load_rna_counts_table(self.counts_ref, 6)
@@ -50,7 +50,7 @@ class TestRnaCountsProcessor(unittest.TestCase):
                                                      [[0, 1, 2], [3, 4, 5]],
                                                      [[0, 1]], 0.3)[0][1]
         ref_val = np.array([1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0]).astype(np.bool_)
-        self.assertItemsEqual(comp_val, ref_val)
+        self.assertCountEqual(comp_val, ref_val)
 
     def test_suite(self):
         exp_groups = [[0, 1, 2], [3, 4, 5]]
@@ -58,7 +58,7 @@ class TestRnaCountsProcessor(unittest.TestCase):
         comp_val = RCP.run_analysis_suite(self.counts_ref, 6, exp_groups,
                                      test_groups_to_compare, 5, 0.3)[0]
         ref_val = np.array([1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0]).astype(np.bool_)
-        self.assertItemsEqual(comp_val, ref_val)
+        self.assertCountEqual(comp_val, ref_val)
 
 if __name__ == "__main__":
     unittest.main()

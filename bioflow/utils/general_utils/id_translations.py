@@ -1,6 +1,8 @@
 from bioflow.neo4j_db.db_io_routines import look_up_annotation_set
+from bioflow.user_configs import internal_storage
 from csv import reader as csv_reader
 from csv import writer as csv_writer
+import os
 
 
 def retrieve_id_translation_table(id_list, id_ptable=None):
@@ -11,7 +13,7 @@ def retrieve_id_translation_table(id_list, id_ptable=None):
 
     output_collector = []
 
-    print translated_list[1]
+    print(translated_list[1])
 
     for key, value in translated_list[1]:
         # print key
@@ -28,10 +30,10 @@ def retrieve_id_translation_table(id_list, id_ptable=None):
 def retrieve_base_table(path, header=False):
     output_collector = []
 
-    with open(path, 'r') as source:
+    with open(path, 'rt') as source:
         reader = csv_reader(source)
         if header:
-            reader.next()
+            next(reader)
         for line in reader:
             output_collector.append(line)
     output_collector = [val for sublist in output_collector for val in sublist]
@@ -40,7 +42,7 @@ def retrieve_base_table(path, header=False):
 
 def write_mapping_table(path, data_table, header=False):
 
-    with open(path, 'w') as sink:
+    with open(path, 'wt') as sink:
         writer = csv_writer(sink)
         if header:
             writer.writerow(['Source ID', 'DB ID', 'UNIPROT_ID'])

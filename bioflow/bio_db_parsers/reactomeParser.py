@@ -5,6 +5,7 @@ import xml.etree.ElementTree as ET
 from collections import defaultdict
 from bioflow.utils.log_behavior import get_logger
 from bioflow import main_configs
+import os
 
 
 log = get_logger(__name__)
@@ -17,8 +18,8 @@ def zip_dicts(dict1, dict2):
     :param dict1: dictionary #1
     :param dict2: dictionary #2
     """
-    for key in dict2.keys():
-        if key not in dict1.keys():
+    for key in list(dict2.keys()):
+        if key not in list(dict1.keys()):
             dict1[key] = dict2[key]  # never used in production
         else:
             assert isinstance(dict2[key], (list, tuple))
@@ -147,7 +148,7 @@ class ReactomeParser(object):
         :param tag_to_parse: what tag we want to parse first
         """
         for object_of_interest in self._find_in_root(primary_term):
-            key_ = object_of_interest.attrib.values()[0]
+            key_ = list(object_of_interest.attrib.values())[0]
             for object_property in object_of_interest:
                 if tag_to_parse in object_property.tag:
                     target_dict[key_] = object_property.text
@@ -161,7 +162,7 @@ class ReactomeParser(object):
         :param mapped_terms: specific x-refs whose content we would want to extract
         """
         for object_of_interest in self._find_in_root(primary_term):
-            key_ = object_of_interest.attrib.values()[0]
+            key_ = list(object_of_interest.attrib.values())[0]
             target_dict[key_] = {'name': []}
             for object_property in object_of_interest:
                 if '}name' in object_property.tag and object_property.text:
@@ -177,10 +178,10 @@ class ReactomeParser(object):
                     if not other_term_inserted:
                         target_dict[key_]['name'].append(object_property.text)
                 if '}organism' in object_property.tag \
-                        and object_property.attrib.values()[0][1:] != 'BioSource1':
+                        and list(object_property.attrib.values())[0][1:] != 'BioSource1':
                     # second condition removes references to the main organism in the xml file
                     target_dict[key_]['organism'] = self.BioSources[
-                        object_property.attrib.values()[0][1:]]
+                        list(object_property.attrib.values())[0][1:]]
             target_dict[key_]['name'] = list(set(target_dict[key_]['name']))
 
     def _parse_modification_features(self):
@@ -190,17 +191,17 @@ class ReactomeParser(object):
         Because of unicity of parsing syntax they cannot be folded elsewhere
         """
         for single_ModificationFeature in self._find_in_root('ModificationFeature'):
-            key = single_ModificationFeature.attrib.values()[0]
+            key = list(single_ModificationFeature.attrib.values())[0]
             self.ModificationFeatures[key] = {'ID': key}  # pre-processing
             for modification_property in single_ModificationFeature:
                 if '}featureLocation' in modification_property.tag:  # trigger #1
                     # dict_position = element to retrieve
                     self.ModificationFeatures[key]['location'] = self.SeqSite[
-                        modification_property.attrib.values()[0][1:]]  # trigger #2
+                        list(modification_property.attrib.values())[0][1:]]  # trigger #2
                 if '}modificationType' in modification_property.tag:
                     # dict_position = element to retrieve
                     self.ModificationFeatures[key]['modification'] = self.SeqModVoc[
-                        modification_property.attrib.values()[0][1:]]
+                        list(modification_property.attrib.values())[0][1:]]
 
     def _meta_parse_tag(self, local_dict, local_property, meta_refs, is_collection):
         """
@@ -212,7 +213,7 @@ class ReactomeParser(object):
         :param is_collection: Fall-through tag indicating if we are parsing a collection
         """
         if '}cellularLocation' in local_property.tag:
-            local_dict['cellularLocation'] = local_property.attrib.values()[0][1:]
+            local_dict['cellularLocation'] = list(local_property.attrib.values())[0][1:]
         if '}displayName' in local_property.tag:
             local_dict['displayName'] = local_property.text
         if '}name' in local_property.tag:
@@ -220,11 +221,11 @@ class ReactomeParser(object):
         if '}memberPhysicalEntity' in local_property.tag:
             is_collection = True
             local_dict['collectionMembers'].append(
-                local_property.attrib.values()[0][1:])
+                list(local_property.attrib.values())[0][1:])
         if '}entityReference' in local_property.tag:
             # print local_property.attrib.values()[0][1:]
             # TODO: temporary fix < HAHAHA
-            if not "EntityReference" in local_property.attrib.values()[0][1:]:
+            if not "EntityReference" in list(local_property.attrib.values())[0][1:]:
                 # pass
                 # print local_property.attrib.values()[0][1:]
                 # for ref in meta_refs.keys():
@@ -232,16 +233,16 @@ class ReactomeParser(object):
                 # meta_ref_types = set(''.join([i for i in ref if not i.isdigit()]) for ref in meta_refs.keys())
                 # print meta_ref_types
                 local_dict['references'] = \
-                        zip_dicts(meta_refs[local_property.attrib.values()[0][1:]],
+                        zip_dicts(meta_refs[list(local_property.attrib.values())[0][1:]],
                                   local_dict['references'])
         if '}feature' in local_property.tag \
-                and 'ModificationFeature' in local_property.attrib.values()[0]:
+                and 'ModificationFeature' in list(local_property.attrib.values())[0]:
             local_dict['modification'].append(self.ModificationFeatures[
-                                                  local_property.attrib.values()[0][1:]])
+                                                  list(local_property.attrib.values())[0][1:]])
         if '}component' in local_property.tag \
                 and 'Stoichiometry' not in local_property.tag:
                     local_dict['parts'].append(
-                        local_property.attrib.values()[0][1:])
+                        list(local_property.attrib.values())[0][1:])
         return is_collection
 
     def _meta_parse(self, primary_term, meta_dict, meta_collection_dict, meta_refs,
@@ -258,7 +259,7 @@ class ReactomeParser(object):
         """
         for meta_object in self._find_in_root(primary_term):
 
-            key_ = meta_object.attrib.values()[0]
+            key_ = list(meta_object.attrib.values())[0]
             base_dict = {'collectionMembers': [],
                          'modification': [],
                          'parts': [],
@@ -302,14 +303,14 @@ class ReactomeParser(object):
         # TODO: cyclomatic complexity of this method is close to 11, which is on the edge of
         # acceptable
         for reaction_object in self._find_in_root(primary_term):
-            key_ = reaction_object.attrib.values()[0]
+            key_ = list(reaction_object.attrib.values())[0]
             base_dict = {'right': [],
                          'left': [],
                          'references': {
                              'name': []}}
             for reaction_property in reaction_object:
                 if '}product' in reaction_property.tag:
-                    base_dict['right'].append(reaction_property.attrib.values()[0][1:])
+                    base_dict['right'].append(list(reaction_property.attrib.values())[0][1:])
                 if '}displayName' in reaction_property.tag:
                     base_dict['displayName'] = reaction_property.text
                 if '}name' in reaction_property.tag:
@@ -318,11 +319,11 @@ class ReactomeParser(object):
                 if '}eCNumber' in reaction_property.tag:
                     base_dict['references']['eCNumber'] = reaction_property.text
                 if '}left' in reaction_property.tag:
-                    base_dict['left'].append(reaction_property.attrib.values()[0][1:])
+                    base_dict['left'].append(list(reaction_property.attrib.values())[0][1:])
                 if '}right' in reaction_property.tag:
-                    base_dict['right'].append(reaction_property.attrib.values()[0][1:])
+                    base_dict['right'].append(list(reaction_property.attrib.values())[0][1:])
 
-            for key in base_dict.keys():
+            for key in list(base_dict.keys()):
                 if key not in tags_to_parse and key not in ['references', 'displayName']:
                     del base_dict[key]
 
@@ -337,14 +338,14 @@ class ReactomeParser(object):
         (legacy reasons)
         """
         for catalysis_object in self._find_in_root(primary_term):
-            key_ = catalysis_object.attrib.values()[0]
+            key_ = list(catalysis_object.attrib.values())[0]
             base_dict = {}
             for catalysis_property in catalysis_object:
                 if '}controlled' in catalysis_property.tag:
                     # TODO: biochemical reaction filtering should be around here
-                    base_dict['controlled'] = catalysis_property.attrib.values()[0][1:]
+                    base_dict['controlled'] = list(catalysis_property.attrib.values())[0][1:]
                 if '}controller' in catalysis_property.tag:
-                    base_dict['controller'] = catalysis_property.attrib.values()[0][1:]
+                    base_dict['controller'] = list(catalysis_property.attrib.values())[0][1:]
                 if '}controlType' in catalysis_property.tag:
                     base_dict['ControlType'] = catalysis_property.text
 
@@ -356,17 +357,17 @@ class ReactomeParser(object):
         Parses modulations
         """
         for single_Modulation in self._find_in_root('Modulation'):
-            key = single_Modulation.attrib.values()[0]
+            key = list(single_Modulation.attrib.values())[0]
             self.Modulations[key] = {}
             for modulation_property in single_Modulation:
                 if '}displayName' in modulation_property.tag:
                     self.Modulations[key]['displayName'] = modulation_property.text
                 if '}controller' in modulation_property.tag:
-                    self.Modulations[key]['controller'] = modulation_property.attrib.values()[0][
+                    self.Modulations[key]['controller'] = list(modulation_property.attrib.values())[0][
                         1:]
                 if '}controlled' in modulation_property.tag:
                     self.Modulations[key]['controlled'] = \
-                        self.Catalysises[modulation_property.attrib.values()[0][1:]]['controller']
+                        self.Catalysises[list(modulation_property.attrib.values())[0][1:]]['controller']
                 if '}controlType' in modulation_property.tag:
                     self.Modulations[key]['controlType'] = modulation_property.text
 
@@ -375,7 +376,7 @@ class ReactomeParser(object):
         Parses Pathways
         """
         for single_Pathway in self._find_in_root('Pathway'):
-            key = single_Pathway.attrib.values()[0]
+            key = list(single_Pathway.attrib.values())[0]
             local_dict = {
                 'components': [],
                 'references': {
@@ -387,13 +388,13 @@ class ReactomeParser(object):
                 if '}name' in pathway_property.tag:
                     local_dict['references']['name'].append(pathway_property.text)
                 if '}pathwayComponent' in pathway_property.tag \
-                        and 'Pathway' in pathway_property.attrib.values()[
+                        and 'Pathway' in list(pathway_property.attrib.values())[
                         0]:
                     local_dict['components'].append(
-                        pathway_property.attrib.values()[0][1:])
+                        list(pathway_property.attrib.values())[0][1:])
                 if '}pathwayOrder' in pathway_property.tag:
                     local_dict['PathwayStep'].append(
-                        pathway_property.attrib.values()[0][1:])
+                        list(pathway_property.attrib.values())[0][1:])
             self.Pathways[key] = local_dict
 
     def _parse_pathway_steps(self):
@@ -406,16 +407,16 @@ class ReactomeParser(object):
             'TemplateReactionRegulation',
             'Catalysis']
         for single_Pathway_step in self._find_in_root('PathwayStep'):
-            key = single_Pathway_step.attrib.values()[0]
+            key = list(single_Pathway_step.attrib.values())[0]
             local_dict = {'components': [], 'nextStep': []}
             for pathway_property in single_Pathway_step:
                 if '}stepProcess' in pathway_property.tag and not any(
-                        x in pathway_property.attrib.values()[0] for x in exclude):
+                        x in list(pathway_property.attrib.values())[0] for x in exclude):
                     local_dict['components'].append(
-                        pathway_property.attrib.values()[0][1:])
+                        list(pathway_property.attrib.values())[0][1:])
                 if '}nextStep' in pathway_property.tag:
                     local_dict['nextStep'].append(
-                        pathway_property.attrib.values()[0][1:])
+                        list(pathway_property.attrib.values())[0][1:])
             self.PathwaySteps[key] = local_dict
 
     def parse_all(self):
@@ -464,8 +465,11 @@ class ReactomeParser(object):
 
         log.info('Reactome parser finished parsing xml tree to dict collection')
 
+
 if __name__ == "__main__":
-    source_file = "/home/andrei/PycharmProjects/bioflow/unittests/UT_examples/reactome_extract.owl"
+    source_file = 'unittests/UT_examples/reactome_extract.owl'
+    # log.debug(os.path.abspath(source_file))
+    # print(os.path.abspath(source_file))
     # source_file = main_configs.reactome_biopax_path
     RP = ReactomeParser(source_file)
     RP.parse_all()

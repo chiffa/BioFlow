@@ -1,16 +1,16 @@
 """
-:created: Dec 15, 2013
-:author: Andrei Kucharavy
 Performs IO from the setup .ini files and casts into relevant Python Dictionaries
+Performs as well some basic functions based on those config files, such as pulling down the
+databases from online
 """
 from os.path import join, abspath, expanduser
 import os
 from shutil import copy as copy_file
-from string import lower
 from bioflow.utils.general_utils.dict_like_configs_parser import ini_configs2dict, dict2init_configs
 from bioflow.utils.general_utils.high_level_os_io import mkdir_recursive
 from bioflow.utils.general_utils.internet_io import url_to_local, marbach_post_proc
 from bioflow.utils.log_behavior import get_logger
+from bioflow.user_configs import sources_location
 
 log = get_logger(__name__)
 
@@ -56,29 +56,29 @@ def pull_online_dbs():
     write_dirs = ini_configs2dict(conf_files_locations['online_dbs'])
     base_folder = ini_configs2dict(conf_files_locations['servers'])['PRODUCTION']['base_folder']
 
-    for DB_type, location_dict in write_dirs.iteritems():
+    for DB_type, location_dict in write_dirs.items():
 
-        print DB_type
+        print(DB_type)
 
-        if 'inactive' in location_dict.keys() and location_dict['inactive'] == 'True':
+        if 'inactive' in list(location_dict.keys()) and location_dict['inactive'] == 'True':
             continue
 
         local = location_dict['local'].replace('$DB_HOME$', base_folder)
         onlines = [location.strip() for location in location_dict['online'].split(',')]
 
-        if 'rename' in location_dict.keys():
+        if 'rename' in list(location_dict.keys()):
             renames = [location.strip() for location in location_dict['rename'].split(',')]
 
             for online, rename in zip(onlines, renames):
                 log.info('loading %s database from %s to %s',
-                         lower(DB_type), location_dict['online'], local)
+                         DB_type.lower(), location_dict['online'], local)
                 mkdir_recursive(local)
                 url_to_local(online, local, rename=rename)
 
         else:
             for online in onlines:
                 log.info('loading %s database from %s to %s',
-                         lower(DB_type), location_dict['online'], local)
+                         DB_type.lower(), location_dict['online'], local)
                 mkdir_recursive(local)
                 url_to_local(online, local)
 
@@ -110,23 +110,23 @@ def compute_full_paths(sources_parse_dict, online_dbs_parse_dict, servers_parse_
     base_folder = servers_parse_dict['base_folder']
     paths_dict = {}
 
-    for source_name, source_contents in sources_parse_dict.items():
+    for source_name, source_contents in list(sources_parse_dict.items()):
 
         if source_name in ['INTERNAL', 'META']:
             continue
 
         if not online_dbs_parse_dict[source_name] or \
-                ('inactive' in online_dbs_parse_dict[source_name].keys() and
+                ('inactive' in list(online_dbs_parse_dict[source_name].keys()) and
                  online_dbs_parse_dict[source_name]['inactive'] == 'True'):
             log.exception('attempt to load an inactive source type %s', source_name)
             continue
 
         pre_location = online_dbs_parse_dict[source_name]['local'].replace('$DB_HOME$', base_folder)
 
-        if 'file' in source_contents.keys():
+        if 'file' in list(source_contents.keys()):
             paths_dict[source_name] = join(pre_location, source_contents['file'])
 
-        elif 'name_pattern' in source_contents.keys():
+        elif 'name_pattern' in list(source_contents.keys()):
             target = ''
 
             if not os.path.exists(pre_location):
@@ -186,7 +186,9 @@ def set_folders(file_directory,
 
 
 if __name__ == "__main__":
-    set_folders('/home/andrei/sources')
+    # TODO: perform search and modify it to home/<user>/bioflow/sources and make it
+    #  user-configurable
+    set_folders(sources_location)
     build_source_config('human')
     pull_online_dbs()
     # pp = PrettyPrinter(indent=4)

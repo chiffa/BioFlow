@@ -39,7 +39,7 @@ class GdfExportInterface(object):
             current_matrix,
             directed=False):
         mkdir_recursive(target_fname)
-        self.target_file = open(target_fname, 'w')
+        self.target_file = open(target_fname, 'wt')
         self.field_types = field_types
         self.field_names = field_names
         self.node_properties = node_properties_dict
@@ -92,7 +92,7 @@ class GdfExportInterface(object):
         Write the nodes with associated informations
 
         """
-        for nodename, nodeprops in self.node_properties.iteritems():
+        for nodename, nodeprops in self.node_properties.items():
             if self.mincurrent and float(nodeprops[0]) > self.mincurrent:
                 self.target_file.write(
                     str(nodename) + ', ' + ', '.join(nodeprops) + '\n')

@@ -24,7 +24,7 @@ def insert_cell_locations(cell_locations_dict):
 
     :param cell_locations_dict:
     """
-    for Loc, displayName in cell_locations_dict.iteritems():
+    for Loc, displayName in cell_locations_dict.items():
         memoization_dict[Loc] = DatabaseGraph.create('Location',
                                                      {'legacyId': Loc,
                                                       'displayName': displayName})
@@ -49,10 +49,10 @@ def insert_meta_objects(neo4j_graph_class, meta_id_2_property_dict):
     :param neo4j_graph_class:
     :param meta_id_2_property_dict:
     """
-    size = len(meta_id_2_property_dict.keys())
+    size = len(list(meta_id_2_property_dict.keys()))
     log.info('Starting inserting %s with %s elements', neo4j_graph_class, size)
     breakpoints = 300
-    for i, (meta_name, property_dict) in enumerate(meta_id_2_property_dict.iteritems()):
+    for i, (meta_name, property_dict) in enumerate(meta_id_2_property_dict.items()):
 
         if i % breakpoints == 0:
             log.info('\t %.2f %%' % (float(i)/float(size)*100.0))
@@ -62,6 +62,22 @@ def insert_meta_objects(neo4j_graph_class, meta_id_2_property_dict):
                            'localization': property_dict['cellularLocation'],
                            'main_connex': False}
         primary = DatabaseGraph.create(neo4j_graph_class, meta_properties)
+        log.debug(primary)
+        log.debug(dir(primary))
+        log.debug("%s\n%s\n%s\n%s\n%s" %
+                  (primary._properties,
+                  primary.values(),
+                  primary.labels,
+                  primary.keys(),
+                  primary.items()))
+
+        # print(primary)
+        # print(dir(primary))
+        # print(primary._properties, '\n',
+        #       primary.values(), '\n',
+        #       primary.labels, '\n',
+        #       primary.keys(), '\n',
+        #       primary.items())
 
         if meta_name in Leg_ID_Filter:
             ForbiddenIDs.append(get_db_id(primary))
@@ -70,17 +86,17 @@ def insert_meta_objects(neo4j_graph_class, meta_id_2_property_dict):
 
         insert_minimal_annotations(primary, property_dict['references'])
 
-        if 'cellularLocation' in property_dict.keys():
+        if 'cellularLocation' in list(property_dict.keys()):
             secondary = memoization_dict[property_dict['cellularLocation']]
             DatabaseGraph.link(primary.id,
                                secondary.id,
                                'is_localized',
-                               {'custom_from': primary.properties['legacyId'],
-                                'custom_to': secondary.properties['legacyId']})
+                               {'custom_from': primary._properties['legacyId'],
+                                'custom_to': secondary._properties['legacyId']})
 
-        if 'modification' in property_dict.keys():
+        if 'modification' in list(property_dict.keys()):
             for modification in property_dict['modification']:
-                if 'location' in modification.keys() and 'modification' in modification.keys():
+                if 'location' in list(modification.keys()) and 'modification' in list(modification.keys()):
 
                     located_modification = DatabaseGraph.create('ModificationFeature',
                                                                 {'legacyId': modification['ID'],
@@ -91,8 +107,8 @@ def insert_meta_objects(neo4j_graph_class, meta_id_2_property_dict):
                     DatabaseGraph.link(primary.id,
                                        located_modification.id,
                                        'is_able_to_modify',
-                                       {'custom_from': primary.properties['legacyId'],
-                                        'custom_to': located_modification.properties['legacyId'],
+                                       {'custom_from': primary._properties['legacyId'],
+                                        'custom_to': located_modification._properties['legacyId'],
                                         'source': 'Reactome_modification'})
 
 
@@ -104,9 +120,9 @@ def insert_collections(collections_2_members):
     """
 
     breakpoints = 300
-    size = len(collections_2_members.keys())
+    size = len(list(collections_2_members.keys()))
 
-    for i, (collection, collection_property_dict) in enumerate(collections_2_members.iteritems()):
+    for i, (collection, collection_property_dict) in enumerate(collections_2_members.items()):
 
         if i % breakpoints == 0:
             log.info('\t %.2f %%' % (float(i)/float(size)*100))
@@ -118,8 +134,8 @@ def insert_collections(collections_2_members):
             DatabaseGraph.link(collection_node.id,
                                member_node.id,
                                'is_part_of_collection',
-                               {'custom_from': collection_node.properties['legacyId'],
-                                'custom_to': member_node.properties['legacyId'],
+                               {'custom_from': collection_node._properties['legacyId'],
+                                'custom_to': member_node._properties['legacyId'],
                                 'source': 'Reactome_collection'})
 
 
@@ -130,7 +146,7 @@ def insert_complex_parts(complex_property_dict):
     :param complex_property_dict:
     """
     breakpoint = 300
-    size = len(complex_property_dict.keys())
+    size = len(list(complex_property_dict.keys()))
 
     for i, key in enumerate(complex_property_dict.keys()):
 
@@ -143,8 +159,8 @@ def insert_complex_parts(complex_property_dict):
                 complex_node = memoization_dict[key]
                 part_node = memoization_dict[part]
                 DatabaseGraph.link(complex_node.id, part_node.id, 'is_part_of_complex',
-                                   {'custom_from': complex_node.properties['legacyId'],
-                                    'custom_to': part_node.properties['legacyId'],
+                                   {'custom_from': complex_node._properties['legacyId'],
+                                    'custom_to': part_node._properties['legacyId'],
                                     'source': 'Reactome_complex'})
 
 
@@ -156,7 +172,7 @@ def insert_reactions(neo4j_graph_class, property_source_dict):
     :param neo4j_graph_class:
     :param property_source_dict:
     """
-    for reaction, reaction_properties in property_source_dict.iteritems():
+    for reaction, reaction_properties in property_source_dict.items():
         memoization_dict[reaction] = DatabaseGraph.create(neo4j_graph_class,
                                                           {'legacyId': reaction,
                                                            'displayName': reaction_properties['displayName']})
@@ -165,7 +181,7 @@ def insert_reactions(neo4j_graph_class, property_source_dict):
             memoization_dict[reaction],
             reaction_properties['references'])
 
-        for property_name, property_value_list in reaction_properties.iteritems():
+        for property_name, property_value_list in reaction_properties.items():
             if property_name in ['left', 'right']:
                 for elt in property_value_list:
                     reaction_node = memoization_dict[reaction]
@@ -174,8 +190,8 @@ def insert_reactions(neo4j_graph_class, property_source_dict):
                                        elt_node.id,
                                        'is_reaction_participant',
                                        {'side': property_name,
-                                        'custom_from': reaction_node.properties['legacyId'],
-                                        'custom_to': reaction_node.properties['legacyId'],
+                                        'custom_from': reaction_node._properties['legacyId'],
+                                        'custom_to': reaction_node._properties['legacyId'],
                                         'source': 'Reactome_reaction'})
 
 
@@ -186,16 +202,16 @@ def insert_catalysis(catalysises_dict):
 
     :param catalysises_dict:
     """
-    for catalysis, catalysis_properties in catalysises_dict.iteritems():
+    for catalysis, catalysis_properties in catalysises_dict.items():
 
-        if 'controller' in catalysis_properties.keys() \
-                and 'controlled' in catalysis_properties.keys():
+        if 'controller' in list(catalysis_properties.keys()) \
+                and 'controlled' in list(catalysis_properties.keys()):
 
-            if catalysis_properties['controlled'] in memoization_dict.keys() \
-                    and catalysis_properties['controller'] in memoization_dict.keys():
+            if catalysis_properties['controlled'] in list(memoization_dict.keys()) \
+                    and catalysis_properties['controller'] in list(memoization_dict.keys()):
 
                 # TODO: this can be moved to the parsing
-                if 'ControlType' not in catalysises_dict[catalysis].keys():
+                if 'ControlType' not in list(catalysises_dict[catalysis].keys()):
                     catalysis_properties['ControlType'] = 'UNKNOWN'
 
                 controller = memoization_dict[catalysis_properties['controller']]  #
@@ -207,20 +223,20 @@ def insert_catalysis(catalysises_dict):
                     'is_catalysant',
                     {'legacyId': catalysis,
                         'controlType': catalysis_properties['ControlType'],
-                        'custom_from': controller.properties['legacyId'],
-                        'custom_to': controlled.properties['legacyId'],
+                        'custom_from': controller._properties['legacyId'],
+                        'custom_to': controlled._properties['legacyId'],
                         'source': 'Reactome_catalysis'})
 
             else:
                 log.debug("Catalysis targets not memoized: %s : %s, %s, %s", catalysis,
                           catalysises_dict[catalysis],
-                          catalysises_dict[catalysis]['controlled'] in memoization_dict.keys(),
-                          catalysises_dict[catalysis]['controller'] in memoization_dict.keys())
+                          catalysises_dict[catalysis]['controlled'] in list(memoization_dict.keys()),
+                          catalysises_dict[catalysis]['controller'] in list(memoization_dict.keys()))
         else:
             log.debug("Catalysis without control/controlled %s : %s, %s, %s,",
                       catalysis, catalysises_dict[catalysis],
-                      'controller' in catalysises_dict[catalysis].keys(),
-                      'controlled' in catalysises_dict[catalysis].keys())
+                      'controller' in list(catalysises_dict[catalysis].keys()),
+                      'controlled' in list(catalysises_dict[catalysis].keys()))
 
 
 def insert_modulation(modulations_dict):
@@ -229,7 +245,7 @@ def insert_modulation(modulations_dict):
 
     :param modulations_dict:
     """
-    for modulation, modulation_property_dict in modulations_dict.iteritems():
+    for modulation, modulation_property_dict in modulations_dict.items():
         controller = memoization_dict[modulation_property_dict['controller']]  #
         controlled = memoization_dict[modulation_property_dict['controlled']]  #
 
@@ -239,8 +255,8 @@ def insert_modulation(modulations_dict):
             'is_regulant',
             {'legacyID': modulation,
              'controlType': modulation_property_dict['controlType'],
-             'custom_from': controller.properties['legacyId'],
-             'custom_to': controlled.properties['legacyId']
+             'custom_from': controller._properties['legacyId'],
+             'custom_to': controlled._properties['legacyId']
              }
         )
 
@@ -254,10 +270,10 @@ def insert_pathways(pathway_steps, pathways):
     :param pathways:
     """
     breakpoints = 300
-    ps_len = len(pathway_steps.keys())
-    p_len = len(pathways.keys())
+    ps_len = len(list(pathway_steps.keys()))
+    p_len = len(list(pathways.keys()))
 
-    log.info('Inserting Pathway steps with %s elements', len(pathway_steps.keys()))
+    log.info('Inserting Pathway steps with %s elements', len(list(pathway_steps.keys())))
 
     for i, pathway_step in enumerate(pathway_steps.keys()):
 
@@ -267,9 +283,9 @@ def insert_pathways(pathway_steps, pathways):
         memoization_dict[pathway_step] = DatabaseGraph.create('PathwayStep',
                                                               {'legacyId': pathway_step})
 
-    log.info('Inserting Pathways with %s elements', len(pathways.keys()))
+    log.info('Inserting Pathways with %s elements', len(list(pathways.keys())))
 
-    for pathway_step in pathways.keys():
+    for pathway_step in list(pathways.keys()):
 
         if i % breakpoints == 0:
             log.info('\t %.2f %%' % (float(i)/float(p_len)*100))
@@ -297,7 +313,7 @@ def insert_pathways(pathway_steps, pathways):
                                 'custom_to': next_step,
                                 'source': 'Reactome_pathway'})
 
-    for pathway_step in pathways.keys():
+    for pathway_step in list(pathways.keys()):
 
         for second_pathway_step in pathways[pathway_step]['PathwayStep']:
             DatabaseGraph.link(memoization_dict[pathway_step].id,
@@ -324,7 +340,7 @@ def get_one_meta_set(neo4j_class):
     :param neo4j_class:
     """
     for node in DatabaseGraph.get_all(neo4j_class):
-        memoization_dict[node.properties['legacyId']] = node
+        memoization_dict[node._properties['legacyId']] = node
 
 
 def get_all_meta_sets():
@@ -404,7 +420,9 @@ def insert_reactome(skip_import='N'):
         insert_complex_parts(reactome_parser.Complexes)
 
         # NOW dump the ForbiddenIDs
-        pickle.dump(ForbiddenIDs, open(Dumps.Forbidden_IDs, 'w'))
+        # # TODO: the forbidden IDs are no more calculated here - this can be deleted
+        # pickle.dump(ForbiddenIDs, open(Dumps.Forbidden_IDs, 'wb'))
+        # raise Exception('pickle debug')
 
 
     if skip_import == 'M':

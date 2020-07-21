@@ -24,14 +24,14 @@ def insert_into_the_database(_up_ids_2_inner_ids, _up_ids_2_properties):
 
     final_dicts = dict(
         ((_up_ids_2_inner_ids[key[0]], _up_ids_2_inner_ids[key[1]]), value)
-        for key, value in _up_ids_2_properties.iteritems()
-        if key[0] in _up_ids_2_inner_ids.keys() and key[1] in _up_ids_2_inner_ids.keys())
+        for key, value in _up_ids_2_properties.items()
+        if key[0] in list(_up_ids_2_inner_ids.keys()) and key[1] in list(_up_ids_2_inner_ids.keys()))
 
     breakpoints = 300
-    total_pairs = len(final_dicts.keys())
+    total_pairs = len(list(final_dicts.keys()))
     previous_time = time()
 
-    for counter, ((node1_id, node2_id), link_parameters) in enumerate(final_dicts.iteritems()):
+    for counter, ((node1_id, node2_id), link_parameters) in enumerate(final_dicts.items()):
 
         if counter % breakpoints == 0 and counter > 1:
             compops = float(breakpoints)/(time() - previous_time)

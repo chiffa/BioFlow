@@ -7,6 +7,7 @@ from os import path, makedirs
 from pprint import PrettyPrinter
 from pymongo import MongoClient
 from bioflow.configs_manager import parse_config, compute_full_paths
+from bioflow.user_configs import output_location
 from bioflow.utils.general_utils import high_level_os_io as hl_os_io
 from datetime import datetime
 
@@ -121,6 +122,7 @@ class Dumps(object):
 
     RNA_seq_counts_compare = prefix + prefix_2 + '/RNA_seq_compare' + postfix
 
+    # TODO: this has nothing to do with in the configs either
     analysis_set_display_names = prefix + prefix_2 + '/current_analysis_set_name_maps.txt'
     analysis_set_bulbs_ids = prefix + prefix_2 + '/current_analysis_set_bulbs_id_list.csv'
     background_set_bulbs_ids = prefix + prefix_2 + '/current_background_set_bulbs_id_list.csv'
@@ -147,16 +149,18 @@ class Outputs(object):
 #  Declares overloaded IDs, pickles from the dumps of already computed
 forbidden_neo4j_ids = []
 if path.isfile(Dumps.Forbidden_IDs):
-    forbidden_neo4j_ids = pickle.load(file(Dumps.Forbidden_IDs, 'r'))
+    try:
+        forbidden_neo4j_ids = pickle.load(open(Dumps.Forbidden_IDs, 'rb'))
+    except Exception as e:
+        print('exception encountered: %s' % (e))
 
-
+# TODO: cut this away
 # Where the RNA counts bioflow, hits and background deduced from it are to be found  #
 # these are defaults that can be overriden by changing parameters to "cast analysis set" function
 #  from neo4j db io module
 rna_source = "/home/ank/Documents/External_Predictions/Ben_RNA_seq/counts.tsv"
 analysis_protein_ids_csv = "/home/andrei/support/tmp/Chr_10.txt"
 background_protein_ids_csv = "/home/ank/projects_files/2014/Poly_Pharma/HJ-screen/Allgene_R2.csv"
-
 
 if __name__ == "__main__":
     pp = PrettyPrinter(indent=4)

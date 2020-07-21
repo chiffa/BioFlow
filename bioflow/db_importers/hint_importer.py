@@ -18,9 +18,9 @@ def get_uniprots_for_hint():
     """
     initial_dict = {}
     for node in DatabaseGraph.get_all('UNIPROT'):
-        initial_dict[node.properties['legacyId']] = node.id
+        initial_dict[node._properties['legacyId']] = node.id
 
-    for key in initial_dict.keys():
+    for key in list(initial_dict.keys()):
         initial_dict[key.split('_')[0]] = initial_dict.pop(key)
     return initial_dict
 
@@ -41,14 +41,14 @@ def cross_ref_hint():
 
     log.info('Starting inserting HINT for %s primary nodes' % size)
 
-    for i, (legacyId, linked_legacyIds) in enumerate(relations_dict.iteritems()):
+    for i, (legacyId, linked_legacyIds) in enumerate(relations_dict.items()):
 
         if i % breakpoints:
             log.info('\t %.2f %%' % (float(i)/float(size)*100))
 
-        if legacyId in uniprot_ref_dict.keys():
+        if legacyId in list(uniprot_ref_dict.keys()):
             for linked_legacyId in linked_legacyIds:
-                if linked_legacyId in uniprot_ref_dict.keys():
+                if linked_legacyId in list(uniprot_ref_dict.keys()):
                     actual_cross_links += 1
 
                     DatabaseGraph.link(uniprot_ref_dict[legacyId], uniprot_ref_dict[linked_legacyId],

@@ -4,18 +4,60 @@ TODOs for the project in the future:
 Current refactoring:
 --------------------
 
-YEAST:
-    DISABLE TRRUST/human/mouse-specific imports
+ - TODO: Change the informativity between nodes connection from the max of their informativities
+to the difference of their informativities. In this way, the total path is equivalent to the
+quantity of the information stored
+ - TODO: change the informativity computation so that the path between nodes through the network
+is log of probability of being connected through that suite of GO terms.
+
+ - TODO: Move MongoDB interface from configs into a proper location and create database type -
+agnostic bindings
+
+ - TODO: CRICITAL: MATPLOTLIB DOES NOT WORK WITH CURRENT DOCKERFILE IF FIGURE IS CREATED
+ - TODO: CRITICAL: ascii in gdf export crashes
+
+ - TODO: allow user to configure where to store the output => add outputs folder to docker-compose
+ - TODO: allow user to configure where to store intermediates and inputs/outputs
+ - TODO: remove ank as point of storage for miniconda in Docker
+ - TODO: move configs somewhere saner: ~/bioflow/ directory seems to be a good start
+
+ - TODO: document where the user-mapped folders live from Docker
+ - TODO: document the user how to install and map to a local neo4j database
+
+ - TODO: flow to a targeted set
+ - TODO: weighted targets flow
+ - TODO: modification of the Laplacian weights by the end user.
+
+ - TODO: provide the interface for overlaying the molecular maps to check for signatures/compare
+samples
+
+ - TODO: add a mail signalling to indicate the termination or crash of the execution
+ - TODO: pull inlined updates printing from evoGANs project.
+    => Currently the percentages are managed by log.info(calls)
+    => Providing an in-line update would require a print(<log message>, end='\r')
+    => Change log management so that the info gets logged into a file without rising to the
+surface and couple all the log.debug with a "print"
+
+(Bigger refactors)
+ - TODO: refactor the entire edge typing upon insertion, retrieval upon construction of
+laplacian/adjacency matrix and setting of Laplacian weights
+ - TODO: refactor the setting parsing and supplying
+
+Bulk Backlog:
+-------------
+
+Language of network alignment/explanation of net1 by net2: allows
+   to compare GO annotation with interactome, cell type specificity
+   analysis or organ context.
+    => Solved by the search of average resistance between connected nodes in the graph1 on graph2
+   . Alternatively, average flow intensity difference between a random sample of common noces on
+   graphs 1 and 2.
 
 Problems uncovered with user while testing the Docker integration:
     - explain how directories on the OS are mapped to the directories on the Docker
     - Suggest that in case you are using Mac/OSX, you need to manually increase memory allocated to Docker to at least 16 GBs:
         - 2 GB for each database
         - + ~7GB for each processor used to perform random sampling
-
-    CRICITAL: MATPLOTLIB DOES NOT WORK WITH CURRENT DOCKERFILE IF FIGURE IS CREATED
-    CRITICAL: ascii in gdf export crashes
-
 
 Potential problems with pip installation:
     - the configs/dump files modified by the user
@@ -28,21 +70,6 @@ Travis tester:
     - docker-compose
     - databases downloads
 
-Add functions:
-    - allow user to configure where to store the output => add outputs folder to docker-compose
-    - remove ank as point of storage for miniconda in Docker
-    - move configs somewhere saner
-
-Documents:
-    - tell where the user-mapped folders live from Docker
-    - tell the user how to install and map to a local neo4j database
-
-There still seem to be a problem of regular convergence to the same paths in the network. Potential sources:
-    - borked topology
-    - current intensity between the interconnected nodes (potentially resolved)
-    - tight clusters due to cross-linking that disperse the network
-=> Solved through statistics computation refactoring
-
 => Build an export of the sampling current weights to figure out which nodes are offending.
 => Re-compute eigenvalues of the laplacian and add values to the network weighting nodes
 
@@ -53,24 +80,13 @@ There still seem to be a problem of regular convergence to the same paths in the
 
 Add a mention for what were the parameters of the launch of the analysis - what was build and where the data was loaded from?
 
-Next steps, in order:
-    - (DONE) dump of indexed nodes Legacy Ids and a method to compare them (in the "DB inspection" realm)
-    - (DONE) Delete dead branches, break dependency on bulbs
-        - think if we could do testing for a neo4j build
-    - (DONE) build a new docker image
-    - flow to a targeted set
-    - weighted targets flow
-    - modification of laplacian
-    - switch to python 3
-        - Check if travis can do the testing for both samples
-        - Check if we can find the tools that can perform automated conversion.
-
 We are using Interactome Interface for 5 independent reasons:
     - build the laplacian matrix
     - store the laplacian matrix
     - perform sampling on the laplacian matrix
     - calculate the stats on teh sampling matrix => This is actually done in interactome analysis
     - (OK) export the rendering to the gdf => this actually is done by a separate object.
+    - it might be a good idea to refactor it.
 
 We can already factor out the two methods responsible for a laplacian matrix building.
 
@@ -110,6 +126,26 @@ Documentation:
         - access to non-local neo4j instance
         - useful commands
         - what to do if the commands are slow (optimized for use case of the Bioflow, not necessarily best)
+
+
+Bulk Backlong Done:
+-------------------
+
+YEAST:
+    DISABLE TRRUST/human/mouse-specific imports: DONE
+
+Next steps, in order:
+    - (DONE) dump of indexed nodes Legacy Ids and a method to compare them (in the "DB inspection" realm)
+    - (DONE) Delete dead branches, break dependency on bulbs
+        - think if we could do testing for a neo4j build
+    - (DONE) build a new docker image
+
+There still seem to be a problem of regular convergence to the same paths in the network. Potential sources:
+    - borked topology
+    - current intensity between the interconnected nodes (potentially resolved)
+    - tight clusters due to cross-linking that disperse the network
+=> Solved through statistics computation refactoring
+
 
 Functional:
 -----------
@@ -212,14 +248,10 @@ Cosmetic:
     to explain why the hits are justified and why they aren't.
 
 
-New features:
--------------
+Feature wishlist:
+-----------------
 
 -  Add protein abundance level for instantiation of the network
-
--  Language of network alignment/explanation of net1 by net2: allows
-   to compare GO annotation with interactome, cell type specificity 
-   analysis or organ context.
 
 -  Add a coarseness feature on the interactome analysis affecting
    sampling behavior, so that precision is sacrificed in favor of
@@ -292,7 +324,7 @@ Structure-required refactoring:
 -------------------------------
 
 
--  separate the envelopes for the GO and Reactome graphs retrieval from
+-  (DONE) separate the envelopes for the GO and Reactome graphs retrieval from
    the envelope used to recover and compute over the graph.
    
    -  remove the memoization of individual pairs during the flow withing
@@ -347,7 +379,7 @@ Good-to-have; non-critical:
    state of a project-wide variable and if it is set to True (in
    unittests) will switch it to a mock, not expecting the database to answer
 
--  Bulk-insertion into the neo4j. => Requires taking over the bulbs engine
+-  (DONE) Bulk-insertion into the neo4j. => Requires taking over the bulbs engine
 
 -  Add active state memoization for the import commander, so that when
    an exception happens, it prints it, terminates gracefully and upon
@@ -376,7 +408,7 @@ Good-to-have; non-critical:
       -  Re-building the intermediate representations
       -  Re-building the mongoDB reference and average heatmap
 
--  build a condas-compatible package that would be installable
+-  (DONE) build a condas-compatible package that would be installable
    cross-plateform and would contain pre-compiled binaries for
    C-extenstions. (Failed - we are better off with a Docker given complexity of the stack)
 
@@ -425,7 +457,7 @@ New Databases:
 
 - Protein abundance
 
-- Transcription/translation regulation
+- (DONE) Transcription/translation regulation
 
 - Post-translational modifications
 
@@ -454,7 +486,7 @@ methods were doing:
 
 - write a quickstart guide
 
-- add pictures of what netowrk analysis looks like
+- add pictures of what netqork analysis looks like
 
 - Validation of results with retrieval of Pamela Silver's paper and John's Overington 300
 essential targets: high average information flow and low abundance.

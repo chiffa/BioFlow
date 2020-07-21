@@ -20,8 +20,8 @@ def linearly_independent_go_groups(size):
              go_interface_instace.GO2UP_Reachable_nodes[value]),
              go_interface_instace.GO_Legacy_IDs[value],
              go_interface_instace.GO_Names[value])) for key,
-        value in go_interface_instace.Num2GO.iteritems())
-    print go_interface_instace.pretty_time()
+        value in go_interface_instace.Num2GO.items())
+    print(go_interface_instace.pretty_time())
     analyze_eigenvects(go_interface_instace.Indep_Lapl, size, char_indexes)
 
 
@@ -39,9 +39,9 @@ def run_analysis(group):
     nr_nodes, nr_groups = compare_to_blank(
         len(group), [1000, 1200], go_interface_instance)
     for group in nr_groups:
-        print 'run analysis 1: %s' % group
+        print('run analysis 1: %s' % group)
     for node in nr_nodes:
-        print 'run analysis 2: %s' % node
+        print('run analysis 2: %s' % node)
 
 
 def decide_regeneration():

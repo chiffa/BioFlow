@@ -205,8 +205,7 @@ def compare_to_blank(blank_model_size, p_val=0.05, sparse_rounds=False,
     log.info("samples found to test against:\t %s" %
              interactome_rand_samp_db.find({'size': blank_model_size,
                                             'sys_hash': md5_hash,
-                                            'sparse_rounds': sparse_rounds}
-                                            ).count())
+                                            'sparse_rounds': sparse_rounds}).count())
 
     for i, sample in enumerate(interactome_rand_samp_db.find(
                                                             {'size': blank_model_size,
@@ -232,7 +231,7 @@ def compare_to_blank(blank_model_size, p_val=0.05, sparse_rounds=False,
     node_currents = interactome_interface_instance.node_current
     dictionary_system = interactome_interface_instance.format_node_props(node_currents)
     curr_inf_conf_tot = np.array(
-        [[int(key)] + list(val) for key, val in dictionary_system.items()]).T
+        [[int(key)] + list(val) for key, val in list(dictionary_system.items())]).T
 
     node_ids, query_array = (curr_inf_conf_tot[0, :], curr_inf_conf_tot[(1, 2), :])
 
@@ -271,7 +270,7 @@ def compare_to_blank(blank_model_size, p_val=0.05, sparse_rounds=False,
 
         combined_p_vals[filter] = p_vals
 
-        # TODO: insert into appropriate locations => we will assume that the order is preserved
+        # TODO: insert into appropriate locations => we assume that the order is preserved
 
         # samples_scatter_and_hist(max_set, entry)
 
@@ -293,7 +292,7 @@ def compare_to_blank(blank_model_size, p_val=0.05, sparse_rounds=False,
 
     log.debug('debug, not random nodes: %s', not_random_nodes)
     log.debug('debug bulbs_id_disp_name: %s',
-              interactome_interface_instance.neo4j_id_2_display_name.items()[:10])
+              list(interactome_interface_instance.neo4j_id_2_display_name.items())[:10])
 
     node_char_list = [
         [int(nr_node_id), interactome_interface_instance.neo4j_id_2_display_name[nr_node_id]] +
@@ -319,10 +318,11 @@ def auto_analyze(source_list,
     """
     Automatically analyzes the itneractome synergetic action of the RNA_seq results
 
-    :param source_list::
-    :param desired_depth:
-    :param processors:
-    :param background_list
+    :param source_list: python list of "hit" physical entities
+    :param desired_depth: desired sampling depth
+    :param processors: number of processes that will be loaded. as a rule of thumb,
+    for max performance, use N-1 processors, where N is the number of physical cores on the machine
+    :param background_list list of physical entities that an experimental method can retrieve
     :param skip_sampling: if true, will skip background sampling step
     """
     # noinspection PyTypeChecker
@@ -415,7 +415,7 @@ def auto_analyze(source_list,
         for node in nr_nodes:
             log.info('\t %s \t %s \t %s \t %s \t %s', *node)
 
-        with open(Outputs.interactome_network_output, 'w') as output:
+        with open(Outputs.interactome_network_output, 'wt') as output:
             writer = csv_writer(output, delimiter='\t')
             writer.writerow(['node id', 'display name', 'info flow', 'degree', 'p value'])
             for node in nr_nodes:

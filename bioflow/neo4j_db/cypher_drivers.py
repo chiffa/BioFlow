@@ -12,7 +12,7 @@ password = os.environ['NEOPASS']
 
 
 def neo4j_sanitize(string):
-    if isinstance(string, basestring):
+    if isinstance(string, str):
         return string.replace('\'', '\"').replace('\\', '\\\\')
     else:
         return string
@@ -39,7 +39,7 @@ class GraphDBPipe(object):
         instruction_puck = ["CREATE (n:%s)" % node_type]
         set_puck = []
 
-        for key, value in param_dict.iteritems():
+        for key, value in param_dict.items():
             set_puck.append("SET n.%s = '%s'" % (key, neo4j_sanitize(value)))
 
         instruction_puck += set_puck
@@ -142,7 +142,7 @@ class GraphDBPipe(object):
 
         where_puck = []
 
-        for key, value in filter_dict.iteritems():
+        for key, value in filter_dict.items():
             where_puck.append("a.%s = '%s'" % (key, neo4j_sanitize(value)))
 
         where_clause = "WHERE " + ' AND '.join(where_puck) + ' '
@@ -170,7 +170,7 @@ class GraphDBPipe(object):
 
         if params is not None:
             set_puck = []
-            for key, value in params.iteritems():
+            for key, value in params.items():
                 set_puck.append("SET r.%s = '%s'" % (key, neo4j_sanitize(value)))
             instructions_puck += set_puck
 
@@ -208,7 +208,7 @@ class GraphDBPipe(object):
 
         if link_param_filter is not None:
             where_puck = []
-            for key, value in link_param_filter.iteritems():
+            for key, value in link_param_filter.items():
                 where_puck.append("AND r.%s = '%s'" % (key, neo4j_sanitize(value)))
             instructions_puck += where_puck
 
@@ -226,7 +226,7 @@ class GraphDBPipe(object):
     @staticmethod
     def _set_attributes(tx, node_id, attributes_dict):
         instructions_puck = ["MATCH (n) WHERE ID(n) = %s" % node_id]
-        for key, value in attributes_dict.iteritems():
+        for key, value in attributes_dict.items():
             instructions_puck.append("SET n.%s = '%s'" % (key, neo4j_sanitize(value)))
         instructions_puck.append("RETURN n")
         instruction = ' '.join(instructions_puck)
@@ -330,8 +330,8 @@ class GraphDBPipe(object):
         with self._driver.session() as session:
             tx = session.begin_transaction()
             annot_nodes = []
-            for annot_type, annot_list in annot_type_2_annot_list.iteritems():
-                if isinstance(annot_list, basestring):
+            for annot_type, annot_list in annot_type_2_annot_list.items():
+                if isinstance(annot_list, str):
                     annot_list = [annot_list]
                 for annot_tag in annot_list:
                     annot_node = self._attach_annotation_tag(tx, node_id, annot_tag, annot_type, preferential)
@@ -380,7 +380,7 @@ class GraphDBPipe(object):
         with self._driver.session() as session:
             tx = session.begin_transaction()
             annotated_nodes = []
-            if annotations_types is None or isinstance(annotations_types, basestring):
+            if annotations_types is None or isinstance(annotations_types, str):
                 for i, annotation_tag in enumerate(annotation_tags_list):
                     annotated_nodes.append(self._get_from_annotation_tag(tx, annotation_tag, annotations_types))
                     if i % batch_size == 0:
@@ -466,7 +466,7 @@ class GraphDBPipe(object):
                       "WHERE r.preferential = True AND a.type = 'UNIPROT_GeneName' "
                       "RETURN n, a")
 
-        name_maps = dict((res['n'].properties['legacyId'], res['a'].properties['tag']) for res in name_maps)
+        name_maps = dict((res['n']._properties['legacyId'], res['a']._properties['tag']) for res in name_maps)
 
         return name_maps
 
@@ -498,10 +498,14 @@ class GraphDBPipe(object):
 if __name__ == "__main__":
     neo4j_pipe = GraphDBPipe()
     # neo4j_pipe.delete_all('Test')
-    # neo4j_pipe.create('Protein', {"chat": "miau", "dog": "waf"})
+    neo4j_pipe.delete_all('RNA')
+    neo4j_pipe.delete_all('Annotation')
+    neo4j_pipe.delete_all('Location')
+    neo4j_pipe.delete_all('Protein')
+    print(neo4j_pipe.create('Protein', {"chat": "miau", "dog": "waf"}))
     # print neo4j_pipe.create('Complex', {"chat": "miau", "dog": "waf"})
     # neo4j_pipe.link(1, 3, 'test', {"weight": 2, "source": "Andrei"})
-    # print neo4j_pipe.get(0).properties['custom']
+    # print neo4j_pipe.get(0)._properties['custom']
     # print neo4j_pipe.get_all("Protein")[:10]
     # print neo4j_pipe.delete_all('Complex')
     # print neo4j_pipe.count("Annotation")
@@ -518,7 +522,7 @@ if __name__ == "__main__":
     # super_nodes = neo4j_pipe.batch_retrieve_from_annotation_tags(['RNF14', 'REM1', 'GAG', 'MZT2A', 'FHIT'], None)
     # for node_set in super_nodes:
     #     log.info(node_set)
-    # print nodes[0]._values[0].properties['dog']
+    # print nodes[0]._values[0]._properties['dog']
     # print neo4j_pipe.attach_all_node_annotations(0, {'super': ['wo1', 'wo2'], 'super-duper': ['aka', 'coco']})
     # neo4j_pipe.batch_insert(["Protein", "Complex"], [{'a': 1}, {'a': 2, 'b': 3}])
     # neo4j_pipe.batch_link([(25, 26), (25, 1)], [None, 'reaction'], [None, {"weight": 3, "source": "test"}])

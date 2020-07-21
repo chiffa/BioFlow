@@ -22,13 +22,16 @@ class TestLogs(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        wipe_dir(log_location)
+        try:
+            wipe_dir(log_location)
+        except OSError:
+            pass
 
     def test_file_creation(self):
         self.assertTrue(os.path.isdir(log_location))
 
     def test_low_level_logs(self):
-        with open(os.path.join(log_location, 'debug.log'), 'r') as source_file:
+        with open(os.path.join(log_location, 'debug.log'), 'rt') as source_file:
             contents = ''.join(source_file.read())
             self.assertIn('debug', contents)
             self.assertIn('logging', contents)
@@ -37,13 +40,13 @@ class TestLogs(unittest.TestCase):
             self.assertIn('critical', contents)
 
     def test_high_level_logs(self):
-        with open(os.path.join(log_location, 'critical.log'), 'r') as source_file:
+        with open(os.path.join(log_location, 'critical.log'), 'rt') as source_file:
             contents = ''.join(source_file.read())
             self.assertIn('critical', contents)
             self.assertNotIn('warning', contents)
 
     def test_redundant_logs(self):
-        with open(os.path.join(log_location, 'info.log'), 'r') as source_file:
+        with open(os.path.join(log_location, 'info.log'), 'rt') as source_file:
             contents = ''.join(source_file.read())
             self.assertEqual(contents.count('debug'), 0)
             self.assertEqual(contents.count('info'), 1)

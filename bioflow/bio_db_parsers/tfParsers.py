@@ -9,7 +9,7 @@ def parse_TRRUST(trrust_file):
     base = []
     ret_dict = {}
 
-    with open(trrust_file, 'rb') as source:
+    with open(trrust_file, 'rt') as source:
         reader = csv_reader(source, delimiter='\t')
         for line in reader:
             interaction_from = line[0]
@@ -30,9 +30,9 @@ def parse_cellnet_grn(cellnet_file):
     base = []
     ret_dict = {}
 
-    with open(cellnet_file, 'rb') as source:
+    with open(cellnet_file, 'rt') as source:
         reader = csv_reader(source, delimiter=',')
-        header = reader.next()
+        header = next(reader)
         # print header
         for line in reader:
             interaction_no = int(line[0])
@@ -59,7 +59,7 @@ def parse_marbach(marbach_prefix, parse_mode='mean'):
     """
 
     def open_marbach(marbach_file, insertion_index):
-        with open(marbach_file, 'rb') as source:
+        with open(marbach_file, 'rt') as source:
             reader = csv_reader(source, delimiter='\t')
             for line in reader:
                 interaction_from = line[0]
@@ -76,7 +76,7 @@ def parse_marbach(marbach_prefix, parse_mode='mean'):
     master_accumulator = defaultdict(lambda: np.zeros((32, )))
 
     for file_name in os.listdir(marbach_prefix):
-        print file_name
+        print(file_name)
         if file_name[0] in ['0', '1', '3'] and file_name[-4:] == ".txt":
             location = os.path.join(marbach_prefix, file_name)
             open_marbach(location, insertion_index=int(file_name[:2])-1)
@@ -84,7 +84,7 @@ def parse_marbach(marbach_prefix, parse_mode='mean'):
     ret_dict = {}
     base = []
 
-    for pair, weight_array in master_accumulator.iteritems():
+    for pair, weight_array in master_accumulator.items():
         if parse_mode == 'mean':
             summary = sum(weight_array != 0) >= 16
 

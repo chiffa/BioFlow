@@ -16,8 +16,8 @@ class GoParserTester(unittest.TestCase):
         cls.terms, cls.term_rels = GOTermsParser().parse_go_terms(cls.ref_obo)
 
     def test_proper_parsing(self):
-        self.assertIn('0000001', self.terms.keys())
-        self.assertIn('0000002', self.terms.keys())
+        self.assertIn('0000001', list(self.terms.keys()))
+        self.assertIn('0000002', list(self.terms.keys()))
 
     def test_namespaces(self):
         self.assertEqual('biological_process', self.terms['0000001']['namespace'])
@@ -31,10 +31,10 @@ class GoParserTester(unittest.TestCase):
         self.assertIn(('0000002', 'is_a', '0007005'), self.term_rels)
 
     def test_obsolescence(self):
-        self.assertNotIn('0000039', self.terms.keys())
+        self.assertNotIn('0000039', list(self.terms.keys()))
 
     def test_chebi_parsing(self):
-        self.assertIn('CHEBI', self.terms['0000036'].keys())
+        self.assertIn('CHEBI', list(self.terms['0000036'].keys()))
         self.assertIn('22221', self.terms['0000036']['CHEBI'])
 
 
@@ -66,7 +66,7 @@ class ReactomeParseTester(unittest.TestCase):
     def setUpClass(cls):
         cls.actual_parser = ReactomeParser(cls.reactome_to_parse)
         cls.actual_parser.parse_all()
-        # print cls.actual_parser.parsed
+        # print(cls.actual_parser.parsed)
         # dump_object(cls.ref_parse, cls.actual_parser)
         cls.ref_parser = undump_object(cls.ref_parse)
         # to parse
@@ -93,15 +93,15 @@ class ReactomeParseTester(unittest.TestCase):
                              self.ref_parser.DnaRefs)
 
     def test_RnaRefs(self):
-        self.assertDictEqual(self.actual_parser.RnaRefs,
+        self.assertCountEqual(self.actual_parser.RnaRefs,
                              self.ref_parser.RnaRefs)
 
     def test_SmallMoleculeRefs(self):
-        self.assertDictEqual(self.actual_parser.SmallMoleculeRefs,
+        self.assertCountEqual(self.actual_parser.SmallMoleculeRefs,
                              self.ref_parser.SmallMoleculeRefs)
 
     def test_ProteinRefs(self):
-        self.assertDictEqual(self.actual_parser.ProteinRefs,
+        self.assertCountEqual(self.actual_parser.ProteinRefs,
                              self.ref_parser.ProteinRefs)
 
     def test_ModificationFeatures(self):
@@ -115,21 +115,21 @@ class ReactomeParseTester(unittest.TestCase):
                              self.ref_parser.Dna_Collections)
 
     def test_Rna(self):
-        self.assertDictEqual(self.actual_parser.Rnas,
+        self.assertCountEqual(self.actual_parser.Rnas,
                              self.ref_parser.Rnas)
-        self.assertDictEqual(self.actual_parser.Rna_Collections,
+        self.assertCountEqual(self.actual_parser.Rna_Collections,
                              self.ref_parser.Rna_Collections)
 
     def test_SmallMolecules(self):
-        self.assertDictEqual(self.actual_parser.SmallMolecules,
+        self.assertCountEqual(self.actual_parser.SmallMolecules,
                              self.ref_parser.SmallMolecules)
-        self.assertDictEqual(self.actual_parser.SmallMolecule_Collections,
+        self.assertCountEqual(self.actual_parser.SmallMolecule_Collections,
                              self.ref_parser.SmallMolecule_Collections)
 
     def test_Proteins(self):
-        self.assertDictEqual(self.actual_parser.Proteins,
+        self.assertCountEqual(self.actual_parser.Proteins,
                              self.ref_parser.Proteins)
-        self.assertDictEqual(self.actual_parser.Protein_Collections,
+        self.assertCountEqual(self.actual_parser.Protein_Collections,
                              self.ref_parser.Protein_Collections)
 
     def test_PhysicalEntities(self):

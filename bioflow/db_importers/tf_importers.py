@@ -30,14 +30,14 @@ def insert_into_the_database(up_ids_2_inner_ids,
 
     final_dicts = dict(
         ((up_ids_2_inner_ids[key[0]], up_ids_2_inner_ids[key[1]]), value)
-        for key, value in up_ids_2_properties.iteritems()
-        if key[0] in up_ids_2_inner_ids.keys() and key[1] in up_ids_2_inner_ids.keys())
+        for key, value in up_ids_2_properties.items()
+        if key[0] in list(up_ids_2_inner_ids.keys()) and key[1] in list(up_ids_2_inner_ids.keys()))
 
     breakpoints = 300
-    total_pairs = len(final_dicts.keys())
+    total_pairs = len(list(final_dicts.keys()))
     previous_time = time()
 
-    for counter, ((node1_id, node2_id), link_parameter) in enumerate(final_dicts.iteritems()):
+    for counter, ((node1_id, node2_id), link_parameter) in enumerate(final_dicts.items()):
         # print 'tick'
 
         if counter % breakpoints == 0 and counter > 1:
@@ -68,9 +68,9 @@ def cross_ref_tf_factors(confs='tcm'):
 
     :return:
     """
-
+    # TODO:
     if organism_meta_flag != 'Human':
-        raise Exception('TF data unavailable for organisms other than human!')
+        raise Exception('TF data unavailable for organisms other than human. Disable TF import in import_main.py')
 
     if 't' in confs:
         log.info('Starting TRRUST Parsing')
@@ -79,31 +79,31 @@ def cross_ref_tf_factors(confs='tcm'):
         log.info('TRRUST parsed, starting translation of UP identifiers to internal database identifiers')
         up_ids_2_inner_ids = convert_to_internal_ids(up_ids)
 
-        log.info('UP identifier conversion finished, starting database insertion for %s links' % len(up_ids_2_properties.keys()))
+        log.info('UP identifier conversion finished, starting database insertion for %s links' % len(list(up_ids_2_properties.keys())))
         insert_into_the_database(up_ids_2_inner_ids, up_ids_2_properties, 1, 'TF_TRRUST')
 
         log.info('Database insertion finished. TRRUST import finished')
 
-    if 'c' in confs:
-        log.info('Starting CellNet Parsing')
-        up_ids_2_properties, up_ids = parse_cellnet_grn(cellnet_path)
+    # if 'c' in confs:
+    #     log.info('Starting CellNet Parsing')
+    #     up_ids_2_properties, up_ids = parse_cellnet_grn(cellnet_path)
+    #
+    #     log.info('CellNet parsed, starting translation of UP identifiers to internal database identifiers')
+    #     up_ids_2_inner_ids = convert_to_internal_ids(up_ids)
+    #
+    #     log.info('UP identifier conversion finished, starting database insertion for %s links' % len(list(up_ids_2_properties.keys())))
+    #     insert_into_the_database(up_ids_2_inner_ids, up_ids_2_properties, 10, 'CellNet')
+    #
+    #     log.info('Database insertion finished. CellNet import finished')
 
-        log.info('CellNet parsed, starting translation of UP identifiers to internal database identifiers')
-        up_ids_2_inner_ids = convert_to_internal_ids(up_ids)
-
-        log.info('UP identifier conversion finished, starting database insertion for %s links' % len(up_ids_2_properties.keys()))
-        insert_into_the_database(up_ids_2_inner_ids, up_ids_2_properties, 10, 'CellNet')
-
-        log.info('Database insertion finished. CellNet import finished')
-
-    if 'm' in confs:
-        log.info('Starting Marbach Parsing')
-        up_ids_2_properties, up_ids = parse_marbach(marbach_path, marbach_mode)
-
-        log.info('Marbach parsed, starting translation of UP identifiers to internal database identifiers')
-        up_ids_2_inner_ids = convert_to_internal_ids(up_ids)
-
-        log.info('UP identifier conversion finished, starting database insertion for %s links' % len(up_ids_2_properties.keys()))
-        insert_into_the_database(up_ids_2_inner_ids, up_ids_2_properties, 10, 'Marbach2016')
-
-        log.info('Database insertion finished. Marbach import finished')
+    # if 'm' in confs:
+    #     log.info('Starting Marbach Parsing')
+    #     up_ids_2_properties, up_ids = parse_marbach(marbach_path, marbach_mode)
+    #
+    #     log.info('Marbach parsed, starting translation of UP identifiers to internal database identifiers')
+    #     up_ids_2_inner_ids = convert_to_internal_ids(up_ids)
+    #
+    #     log.info('UP identifier conversion finished, starting database insertion for %s links' % len(list(up_ids_2_properties.keys())))
+    #     insert_into_the_database(up_ids_2_inner_ids, up_ids_2_properties, 10, 'Marbach2016')
+    #
+    #     log.info('Database insertion finished. Marbach import finished')

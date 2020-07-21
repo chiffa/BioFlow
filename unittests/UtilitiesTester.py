@@ -4,7 +4,7 @@ Tests all the functions declared in the utilities module
 import os
 import unittest
 import numpy as np
-from itertools import izip
+
 import warnings
 from bioflow.utils import linalg_routines
 from bioflow.utils import gdfExportInterface
@@ -104,10 +104,14 @@ class GdfExportTester(unittest.TestCase):
         wipe_dir(cls.test_location)
 
     def test_GDF_export(self):
-        with open(self.test_location, 'r') as tested, \
-                open(self.reference_location, 'r') as reference:
-            for line1, line2 in izip(tested, reference):
-                self.assertItemsEqual(line1, line2)
+        with open(self.test_location, 'rt') as tested, \
+                open(self.reference_location, 'rt') as reference:
+            set1 = set()
+            set2 = set()
+            for line1, line2 in zip(tested, reference):
+                set1.add(line1)
+                set2.add(line2)
+            self.assertCountEqual(set1, set2)
 
     def test_GDF_exceptions(self):
         pass
