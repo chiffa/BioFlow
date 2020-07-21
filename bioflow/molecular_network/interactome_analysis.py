@@ -7,6 +7,8 @@ from csv import reader
 from csv import writer as csv_writer
 from multiprocessing import Pool
 from collections import defaultdict
+import traceback
+from pprint import pprint
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -84,16 +86,21 @@ def spawn_sampler_pool(
     :param sparse_rounds:
     :param interactome_interface_instance:
     """
-    process_pool = Pool(pool_size)
-    payload = [
-        (sample_size_list,
-         interaction_list_per_pool,
-         sparse_rounds,
-         interactome_interface_instance)]
-    log.debug('spawning the sampler with payload %s', payload)
-    payload_list = payload*pool_size
-    payload_list = [list(item)+[i] for i, item in enumerate(payload_list)]
-    process_pool.map(spawn_sampler, payload_list)
+    try:
+        process_pool = Pool(pool_size)
+        payload = [
+            (sample_size_list,
+             interaction_list_per_pool,
+             sparse_rounds,
+             interactome_interface_instance)]
+        log.debug('spawning the sampler with payload %s', payload)
+        payload_list = payload * pool_size
+        payload_list = [list(item)+[i] for i, item in enumerate(payload_list)]
+        process_pool.map(spawn_sampler, payload_list)
+
+    except Exception as e:
+        msg = "{}\n\nOriginal {}".format(e, traceback.format_exc())
+        raise type(e)(msg)
 
 
 def local_indexed_select(bi_array, array_column, selection_span):
@@ -178,6 +185,7 @@ def compare_to_blank(blank_model_size, p_val=0.05, sparse_rounds=False,
      dictionaries otherwise
     """
     def get_max_for_each_degree(sample_sub_arrray):
+        # print('debug max_array_shape:', str(sample_sub_arrray.shape))
         degrees = np.unique(sample_sub_arrray[1, :])
         max_array = []
 
@@ -216,7 +224,12 @@ def compare_to_blank(blank_model_size, p_val=0.05, sparse_rounds=False,
 
         dictionary_system = interactome_interface_instance.format_node_props(node_currents, limit=0)
         background_sub_array = list(dictionary_system.values())
+        if np.array(background_sub_array).T.shape[0] < 2:
+            print(background_sub_array)
+            continue
         background_sub_array_list.append(np.array(background_sub_array).T)
+        # print(np.array(background_sub_array).T.shape)
+        # pprint(background_sub_array)
         max_arr = get_max_for_each_degree(np.array(background_sub_array).T)
         max_sub_array_list.append(max_arr)
         count = i
@@ -327,9 +340,9 @@ def auto_analyze(source_list,
     """
     # noinspection PyTypeChecker
     if desired_depth % processors != 0:
-        desired_depth = desired_depth / processors + 1
+        desired_depth = desired_depth // processors + 1
     else:
-        desired_depth = desired_depth / processors
+        desired_depth = desired_depth // processors
 
     for _list in source_list:
         log.info('Auto analyzing list of interest: %s', len(_list))
@@ -372,7 +385,8 @@ def auto_analyze(source_list,
                 interactome_interface.build_extended_conduction_system(fast_load=True)
 
             nr_nodes, p_val_dict = compare_to_blank(
-                len(interactome_interface.entry_point_uniprots_neo4j_ids), p_val=0.9,
+                len(interactome_interface.entry_point_uniprots_neo4j_ids),
+                p_val=0.9,
                 interactome_interface_instance=interactome_interface)
 
 

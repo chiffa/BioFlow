@@ -509,7 +509,14 @@ def perform_clustering(inter_node_tension, cluster_number, show='undefined clust
     groups = cluster_nodes(relations_matrix, cluster_number)
 
     relations_matrix = normalize_laplacian(relations_matrix)
-    eigenvals, _ = eigsh(relations_matrix)
+
+    if relations_matrix.shape[0] < 5:
+        eigenvals, _ = eigsh(relations_matrix, k=2)
+    elif relations_matrix.shape[0] < 10:
+        eigenvals, _ = eigsh(relations_matrix, k=4)
+    else:
+        eigenvals, _ = eigsh(relations_matrix)
+
     relations_matrix = -relations_matrix
     relations_matrix.setdiag(1)
 

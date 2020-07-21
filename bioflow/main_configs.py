@@ -16,7 +16,9 @@ current_run_start_time = str(datetime.now())
 current_run_start_time = current_run_start_time.replace(':', '.')
 
 dump_location = path.join(path.abspath(path.dirname(__file__)), 'dumps')
-output_location = path.join(path.abspath(os.path.expanduser('~')), 'outputs' + '_' + current_run_start_time)
+# output_location = path.join(path.abspath(os.path.expanduser('~')), 'outputs' + '_' +
+#                             current_run_start_time)
+output_location = path.join(output_location, 'run startend on ' + current_run_start_time)
 log_location = path.join(path.abspath(path.dirname(__file__)), 'logs')
 
 hl_os_io.mkdir_recursive(dump_location)

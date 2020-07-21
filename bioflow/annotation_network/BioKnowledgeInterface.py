@@ -241,7 +241,7 @@ class GeneOntologyInterface(object):
             json.dumps(
                 sorted(
                     self.analytic_uniprots),
-                sort_keys=True)).hexdigest()
+                sort_keys=True).encode('utf-8')).hexdigest()
         payload = {
             'UP_hash': md5, 'sys_hash': self.md5_hash(), 'size': len(
                 self.analytic_uniprots), 'UPs': pickle.dumps(
@@ -652,7 +652,7 @@ class GeneOntologyInterface(object):
             self.correction_factor,
             self.ultraspec_cleaned,
             self.ultraspec_lvl]
-        md5 = hashlib.md5(json.dumps(data, sort_keys=True)).hexdigest()
+        md5 = hashlib.md5(json.dumps(data, sort_keys=True).encode('utf-8')).hexdigest()
         return str(md5)
 
     def inflate_matrix_and_indexes(self):
@@ -950,7 +950,7 @@ class GeneOntologyInterface(object):
                 md5 = hashlib.md5(
                     json.dumps(
                         sorted(analytics_up_list),
-                        sort_keys=True)).hexdigest()
+                        sort_keys=True).encode('utf-8')).hexdigest()
 
                 if not no_add:
                     annotome_rand_samp.insert(
