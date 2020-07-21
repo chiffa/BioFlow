@@ -6,6 +6,7 @@ from csv import reader
 from bioflow.main_configs import Dumps
 from time import time
 import subprocess
+import numpy as np
 
 
 def get_git_revision_hash():
@@ -25,9 +26,10 @@ def write_to_csv(filename, array):
     :param array: array to dump
     :type array: numpy.array
     """
-    dump_file = open(filename, 'wt')
-    dump_file.write(array)
-    dump_file.close()
+    np.savetxt(filename, array)
+    # dump_file = open(filename, 'wt')
+    # dump_file.write(array)
+    # dump_file.close()
 
 
 def dump_object(dump_filename, object_to_dump):

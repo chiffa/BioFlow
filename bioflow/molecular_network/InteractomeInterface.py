@@ -231,7 +231,7 @@ class InteractomeInterface(object):
             json.dumps(
                 sorted(
                     self.entry_point_uniprots_neo4j_ids),
-                sort_keys=True)).hexdigest()
+                sort_keys=True).encode('utf-8')).hexdigest()
 
         payload = {
             'UP_hash': md5, 'sys_hash': self.md5_hash(),
@@ -770,7 +770,7 @@ class InteractomeInterface(object):
             l_norm,
             edge_drop,
             biogrid_only]
-        md5 = hashlib.md5(json.dumps(data, sort_keys=True)).hexdigest()
+        md5 = hashlib.md5(json.dumps(data, sort_keys=True).encode('utf-8')).hexdigest()
 
         return str(md5)
 
@@ -837,7 +837,11 @@ class InteractomeInterface(object):
         if fast_load:
             payload = self.undump_memoized()
             print('')
-            UP_hash = hashlib.md5(json.dumps(sorted(self.entry_point_uniprots_neo4j_ids), sort_keys=True)).hexdigest()
+            UP_hash = hashlib.md5(
+                json.dumps(
+                    sorted(self.entry_point_uniprots_neo4j_ids),
+                    sort_keys=True).encode("utf-8")
+            ).hexdigest()
             if payload['sys_hash'] == self.md5_hash() and payload['UP_hash'] == UP_hash:
                 self.current_accumulator, self.node_current = pickle.loads(payload['currents'])
                 self.uniprots_2_voltage_and_circulation = pickle.loads(payload['voltages'])
@@ -1064,7 +1068,7 @@ class InteractomeInterface(object):
                 md5 = hashlib.md5(
                     json.dumps(
                         sorted(analytics_uniprot_list),
-                        sort_keys=True)).hexdigest()
+                        sort_keys=True).encode('utf-8')).hexdigest()
 
                 if not no_add:
                     log.info("Sampling pool %s: Adding a blanc:"

@@ -4,44 +4,65 @@ TODOs for the project in the future:
 Current refactoring:
 --------------------
 
- - TODO: Change the informativity between nodes connection from the max of their informativities
-to the difference of their informativities. In this way, the total path is equivalent to the
-quantity of the information stored
- - TODO: change the informativity computation so that the path between nodes through the network
-is log of probability of being connected through that suite of GO terms.
+ - TODO: [DEBUG] create a mongoDB connection inside the fork for the pool.
 
- - TODO: Move MongoDB interface from configs into a proper location and create database type -
-agnostic bindings
+ - TODO: [DEBUG] Move MongoDB interface from configs into a proper location and create database
+type - agnostic bindings
 
- - TODO: CRICITAL: MATPLOTLIB DOES NOT WORK WITH CURRENT DOCKERFILE IF FIGURE IS CREATED
- - TODO: CRITICAL: ascii in gdf export crashes
+ - TODO: [SANITY] reconfigure the configs management:
+    - all the stings `+` need to be `os.path.join`.
+    - active organism is now the only thing that is saved. It is stored in "shelve" file inside a "
+.internal" directory
+    - fold in the sources for the databases into a single location, with a selector from "shelve"
+indicating which organims to load.
+ - TODO: [SANITY] allow user to configure where to store the output => add outputs folder to
+docker-compose
+ - TODO: [SANITY] allow user to configure where to store intermediates and inputs/outputs
+ - TODO: [SANITY] remove ank as point of storage for miniconda in Docker
+ - TODO: [SANITY] move configs somewhere saner: ~/bioflow/ directory seems to be a good start
+ - TODO: [SANITY] refactor the setting parsing and supplying
 
- - TODO: allow user to configure where to store the output => add outputs folder to docker-compose
- - TODO: allow user to configure where to store intermediates and inputs/outputs
- - TODO: remove ank as point of storage for miniconda in Docker
- - TODO: move configs somewhere saner: ~/bioflow/ directory seems to be a good start
+ - TODO: [CRICITAL] MATPLOTLIB DOES NOT WORK WITH CURRENT DOCKERFILE IF FIGURE IS CREATED
+ - TODO: [CRITICAL] ascii in gdf export crashes (should be solved with Py3's utf3)
 
- - TODO: document where the user-mapped folders live from Docker
- - TODO: document the user how to install and map to a local neo4j database
+ - TODO: [DOC] document where the user-mapped folders live from Docker
+ - TODO: [DOC] document the user how to install and map to a local neo4j database
 
- - TODO: flow to a targeted set
- - TODO: weighted targets flow
- - TODO: modification of the Laplacian weights by the end user.
-
- - TODO: provide the interface for overlaying the molecular maps to check for signatures/compare
-samples
-
- - TODO: add a mail signalling to indicate the termination or crash of the execution
- - TODO: pull inlined updates printing from evoGANs project.
+ - TODO: [USABILITY] pull inlined updates printing from evoGANs project.
     => Currently the percentages are managed by log.info(calls)
     => Providing an in-line update would require a print(<log message>, end='\r')
     => Change log management so that the info gets logged into a file without rising to the
 surface and couple all the log.debug with a "print"
 
-(Bigger refactors)
- - TODO: refactor the entire edge typing upon insertion, retrieval upon construction of
+Bigger refactors
+****************
+
+ - TODO: [REFACTOR] refactor the entire edge typing upon insertion, retrieval upon construction of
 laplacian/adjacency matrix and setting of Laplacian weights
- - TODO: refactor the setting parsing and supplying
+
+ - TODO: [NOT THIS ITERATION] neo4j and mongodb versionning based on the currently
+active organism. For instance, all neo4j nodes and edges need to be marked with the organism tag.
+
+ - TODO: [NOT THIS ITERATION] add a mail signalling to indicate the termination or crash of the
+execution
+
+ - TODO: [FEATURE] Change the informativity between nodes connection from the max of their
+informativities
+to the difference of their informativities. In this way, the total path is equivalent to the
+quantity of the information stored
+
+ - TODO: [FEATURE] provide the interface for overlaying the molecular maps to check for
+signatures/compare samples
+
+ - TODO: [FEATURE] change the informativity computation so that the path between nodes through the
+network is log of probability of being connected through that suite of GO terms.
+
+ - TODO: [FEATURE] flow to a targeted set
+
+ - TODO: [FEATURE] weighted targets flow
+
+ - TODO: [FEATURE] modification of the Laplacian weights by the end user.
+
 
 Bulk Backlog:
 -------------

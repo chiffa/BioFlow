@@ -5,6 +5,7 @@ import pickle
 from collections import namedtuple
 from csv import reader
 from multiprocessing import Pool
+import traceback
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -24,6 +25,7 @@ _correlation_factors = (1, 1)
 ref_param_set = tuple([_filter, [], (1, 1), True, 3])
 
 
+# TODO: move ref_param_set to configs
 def get_go_interface_instance(param_set=ref_param_set):
     """
     Generates a Matrix_Knowledge_DB interface for the use in the spawner. If
@@ -49,20 +51,25 @@ def spawn_sampler(sample_size_list_plus_iteration_list_plus_args):
     :param sample_size_list_plus_iteration_list_plus_args: combined list of sample sizes
      and iterations (required for Pool.map usage)
     """
-    go_interface_instance = sample_size_list_plus_iteration_list_plus_args[4]
-    param_set = sample_size_list_plus_iteration_list_plus_args[5]
-    if go_interface_instance is None:
-        go_interface_instance = get_go_interface_instance(param_set)
+    try:
+        go_interface_instance = sample_size_list_plus_iteration_list_plus_args[4]
+        param_set = sample_size_list_plus_iteration_list_plus_args[5]
+        if go_interface_instance is None:
+            go_interface_instance = get_go_interface_instance(param_set)
 
-    sample_size_list = sample_size_list_plus_iteration_list_plus_args[0]
-    iteration_list = sample_size_list_plus_iteration_list_plus_args[1]
-    sparse_rounds = sample_size_list_plus_iteration_list_plus_args[2]
-    chromosome_specific = sample_size_list_plus_iteration_list_plus_args[3]
-    go_interface_instance.randomly_sample(
-        sample_size_list,
-        iteration_list,
-        sparse_rounds,
-        chromosome_specific)
+        sample_size_list = sample_size_list_plus_iteration_list_plus_args[0]
+        iteration_list = sample_size_list_plus_iteration_list_plus_args[1]
+        sparse_rounds = sample_size_list_plus_iteration_list_plus_args[2]
+        chromosome_specific = sample_size_list_plus_iteration_list_plus_args[3]
+        go_interface_instance.randomly_sample(
+            sample_size_list,
+            iteration_list,
+            sparse_rounds,
+            chromosome_specific)
+
+    except Exception as e:
+        msg = "{}\n\nOriginal {}".format(e, traceback.format_exc())
+        raise type(e)(msg)
 
     # TODO: choromosome specific has nothing to do here; should be managed otherwise
 
@@ -342,21 +349,26 @@ def compare_to_blank(
             {'size': blank_model_size, 'sys_hash': md5_hash, 'sparse_rounds': sparse_rounds})
 
     for i, sample in enumerate(background_sample):
+
         if sparse_rounds:
             log.warning('Blank done on sparse rounds. Clustering will not be performed')
+
         _, node_currents = pickle.loads(sample['currents'])
         tensions = pickle.loads(sample['voltages'])
+
         if not sparse_rounds:
             _, _, mean_correlations, eigenvalues = perform_clustering(
                 tensions, cluster_no, show=False)
         else:
             mean_correlations = np.array([[(0, ), 0, 0]]*cluster_no)
             eigenvalues = np.array([-1]*cluster_no)
+
         mean_correlation_accumulator.append(np.array(mean_correlations))
         eigenvalues_accumulator.append(eigenvalues)
         dict_system = go_interface_instance.format_node_props(node_currents)
         curr_inf_conf = list(dict_system.values())
         curr_inf_conf_general.append(np.array(curr_inf_conf).T)
+
         count = i
         if dict_system == {}:
             del mean_correlation_accumulator[-1]
@@ -422,7 +434,7 @@ def compare_to_blank(
             [int(GO_id), go_interface_instance.GO_Names[GO_id]] +
             dict_system[GO_id] + r_nodes[go_node_ids == float(GO_id)].tolist() +
             [[go_interface_instance.interactome_interface_instance.
-                bulbs_id_2_display_name[up_bulbs_id]
+                neo4j_id_2_display_name[up_bulbs_id]
              for up_bulbs_id in list(set(go_interface_instance.GO2UP_Reachable_nodes[GO_id]).
                 intersection(set(go_interface_instance.analytic_uniprots)))]]
             for GO_id in not_random_nodes]
@@ -471,9 +483,9 @@ def auto_analyze(source=None, go_interface_instance=None, processors=3, desired_
         dumplist = source
 
     if desired_depth % processors != 0:
-        desired_depth = desired_depth / processors + 1
+        desired_depth = desired_depth // processors + 1
     else:
-        desired_depth = desired_depth / processors
+        desired_depth = desired_depth // processors
 
     # noinspection PyTypeChecker
     for my_list in dumplist:
