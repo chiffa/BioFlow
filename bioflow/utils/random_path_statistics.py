@@ -68,12 +68,16 @@ for i, sample in enumerate(interactome_rand_samp_db.find({'size': 2,
 
     io_nodes, tension = (list(tensions.items())[0][0], list(tensions.items())[0][1])
 
-    if tension < 0.5:
+    if tension < 0.1:
         continue  # we are hitting near a very tight cluster, so the pathway will be winde and short
+
+    # todo: InteractomeInterface.current_accumulator, node_current = sample['currents]
+    #   InteractomeInterface.UP2UP_voltages = voltages
+    #   Interactome_Interface.export(conduction_system)
 
     # Collects 100 nodes routing most information and cuts the source/sink nodes
     nodes_current = np.sort(
-        np.array(list(nodes_current_dict.node_current_values())).astype(np.float))[-102:-2] * tension
+        np.array(list(nodes_current_dict.values())).astype(np.float))[-102:-2] * tension
 
     # additional filter in case some of the nodes have too small of current
     nodes_current = nodes_current[nodes_current > 0.0002]
@@ -90,9 +94,13 @@ for i, sample in enumerate(interactome_rand_samp_db.find({'size': 2,
     # print(essential_max_current)
 
     total_resistance = tension  # V=IR and since I=1 for tension calculation, it is resistance
-    length_by_width = total_resistance
+    length_by_width = total_resistance  # R ~ L / W
     print(total_resistance)
     print(total_resistance.dtype)
+    print(nodes_current)
+    print(nodes_current.dtype)
+
+    # TODO: debug the nan prevalence from here
 
     shape_characteristic = 1. / nodes_current
 
@@ -102,8 +110,15 @@ for i, sample in enumerate(interactome_rand_samp_db.find({'size': 2,
     print('length/width / tension', length_by_width)
     print('1/mean_width', np.mean(nodes_current))
     # alternative width is max. But in this case we might to remove everything close enough to 0
-    # mean_width = 1./np.mean(nodes_current[nodes_current > 0.1])
-    mean_width = 1. / np.mean(nodes_current)
+
+    # number of branches routing at least 10% of info flow. This is a bit of an oversimplification
+    # ideally we need to use an estimator of width - # of major branches routing flow independently
+    # Maybe we can use the extreme values distribution based on the bottom X in order to see
+    # which one are really the outliers in the network
+    if np.any(nodes_current > .1):
+        mean_width = 1./np.mean(nodes_current[nodes_current > 0.1])
+    else:
+        mean_width = 1./np.median(nodes_current)
     length = mean_width * length_by_width
 
     if length < 1:
@@ -129,6 +144,8 @@ for i, sample in enumerate(interactome_rand_samp_db.find({'size': 2,
 
     essentiality_percentage.append(min([essential_max_current, 1.]))
 
+
+    # TODO: debug dump of a couple of pathways into gdf format
 
     # if any(nodes_current > 1.1):
     #     print nodes_current
@@ -187,6 +204,7 @@ plt.xlabel('pathway shape parameter')
 plt.ylabel('density of distribution')
 # plt.show()
 plt.savefig(os.path.join(output_location, 'pathway_shape_parameter.png'))
+plt.clf()
 
 
 _length = np.array(length_width_accumulator)[:, 0]
@@ -204,6 +222,7 @@ plt.xlabel('length of the pathway')
 plt.ylabel('density of distribution')
 # plt.show()
 plt.savefig(os.path.join(output_location, 'pathway_length_distribution.png'))
+plt.clf()
 
 
 _width = np.array(length_width_accumulator)[:, 1]
@@ -220,6 +239,7 @@ plt.plot(xs, density(xs), 'k')
 plt.xlabel('width of the pathway')
 plt.ylabel('density of distribution')
 plt.savefig(os.path.join(output_location, 'density_estimation_distribution.png'))
+plt.clf()
 # plt.show()
 
 
@@ -233,6 +253,7 @@ plt.axvline(0.7)
 plt.xlabel('percentage of current routed through essential genes')
 plt.ylabel('density of distribution')
 plt.savefig(os.path.join(output_location, 'essential_percentage_distribution.png'))
+plt.clf()
 # plt.show()
 
 
@@ -276,6 +297,7 @@ plt.xlabel('length of the pathway')
 plt.ylabel('width of the pathway')
 plt.show()
 plt.savefig(os.path.join(output_location, 'essentiality_length_vs_width.png'))
+plt.clf()
 
 # pickle.dump(length_accumulator, open('step_length.dmp', 'wb'))
 # pickle.dump(width_accumulator, open('width_length.dmp', 'wb'))

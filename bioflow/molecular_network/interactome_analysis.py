@@ -358,7 +358,8 @@ def auto_analyze(source_list,
         if background_list:
             interactome_interface.background = background_list
             interactome_interface.connected_uniprots = list(
-                set(interactome_interface.connected_uniprots).intersection(set(interactome_interface.background)))
+                set(interactome_interface.connected_uniprots
+                    ).intersection(set(interactome_interface.background)))
 
         if not skip_sampling:
             log.info("spawning a sampler for %s proteins @ %s compops/sec",

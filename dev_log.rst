@@ -63,6 +63,12 @@ network is log of probability of being connected through that suite of GO terms.
 
  - TODO: [FEATURE] modification of the Laplacian weights by the end user.
 
+ - TODO: [FEATURE] import credence from the interaction databases
+
+ - TODO: [FEATURE] add direct interactions for TFs in yeasts by combining
+https://www.nature.com/articles/ng2012 and https://pubmed.ncbi.nlm.nih.gov/29036684/ for binary
+interaction filters
+
 
 Bulk Backlog:
 -------------

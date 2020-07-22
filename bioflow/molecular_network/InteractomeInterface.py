@@ -22,7 +22,7 @@ from bioflow.utils.gdfExportInterface import GdfExportInterface
 from bioflow.utils.io_routines import write_to_csv, dump_object, undump_object
 from bioflow.utils.log_behavior import get_logger
 from bioflow.main_configs import Dumps, Outputs, interactome_rand_samp_db
-from bioflow.user_configs import internal_storage, biogrid_only
+from bioflow.user_configs import internal_storage, skip_hint, skip_biogrid, skip_reactome
 from bioflow.internal_configs import edge_type_filters, adjacency_matrix_weights, \
     laplacian_matrix_weights, neo4j_names_dict
 from bioflow.algorithms_bank import conduction_routines as cr
@@ -558,7 +558,7 @@ class InteractomeInterface(object):
         self.laplacian_matrix = lil_matrix((load_len, load_len))
 
         # TODO: if the BioGRID tag is true, this will be reduced to the weak_contact links
-        if not biogrid_only:
+        if not skip_reactome:
             for reaction_participant_set in self.ReactLinks:
                 for reaction_participant in itertools.combinations(reaction_participant_set, 2):
                     link_indexes = (
@@ -569,11 +569,13 @@ class InteractomeInterface(object):
             insert_expansion_links(self.GroupLinks, "Group")
             insert_expansion_links(self.sec_links, "Contact_interaction")
             insert_expansion_links(self.GroupLinks_2, "Group")
-            insert_expansion_links(self.sec_links_2, "Contact_interaction")
-            insert_expansion_links(self.UP_Links, "Same")
-            insert_expansion_links(self.hint_links, "Contact_interaction")
 
-        insert_expansion_links(self.biogrid_links, "weak_contact")
+        if not skip_hint:
+            insert_expansion_links(self.hint_links, "Contact_interaction")
+            insert_expansion_links(self.UP_Links, "Same")
+
+        if not skip_biogrid:
+            insert_expansion_links(self.biogrid_links, "weak_contact")
 
         if self.full_impact:
             insert_expansion_links(self.Super_Links, "is_likely_same")
@@ -769,7 +771,7 @@ class InteractomeInterface(object):
             cr.line_loss,
             l_norm,
             edge_drop,
-            biogrid_only]
+            (skip_reactome, skip_hint, skip_biogrid)]
         md5 = hashlib.md5(json.dumps(data, sort_keys=True).encode('utf-8')).hexdigest()
 
         return str(md5)
