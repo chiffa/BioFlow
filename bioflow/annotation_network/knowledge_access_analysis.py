@@ -366,7 +366,7 @@ def compare_to_blank(
         mean_correlation_accumulator.append(np.array(mean_correlations))
         eigenvalues_accumulator.append(eigenvalues)
         dict_system = go_interface_instance.format_node_props(node_currents)
-        curr_inf_conf = list(dict_system.values())
+        curr_inf_conf = list(dict_system.node_current_values())
         curr_inf_conf_general.append(np.array(curr_inf_conf).T)
 
         count = i

@@ -814,7 +814,7 @@ class GeneOntologyInterface(object):
         :return: {GO:[node current, pure GO informativity, Number of reachable nodes]}
         """
         char_dict = {}
-        limiting_current = max(node_current.values()) * limit
+        limiting_current = max(node_current.node_current_values()) * limit
         for go_term in self.GO2Num.keys():
 
             if node_current[go_term] > limiting_current:

@@ -5,46 +5,56 @@ from scipy.stats import gaussian_kde
 from matplotlib import pyplot as plt
 from scipy import histogram2d
 from csv import reader as csv_reader
+import os
 
 from bioflow.main_configs import interactome_rand_samp_db
 from bioflow.utils.log_behavior import get_logger
 from bioflow.molecular_network.InteractomeInterface import InteractomeInterface
 from bioflow.algorithms_bank.conduction_routines import perform_clustering
 from bioflow.main_configs import Dumps
+from bioflow.utils.top_level import map_and_save_gene_ids
 # from bioflow.algorithms_bank.conduction_routines import get_current_through_nodes
 from matplotlib.cm import get_cmap
+from bioflow.main_configs import output_location
+from bioflow.user_configs import sources_location
 
 
 log = get_logger(__name__)
 
+
+# TODO: for our application a critical validation step could be to cribble the laplacian with zeros
 
 interactome_interface_instance = InteractomeInterface(True, True)
 interactome_interface_instance.fast_load()
 
 md5_hash = interactome_interface_instance.md5_hash()
 
+interactome_interface_instance.randomly_sample(samples_size=[2],
+                                               samples_each_size=[1000])
+
 # we will need to populate the database first
 # here as well is where we will be doing filtering by the edge type
 print("samples found to test against:\t %s" % interactome_rand_samp_db.find({'size': 2,
                                                                           'sys_hash': md5_hash,
                                                                           'sparse_rounds': False}).count())
-
 essential_genes_bulbs_ids = []
 
-# TODO: retrieve the list of the essential gens for yeast
-with open(Dumps.analysis_set_bulbs_ids, 'rt') as source:
-    reader = csv_reader(source)
-    for line in reader:
-        essential_genes_bulbs_ids += line
 
-essential_genes_bulbs_ids = [int(gene) for gene in essential_genes_bulbs_ids]
+# underlying file: "C:\\Users\\Andrei\\Dropbox\\workspaces\\EPFL
+#       post-doc\\Mehdi_paper_EPFL\\yeast_essential_genes-gene_names.csv"
+essential_genes_bulbs_ids, _ = map_and_save_gene_ids(os.path.join(sources_location,
+                                                                  'yeast_essential_genes-gene_names.csv'),
+        '')
 
-values = []
+# was needed due to pull from the string formatting
+# essential_genes_bulbs_ids = [int(gene) for gene in essential_genes_bulbs_ids]
+
+node_current_values = []
 length_width_accumulator = []
 essentiality_percentage = []
 
 # we will need to modify the sys_hash to take in account that we are using only one type of
-# connections
+# connections = > Done
 for i, sample in enumerate(interactome_rand_samp_db.find({'size': 2,
                                                           'sys_hash': md5_hash,
                                                           'sparse_rounds': False})):
@@ -53,61 +63,71 @@ for i, sample in enumerate(interactome_rand_samp_db.find({'size': 2,
     #     break
 
     _, nodes_current_dict = pickle.loads(sample['currents'])
-    tensions = pickle.loads(sample['voltages'])
+    tensions = pickle.loads(sample['voltages'])  # (tension might be broken)
+    # print(sorted(nodes_current_dict.items(), key=lambda x: x[1], reverse=True)[:10])
 
-    io_nodes, tension = (list(tensions.keys())[0], list(tensions.values())[0])
-    # this actually should be a multiplication - we divide to normalize to 1 volt, after counting for 1 amp
+    io_nodes, tension = (list(tensions.items())[0][0], list(tensions.items())[0][1])
 
-    nodes_current = np.sort(np.array(list(nodes_current_dict.values())).astype(np.float))[-100:] * tension
+    if tension < 0.5:
+        continue  # we are hitting near a very tight cluster, so the pathway will be winde and short
+
+    # Collects 100 nodes routing most information and cuts the source/sink nodes
+    nodes_current = np.sort(
+        np.array(list(nodes_current_dict.node_current_values())).astype(np.float))[-102:-2] * tension
+
+    # additional filter in case some of the nodes have too small of current
+    nodes_current = nodes_current[nodes_current > 0.0002]
+
+    # print(nodes_current)
 
     # not the most efficient implementation, but oh well
     essential_max_current = 0
     for gene in essential_genes_bulbs_ids:
-        if nodes_current_dict[gene]/tension > 0.05:
+        if nodes_current_dict[gene] / tension > 0.05:
             if nodes_current_dict[gene] > essential_max_current:
                 essential_max_current = nodes_current_dict[gene] * tension
 
-    # delete nodes close to 1 (IO)
-    # ivide by 2
+    # print(essential_max_current)
 
-    if tension > .2:
+    total_resistance = tension  # V=IR and since I=1 for tension calculation, it is resistance
+    length_by_width = total_resistance
+    print(total_resistance)
+    print(total_resistance.dtype)
 
-        total_resistance = tension  # yeah, tension is just a resistance in this context - my labeling error
-        length_by_width = total_resistance
-        # nodes_current = nodes_current[np.logical_not(np.isclose(nodes_current, np.ones(nodes_current.shape), rtol=1e-03))]/2
-        nodes_current = nodes_current[nodes_current < 0.999]
-        shape_characteristic = 1. / nodes_current
+    shape_characteristic = 1. / nodes_current
 
-        print('\n\n\n>>>>>>>>>>>>>')
-        print('sample ', i)
-        print('length/width', length_by_width)
-        # alternative width is max. But in this case we might to remove everything close enough to 0
-        # mean_width = 1./np.mean(nodes_current[nodes_current > 0.1])
-        mean_width = 1. / np.mean(nodes_current[nodes_current > 0.2])
-        length = mean_width * length_by_width
+    print('\n\n\n>>>>>>>>>>>>>')
+    print('sample ', i)
+    print('nodes_current', nodes_current)
+    print('length/width / tension', length_by_width)
+    print('1/mean_width', np.mean(nodes_current))
+    # alternative width is max. But in this case we might to remove everything close enough to 0
+    # mean_width = 1./np.mean(nodes_current[nodes_current > 0.1])
+    mean_width = 1. / np.mean(nodes_current)
+    length = mean_width * length_by_width
 
-        if length < 1:
-            mean_width /= length
-            length = 1
+    if length < 1:
+        mean_width /= length
+        length = 1
 
-        if mean_width < 1:
-            length /= mean_width
-            mean_width = 1
+    if mean_width < 1:
+        length /= mean_width
+        mean_width = 1
 
-        print('width', mean_width)
-        print('length', length)
-        print('essentiality', essential_max_current)
-        # print 'io nodes:\t', nodes_current_dict[io_nodes[0]] * tension, nodes_current_dict[io_nodes[1]] * tension
+    print('width', mean_width)
+    print('length', length)
+    print('essentiality', essential_max_current)
+    # print 'io nodes:\t', nodes_current_dict[io_nodes[0]] * tension, nodes_current_dict[io_nodes[1]] * tension
 
-        # print 'resistance:\t', total_resistance
-        # print 'max current:\t', nodes_current[-1]
-        # print 'tension:\t', tension
-        # print nodes_current
+    # print('resistance:\t', total_resistance)
+    # print('max current:\t', nodes_current[-1])
+    # print('tension:\t', tension)
+    # print(nodes_current)
 
-        length_width_accumulator.append((length, mean_width))
-        values += nodes_current.tolist()
+    length_width_accumulator.append((length, mean_width))
+    node_current_values += nodes_current.tolist()
 
-        essentiality_percentage.append(min([essential_max_current,1.]))
+    essentiality_percentage.append(min([essential_max_current, 1.]))
 
 
     # if any(nodes_current > 1.1):
@@ -155,16 +175,18 @@ for i, sample in enumerate(interactome_rand_samp_db.find({'size': 2,
         # length_width_accumulator.append([mean_length, mean_width])
 
 
-values = np.array(values)
 
-data = values[values > 0.2]
+node_current_values = np.array(node_current_values)
+data = node_current_values[node_current_values > 0.0002]
+print(data)
 fltr = np.logical_not(np.isnan(data))
 density = gaussian_kde(data[fltr].flatten())
 xs = np.linspace(data[fltr].min(), data[fltr].max(), 200)
 plt.plot(xs, density(xs), 'k')
 plt.xlabel('pathway shape parameter')
 plt.ylabel('density of distribution')
-plt.show()
+# plt.show()
+plt.savefig(os.path.join(output_location, 'pathway_shape_parameter.png'))
 
 
 _length = np.array(length_width_accumulator)[:, 0]
@@ -180,7 +202,9 @@ plt.title('Length distribution of non-trivial pathways')
 plt.plot(xs, density(xs), 'k')
 plt.xlabel('length of the pathway')
 plt.ylabel('density of distribution')
-plt.show()
+# plt.show()
+plt.savefig(os.path.join(output_location, 'pathway_length_distribution.png'))
+
 
 _width = np.array(length_width_accumulator)[:, 1]
 
@@ -195,7 +219,9 @@ plt.title('Width distribution of non-trivial pathways')
 plt.plot(xs, density(xs), 'k')
 plt.xlabel('width of the pathway')
 plt.ylabel('density of distribution')
-plt.show()
+plt.savefig(os.path.join(output_location, 'density_estimation_distribution.png'))
+# plt.show()
+
 
 data = np.array(np.array(essentiality_percentage)[_length > 1.1])
 fltr = np.logical_not(np.isnan(data))
@@ -206,7 +232,9 @@ plt.plot(xs, density(xs), 'k')
 plt.axvline(0.7)
 plt.xlabel('percentage of current routed through essential genes')
 plt.ylabel('density of distribution')
-plt.show()
+plt.savefig(os.path.join(output_location, 'essential_percentage_distribution.png'))
+# plt.show()
+
 
 def better2D_desisty_plot(xdat, ydat, thresh=3, bins=(100, 100)):
     xyrange = [[min(xdat), max(xdat)], [min(ydat), max(ydat)]]
@@ -247,7 +275,9 @@ plt.axvspan(0, 2, facecolor='0.5', alpha=0.5)
 plt.xlabel('length of the pathway')
 plt.ylabel('width of the pathway')
 plt.show()
+plt.savefig(os.path.join(output_location, 'essentiality_length_vs_width.png'))
 
 # pickle.dump(length_accumulator, open('step_length.dmp', 'wb'))
 # pickle.dump(width_accumulator, open('width_length.dmp', 'wb'))
-pickle.dump(length_width_accumulator, open('w_l_accumulator.dmp', 'wb'))
+w_l_accumulator_location = os.path.join(output_location, 'BOWN_NN_w_l_accumulatror.dmp')
+pickle.dump(length_width_accumulator, open(w_l_accumulator_location, 'wb'))

@@ -223,7 +223,7 @@ def compare_to_blank(blank_model_size, p_val=0.05, sparse_rounds=False,
         _, node_currents = pickle.loads(sample['currents'])
 
         dictionary_system = interactome_interface_instance.format_node_props(node_currents, limit=0)
-        background_sub_array = list(dictionary_system.values())
+        background_sub_array = list(dictionary_system.node_current_values())
         if np.array(background_sub_array).T.shape[0] < 2:
             print(background_sub_array)
             continue

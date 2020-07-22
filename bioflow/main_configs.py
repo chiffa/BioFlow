@@ -7,7 +7,7 @@ from os import path, makedirs
 from pprint import PrettyPrinter
 from pymongo import MongoClient
 from bioflow.configs_manager import parse_config, compute_full_paths
-from bioflow.user_configs import output_location
+from bioflow.user_configs import output_location, dumps_directory, logs_directory
 from bioflow.utils.general_utils import high_level_os_io as hl_os_io
 from datetime import datetime
 
@@ -15,6 +15,8 @@ from datetime import datetime
 current_run_start_time = str(datetime.now())
 current_run_start_time = current_run_start_time.replace(':', '.')
 
+
+# TODO: remap those to the values in user configs
 dump_location = path.join(path.abspath(path.dirname(__file__)), 'dumps')
 # output_location = path.join(path.abspath(os.path.expanduser('~')), 'outputs' + '_' +
 #                             current_run_start_time)

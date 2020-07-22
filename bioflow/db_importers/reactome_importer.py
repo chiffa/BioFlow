@@ -66,7 +66,7 @@ def insert_meta_objects(neo4j_graph_class, meta_id_2_property_dict):
         log.debug(dir(primary))
         log.debug("%s\n%s\n%s\n%s\n%s" %
                   (primary._properties,
-                  primary.values(),
+                  primary.node_current_values(),
                   primary.labels,
                   primary.keys(),
                   primary.items()))

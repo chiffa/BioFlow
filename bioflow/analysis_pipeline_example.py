@@ -63,9 +63,9 @@ if __name__ == "__main__":
     #     # '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/TWIST1_ECAD/All_genes.csv'
     # )
 
-    hits_ids, background_bulbs_ids = map_and_save_gene_ids(
-        'yeast_test_gene_set-glycogen_biosynthesis.tsv',
-        '')
+    # hits_ids, background_bulbs_ids = map_and_save_gene_ids(
+    #     'yeast_test_gene_set-glycogen_biosynthesis.tsv',
+    #     '')
 
     # # get the bulbs ids for the nodes we would like to analyze
     # hits_ids = get_source_bulbs_ids()
@@ -73,21 +73,21 @@ if __name__ == "__main__":
 
     # background_bulbs_ids = get_background_bulbs_ids()
 
-    # rebuild_the_laplacians(all_detectable_genes=background_bulbs_ids)
+    rebuild_the_laplacians(all_detectable_genes=background_bulbs_ids)
 
 
 
-    # perform the interactome analysis
-    interactome_analysis([hits_ids],
-                         desired_depth=30,
-                         processors=3,
-                         background_list=background_bulbs_ids,
-                         skip_sampling=False,
-                         from_memoization=False)
+    # # perform the interactome analysis
+    # interactome_analysis([hits_ids],
+    #                      desired_depth=30,
+    #                      processors=3,
+    #                      background_list=background_bulbs_ids,
+    #                      skip_sampling=False,
+    #                      from_memoization=False)
 
-    # perform the knowledge analysis
-    knowledge_analysis([hits_ids],
-                       desired_depth=20,
-                       processors=3,
-                       param_set=ref_param_set,
-                       skip_sampling=False)
+    # # perform the knowledge analysis
+    # knowledge_analysis([hits_ids],
+    #                    desired_depth=20,
+    #                    processors=3,
+    #                    param_set=ref_param_set,
+    #                    skip_sampling=False)
