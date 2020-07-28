@@ -1061,16 +1061,17 @@ class InteractomeInterface(object):
         if self.background:
             self.connected_uniprots = list(
                 set(self.all_uniprots_neo4j_id_list).intersection(set(self.background)))
+            local_connected_uniprots = self.connected_uniprots
         else:
             # TODO: debug to see why there are non-uniprots in connected uniprots
-            self.connected_uniprots = list(
+            local_connected_uniprots = list(
                 set(self.all_uniprots_neo4j_id_list).intersection(set(self.connected_uniprots)))
 
 
         for sample_size, iterations in zip(samples_size, samples_each_size):
             for i in range(0, iterations):
-                shuffle(self.connected_uniprots)
-                analytics_uniprot_list = self.connected_uniprots[:sample_size]
+                shuffle(local_connected_uniprots)
+                analytics_uniprot_list = local_connected_uniprots[:sample_size]
                 # print('debug: selected UProt IDs :', analytics_uniprot_list)
 
                 self.set_uniprot_source(analytics_uniprot_list)

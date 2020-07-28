@@ -29,18 +29,18 @@ interactome_interface_instance.fast_load()
 
 md5_hash = interactome_interface_instance.md5_hash()
 
-interactome_interface_instance.randomly_sample(samples_size=[2],
-                                               samples_each_size=[1])
+# interactome_interface_instance.randomly_sample(samples_size=[2],
+#                                                samples_each_size=[700])
 
-interactome_interface_instance.export_conduction_system()
+# interactome_interface_instance.export_conduction_system()
 
-raise Exception('debug')
+# raise Exception('debug')
 
 # we will need to populate the database first
 # here as well is where we will be doing filtering by the edge type
-print("samples found to test against:\t %s" % interactome_rand_samp_db.find({'size': 2,
+print("samples found to test against:\t %s" % interactome_rand_samp_db.count_documents({'size': 2,
                                                                           'sys_hash': md5_hash,
-                                                                          'sparse_rounds': False}).count())
+                                                                          'sparse_rounds': False}))
 
 essential_genes_bulbs_ids = []
 
@@ -73,14 +73,18 @@ for i, sample in enumerate(interactome_rand_samp_db.find({'size': 2,
 
     io_nodes, tension = (list(tensions.items())[0][0], list(tensions.items())[0][1])
 
-    if tension < 0.1:
-        continue  # we are hitting near a very tight cluster, so the pathway will be winde and short
+    print('debug tension: ', tension)
 
-    # Debug section
-    interactome_interface_instance.current_accumulator = current_acc
-    interactome_interface_instance.node_current = nodes_current_dict
-    interactome_interface_instance.UP2UP_voltages = tensions
-    interactome_interface_instance.export_conduction_system()
+    # TODO:
+
+    if tension < 0.1:
+        continue  # we are hitting near a very tight cluster, so the pathway will be wide and short
+
+    # # Debug section
+    # interactome_interface_instance.current_accumulator = current_acc
+    # interactome_interface_instance.node_current = nodes_current_dict
+    # interactome_interface_instance.UP2UP_voltages = tensions
+    # interactome_interface_instance.export_conduction_system()
 
     # Collects 100 nodes routing most information and cuts the source/sink nodes
     nodes_current = np.sort(
@@ -135,6 +139,9 @@ for i, sample in enumerate(interactome_rand_samp_db.find({'size': 2,
         length /= mean_width
         mean_width = 1
 
+    if length > 12:
+        continue
+
     print('width', mean_width)
     print('length', length)
     print('essentiality', essential_max_current)
@@ -150,7 +157,7 @@ for i, sample in enumerate(interactome_rand_samp_db.find({'size': 2,
 
     essentiality_percentage.append(min([essential_max_current, 1.]))
 
-    raise Exception('debug')
+    # raise Exception('debug')
 
 
     # TODO: debug dump of a couple of pathways into gdf format
