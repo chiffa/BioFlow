@@ -30,13 +30,18 @@ interactome_interface_instance.fast_load()
 md5_hash = interactome_interface_instance.md5_hash()
 
 interactome_interface_instance.randomly_sample(samples_size=[2],
-                                               samples_each_size=[1000])
+                                               samples_each_size=[1])
+
+interactome_interface_instance.export_conduction_system()
+
+raise Exception('debug')
 
 # we will need to populate the database first
 # here as well is where we will be doing filtering by the edge type
 print("samples found to test against:\t %s" % interactome_rand_samp_db.find({'size': 2,
                                                                           'sys_hash': md5_hash,
                                                                           'sparse_rounds': False}).count())
+
 essential_genes_bulbs_ids = []
 
 
@@ -62,7 +67,7 @@ for i, sample in enumerate(interactome_rand_samp_db.find({'size': 2,
     # if i > 10:
     #     break
 
-    _, nodes_current_dict = pickle.loads(sample['currents'])
+    current_acc, nodes_current_dict = pickle.loads(sample['currents'])
     tensions = pickle.loads(sample['voltages'])  # (tension might be broken)
     # print(sorted(nodes_current_dict.items(), key=lambda x: x[1], reverse=True)[:10])
 
@@ -71,9 +76,11 @@ for i, sample in enumerate(interactome_rand_samp_db.find({'size': 2,
     if tension < 0.1:
         continue  # we are hitting near a very tight cluster, so the pathway will be winde and short
 
-    # todo: InteractomeInterface.current_accumulator, node_current = sample['currents]
-    #   InteractomeInterface.UP2UP_voltages = voltages
-    #   Interactome_Interface.export(conduction_system)
+    # Debug section
+    interactome_interface_instance.current_accumulator = current_acc
+    interactome_interface_instance.node_current = nodes_current_dict
+    interactome_interface_instance.UP2UP_voltages = tensions
+    interactome_interface_instance.export_conduction_system()
 
     # Collects 100 nodes routing most information and cuts the source/sink nodes
     nodes_current = np.sort(
@@ -100,8 +107,6 @@ for i, sample in enumerate(interactome_rand_samp_db.find({'size': 2,
     print(nodes_current)
     print(nodes_current.dtype)
 
-    # TODO: debug the nan prevalence from here
-
     shape_characteristic = 1. / nodes_current
 
     print('\n\n\n>>>>>>>>>>>>>')
@@ -115,6 +120,7 @@ for i, sample in enumerate(interactome_rand_samp_db.find({'size': 2,
     # ideally we need to use an estimator of width - # of major branches routing flow independently
     # Maybe we can use the extreme values distribution based on the bottom X in order to see
     # which one are really the outliers in the network
+
     if np.any(nodes_current > .1):
         mean_width = 1./np.mean(nodes_current[nodes_current > 0.1])
     else:
@@ -143,6 +149,8 @@ for i, sample in enumerate(interactome_rand_samp_db.find({'size': 2,
     node_current_values += nodes_current.tolist()
 
     essentiality_percentage.append(min([essential_max_current, 1.]))
+
+    raise Exception('debug')
 
 
     # TODO: debug dump of a couple of pathways into gdf format

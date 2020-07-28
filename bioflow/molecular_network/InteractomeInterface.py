@@ -954,7 +954,9 @@ class InteractomeInterface(object):
             'DOUBLE']
 
         if p_value_dict is None:
-            p_value_dict = defaultdict(lambda: 'na')
+            p_value_dict = defaultdict(lambda: (np.nan, np.nan, np.nan))
+
+        nan_neg_log10 = lambda x: x if type(x) is str else -np.log10(x)
 
         characterization_dict = {}
 
@@ -983,7 +985,7 @@ class InteractomeInterface(object):
                 str(self.laplacian_matrix[matrix_index, matrix_index]),
                 str(float(int(NodeID in self.entry_point_uniprots_neo4j_ids))),
                 str(p_value_dict[int(NodeID)][0]),
-                str(-np.log10(p_value_dict[int(NodeID)][0])),
+                str(nan_neg_log10(p_value_dict[int(NodeID)][0])),
                 str(float(p_value_dict[int(NodeID)][1])),
                 str(float(p_value_dict[int(NodeID)][2]))]
 
@@ -1051,14 +1053,25 @@ class InteractomeInterface(object):
         if not len(samples_size) == len(samples_each_size):
             raise Exception('Not the same list sizes!')
 
-        if self.background:  # TODO: move that part to the interactome analysis section => Unique Interactome Interface
+        # TODO: move that part to the interactome analysis section => Unique Interactome Interface
+
+        # TODO: include the limitations on the types of nodes to sample:
+
+
+        if self.background:
             self.connected_uniprots = list(
-                set(self.connected_uniprots).intersection(set(self.background)))
+                set(self.all_uniprots_neo4j_id_list).intersection(set(self.background)))
+        else:
+            # TODO: debug to see why there are non-uniprots in connected uniprots
+            self.connected_uniprots = list(
+                set(self.all_uniprots_neo4j_id_list).intersection(set(self.connected_uniprots)))
+
 
         for sample_size, iterations in zip(samples_size, samples_each_size):
             for i in range(0, iterations):
                 shuffle(self.connected_uniprots)
                 analytics_uniprot_list = self.connected_uniprots[:sample_size]
+                # print('debug: selected UProt IDs :', analytics_uniprot_list)
 
                 self.set_uniprot_source(analytics_uniprot_list)
                 log.info('sampling pool %s: sampling characteristics: sys_hash: %s, size: %s, sparse_rounds: %s' % (pool_no, self.md5_hash(),
