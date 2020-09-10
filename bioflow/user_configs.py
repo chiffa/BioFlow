@@ -7,6 +7,6 @@ internal_storage = os.path.join(storage_location, '.internal')
 dumps_directory = os.path.join(internal_storage, 'dumps')
 logs_directory = os.path.join(internal_storage, 'logs')
 
-skip_reactome = True
+skip_reactome = False
 skip_hint = False
 skip_biogrid = False

@@ -6,9 +6,11 @@ from collections import namedtuple
 from csv import reader
 from multiprocessing import Pool
 import traceback
+import os
 
 import numpy as np
 from matplotlib import pyplot as plt
+from csv import writer as csv_writer
 
 from bioflow.algorithms_bank.conduction_routines import perform_clustering
 from bioflow.annotation_network.BioKnowledgeInterface import GeneOntologyInterface
@@ -297,8 +299,8 @@ def show_correlations(
         plt.hist(test_tri_corr_array[2, :],
                  bins=bins, histtype='step', log=True, color='r')
 
-    # plt.show()
-    plt.savefig(Outputs.knowledge_network_stats)
+    # # plt.show()
+    # plt.savefig(Outputs.knowledge_network_stats)
 
     # pull the groups corresponding to non-random associations.
     return current_info_rel, cluster_props
@@ -366,7 +368,7 @@ def compare_to_blank(
         mean_correlation_accumulator.append(np.array(mean_correlations))
         eigenvalues_accumulator.append(eigenvalues)
         dict_system = go_interface_instance.format_node_props(node_currents)
-        curr_inf_conf = list(dict_system.node_current_values())
+        curr_inf_conf = list(dict_system.values())
         curr_inf_conf_general.append(np.array(curr_inf_conf).T)
 
         count = i
@@ -466,7 +468,7 @@ def get_estimated_time(samples, sample_sizes, operations_per_sec=2.2):
 
 
 def auto_analyze(source=None, go_interface_instance=None, processors=3, desired_depth=24,
-                 skip_sampling=False, param_set=ref_param_set):
+                 skip_sampling=False, param_set=ref_param_set, output_destination_prefix=''):
     """
     Automatically analyzes the GO annotation of the RNA_seq results.
 
@@ -548,7 +550,19 @@ def auto_analyze(source=None, go_interface_instance=None, processors=3, desired_
                 go_interface_instance=go_interface_instance,
                 param_set=param_set)
 
-        go_interface_instance.export_conduction_system()
+        if len(output_destination_prefix) > 0:
+            corrected_knowledge_GDF_output = os.path.join(
+                os.path.join(Outputs.prefix, output_destination_prefix),
+                'GO_Analysis_output.gdf')
+            corrected_knowledge_tables_output = os.path.join(
+                os.path.join(Outputs.prefix, output_destination_prefix),
+                'knowledge_stats.tsv')
+
+        else:
+            corrected_knowledge_GDF_output = Outputs.GO_GDF_output
+            corrected_knowledge_tables_output = Outputs.knowledge_network_output
+
+        go_interface_instance.export_conduction_system(output_location=corrected_knowledge_GDF_output)
 
         for group in nr_groups:
             log.info(group)
@@ -556,6 +570,14 @@ def auto_analyze(source=None, go_interface_instance=None, processors=3, desired_
                  'UP_list')
         for node in nr_nodes:
             log.info('\t %s \t %s \t %s \t %s \t %s \t %s \t %s', *node)
+
+        with open(corrected_knowledge_tables_output, 'wt') as output:
+            # TODO: add an override to the directory of export
+            writer = csv_writer(output, delimiter='\t')
+            writer.writerow(['NodeID', 'Name', 'current', 'informativity', 'confusion_potential',
+                             'p_val', 'UP_list'])
+            for node in nr_nodes:
+                writer.writerow(node)
 
 
 if __name__ == "__main__":

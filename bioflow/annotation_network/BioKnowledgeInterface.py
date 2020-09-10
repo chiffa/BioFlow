@@ -814,7 +814,7 @@ class GeneOntologyInterface(object):
         :return: {GO:[node current, pure GO informativity, Number of reachable nodes]}
         """
         char_dict = {}
-        limiting_current = max(node_current.node_current_values()) * limit
+        limiting_current = max(node_current.values()) * limit
         for go_term in self.GO2Num.keys():
 
             if node_current[go_term] > limiting_current:
@@ -825,7 +825,8 @@ class GeneOntologyInterface(object):
 
         return char_dict
 
-    def export_conduction_system(self):
+    def export_conduction_system(self,
+                                 output_location=Outputs.GO_GDF_output):
         """
         Computes the conduction system of the GO terms and exports it to the GDF format
          and flushes it into a file that can be viewed with Gephi
@@ -867,7 +868,7 @@ class GeneOntologyInterface(object):
                              '1']
 
         gdf_exporter = GdfExportInterface(
-            target_fname=Outputs.GO_GDF_output,
+            target_fname=output_location,
             field_names=node_char_names,
             field_types=node_char_types,
             node_properties_dict=char_dict,

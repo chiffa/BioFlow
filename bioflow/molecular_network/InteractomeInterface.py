@@ -909,14 +909,15 @@ class InteractomeInterface(object):
         :return: {Entity:[node current, node degree]}
         """
         characterization_dict = {}
-        limit_current = max(node_current.node_current_values()) * limit
+        limit_current = max(node_current.values()) * limit
         for NodeID, i in self.neo4j_id_2_matrix_index.items():
             if node_current[NodeID] > limit_current:
                 characterization_dict[NodeID] = [node_current[NodeID],
                                                  self.non_norm_laplacian_matrix[i, i]]
         return characterization_dict
 
-    def export_conduction_system(self, p_value_dict=None, output_location=Outputs.Interactome_GDF_output):
+    def export_conduction_system(self, p_value_dict=None,
+                                 output_location=Outputs.Interactome_GDF_output):
         """
         Computes the conduction system of the GO terms and exports it to the GDF format and
          flushes it into a file that can be viewed with Gephi

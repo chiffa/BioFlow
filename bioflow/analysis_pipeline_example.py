@@ -10,6 +10,7 @@ from bioflow.utils.io_routines import get_source_bulbs_ids
 from bioflow.utils.top_level import map_and_save_gene_ids, rebuild_the_laplacians
 from bioflow.utils.log_behavior import clear_logs
 from bioflow.user_configs import sources_location
+import os
 
 if __name__ == "__main__":
     pass  # for syntactic reasons
@@ -63,9 +64,9 @@ if __name__ == "__main__":
     #     # '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/TWIST1_ECAD/All_genes.csv'
     # )
 
-    # hits_ids, background_bulbs_ids = map_and_save_gene_ids(
-    #     'yeast_test_gene_set-glycogen_biosynthesis.tsv',
-    #     '')
+    hits_ids, background_bulbs_ids = map_and_save_gene_ids(
+        'yeast_test_gene_set-glycogen_biosynthesis.tsv',
+        '')
 
     # # get the bulbs ids for the nodes we would like to analyze
     # hits_ids = get_source_bulbs_ids()
@@ -73,16 +74,16 @@ if __name__ == "__main__":
 
     # background_bulbs_ids = get_background_bulbs_ids()
 
-    rebuild_the_laplacians(all_detectable_genes=background_bulbs_ids)
+    # rebuild_the_laplacians(all_detectable_genes=background_bulbs_ids)
 
 
 
-    # # perform the interactome analysis
+    # perform the interactome analysis
     # interactome_analysis([hits_ids],
     #                      desired_depth=30,
     #                      processors=3,
     #                      background_list=background_bulbs_ids,
-    #                      skip_sampling=False,
+    #                      skip_sampling=True,
     #                      from_memoization=False)
 
     # # perform the knowledge analysis
@@ -90,4 +91,35 @@ if __name__ == "__main__":
     #                    desired_depth=20,
     #                    processors=3,
     #                    param_set=ref_param_set,
-    #                    skip_sampling=False)
+    #                    skip_sampling=True)
+    #
+
+    chromosomes_directory = "//home//kucharav//bioflow//sources//yeast_chr_genes"
+    background_file = os.path.join(chromosomes_directory, "all_genes.tab")
+
+    background_set = False
+    for filename in os.listdir(chromosomes_directory):
+        if filename != "all_genes.tab":
+            target_file = os.path.join(chromosomes_directory, filename)
+            hits_ids, background_bulbs_ids = map_and_save_gene_ids(target_file, background_file)
+
+            if not background_set:
+                rebuild_the_laplacians(all_detectable_genes=background_bulbs_ids)
+                background_set = True
+
+            # perform the interactome analysis
+            interactome_analysis([hits_ids],
+                                 desired_depth=20,
+                                 processors=3,
+                                 background_list=background_bulbs_ids,
+                                 skip_sampling=False,
+                                 from_memoization=False,
+                                 output_destination_prefix='chr_%s'%filename)
+
+            # perform the knowledge analysis
+            knowledge_analysis([hits_ids],
+                               desired_depth=20,
+                               processors=3,
+                               param_set=ref_param_set,
+                               skip_sampling=False,
+                               output_destination_prefix='chr_%s'%filename)

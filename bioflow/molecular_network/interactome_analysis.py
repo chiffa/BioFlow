@@ -9,6 +9,7 @@ from multiprocessing import Pool
 from collections import defaultdict
 import traceback
 from pprint import pprint
+import os
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -223,7 +224,7 @@ def compare_to_blank(blank_model_size, p_val=0.05, sparse_rounds=False,
         _, node_currents = pickle.loads(sample['currents'])
 
         dictionary_system = interactome_interface_instance.format_node_props(node_currents, limit=0)
-        background_sub_array = list(dictionary_system.node_current_values())
+        background_sub_array = list(dictionary_system.values())
         if np.array(background_sub_array).T.shape[0] < 2:
             print(background_sub_array)
             continue
@@ -327,7 +328,7 @@ def compare_to_blank(blank_model_size, p_val=0.05, sparse_rounds=False,
 def auto_analyze(source_list,
                  desired_depth=24, processors=4,
                  background_list=None, skip_sampling=False,
-                 from_memoization=False):
+                 from_memoization=False, output_destination_prefix=''):
     """
     Automatically analyzes the itneractome synergetic action of the RNA_seq results
 
@@ -422,7 +423,20 @@ def auto_analyze(source_list,
                 len(interactome_interface.entry_point_uniprots_neo4j_ids), p_val=0.9,
                 sparse_rounds=sampling_depth, interactome_interface_instance=interactome_interface)
 
-        interactome_interface.export_conduction_system(p_val_dict)
+        if len(output_destination_prefix) > 0:
+            corrected_interactome_GDF_output = os.path.join(
+                os.path.join(Outputs.prefix, output_destination_prefix),
+                'Interactome_Analysis_output.gdf')
+            corrected_interactome_tables_output = os.path.join(
+                os.path.join(Outputs.prefix, output_destination_prefix),
+                'interactome_stats.tsv')
+
+        else:
+            corrected_interactome_GDF_output = Outputs.Interactome_GDF_output
+            corrected_interactome_tables_output = Outputs.interactome_network_output
+
+        interactome_interface.export_conduction_system(p_val_dict,
+                                                       output_location=corrected_interactome_GDF_output)
 
         log.info('\t %s \t %s \t %s \t %s \t %s', 'node id',
             'display name', 'info flow', 'degree', 'p value')
@@ -430,7 +444,7 @@ def auto_analyze(source_list,
         for node in nr_nodes:
             log.info('\t %s \t %s \t %s \t %s \t %s', *node)
 
-        with open(Outputs.interactome_network_output, 'wt') as output:
+        with open(corrected_interactome_tables_output, 'wt') as output:
             writer = csv_writer(output, delimiter='\t')
             writer.writerow(['node id', 'display name', 'info flow', 'degree', 'p value'])
             for node in nr_nodes:

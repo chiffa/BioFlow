@@ -34,6 +34,8 @@ docker-compose
     => Change log management so that the info gets logged into a file without rising to the
 surface and couple all the log.debug with a "print"
 
+ - TODO: fold the p-values into the GO_GDF export in the same way we do it for the interactome
+
 Bigger refactors
 ****************
 

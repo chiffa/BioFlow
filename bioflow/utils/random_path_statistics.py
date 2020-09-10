@@ -23,14 +23,15 @@ log = get_logger(__name__)
 
 
 # TODO: for our application a critical validation step could be to cribble the laplacian with zeros
+# => That would be an additional validation of our model stability
 
 interactome_interface_instance = InteractomeInterface(True, True)
 interactome_interface_instance.fast_load()
 
 md5_hash = interactome_interface_instance.md5_hash()
 
-# interactome_interface_instance.randomly_sample(samples_size=[2],
-#                                                samples_each_size=[700])
+interactome_interface_instance.randomly_sample(samples_size=[2],
+                                               samples_each_size=[1000])
 
 # interactome_interface_instance.export_conduction_system()
 
@@ -91,7 +92,7 @@ for i, sample in enumerate(interactome_rand_samp_db.find({'size': 2,
         np.array(list(nodes_current_dict.values())).astype(np.float))[-102:-2] * tension
 
     # additional filter in case some of the nodes have too small of current
-    nodes_current = nodes_current[nodes_current > 0.0002]
+    nodes_current = nodes_current[nodes_current > 0.05]
 
     # print(nodes_current)
 
