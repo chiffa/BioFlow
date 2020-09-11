@@ -384,7 +384,7 @@ class GraphDBPipe(object):
                 for i, annotation_tag in enumerate(annotation_tags_list):
                     annotated_nodes.append(self._get_from_annotation_tag(tx, annotation_tag, annotations_types))
                     if i % batch_size == 0:
-                        log.info('\t %.2f %%' % (float(i)/float(len(annotation_tags_list))*100))
+                        log.info('\t %.2f %%' % (float(i) / float(len(annotation_tags_list))*100))
                         tx.commit()
                         tx = session.begin_transaction()
             else:  # we assume it's a list

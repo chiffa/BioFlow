@@ -200,8 +200,8 @@ def get_current_through_nodes(triu_current_matrix):
 
     # print np.any(triu_current_matrix.diagonal())
 
-    incoming_current = np.array((positive_current + positive_current.T).sum(axis=1)).flatten()/2
-    outgoing_current = np.array((negative_current + negative_current.T).sum(axis=1)).flatten()/2
+    incoming_current = np.array((positive_current + positive_current.T).sum(axis=1)).flatten() / 2
+    outgoing_current = np.array((negative_current + negative_current.T).sum(axis=1)).flatten() / 2
 
     if np.any(outgoing_current):
         print('incoming', incoming_current)
@@ -329,8 +329,8 @@ def master_edge_current(conductivity_laplacian, index_list,
         for _ in repeat(None, sampling_depth):
             idx_list_c = copy(index_list)
             random.shuffle(idx_list_c)
-            list_of_pairs += list(zip(idx_list_c[:len(idx_list_c) / 2],
-                                 idx_list_c[len(idx_list_c) / 2:]))
+            list_of_pairs += list(zip(idx_list_c[:len(idx_list_c) // 2],
+                                 idx_list_c[len(idx_list_c) // 2:]))
     else:
         list_of_pairs = [(i, j) for i, j in combinations(set(index_list), 2)]
 
@@ -392,8 +392,8 @@ def master_edge_current(conductivity_laplacian, index_list,
         current_accumulator += sparse_abs(current_upper)
 
         if counter % breakpoints == 0 and counter > 1:
-            compops = float(breakpoints)/(time()-previous_time)
-            mins_before_termination = (total_pairs-counter)/compops/60
+            compops = float(breakpoints) / (time() - previous_time)
+            mins_before_termination = (total_pairs-counter) / compops / 60
             log.info("progress: %s/%s, current speed: %s compops, time remaining: %s min, finishing: %s "
                      % (counter, total_pairs, compops, mins_before_termination,
                         datetime.datetime.now() + datetime.timedelta(minutes=mins_before_termination)))

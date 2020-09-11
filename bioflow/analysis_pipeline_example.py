@@ -64,9 +64,9 @@ if __name__ == "__main__":
     #     # '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/TWIST1_ECAD/All_genes.csv'
     # )
 
-    hits_ids, background_bulbs_ids = map_and_save_gene_ids(
-        'yeast_test_gene_set-glycogen_biosynthesis.tsv',
-        '')
+    # hits_ids, background_bulbs_ids = map_and_save_gene_ids(
+    #     'yeast_test_gene_set-glycogen_biosynthesis.tsv',
+    #     '')
 
     # # get the bulbs ids for the nodes we would like to analyze
     # hits_ids = get_source_bulbs_ids()
@@ -103,9 +103,9 @@ if __name__ == "__main__":
             target_file = os.path.join(chromosomes_directory, filename)
             hits_ids, background_bulbs_ids = map_and_save_gene_ids(target_file, background_file)
 
-            if not background_set:
-                rebuild_the_laplacians(all_detectable_genes=background_bulbs_ids)
-                background_set = True
+            # if not background_set:
+            #     rebuild_the_laplacians(all_detectable_genes=background_bulbs_ids)
+            #     background_set = True
 
             # perform the interactome analysis
             interactome_analysis([hits_ids],

@@ -642,7 +642,7 @@ class InteractomeInterface(object):
             counters[adjacency_graph_connected_components[1][elt], 0] += 1
 
         giant_connex_component_index = np.argmax(counters)
-        markings_to_do = len(adjacency_graph_connected_components[1])/10.
+        markings_to_do = len(adjacency_graph_connected_components[1]) / 10.
 
         for i, connex_component_index in enumerate(adjacency_graph_connected_components[1]):
 

@@ -508,7 +508,8 @@ def auto_analyze(source=None, go_interface_instance=None, processors=3, desired_
                 log.info('length: %s \t sampling depth: %s \t, estimated round time: %s min',
                          len(go_interface_instance.analytic_uniprots),
                          'full',
-                         len(go_interface_instance.analytic_uniprots)**2 / estimated_comp_ops / 60)
+                         len(go_interface_instance.analytic_uniprots)**2 / estimated_comp_ops /
+                         60)
 
                 spawn_sampler_pool(processors,
                                    [len(go_interface_instance.analytic_uniprots)],
@@ -525,14 +526,14 @@ def auto_analyze(source=None, go_interface_instance=None, processors=3, desired_
                 param_set=param_set)
 
         else:
-            sampling_depth = max(200 ** 2 / len(go_interface_instance.analytic_uniprots), 5)
+            sampling_depth = max(200 ** 2 // len(go_interface_instance.analytic_uniprots), 5)
 
             if not skip_sampling:
 
                 log.info('length: %s \t sampling depth: %s \t, estimated round time: %s min',
                          len(go_interface_instance.analytic_uniprots),
                          sampling_depth,
-                         len(go_interface_instance.analytic_uniprots) * sampling_depth / 2 / 60)
+                         len(go_interface_instance.analytic_uniprots) * sampling_depth / 2 / 60 / estimated_comp_ops)
 
                 spawn_sampler_pool(processors,
                                    [len(go_interface_instance.analytic_uniprots)],

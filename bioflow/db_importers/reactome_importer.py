@@ -55,7 +55,7 @@ def insert_meta_objects(neo4j_graph_class, meta_id_2_property_dict):
     for i, (meta_name, property_dict) in enumerate(meta_id_2_property_dict.items()):
 
         if i % breakpoints == 0:
-            log.info('\t %.2f %%' % (float(i)/float(size)*100.0))
+            log.info('\t %.2f %%' % (float(i) / float(size) * 100.0))
 
         meta_properties = {'legacyId': meta_name,
                            'displayName': property_dict['displayName'],
@@ -125,7 +125,7 @@ def insert_collections(collections_2_members):
     for i, (collection, collection_property_dict) in enumerate(collections_2_members.items()):
 
         if i % breakpoints == 0:
-            log.info('\t %.2f %%' % (float(i)/float(size)*100))
+            log.info('\t %.2f %%' % (float(i) / float(size) * 100))
 
 
         for member in collection_property_dict['collectionMembers']:
@@ -151,7 +151,7 @@ def insert_complex_parts(complex_property_dict):
     for i, key in enumerate(complex_property_dict.keys()):
 
         if i % breakpoint == 0:
-            log.info('\t %.2f %%' % (float(i)/float(size)*100.0))
+            log.info('\t %.2f %%' % (float(i) / float(size) * 100.0))
 
         for part in complex_property_dict[key]['parts']:
             # TODO: remove redundant protection from Stoichiometry
@@ -278,7 +278,7 @@ def insert_pathways(pathway_steps, pathways):
     for i, pathway_step in enumerate(pathway_steps.keys()):
 
         if i % breakpoints == 0:
-            log.info('\t %.2f %%' % (float(i)/float(ps_len)*100))
+            log.info('\t %.2f %%' % (float(i) / float(ps_len) * 100))
 
         memoization_dict[pathway_step] = DatabaseGraph.create('PathwayStep',
                                                               {'legacyId': pathway_step})
@@ -288,7 +288,7 @@ def insert_pathways(pathway_steps, pathways):
     for pathway_step in list(pathways.keys()):
 
         if i % breakpoints == 0:
-            log.info('\t %.2f %%' % (float(i)/float(p_len)*100))
+            log.info('\t %.2f %%' % (float(i) / float(p_len) * 100))
 
 
         memoization_dict[pathway_step] = DatabaseGraph.create('Pathway',

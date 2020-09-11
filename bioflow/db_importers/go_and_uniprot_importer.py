@@ -242,10 +242,10 @@ def import_uniprots(uniprot, reactome_acnum_bindings):
 
         log.debug(
             'loading UNIPROT: Acnums cross-linked - %.2f %% ; Total loaded: - %.2f %%',
-            cross_links / acc_nums_no, sp_id_num / up_no *100)
+            cross_links / acc_nums_no, sp_id_num / up_no * 100)
 
         if sp_id_num*20 % up_no < 20:
-            log.info('Uniprots nodes load: %s %%', sp_id_num / up_no * 100 )
+            log.info('Uniprots nodes load: %s %%', sp_id_num / up_no * 100)
 
         # Add the newly created uniprot to the buffer
         Uniprot_memoization_dict[swiss_prot_id] = uniprot_node

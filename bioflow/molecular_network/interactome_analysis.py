@@ -293,8 +293,9 @@ def compare_to_blank(blank_model_size, p_val=0.05, sparse_rounds=False,
 
     for point in query_array.T:
         selector = np.logical_and(base_bi_corr[1, :] > point[1]*0.9, base_bi_corr[1, :] < point[1]*1.1)
-        r_rels.append(point[0]/np.mean(base_bi_corr[0, selector]))
-        r_std_nodes.append((point[0]-np.mean(base_bi_corr[0, selector]))/np.std(base_bi_corr[0, selector]))
+        r_rels.append(point[0] / np.mean(base_bi_corr[0, selector]))
+        r_std_nodes.append((point[0] - np.mean(base_bi_corr[0, selector])) / np.std(base_bi_corr[0,
+                                                                                              selector]))
 
     r_rels = np.array(r_rels)
     r_std_nodes = np.array(r_std_nodes)
@@ -394,7 +395,7 @@ def auto_analyze(source_list,
 
         else:
             ceiling = min(205, len(interactome_interface.entry_point_uniprots_neo4j_ids))
-            sampling_depth = max((ceiling-5) ** 2 /
+            sampling_depth = max((ceiling - 5) ** 2 //
                                  len(interactome_interface.entry_point_uniprots_neo4j_ids),
                                  5)
 

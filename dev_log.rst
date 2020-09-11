@@ -71,6 +71,8 @@ network is log of probability of being connected through that suite of GO terms.
 https://www.nature.com/articles/ng2012 and https://pubmed.ncbi.nlm.nih.gov/29036684/ for binary
 interaction filters
 
+ - TODO: [DEV TOOL] performance evaluation run: compute compops for sampling a large pool of
+genes in yeast
 
 Bulk Backlog:
 -------------

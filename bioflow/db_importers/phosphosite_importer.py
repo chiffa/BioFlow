@@ -39,8 +39,8 @@ def insert_into_the_database(up_ids_2_inner_ids,
         # print 'tick'
 
         if counter % breakpoints == 0 and counter > 1:
-            compops = float(breakpoints)/(time()-previous_time)
-            secs_before_termination = int((total_pairs-counter)/compops)
+            compops = float(breakpoints) / (time() - previous_time)
+            secs_before_termination = int((total_pairs - counter) / compops)
 
             log.info('inserting link %s out of %s; %.2f complete; inserting speed: %.2f; expected finsihing: %s',
                       counter + 1,

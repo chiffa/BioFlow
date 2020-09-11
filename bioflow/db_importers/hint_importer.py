@@ -44,7 +44,7 @@ def cross_ref_hint():
     for i, (legacyId, linked_legacyIds) in enumerate(relations_dict.items()):
 
         if i % breakpoints:
-            log.info('\t %.2f %%' % (float(i)/float(size)*100))
+            log.info('\t %.2f %%' % (float(i) / float(size) * 100))
 
         if legacyId in list(uniprot_ref_dict.keys()):
             for linked_legacyId in linked_legacyIds:

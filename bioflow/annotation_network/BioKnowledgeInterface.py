@@ -748,7 +748,7 @@ class GeneOntologyInterface(object):
             for _ in range(0, sparse_samples):
                 _length = copy(self.analytic_uniprots)
                 random.shuffle(_length)
-                iterator += list(zip(_length[:len(_length) / 2], _length[len(_length) / 2:]))
+                iterator += list(zip(_length[:len(_length) // 2], _length[len(_length) // 2:]))
                 self.uncomplete_compute = True
         else:
             iterator = combinations(self.analytic_uniprots, 2)
