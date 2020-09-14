@@ -17,11 +17,11 @@ current_run_start_time = current_run_start_time.replace(':', '.')
 
 
 # TODO: remap those to the values in user configs
-dump_location = path.join(path.abspath(path.dirname(__file__)), 'dumps')
+dump_location = dumps_directory
 # output_location = path.join(path.abspath(os.path.expanduser('~')), 'outputs' + '_' +
 #                             current_run_start_time)
 output_location = path.join(output_location, 'run startend on ' + current_run_start_time)
-log_location = path.join(path.abspath(path.dirname(__file__)), 'logs')
+log_location = logs_directory
 
 hl_os_io.mkdir_recursive(dump_location)
 hl_os_io.mkdir_recursive(output_location)

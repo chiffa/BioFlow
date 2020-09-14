@@ -19,6 +19,7 @@ from bioflow.molecular_network.InteractomeInterface import InteractomeInterface
 from bioflow.utils.dataviz import kde_compute
 from bioflow.utils.io_routines import undump_object, get_source_bulbs_ids, get_background_bulbs_ids
 from bioflow.utils.log_behavior import get_logger
+from bioflow.utils.general_utils.high_level_os_io import mkdir_recursive
 
 log = get_logger(__name__)
 
@@ -552,12 +553,10 @@ def auto_analyze(source=None, go_interface_instance=None, processors=3, desired_
                 param_set=param_set)
 
         if len(output_destination_prefix) > 0:
-            corrected_knowledge_GDF_output = os.path.join(
-                os.path.join(Outputs.prefix, output_destination_prefix),
-                'GO_Analysis_output.gdf')
-            corrected_knowledge_tables_output = os.path.join(
-                os.path.join(Outputs.prefix, output_destination_prefix),
-                'knowledge_stats.tsv')
+            prefix = os.path.join(Outputs.prefix, output_destination_prefix)
+            mkdir_recursive(prefix)
+            corrected_knowledge_GDF_output = os.path.join(prefix, 'GO_Analysis_output.gdf')
+            corrected_knowledge_tables_output = os.path.join(prefix, 'knowledge_stats.tsv')
 
         else:
             corrected_knowledge_GDF_output = Outputs.GO_GDF_output

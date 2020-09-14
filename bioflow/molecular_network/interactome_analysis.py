@@ -20,6 +20,7 @@ from bioflow.molecular_network.InteractomeInterface import InteractomeInterface
 from bioflow.utils.dataviz import kde_compute
 from bioflow.utils.log_behavior import get_logger
 from bioflow.utils.io_routines import get_source_bulbs_ids, get_background_bulbs_ids
+from bioflow.utils.general_utils.high_level_os_io import mkdir_recursive
 
 from scipy.stats import gumbel_r
 
@@ -392,7 +393,6 @@ def auto_analyze(source_list,
                 p_val=0.9,
                 interactome_interface_instance=interactome_interface)
 
-
         else:
             ceiling = min(205, len(interactome_interface.entry_point_uniprots_neo4j_ids))
             sampling_depth = max((ceiling - 5) ** 2 //
@@ -425,12 +425,10 @@ def auto_analyze(source_list,
                 sparse_rounds=sampling_depth, interactome_interface_instance=interactome_interface)
 
         if len(output_destination_prefix) > 0:
-            corrected_interactome_GDF_output = os.path.join(
-                os.path.join(Outputs.prefix, output_destination_prefix),
-                'Interactome_Analysis_output.gdf')
-            corrected_interactome_tables_output = os.path.join(
-                os.path.join(Outputs.prefix, output_destination_prefix),
-                'interactome_stats.tsv')
+            prefix = os.path.join(Outputs.prefix, output_destination_prefix)
+            mkdir_recursive(prefix)
+            corrected_interactome_GDF_output = os.path.join(prefix, 'Interactome_Analysis_output.gdf')
+            corrected_interactome_tables_output = os.path.join(prefix, 'interactome_stats.tsv')
 
         else:
             corrected_interactome_GDF_output = Outputs.Interactome_GDF_output

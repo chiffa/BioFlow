@@ -114,12 +114,13 @@ if __name__ == "__main__":
                                  background_list=background_bulbs_ids,
                                  skip_sampling=False,
                                  from_memoization=False,
-                                 output_destination_prefix='chr_%s'%filename)
+                                 output_destination_prefix='chr_%s' % filename[:-4])
 
+            skip_sampling = False
             # perform the knowledge analysis
             knowledge_analysis([hits_ids],
                                desired_depth=20,
                                processors=3,
                                param_set=ref_param_set,
                                skip_sampling=False,
-                               output_destination_prefix='chr_%s'%filename)
+                               output_destination_prefix='chr_%s' % filename[:-4])

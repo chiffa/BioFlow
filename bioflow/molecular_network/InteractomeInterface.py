@@ -774,6 +774,26 @@ class InteractomeInterface(object):
             (skip_reactome, skip_hint, skip_biogrid)]
         md5 = hashlib.md5(json.dumps(data, sort_keys=True).encode('utf-8')).hexdigest()
 
+        log.debug("md5 hashing done. hash: %s. parameters: \n"
+                  "\t complexity aware: %s \n"
+                  "\t sorted init set hash: %s \n"
+                  "\t full impact: %s \n"
+                  "\t connected UNIPROTs hash: %s\n"
+                  "\t line loss: %s\n"
+                  "\t l_norm: %s\n"
+                  "\t edge drop: %s\n"
+                  "\t skipping reactome|hint|biogrid: %s\n"
+                  % (md5,
+                                            self.connexity_aware,
+                                            hashlib.md5(json.dumps(sorted_initial_set, sort_keys=True).encode('utf-8')).hexdigest(),
+                                            self.full_impact,
+                                            hashlib.md5(json.dumps(connected_ups, sort_keys=True).encode(
+                                                'utf-8')).hexdigest(),
+                                            cr.line_loss,
+                                            l_norm,
+                                            edge_drop,
+                                            (skip_reactome, skip_hint, skip_biogrid)))
+
         return str(md5)
 
     def set_uniprot_source(self, uniprots):
@@ -832,6 +852,10 @@ class InteractomeInterface(object):
             flow of information. Currently a place-holder
         :return: adjusted conduction system
         """
+
+        if self.background:  # TODO: why is this even necessary?
+            self.connected_uniprots = list(
+                set(self.all_uniprots_neo4j_id_list).intersection(set(self.background)))
 
         if lapl_normalized:
             self.normalize_laplacian()
@@ -1058,11 +1082,12 @@ class InteractomeInterface(object):
 
         # TODO: include the limitations on the types of nodes to sample:
 
-
         if self.background:
             self.connected_uniprots = list(
                 set(self.all_uniprots_neo4j_id_list).intersection(set(self.background)))
-            local_connected_uniprots = self.connected_uniprots
+            local_connected_uniprots = list(self.connected_uniprots)  # should have solved th
+            # issue introduced by shufflling and co.
+
         else:
             # TODO: debug to see why there are non-uniprots in connected uniprots
             local_connected_uniprots = list(

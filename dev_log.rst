@@ -4,26 +4,28 @@ TODOs for the project in the future:
 Current refactoring:
 --------------------
 
- - TODO: [DEBUG] create a mongoDB connection inside the fork for the pool.
+ - TODO: [DEBUG]/[SANITY]: MongoDB:
+    - Create a mongoDB connection inside the fork for the pool
+    - Move MongoDB interface from configs into a proper location and create DB type - agnostic
+        bindings
 
- - TODO: [DEBUG] Move MongoDB interface from configs into a proper location and create database
-type - agnostic bindings
-
- - TODO: [SANITY] reconfigure the configs management:
+ - TODO: [SANITY] Configs management:
     - all the stings `+` need to be `os.path.join`.
-    - active organism is now the only thing that is saved. It is stored in "shelve" file inside a "
-.internal" directory
+    - active organism is now the only thing that is saved. It is stored in "shelve" file inside a
+        ".internal" directory
     - fold in the sources for the databases into a single location, with a selector from "shelve"
-indicating which organims to load.
- - TODO: [SANITY] allow user to configure where to store the output => add outputs folder to
-docker-compose
- - TODO: [SANITY] allow user to configure where to store intermediates and inputs/outputs
- - TODO: [SANITY] remove ank as point of storage for miniconda in Docker
- - TODO: [SANITY] move configs somewhere saner: ~/bioflow/ directory seems to be a good start
- - TODO: [SANITY] refactor the setting parsing and supplying
+        indicating which organims to load.
+    - create a user interface command in order to set up the environment and a saving file that
+        allows the configs to be saved between the users.
 
- - TODO: [CRICITAL] MATPLOTLIB DOES NOT WORK WITH CURRENT DOCKERFILE IF FIGURE IS CREATED
- - TODO: [CRITICAL] ascii in gdf export crashes (should be solved with Py3's utf3)
+ - TODO: [USABILITY] Add an option for the user to add the location for the output in the
+        auto-analyse
+
+ - TODO: [USABILITY] change ops/sec from a constant to the average of the last run
+
+ - TODO: [SANITY] Docker:
+    - Add outputs folder map to the host filesystem to the docker-compose
+    - Remove ank as point of storage for miniconda in Docker
 
  - TODO: [DOC] document where the user-mapped folders live from Docker
  - TODO: [DOC] document the user how to install and map to a local neo4j database
@@ -32,12 +34,29 @@ docker-compose
     => Currently the percentages are managed by log.info(calls)
     => Providing an in-line update would require a print(<log message>, end='\r')
     => Change log management so that the info gets logged into a file without rising to the
-surface and couple all the log.debug with a "print"
+        surface and couple all the log.info with a "print"
 
- - TODO: fold the p-values into the GO_GDF export in the same way we do it for the interactome
+ - TODO: [SANITY] Logs:
+    => DONE: Pull the logs and internal dumps into the ~/bioflow directory
+    => IGNORE: Hide away the overly verbose info logs into debug logs.
+
+ - TODO: [USABILITY] fold the p-values into the GO_GDF export in the same way we do it for the
+        interactome
+
+ - PTCH: [SANITY] allow user to configure where to store intermediates and inputs/outputs
+ - DONE: [SANITY] move configs somewhere saner: ~/bioflow/ directory seems to be a good start
+ - PTCH: [CRICITAL] MATPLOTLIB DOES NOT WORK WITH CURRENT DOCKERFILE IF FIGURE IS CREATED =>
+        figures are not created.
+ - DONE: [CRITICAL] ascii in gdf export crashes (should be solved with Py3's utf8)
+
+
 
 Bigger refactors
 ****************
+
+ - TODO: [FEATURE] [DECIDE IF IMPLEMENT] add flow calculation for real samples saving to mongodb, +
+buffering (if unchanged InteractomeInstance and other secondary formatting, just retrieve the
+flow from the database)
 
  - TODO: [REFACTOR] refactor the entire edge typing upon insertion, retrieval upon construction of
 laplacian/adjacency matrix and setting of Laplacian weights
