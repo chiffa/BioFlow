@@ -14,7 +14,8 @@ from csv import writer as csv_writer
 
 from bioflow.algorithms_bank.conduction_routines import perform_clustering
 from bioflow.annotation_network.BioKnowledgeInterface import GeneOntologyInterface
-from bioflow.main_configs import annotome_rand_samp, Dumps, Outputs, estimated_comp_ops
+from bioflow.main_configs import Dumps, Outputs, estimated_comp_ops
+from bioflow.sample_storage.mongodb import find_annotome_rand_samp, count_annotome_rand_samp
 from bioflow.user_configs import sparse_analysis_threshold
 from bioflow.molecular_network.InteractomeInterface import InteractomeInterface
 from bioflow.utils.dataviz import kde_compute
@@ -345,11 +346,11 @@ def compare_to_blank(
              blank_model_size, md5_hash,  sparse_rounds)
 
     log.info("samples found to test against: \t %s",
-             annotome_rand_samp.find({'size': blank_model_size,
+             count_annotome_rand_samp({'size': blank_model_size,
                                       'sys_hash': md5_hash,
-                                      'sparse_rounds': sparse_rounds}).count())
+                                      'sparse_rounds': sparse_rounds}))
 
-    background_sample = annotome_rand_samp.find(
+    background_sample = find_annotome_rand_samp(
             {'size': blank_model_size, 'sys_hash': md5_hash, 'sparse_rounds': sparse_rounds})
 
 

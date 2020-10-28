@@ -1,15 +1,61 @@
 TODOs for the project in the future:
 ====================================
 
+On the table:
+-------------
+
+[TEST]
+
+Currently debugging the issue where an intersection of all_uniprots_id_list with a background
+leads to
+a) injection of non-uniprot IDs into the connected uniprots
+b) change of the signature of the Interface instance by changing:
+    - `analytics_uniprot_list` in `InteractomeInterface`
+    - `analytics_up_list` in `BioKnowledgeInterface`
+
+The issue seem to be stemming from the following variables:
+in `InteractomeInterface`:
+    - `self.all_uniprots_neo4j_id_list` (which is a pointer to `self.reached_uniprots_neo4j_id_list`)
+    - `self.connected_uniprots`
+    - `self.background`
+    - `self.connected_uniprots` and `self.background` are directly modified from the `auto_analyze`
+        routine and then
+    - THE OPERATION ABOVE IS CANCELLED OUT BY THE RANDOM SAMPLE SPECIFICALLY
+        Which is probably the source of our problems. now the issue is how to get rid of the
+        problem with nodes that failed
+    - the issue only emerges upon sparse sampling branch firing
+    - `self.entry_point_uniprots_neo4j_ids` is used by `auto_analyze` to determine sampling depth
+        and is set by the `set_uniprot_source()` method and is checked by the
+        `get_interactome_interface()` method
+    -
+
+in `BioKnowledgeInterface`:
+    - `self.InitSet` (which is `all_uniprots_neo4j_id_list` from the `InteractomeInstance` from
+        which the conduction system is built)
+    - `self.UPs_without_GO`
+
 Current refactoring:
 --------------------
 
- - TODO: [DEBUG]/[SANITY]: MongoDB:
-    - Create a mongoDB connection inside the fork for the pool
-    - Move MongoDB interface from configs into a proper location and create DB type - agnostic
-        bindings
+ - TODO: [SANITY]: remove nested lists from auto-analyze
+
+ - TODO: [DEBUG]: sampling pools seem to be sharing the random ID now and not be parallel. CPU
+    usage however indicates spawned processes running properly
+
+ - TODO: [DEBUG]: align BioKnowledgeInterface analysis on the InteractomeAnalysis:
+    - Take the background list into account
+    - Take in account the analytics UP list in the hashing (once background is taken into account)
+
+ - TODO: [USABILITY] fold the p-values into the GO_GDF export in the same way we do it for the
+        interactome
+
+ - TEST: [DEBUG]/[SANITY]: MongoDB:
+    - [TEST] Create a mongoDB connection inside the fork for the pool
+    - [TEST]Move MongoDB interface from configs into a proper location and create DB type -
+        agnostic bindings
 
  - TODO: [SANITY] Configs management:
+    - move the organism to the '~/bioflow'
     - all the stings `+` need to be `os.path.join`.
     - active organism is now the only thing that is saved. It is stored in "shelve" file inside a
         ".internal" directory
@@ -32,18 +78,9 @@ Current refactoring:
  - TODO: [DOC] document where the user-mapped folders live from Docker
  - TODO: [DOC] document the user how to install and map to a local neo4j database
 
- - TODO: [USABILITY] pull inlined updates printing from evoGANs project.
-    => Currently the percentages are managed by log.info(calls)
-    => Providing an in-line update would require a print(<log message>, end='\r')
-    => Change log management so that the info gets logged into a file without rising to the
-        surface and couple all the log.info with a "print"
-
- - TODO: [SANITY] Logs:
+ - DONE: [SANITY] Logs:
     => DONE: Pull the logs and internal dumps into the ~/bioflow directory
     => IGNORE: Hide away the overly verbose info logs into debug logs.
-
- - TODO: [USABILITY] fold the p-values into the GO_GDF export in the same way we do it for the
-        interactome
 
  - PTCH: [SANITY] allow user to configure where to store intermediates and inputs/outputs
  - DONE: [SANITY] move configs somewhere saner: ~/bioflow/ directory seems to be a good start
@@ -52,9 +89,14 @@ Current refactoring:
  - DONE: [CRITICAL] ascii in gdf export crashes (should be solved with Py3's utf8)
 
 
-
 Bigger refactors
 ****************
+
+ - TODO: [USABILITY] pull inlined updates printing from evoGANs project.
+    => Currently the percentages are managed by log.info(calls)
+    => Providing an in-line update would require a print(<log message>, end='\r')
+    => Change log management so that the info gets logged into a file without rising to the
+        surface and couple all the log.info with a "print"
 
  - TODO: [FEATURE] [DECIDE IF IMPLEMENT] add flow calculation for real samples saving to mongodb, +
 buffering (if unchanged InteractomeInstance and other secondary formatting, just retrieve the
@@ -62,12 +104,6 @@ flow from the database)
 
  - TODO: [REFACTOR] refactor the entire edge typing upon insertion, retrieval upon construction of
 laplacian/adjacency matrix and setting of Laplacian weights
-
- - TODO: [NOT THIS ITERATION] neo4j and mongodb versionning based on the currently
-active organism. For instance, all neo4j nodes and edges need to be marked with the organism tag.
-
- - TODO: [NOT THIS ITERATION] add a mail signalling to indicate the termination or crash of the
-execution
 
  - TODO: [FEATURE] Change the informativity between nodes connection from the max of their
 informativities
@@ -82,7 +118,7 @@ network is log of probability of being connected through that suite of GO terms.
 
  - TODO: [FEATURE] flow to a targeted set
 
- - TODO: [FEATURE] weighted targets flow
+ - TODO: [FEATURE] we ighted targets flow
 
  - TODO: [FEATURE] modification of the Laplacian weights by the end user.
 
@@ -94,6 +130,18 @@ interaction filters
 
  - TODO: [DEV TOOL] performance evaluation run: compute compops for sampling a large pool of
 genes in yeast
+
+ - TOOD: [REFACTOR] set the model for the database usage for the samples by performing
+insertions/conversions inside the `sample_storage` databases wrappers (for mongodb: form the dict
+of query/payload)
+
+ - TODO: [NOT THIS ITERATION] neo4j and mongodb versionning based on the currently
+active organism. For instance, all neo4j nodes and edges need to be marked with the organism tag.
+
+ - TODO: [NOT THIS ITERATION] add a mail signalling to indicate the termination or crash of the
+execution
+
+
 
 Bulk Backlog:
 -------------
@@ -808,23 +856,4 @@ Add additional databases:
     - BioGRID
     - HPRD (Human Reference Protein-protein interaction Dataset - human only)
     - IntAct (good idea to integrate given the quality and extensivity of data)
-    - DIP (Database of Interacting Proteins - releases seem to have stopped in 2014)
-    - GeneMania (Not entirely clear what the dataset or intention are, but can be used to x-link
-     complexes)
-
-Improve crosslinking between different databases
-------------------------------------------------
-
--  Perform a search in the UNIPROT Database in order to improve
-   the annotation based on the DisplayNames => this is done separately
-   by a matching/lookup module (this would be another good application
-   for the elasticsearch engine)
-
--  Import modification feature from the reactome.org to account for post-translational
-    modifications
-
--  Add fulltext indexes to the nodes (would be another great application of the
-   elasticsearch engine)
-
-
-
+ 

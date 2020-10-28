@@ -8,6 +8,13 @@ import logging.handlers
 import sys
 from shutil import rmtree
 
+from smtplib import SMTP
+from datetime import datetime
+from email.message import EmailMessage
+
+from bioflow.user_configs import smtp_logging_parameters, smtp_logging
+
+
 # TODO: give user control where to put the logs in
 log_location = path.join(path.abspath(
         path.join(path.dirname(__file__), os.pardir)), 'logs')
@@ -111,6 +118,7 @@ def get_logger(logger_name):
     add_handler(_logger, logging.WARNING, 'warning.log')
     add_handler(_logger, logging.ERROR, 'error.log')
     add_handler(_logger, logging.CRITICAL, 'critical.log')
+    add_handler()
 
     if not on_remote_unittest:  # pragma: no cover
         ch = logging.StreamHandler(sys.stderr)
@@ -121,7 +129,43 @@ def get_logger(logger_name):
         ch.setFormatter(formatter)
         _logger.addHandler(ch)
 
+    if smtp_logging:
+        mail_handler = logging.handlers.SMTPHandler(
+            mailhost=smtp_logging_parameters['local_host'],
+            fromaddr=smtp_logging_parameters['local_mail_account'],
+            toaddrs=smtp_logging_parameters['reporting_target_mail'],
+            subject="BioFlow runtime error"
+        )
+
+        mail_handler.setLevel(logging.ERROR)
+        _logger.addHandler(mail_handler)
+
     return _logger
+
+
+mime_message = EmailMessage()
+mime_message['From'] = smtp_logging_parameters['local_mail_account']
+mime_message['To'] = smtp_logging_parameters['reporting_target_mail']
+
+
+def successfully_completed(start_date, start_device):
+
+    with SMTP(host=smtp_logging_parameters['local_host']) as smtp_server:
+        mime_message['Subject'] = 'Run started on %s and %s has completed' % (start_date.isoformat(), start_device)
+        mime_message.set_content('Run has completed successfully after %s minutes' % ((datetime.now() -
+                   start_date).total_seconds()/60.))
+
+        smtp_server.send_message(mime_message)
+
+
+def smtp_error_bail_out():
+
+    with SMTP(host=smtp_logging_parameters['local_host']) as smtp_server:
+        mime_message['Subject'] = 'SMTPHandler error bail-out'
+        mime_message.set_content("There was an error in the code and the logger's SMPTHandler bailed out.")
+        print(smtp_server.noop())
+        smtp_server.send_message(mime_message)
+
 
 logger = get_logger('this_logger_needs_to_be_renamed')
 

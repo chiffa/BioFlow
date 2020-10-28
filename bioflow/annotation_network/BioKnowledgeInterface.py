@@ -22,7 +22,8 @@ from scipy.sparse import lil_matrix
 from scipy.sparse.csgraph import shortest_path
 
 from bioflow.algorithms_bank import conduction_routines as cr
-from bioflow.main_configs import Dumps, Outputs, annotome_rand_samp
+from bioflow.main_configs import Dumps, Outputs
+from bioflow.sample_storage.mongodb import insert_annotome_rand_samp
 from bioflow.molecular_network.InteractomeInterface import InteractomeInterface
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from bioflow.neo4j_db.db_io_routines import get_db_id
@@ -956,7 +957,7 @@ class GeneOntologyInterface(object):
                         sort_keys=True).encode('utf-8')).hexdigest()
 
                 if not no_add:
-                    annotome_rand_samp.insert(
+                    insert_annotome_rand_samp(
                         {
                             'UP_hash': md5,
                             'sys_hash': self.md5_hash(),

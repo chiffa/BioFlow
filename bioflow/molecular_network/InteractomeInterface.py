@@ -21,7 +21,8 @@ from itertools import chain
 from bioflow.utils.gdfExportInterface import GdfExportInterface
 from bioflow.utils.io_routines import write_to_csv, dump_object, undump_object
 from bioflow.utils.log_behavior import get_logger
-from bioflow.main_configs import Dumps, Outputs, interactome_rand_samp_db
+from bioflow.main_configs import Dumps, Outputs
+from bioflow.sample_storage.mongodb import insert_interactome_rand_samp
 from bioflow.user_configs import internal_storage, skip_hint, skip_biogrid, skip_reactome
 from bioflow.internal_configs import edge_type_filters, adjacency_matrix_weights, \
     laplacian_matrix_weights, neo4j_names_dict
@@ -468,12 +469,14 @@ class InteractomeInterface(object):
 
             counter += 1
 
+        # This is a pointer
         self.all_uniprots_neo4j_id_list += self.reached_uniprots_neo4j_id_list
         self.reached_uniprots_neo4j_id_list = list(set(self.reached_uniprots_neo4j_id_list))
         log.info("reached uniprots: %s", len(self.reached_uniprots_neo4j_id_list))
 
         for up_node in DatabaseGraph.get_all('UNIPROT'):
             neo4j_node_id = get_db_id(up_node)
+
             if neo4j_node_id not in self.reached_uniprots_neo4j_id_list:
                 self.all_uniprots_neo4j_id_list.append(neo4j_node_id)
                 self.neo4j_id_2_display_name[neo4j_node_id] = up_node._properties['displayName']
@@ -692,10 +695,13 @@ class InteractomeInterface(object):
         self.undump_matrices()
         self.undump_eigen()
 
-        self.connected_uniprots = [
-            NodeID for NodeID,
-            idx in self.neo4j_id_2_matrix_index.items() if idx < (
-                self.laplacian_matrix.shape[0] - 1)]
+        if self.background:
+            self.connected_uniprots = list(
+                set(self.all_uniprots_neo4j_id_list).intersection(set(self.background)))
+
+        else:
+            self.connected_uniprots = list(set(self.all_uniprots_neo4j_id_list))
+
 
     def get_descriptor_for_index(self, index):
         """
@@ -852,10 +858,6 @@ class InteractomeInterface(object):
             flow of information. Currently a place-holder
         :return: adjusted conduction system
         """
-
-        if self.background:  # TODO: why is this even necessary?
-            self.connected_uniprots = list(
-                set(self.all_uniprots_neo4j_id_list).intersection(set(self.background)))
 
         if lapl_normalized:
             self.normalize_laplacian()
@@ -1079,25 +1081,13 @@ class InteractomeInterface(object):
             raise Exception('Not the same list sizes!')
 
         # TODO: move that part to the interactome analysis section => Unique Interactome Interface
-
         # TODO: include the limitations on the types of nodes to sample:
-
-        if self.background:
-            self.connected_uniprots = list(
-                set(self.all_uniprots_neo4j_id_list).intersection(set(self.background)))
-            local_connected_uniprots = list(self.connected_uniprots)  # should have solved th
-            # issue introduced by shufflling and co.
-
-        else:
-            # TODO: debug to see why there are non-uniprots in connected uniprots
-            local_connected_uniprots = list(
-                set(self.all_uniprots_neo4j_id_list).intersection(set(self.connected_uniprots)))
 
 
         for sample_size, iterations in zip(samples_size, samples_each_size):
             for i in range(0, iterations):
-                shuffle(local_connected_uniprots)
-                analytics_uniprot_list = local_connected_uniprots[:sample_size]
+                shuffle(self.connected_uniprots)
+                analytics_uniprot_list = self.connected_uniprots[:sample_size]
                 # print('debug: selected UProt IDs :', analytics_uniprot_list)
 
                 self.set_uniprot_source(analytics_uniprot_list)
@@ -1117,7 +1107,7 @@ class InteractomeInterface(object):
                              "\t size: %s \t sys_hash: %s \t sparse_rounds: %s, matrix weight: %s" % (
                                 pool_no, sample_size, md5, sparse_rounds, np.sum(self.current_accumulator)))
 
-                    interactome_rand_samp_db.insert(
+                    insert_interactome_rand_samp(
                         {
                             'UP_hash': md5,
                             'sys_hash': self.md5_hash(),

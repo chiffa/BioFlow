@@ -7,7 +7,7 @@ from scipy import histogram2d
 from csv import reader as csv_reader
 import os
 
-from bioflow.main_configs import interactome_rand_samp_db
+from bioflow.sample_storage.mongodb import count_interactome_rand_samp, find_interactome_rand_samp
 from bioflow.utils.log_behavior import get_logger
 from bioflow.molecular_network.InteractomeInterface import InteractomeInterface
 from bioflow.algorithms_bank.conduction_routines import perform_clustering
@@ -39,7 +39,7 @@ interactome_interface_instance.randomly_sample(samples_size=[2],
 
 # we will need to populate the database first
 # here as well is where we will be doing filtering by the edge type
-print("samples found to test against:\t %s" % interactome_rand_samp_db.count_documents({'size': 2,
+print("samples found to test against:\t %s" % count_interactome_rand_samp({'size': 2,
                                                                           'sys_hash': md5_hash,
                                                                           'sparse_rounds': False}))
 
@@ -61,9 +61,9 @@ essentiality_percentage = []
 
 # we will need to modify the sys_hash to take in account that we are using only one type of
 # connections = > Done
-for i, sample in enumerate(interactome_rand_samp_db.find({'size': 2,
-                                                          'sys_hash': md5_hash,
-                                                          'sparse_rounds': False})):
+for i, sample in enumerate(find_interactome_rand_samp({'size': 2,
+                                                      'sys_hash': md5_hash,
+                                                      'sparse_rounds': False})):
 
     # if i > 10:
     #     break

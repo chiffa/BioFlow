@@ -5,7 +5,6 @@ import os
 import pickle
 from os import path, makedirs
 from pprint import PrettyPrinter
-from pymongo import MongoClient
 from bioflow.configs_manager import parse_config, compute_full_paths
 from bioflow.user_configs import output_location, dumps_directory, logs_directory
 from bioflow.utils.general_utils import high_level_os_io as hl_os_io
@@ -20,7 +19,7 @@ current_run_start_time = current_run_start_time.replace(':', '.')
 dump_location = dumps_directory
 # output_location = path.join(path.abspath(os.path.expanduser('~')), 'outputs' + '_' +
 #                             current_run_start_time)
-output_location = path.join(output_location, 'run startend on ' + current_run_start_time)
+output_location = path.join(output_location, 'run started on ' + current_run_start_time)
 log_location = logs_directory
 
 hl_os_io.mkdir_recursive(dump_location)
@@ -74,13 +73,7 @@ pymongo_suffix = Sources['INTERNAL']['mongosuffix']
 estimated_comp_ops = int(Sources['INTERNAL']['compops'])  # pairwise flows computed per second
 
 # Builds static entry points for mongodatabase access
-client = MongoClient(mongo_db_url)
-db = client.BioFlow_database
-annotome_rand_samp = db[pymongo_prefix + "UP_r_samples" + pymongo_suffix]
-interactome_rand_samp_db = db[
-    pymongo_prefix +
-    "Interactome_samples" +
-    pymongo_suffix]
+# TODO: move into the
 
 
 class Dumps(object):

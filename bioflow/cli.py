@@ -151,15 +151,16 @@ def purgemongo(collection):
     :param collection:
     :return:
     """
-    from bioflow.main_configs import annotome_rand_samp, interactome_rand_samp_db
+    from bioflow.sample_storage.mongodb import drop_all_interactome_rand_samp
+    from bioflow.sample_storage.mongodb import drop_all_annotome_rand_samp
 
     if collection == 'all':
-        annotome_rand_samp.drop()
-        interactome_rand_samp_db.drop()
+        drop_all_annotome_rand_samp()
+        drop_all_interactome_rand_samp()
     elif collection == 'interactome':
-        interactome_rand_samp_db.drop()
+        drop_all_interactome_rand_samp()
     elif collection == 'annotome':
-        annotome_rand_samp.drop()
+        drop_all_annotome_rand_samp()
 
 
 @click.command()

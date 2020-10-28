@@ -15,7 +15,9 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from bioflow.algorithms_bank.conduction_routines import perform_clustering
-from bioflow.main_configs import interactome_rand_samp_db, Outputs, Dumps, estimated_comp_ops
+from bioflow.main_configs import Outputs, Dumps, estimated_comp_ops
+from bioflow.sample_storage.mongodb import find_interactome_rand_samp, count_interactome_rand_samp
+from bioflow.user_configs import sparse_analysis_threshold
 from bioflow.molecular_network.InteractomeInterface import InteractomeInterface
 from bioflow.utils.dataviz import kde_compute
 from bioflow.utils.log_behavior import get_logger
@@ -213,11 +215,11 @@ def compare_to_blank(blank_model_size, p_val=0.05, sparse_rounds=False,
              (blank_model_size, md5_hash, sparse_rounds))
 
     log.info("samples found to test against:\t %s" %
-             interactome_rand_samp_db.find({'size': blank_model_size,
+             count_interactome_rand_samp({'size': blank_model_size,
                                             'sys_hash': md5_hash,
-                                            'sparse_rounds': sparse_rounds}).count())
+                                            'sparse_rounds': sparse_rounds}))
 
-    for i, sample in enumerate(interactome_rand_samp_db.find(
+    for i, sample in enumerate(find_interactome_rand_samp(
                                                             {'size': blank_model_size,
                                                              'sys_hash': md5_hash,
                                                              'sparse_rounds': sparse_rounds})):
@@ -368,7 +370,8 @@ def auto_analyze(source_list,
             log.info("spawning a sampler for %s proteins @ %s compops/sec",
                      len(interactome_interface.entry_point_uniprots_neo4j_ids), estimated_comp_ops)
 
-        if len(interactome_interface.entry_point_uniprots_neo4j_ids) < 60:
+        # TODO: restructure to spawn a sampler pool that does not share an object in the Threading
+        if len(interactome_interface.entry_point_uniprots_neo4j_ids) < sparse_analysis_threshold:
 
             if not skip_sampling:
                 log.info('length: %s \t sampling depth: %s \t, estimated round time: %s min',
