@@ -746,9 +746,9 @@ class GeneOntologyInterface(object):
         iterator = []
         if sparse_samples:
             for _ in range(0, sparse_samples):
-                _length = copy(self.analytic_uniprots)
-                random.shuffle(_length)
-                iterator += list(zip(_length[:len(_length) // 2], _length[len(_length) // 2:]))
+                _sample = copy(self.analytic_uniprots)
+                random.shuffle(_sample)
+                iterator += list(zip(_sample[:len(_sample) // 2], _sample[len(_sample) // 2:]))
                 self.uncomplete_compute = True
         else:
             iterator = combinations(self.analytic_uniprots, 2)
@@ -933,6 +933,8 @@ class GeneOntologyInterface(object):
 
         self_connectable_uniprots = list(
             set(self.InitSet) - set(self.UPs_without_GO))
+        # TODO: perform intersection with background (self.InitSet is not taking the background
+        #  into account)
 
         if chromosome_specific:
             self_connectable_uniprots = list(set(self_connectable_uniprots).intersection(
@@ -1026,6 +1028,4 @@ if __name__ == '__main__':
 
     # go_interface_instance.export_subsystem(experimental, ['186958', '142401', '147798', '164077'])
 
-    # data_array = np.array([log(val) for val in go_interface_instance.GO2_Pure_Inf.itervalues()])
-    # hist(data_array, 100, log=True)
-    # show()
+    # data_array = np.array([log(val) for val in go

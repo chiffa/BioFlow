@@ -15,6 +15,7 @@ from csv import writer as csv_writer
 from bioflow.algorithms_bank.conduction_routines import perform_clustering
 from bioflow.annotation_network.BioKnowledgeInterface import GeneOntologyInterface
 from bioflow.main_configs import annotome_rand_samp, Dumps, Outputs, estimated_comp_ops
+from bioflow.user_configs import sparse_analysis_threshold
 from bioflow.molecular_network.InteractomeInterface import InteractomeInterface
 from bioflow.utils.dataviz import kde_compute
 from bioflow.utils.io_routines import undump_object, get_source_bulbs_ids, get_background_bulbs_ids
@@ -351,6 +352,7 @@ def compare_to_blank(
     background_sample = annotome_rand_samp.find(
             {'size': blank_model_size, 'sys_hash': md5_hash, 'sparse_rounds': sparse_rounds})
 
+
     for i, sample in enumerate(background_sample):
 
         if sparse_rounds:
@@ -468,22 +470,21 @@ def get_estimated_time(samples, sample_sizes, operations_per_sec=2.2):
     return counter
 
 
-def auto_analyze(source=None, go_interface_instance=None, processors=3, desired_depth=24,
+# TODO: add support for a background support
+def auto_analyze(source_list,
+                 go_interface_instance=None,
+                 processors=3, desired_depth=24,
                  skip_sampling=False, param_set=ref_param_set, output_destination_prefix=''):
     """
     Automatically analyzes the GO annotation of the RNA_seq results.
 
-    :param source:
+    :param source_list:
     :param go_interface_instance:
     :param processors:
     :param desired_depth:
     :param skip_sampling: uses existing mongoDB content without spawning a sampler
     :param param_set:
     """
-    if source is None:
-        dumplist = undump_object(Dumps.RNA_seq_counts_compare)
-    else:
-        dumplist = source
 
     if desired_depth % processors != 0:
         desired_depth = desired_depth // processors + 1
@@ -491,18 +492,18 @@ def auto_analyze(source=None, go_interface_instance=None, processors=3, desired_
         desired_depth = desired_depth // processors
 
     # noinspection PyTypeChecker
-    for my_list in dumplist:
+    for _list in source_list:
         if go_interface_instance is None:
             go_interface_instance = get_go_interface_instance(param_set)
 
-        go_interface_instance.set_uniprot_source(my_list)
+        go_interface_instance.set_uniprot_source(_list)
 
         if not skip_sampling:
             log.info("spawning a sampler for %s proteins @ %s compops/sec",
                      len(go_interface_instance.analytic_uniprots), estimated_comp_ops)
 
         # TODO: restructure to spawn a sampler pool that does not share an object in the Threading
-        if len(go_interface_instance.analytic_uniprots) < 200:
+        if len(go_interface_instance.analytic_uniprots) < sparse_analysis_threshold:
 
             if not skip_sampling:
 
@@ -555,6 +556,7 @@ def auto_analyze(source=None, go_interface_instance=None, processors=3, desired_
         if len(output_destination_prefix) > 0:
             prefix = os.path.join(Outputs.prefix, output_destination_prefix)
             mkdir_recursive(prefix)
+            # TODO: make compatible with nested lists supplied to the program
             corrected_knowledge_GDF_output = os.path.join(prefix, 'GO_Analysis_output.gdf')
             corrected_knowledge_tables_output = os.path.join(prefix, 'knowledge_stats.tsv')
 

@@ -17,6 +17,8 @@ Current refactoring:
         indicating which organims to load.
     - create a user interface command in order to set up the environment and a saving file that
         allows the configs to be saved between the users.
+    - move the `online_dbs.ini`, `mouse.ini`, `yeast.ini` to the `~/bioflow/configs` and add
+    `user_configs.ini` to it to replace `user_configs.py`.
 
  - TODO: [USABILITY] Add an option for the user to add the location for the output in the
         auto-analyse
