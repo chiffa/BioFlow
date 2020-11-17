@@ -113,7 +113,7 @@ class InteractomeInterface(object):
         self.laplacian_dumps_location = Dumps.interactome_laplacian_matrix
 
         char_set = string.ascii_uppercase + string.digits
-        self.random_tag = ''.join(sample(char_set * 6, 6))
+        self.thread_hex = ''.join(sample(char_set * 6, 6))
 
         self.entry_point_uniprots_neo4j_ids = []
         self.UP2UP_voltages = {}
@@ -142,7 +142,7 @@ class InteractomeInterface(object):
         it, pt = (round(time() - self.init_time),
                   round(time() - self.partial_time))
         pload = 'total: %s m %s s, \t partial: %s m %s s' % (
-            int(it) / 60, it % 60, int(pt) / 60, pt % 60)
+            int(it) // 60, it % 60, int(pt) //60, pt % 60)
         self.partial_time = time()
         return pload
 
@@ -896,7 +896,8 @@ class InteractomeInterface(object):
                 self.laplacian_matrix,
                 [self.neo4j_id_2_matrix_index[UP] for UP in self.entry_point_uniprots_neo4j_ids],
                 re_samples=sparse_samples,
-                cancellation=cancellation)
+                cancellation=cancellation,
+                thread_hex=self.thread_hex)
 
         else:
             current_accumulator, up_pair_2_voltage_current =\
@@ -906,7 +907,8 @@ class InteractomeInterface(object):
                      for UP in self.entry_point_uniprots_neo4j_ids],
                     cancellation=cancellation,
                     # memoized=memoized,
-                    memory_source=self.uniprots_2_voltage_and_circulation)
+                    memory_source=self.uniprots_2_voltage_and_circulation,
+                    thread_hex=self.thread_hex)
             # self.uniprots_2_voltage_and_circulation.update(up_pair_2_voltage_current)
             self.UP2UP_voltages.update(
                 dict(((self.matrix_index_2_neo4j_id[i],
@@ -1093,8 +1095,10 @@ class InteractomeInterface(object):
                 # print('debug: selected UProt IDs :', analytics_uniprot_list)
 
                 self.set_uniprot_source(analytics_uniprot_list)
-                log.info('sampling pool %s: sampling characteristics: sys_hash: %s, size: %s, sparse_rounds: %s' % (pool_no, self.md5_hash(),
-                            sample_size, sparse_rounds))
+                log.info('Sampling thread: %s, Thread hex: %s; sampling characteristics: sys_hash: '
+                         '%s, size: %s, '
+                         'sparse_rounds: %s' % (pool_no, self.thread_hex, self.md5_hash(),
+                                                sample_size, sparse_rounds))
 
                 self.build_extended_conduction_system(
                     memoized=memoized, sourced=False, sparse_samples=sparse_rounds)
@@ -1105,7 +1109,7 @@ class InteractomeInterface(object):
                         sort_keys=True).encode('utf-8')).hexdigest()
 
                 if not no_add:
-                    log.info("Sampling pool %s: Adding a blanc:"
+                    log.info("Sampling thread %s: Adding a blanc:"
                              "\t size: %s \t sys_hash: %s \t sparse_rounds: %s, matrix weight: %s" % (
                                 pool_no, sample_size, md5, sparse_rounds, np.sum(self.current_accumulator)))
 
@@ -1124,15 +1128,15 @@ class InteractomeInterface(object):
                                 self.UP2UP_voltages)})
 
                 if not sparse_rounds:
-                    log.info('Sampling pool %s: Random ID: %s \t Sample size: %s \t iteration: %s\t compops: %s \t '
+                    log.info('Sampling thread %s: Thread hex: %s \t Sample size: %s \t iteration: %s\t compop/s: %s \t '
                              'time: %s ',
-                             pool_no, self.random_tag, sample_size, i,
+                             pool_no, self.thread_hex, sample_size, i,
                              "{0:.2f}".format(sample_size * (sample_size - 1) / 2 / self._time()),
                              self.pretty_time())
                 else:
-                    log.info('Sampling pool %s: Random ID: %s \t Sample size: %s \t iteration: %s\t compops: %s \t '
+                    log.info('Sampling thread %s: Thread hex: %s \t Sample size: %s \t iteration: %.2f \t compop/s: %.2f \t '
                              'time: %s, sparse @ %s ',
-                             pool_no, self.random_tag, sample_size, i,
+                             pool_no, self.thread_hex, sample_size, i,
                              "{0:.2f}".format(sample_size * sparse_rounds / 2 / self._time()),
                              self.pretty_time(), sparse_rounds)
 

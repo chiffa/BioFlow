@@ -39,10 +39,22 @@ tends to pull as well the nodes that are not connected to the giant component in
 
     - Tentatively patched by making the pull from which the IDs are sampled stricter
 
-Random ID assignement to the the threads seem to be working as well
+Random ID assignements to the the threads seem to be not working as well
+    - TODO: rename pool to thread
+    - TODO: add the ID to the treads
+
+Threading seem to be failing as well. The additional threads execute the first sampling, but
+never commit. Given that they freeze out somewhere in the middle, the most likely hypothesis is
+that they run out of RAM and only one thread - that keeps a lock on it  - continues going forwards.
+
 
 Current refactoring:
 --------------------
+
+ - TODO: [SHOW-STOPPER: Hunt down the memory leak
+    - pympler (muppy + summary)
+    - objgraph
+    - memory-profiler
 
  - TODO: [SANITY]: remove nested lists from auto-analyze
 

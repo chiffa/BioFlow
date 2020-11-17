@@ -300,7 +300,8 @@ def edge_current_iteration(conductivity_laplacian, index_pair,
 
 def master_edge_current(conductivity_laplacian, index_list,
                         cancellation=True, potential_dominated=True, sampling=False,
-                        sampling_depth=10, memory_source=None, memoization=None):
+                        sampling_depth=10, memory_source=None, memoization=None,
+                        thread_hex='______'):
     """
     master method for all the required edge current calculations
 
@@ -316,9 +317,11 @@ def master_edge_current(conductivity_laplacian, index_list,
     """
     # TODO: remove memoization option in order to reduce overhead nad mongo database load
 
-    log.info('master edge current starting to sample with %s nodes; cancellation: %s;'
+    log.info('thread hex: %s; master edge current starting to sample with %s nodes; cancellation: '
+             '%s;'
              ' potential-dominated %s; sampling %s; sampling_depth %s'
-             % (len(index_list), cancellation, potential_dominated, sampling, sampling_depth))
+             % (thread_hex, len(index_list), cancellation,
+                potential_dominated, sampling, sampling_depth))
 
     # for line in traceback.format_stack():
     #     print (line.strip())
@@ -393,10 +396,14 @@ def master_edge_current(conductivity_laplacian, index_list,
 
         if counter % breakpoints == 0 and counter > 1:
             compops = float(breakpoints) / (time() - previous_time)
-            mins_before_termination = (total_pairs-counter) / compops / 60
-            log.info("progress: %s/%s, current speed: %s compops, time remaining: %s min, finishing: %s "
-                     % (counter, total_pairs, compops, mins_before_termination,
-                        datetime.datetime.now() + datetime.timedelta(minutes=mins_before_termination)))
+            mins_before_termination = (total_pairs-counter) / compops // 60
+            finish_time = datetime.datetime.now() + datetime.timedelta(minutes=mins_before_termination)
+            log.info("thread hex: %s; progress: %s/%s, current speed: %.2f compop/s, "
+                     "time remaining: "
+                     "%.0f "
+                     "min, finishing: %s "
+                     % (thread_hex, counter, total_pairs, compops, mins_before_termination,
+                        finish_time.strftime("%m/%d/%Y, %H:%M:%S")))
             previous_time = time()
 
     if cancellation:
@@ -406,7 +413,8 @@ def master_edge_current(conductivity_laplacian, index_list,
 
 
 def group_edge_current(conductivity_laplacian, index_list,
-                       cancellation=False, potential_dominated=True):
+                       cancellation=False, potential_dominated=True,
+                       thread_hex='______'):
     """
     Performs a pairwise computation and summation of the
 
@@ -420,13 +428,15 @@ def group_edge_current(conductivity_laplacian, index_list,
     current_accumulator, _ = master_edge_current(
         conductivity_laplacian, index_list,
         cancellation=cancellation,
-        potential_dominated=potential_dominated)
+        potential_dominated=potential_dominated,
+        thread_hex=thread_hex)
 
     return current_accumulator
 
 
 def group_edge_current_memoized(conductivity_laplacian, index_list,
-                                cancellation=True, memory_source=None):
+                                cancellation=True, memory_source=None,
+                                thread_hex='______'):
     """
     Performs a pairwise computation and summation of the pairwise_flow
 
@@ -439,11 +449,12 @@ def group_edge_current_memoized(conductivity_laplacian, index_list,
     return master_edge_current(conductivity_laplacian, index_list,
                                cancellation=cancellation,
                                memory_source=memory_source,
-                               memoization=True)
+                               memoization=True,
+                               thread_hex=thread_hex)
 
 
 def sample_group_edge_current(conductivity_laplacian, index_list, re_samples,
-                              cancellation=False):
+                              cancellation=False, thread_hex='______'):
     """
     Performs sampling of pairwise flow in a conductance system.
 
@@ -461,7 +472,8 @@ def sample_group_edge_current(conductivity_laplacian, index_list, re_samples,
     current_accumulator, _ = master_edge_current(conductivity_laplacian, index_list,
                                                  cancellation=cancellation,
                                                  sampling=True,
-                                                 sampling_depth=re_samples)
+                                                 sampling_depth=re_samples,
+                                                 thread_hex=thread_hex)
 
     return current_accumulator
 
