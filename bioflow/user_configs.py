@@ -1,6 +1,6 @@
 import os
 
-smtp_logging = True
+smtp_logging = False
 smtp_logging_parameters = {
     'local_host': 'lpdpc4.epfl.ch',
     'local_mail_account': 'andrei@lpdpc28.epfl.ch',

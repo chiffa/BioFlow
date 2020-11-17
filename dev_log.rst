@@ -34,6 +34,11 @@ in `BioKnowledgeInterface`:
         which the conduction system is built)
     - `self.UPs_without_GO`
 
+The intermediate solution does not seem to be working that well for now: the sampling mechanism
+tends to pull as well the nodes that are not connected to the giant component in the neo4j graph.
+
+Random ID assignement to the the threads seem to be working as well
+
 Current refactoring:
 --------------------
 
@@ -48,11 +53,6 @@ Current refactoring:
 
  - TODO: [USABILITY] fold the p-values into the GO_GDF export in the same way we do it for the
         interactome
-
- - TEST: [DEBUG]/[SANITY]: MongoDB:
-    - [TEST] Create a mongoDB connection inside the fork for the pool
-    - [TEST]Move MongoDB interface from configs into a proper location and create DB type -
-        agnostic bindings
 
  - TODO: [SANITY] Configs management:
     - move the organism to the '~/bioflow'
@@ -87,6 +87,11 @@ Current refactoring:
  - PTCH: [CRICITAL] MATPLOTLIB DOES NOT WORK WITH CURRENT DOCKERFILE IF FIGURE IS CREATED =>
         figures are not created.
  - DONE: [CRITICAL] ascii in gdf export crashes (should be solved with Py3's utf8)
+
+ - DONE: [DEBUG]/[SANITY]: MongoDB:
+    - [DONE] Create a mongoDB connection inside the fork for the pool
+    - [DONE]Move MongoDB interface from configs into a proper location and create DB type -
+        agnostic bindings
 
 
 Bigger refactors

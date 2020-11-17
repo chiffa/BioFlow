@@ -12,12 +12,13 @@ from smtplib import SMTP
 from datetime import datetime
 from email.message import EmailMessage
 
-from bioflow.user_configs import smtp_logging_parameters, smtp_logging
+from bioflow.user_configs import smtp_logging_parameters, smtp_logging, logs_directory
 
 
 # TODO: give user control where to put the logs in
-log_location = path.join(path.abspath(
-        path.join(path.dirname(__file__), os.pardir)), 'logs')
+# log_location = path.join(path.abspath(
+#         path.join(path.dirname(__file__), os.pardir)), 'logs')
+log_location = logs_directory
 
 on_unittest = os.environ.get('UNITTESTING') == 'True'  # if we are unittesting
 on_remote_unittest = os.environ.get('REMOTE_UNITTEST') == 'True'  # if we are testing on CI tools
@@ -118,7 +119,7 @@ def get_logger(logger_name):
     add_handler(_logger, logging.WARNING, 'warning.log')
     add_handler(_logger, logging.ERROR, 'error.log')
     add_handler(_logger, logging.CRITICAL, 'critical.log')
-    add_handler()
+    # add_handler()
 
     if not on_remote_unittest:  # pragma: no cover
         ch = logging.StreamHandler(sys.stderr)
