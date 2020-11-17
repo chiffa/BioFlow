@@ -37,6 +37,8 @@ in `BioKnowledgeInterface`:
 The intermediate solution does not seem to be working that well for now: the sampling mechanism
 tends to pull as well the nodes that are not connected to the giant component in the neo4j graph.
 
+    - Tentatively patched by making the pull from which the IDs are sampled stricter
+
 Random ID assignement to the the threads seem to be working as well
 
 Current refactoring:

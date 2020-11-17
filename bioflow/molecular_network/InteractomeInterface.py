@@ -696,11 +696,12 @@ class InteractomeInterface(object):
         self.undump_eigen()
 
         if self.background:
-            self.connected_uniprots = list(
-                set(self.all_uniprots_neo4j_id_list).intersection(set(self.background)))
+            self.connected_uniprots = set(self.all_uniprots_neo4j_id_list).intersection(set(self.background))
 
         else:
-            self.connected_uniprots = list(set(self.all_uniprots_neo4j_id_list))
+            self.connected_uniprots = set(self.all_uniprots_neo4j_id_list)
+
+        self.connected_uniprots = list(self.connected_uniprots.intersection(self.neo4j_id_2_matrix_index.keys()))
 
 
     def get_descriptor_for_index(self, index):
@@ -812,6 +813,7 @@ class InteractomeInterface(object):
         :raise Warning: if the uniprots were not present in the set of GOs for which
         we built the system or had no GO attached to them
         """
+        # TODO: find the location from which it is called in the sampling that screws things up
         if not set(uniprots) <= set(self.neo4j_id_2_matrix_index.keys()):
             log.warn('Following reached uniprots neo4j_ids were not retrieved upon the '
                      'circulation matrix construction: \n %s',
