@@ -4,83 +4,11 @@ TODOs for the project in the future:
 On the table:
 -------------
 
-[TEST]
-
-Currently debugging the issue where an intersection of all_uniprots_id_list with a background
-leads to
-a) injection of non-uniprot IDs into the connected uniprots
-b) change of the signature of the Interface instance by changing:
-    - `analytics_uniprot_list` in `InteractomeInterface`
-    - `analytics_up_list` in `BioKnowledgeInterface`
-
-The issue seem to be stemming from the following variables:
-in `InteractomeInterface`:
-    - `self.all_uniprots_neo4j_id_list` (which is a pointer to `self.reached_uniprots_neo4j_id_list`)
-    - `self.connected_uniprots`
-    - `self.background`
-    - `self.connected_uniprots` and `self.background` are directly modified from the `auto_analyze`
-        routine and then
-    - THE OPERATION ABOVE IS CANCELLED OUT BY THE RANDOM SAMPLE SPECIFICALLY
-        Which is probably the source of our problems. now the issue is how to get rid of the
-        problem with nodes that failed
-    - the issue only emerges upon sparse sampling branch firing
-    - `self.entry_point_uniprots_neo4j_ids` is used by `auto_analyze` to determine sampling depth
-        and is set by the `set_uniprot_source()` method and is checked by the
-        `get_interactome_interface()` method
-    -
-
-in `BioKnowledgeInterface`:
-    - `self.InitSet` (which is `all_uniprots_neo4j_id_list` from the `InteractomeInstance` from
-        which the conduction system is built)
-    - `self.UPs_without_GO`
-
-The intermediate solution does not seem to be working that well for now: the sampling mechanism
-tends to pull as well the nodes that are not connected to the giant component in the neo4j graph.
-
-    - Tentatively patched by making the pull from which the IDs are sampled stricter
-
-Random ID assignements to the the threads seem to be not working as well
-    - DONE: rename pool to thread
-    - DONE: add the ID to the treads
-    - TODO: debug why objects all share the same ID across threads (random seed behavior?)
-
-Threading seem to be failing as well. The additional threads execute the first sampling, but
-never commit. Given that they freeze out somewhere in the middle, the most likely hypothesis is
-that they run out of RAM and only one thread - that keeps a lock on it  - continues going forwards.
-
-Memory bleeding:
-    does not concern python objects
-    most likely comes from the sparse matrix domain
-    cannot be corrected by explicit object destruction and gc passing
-
-    At this point, the memory leak seem to be localized to the summation/differentiation between
-csc_matrices. Next debugging steps:
-    - disable multithreading to see if there is any interference there
-    - create a reproductible example of the bug
-
-    Disabling multithreading did not do anything.
-    Extracting the summation alone did not reproduce the error.
-
-    At this point I will build a flowchart for transformation of the values and reproduce it in
-its entirety in an extract.
-
-    In the end the memory leak was caused by persistent memoization of trui of flows.
-
-    As a response, I am moving the flags enabling memoization into the deep configs
-
 
 Current refactoring:
 --------------------
 
- - TODO: [SHOW-STOPPER: Hunt down the memory leak
-    - pympler (muppy + summary)
-    - objgraph
-    - memory-profiler
-
  - TODO: [SANITY]: remove nested lists from auto-analyze
-
- - TODO: [DEBUG]: sampling pools seem to be sharing the random ID now and not be parallel. CPU
-    usage however indicates spawned processes running properly
 
  - TODO: [DEBUG]: align BioKnowledgeInterface analysis on the InteractomeAnalysis:
     - Take the background list into account
@@ -104,14 +32,14 @@ Current refactoring:
  - TODO: [USABILITY] Add an option for the user to add the location for the output in the
         auto-analyse
 
- - TODO: [USABILITY] change ops/sec from a constant to the average of the last run
-
  - TODO: [SANITY] Docker:
     - Add outputs folder map to the host filesystem to the docker-compose
     - Remove ank as point of storage for miniconda in Docker
 
  - TODO: [DOC] document where the user-mapped folders live from Docker
  - TODO: [DOC] document the user how to install and map to a local neo4j database
+
+
 
  - DONE: [SANITY] Logs:
     => DONE: Pull the logs and internal dumps into the ~/bioflow directory
@@ -124,10 +52,74 @@ Current refactoring:
  - DONE: [CRITICAL] ascii in gdf export crashes (should be solved with Py3's utf8)
 
  - DONE: [DEBUG]/[SANITY]: MongoDB:
-    - [DONE] Create a mongoDB connection inside the fork for the pool
-    - [DONE]Move MongoDB interface from configs into a proper location and create DB type -
-        agnostic bindings
+    - DONE: Create a mongoDB connection inside the fork for the pool
+    - DONE: Move MongoDB interface from configs into a proper location and create DB type -
+            agnostic bindings
 
+ - DONE: [SHOW-STOPPER] Memory leak debugging:
+    - DONE: apply muppy. Muppy did not detect any object bloating > most likely comes from matrix
+            domain
+    - DONE: apply psutil-based object tracing. The bloat appears around summation + signature
+            change operations in the main loop > sparse matrix summation and type change seem to be the origin.
+    - DONE: try to have consistent matrix classes and avoid implicit conversions. Did not help
+            with memory, but accelerated the main loop by 10x. Further optimization of the main loop might be
+            desirable
+    - DONE: try to explicitely destroy objects with _del and calls of gc. Did not mitigate the
+            problem. At this point, the memory leak seem to be localized to C code for the
+            summation/differentiation between csc_matrices.
+    - DONE: disable multithreading to see if there is any interference there. Did not help
+    - DONE: extract he summation to create a minimal example: did not help
+    - DONE: build a flowchart to see all the steps in matrices to try to extract a minimal
+            example. Noticed that memoization was capturing a complete sparse matrix. That's where the bloat
+            was happening.
+    - DONE: correct the memoization to remember the currents only.
+
+ - DONE: Threading seem to be failing as well.
+        The additional threads execute the first sampling, but never commit. Given that they
+        freeze out somewhere in the middle, the most likely hypothesis is that they run out of
+        RAM and only one thread - that keeps a lock on it  - continues going forwards.
+        In the end it is due to memory leak.
+
+ - DONE: [DEBUG]: sampling pools seem to be sharing the random ID now and not be parallel. CPU
+        usage however indicates spawned processes running properly
+
+ - DONE: Random ID assignements to the the threads seem to be not working as well
+    - DONE: rename pool to thread
+    - DONE: add the ID to the treads
+    - DONE: debug why objects all share the same ID across threads (random seed behavior? - Nope).
+            The final reason was that thread ID was called in Interactome_instance initialization and not
+
+ - DONE: [USABILITY] change ops/sec from a constant to the average of the last run (was already
+        the case)
+
+ - DONE: debug the issue where the `all_uniprots_id_list` interesection with `background` leads
+        to error-prone behavior. Errors:
+        a) injection of non-uniprot IDs into the connected uniprots
+        b) change of the signature of the Interface instance by changing:
+            - `analytics_uniprot_list` in `InteractomeInterface`
+            - `analytics_up_list` in `BioKnowledgeInterface`
+        The issue seem to be stemming from the following variables:
+        in `InteractomeInterface`:
+            - `self.all_uniprots_neo4j_id_list` (which is a pointer to `self.reached_uniprots_neo4j_id_list`)
+            - `self.connected_uniprots`
+            - `self.background`
+            - `self.connected_uniprots` and `self.background` are directly modified from the `auto_analyze`
+                routine and then
+            - The operation above is cancelled by random_sample specifically
+                Which is probably the source of our problems. now the issue is how to get rid of the
+                problem with nodes that failed
+            - the issue only emerges upon sparse sampling branch firing
+            - `self.entry_point_uniprots_neo4j_ids` is used by `auto_analyze` to determine sampling depth
+                and is set by the `set_uniprot_source()` method and is checked by the
+                `get_interactome_interface()` method
+        in `BioKnowledgeInterface`:
+            - `self.InitSet` (which is `all_uniprots_neo4j_id_list` from the `InteractomeInstance` from
+                which the conduction system is built)
+            - `self.UPs_without_GO`
+        The intermediate solution does not seem to be working that well for now: the sampling mechanism
+        tends to pull as well the nodes that are not connected to the giant component in the neo4j graph.
+        - Tentatively patched by making the pull from which the IDs are sampled stricter. Seems to
+        work well
 
 Bigger refactors
 ****************
