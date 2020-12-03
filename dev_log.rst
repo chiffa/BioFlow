@@ -8,6 +8,23 @@ On the table:
 Current refactoring:
 --------------------
 
+ - TODO: [DEBUG] [SHOW-STOPPER]: connections between the nodes seem to have disappeared
+    - TODO: check if this could have been related to memoization > run test on the glycogen set
+
+ - TODO: [USABILITY] add limiters on the p_value that is printed out elements
+
+ - TODO: [USABILITY] change colors of significant elements to red; all others to black (with alpha)
+
+ - TODO: [USABILITY] add the Laplacian nonzero elements to the shape one
+
+ - TODO: [USABILITY] add a proper tabulation and limit float length in the final results print-out
+
+ - TODO: [USABILITY] save the final table as a tsv into the run directory
+
+ - TODO: [DEBUG] add the interactome_network_stats.png to the run folder
+
+ - TODO: [USABILITY] format the run folders with the list send to the different methods
+
  - TODO: [SANITY]: remove nested lists from auto-analyze
 
  - TODO: [DEBUG]: align BioKnowledgeInterface analysis on the InteractomeAnalysis:
@@ -31,6 +48,21 @@ Current refactoring:
 
  - TODO: [USABILITY] Add an option for the user to add the location for the output in the
         auto-analyse
+
+ - TODO: [USABILITY] Improve the progress reporting
+        Move the INFO to a progress bar. The problem is that we are working with multiple threads in
+        async environment. This can be mitigated by using the `aptbar` library
+    - TODO: single sample loop to aptbar progress monitoring
+    - TODO: outer loop (X samples) to aptbar progress monitoring
+    - TODO: move parameters that are currently being printed in the main loop in INFO channel to
+        DEBUG channel
+
+ - TODO: [OPTIMIZATION]: Profile the runtime in the main loop:
+    - TODO: check for consistency of the sparse matrix types in the main execution loop
+    - TODO: run a profiler to figure out the number of calls and time spend in each call. common
+        profilers include `cProfile` (packaged in the base python) and `pycallgraph` (although no
+        updates since 2016). Alternatively, `cProfile` can be piped into `gprof2dot` to generate
+        a call graph
 
  - TODO: [SANITY] Docker:
     - Add outputs folder map to the host filesystem to the docker-compose
