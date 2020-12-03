@@ -17,7 +17,7 @@ from matplotlib import pyplot as plt
 from bioflow.algorithms_bank.conduction_routines import perform_clustering
 from bioflow.main_configs import Outputs, Dumps, estimated_comp_ops
 from bioflow.sample_storage.mongodb import find_interactome_rand_samp, count_interactome_rand_samp
-from bioflow.user_configs import sparse_analysis_threshold
+from bioflow.user_configs import sparse_analysis_threshold, single_threaded
 from bioflow.molecular_network.InteractomeInterface import InteractomeInterface
 from bioflow.utils.dataviz import kde_compute
 from bioflow.utils.log_behavior import get_logger
@@ -90,21 +90,27 @@ def spawn_sampler_pool(
     :param sparse_rounds:
     :param interactome_interface_instance:
     """
-    try:
-        process_pool = Pool(pool_size)
-        payload = [
+    payload = [
             (sample_size_list,
              interaction_list_per_pool,
              sparse_rounds,
              interactome_interface_instance)]
-        log.debug('spawning the sampler with payload %s', payload)
-        payload_list = payload * pool_size
-        payload_list = [list(item)+[i] for i, item in enumerate(payload_list)]
-        process_pool.map(spawn_sampler, payload_list)
+    payload_list = payload * pool_size
+    payload_list = [list(item)+[i] for i, item in enumerate(payload_list)]  # prepare the payload
 
-    except Exception as e:
-        msg = "{}\n\nOriginal {}".format(e, traceback.format_exc())
-        raise type(e)(msg)
+    if not single_threaded:
+        with Pool(processes=pool_size) as pool:  # This is the object we are using to spawn a thread pool
+            try:
+                log.debug('spawning the sampler with payload %s', payload)
+                pool.map(spawn_sampler, payload_list)  # This what we spawn as a sampler
+            except Exception as e:
+                msg = "{}\n\nOriginal {}".format(e, traceback.format_exc())
+                raise type(e)(msg)
+
+    else:
+        log.debug('spawning single-thread sampler with payload %s', payload)
+        for _payload in payload_list:
+            spawn_sampler(_payload)
 
 
 def local_indexed_select(bi_array, array_column, selection_span):
@@ -343,6 +349,7 @@ def auto_analyze(source_list,
     :param background_list list of physical entities that an experimental method can retrieve
     :param skip_sampling: if true, will skip background sampling step
     """
+
     # noinspection PyTypeChecker
     if desired_depth % processors != 0:
         desired_depth = desired_depth // processors + 1

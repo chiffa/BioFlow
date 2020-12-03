@@ -2,6 +2,10 @@
 Module containing the the general routines for processing of conduction matrices with
 IO current arrays.
 """
+# from pympler import muppy, summary, tracker
+import os
+import psutil
+
 import random
 from copy import copy
 from time import time
@@ -18,22 +22,49 @@ import warnings
 from bioflow.utils.log_behavior import get_logger
 from bioflow.utils.dataviz import render_2d_matrix
 from bioflow.internal_configs import line_loss
+from bioflow.user_configs import psutil_main_loop_memory_tracing, \
+    memory_source_allowed, switch_to_splu
 from bioflow.utils.linalg_routines import cluster_nodes, average_off_diag_in_sub_matrix, \
     average_interset_linkage, normalize_laplacian
 
+
 log = get_logger(__name__)
 
-switch_to_splu = False
-# Looks like we are failing the normalization due to the matrix symmetry when using SPLU.
-# Which is expected - since we did simplifying assumptions about the Laplacian to be able to share it
 
-# In theory, we have to problems here: wrong solver and wrong laplacian
-#   1) we are using a Cholesky solver on a system that by definition has at least one nul eigval
-#   2) we are using the same laplacian matrix for all the calculations. However this is wrong:
-#   we need to account for the fact that we are adding external sink/sources by adding 1
-#   to the diagonal terms of the matrix that are being used as sinks/sources
+# switch_to_splu = False
+# # Looks like we are failing the normalization due to the matrix symmetry when using SPLU.
+# # Which is expected - since we did simplifying assumptions about the Laplacian to be able to share it
 #
-#   A comparison with a proper SPLU showed we make an error that is extremely small but perform the calculation about 20x faster
+# # In theory, we have to problems here: wrong solver and wrong laplacian
+# #   1) we are using a Cholesky solver on a system that by definition has at least one nul eigval
+# #   2) we are using the same laplacian matrix for all the calculations. However this is wrong:
+# #   we need to account for the fact that we are adding external sink/sources by adding 1
+# #   to the diagonal terms of the matrix that are being used as sinks/sources
+# #
+# #   A comparison with a proper SPLU showed we make an error that is extremely small but perform the calculation about 20x faster
+
+
+call_inc = 0
+last_mem_log = 0
+
+
+def log_mem(flag=''):
+    if psutil_main_loop_memory_tracing:
+        global last_mem_log
+        global call_inc
+        process = psutil.Process(os.getpid())
+        mem = process.memory_info().rss / 1024 / 1024
+
+        # print("DEBUG: memory load @ %s: %s" % (flag, mem))
+
+        if call_inc == 0:
+            print("DEBUG: memory load @ %s: %s" % (flag, mem))
+        if mem != last_mem_log:
+            print("DEBUG: memory load increased @ %s by %.2f on inc %d" % (flag, mem - last_mem_log,
+                                                                           call_inc))
+            last_mem_log = mem
+    else:
+        pass
 
 
 def delete_row_csr(mat, i):
@@ -69,12 +100,19 @@ def sparse_abs(sparse_matrix):
     :param sparse_matrix: sparse matrix for which we want to recover the absolute.
     :return: absolute of that matrix
     """
-    with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", "Changing the sparsity structure")
+    # with warnings.catch_warnings():
+    #     warnings.filterwarnings("ignore", "Changing the sparsity structure")
 
-        sparse_matrix = csc_matrix(sparse_matrix)
-        sign = sparse_matrix.sign()
-        ret_mat = sparse_matrix.multiply(sign)
+    # print('sparse_abs method unroll')
+    # print(type(sparse_matrix), sparse_matrix.dtype, sparse_matrix.count_nonzero())
+
+    int_mat = sparse_matrix.tocsc()
+    sign = int_mat.sign()
+    ret_mat = int_mat.multiply(sign)
+
+    # print(type(int_mat), type(sign), type(ret_mat))  #
+    # print(int_mat.dtype, sign.dtype, ret_mat.dtype)  #
+    # print(int_mat.count_nonzero(), sign.count_nonzero(), ret_mat.count_nonzero())  #
 
     return ret_mat
 
@@ -109,8 +147,7 @@ def get_potentials(conductivity_laplacian, io_index_pair):
 
     :return: array of potential in each node
     """
-    # TODO: technically, Cholesky is not the best solver. Change is needed, but in approximation
-    # it should be good enough
+    # technically, Cholesky is not the best solver. In approximation it is good enough and is faster
 
     if switch_to_splu:
         io_array = build_sink_source_current_array(io_index_pair, conductivity_laplacian.shape, splu=True)
@@ -136,26 +173,79 @@ def get_current_matrix(conductivity_laplacian, node_potentials):
      it is negative.
     :rtype: scipy.sparse.lil_matrix
     """
+    log_mem('gcm_1')
+
     if switch_to_splu:
-        diag_voltages = lil_matrix(diags(node_potentials.toarray().T.tolist()[0], 0))
+        diag_voltages = csr_matrix(diags(node_potentials.toarray().T.tolist()[0], 0))
+        log_mem('gcm_2.1')
     else:
         # print type(node_potentials)
         # print node_potentials.shape
         # print node_potentials
-        diag_voltages = lil_matrix(diags(node_potentials.toarray().T.tolist()[0], 0))
+        diag_voltages = csr_matrix(diags(node_potentials.toarray().T.tolist()[0], 0))
+        log_mem('gcm_2.1')
+
     corr_conductance_matrix = conductivity_laplacian - \
-                              lil_matrix(diags(conductivity_laplacian.diagonal(), 0))
+                              csr_matrix(diags(conductivity_laplacian.diagonal(), 0))
+    log_mem('gcm_3')
 
     # true currents
-    currents = diag_voltages.dot(corr_conductance_matrix) - corr_conductance_matrix.dot(diag_voltages)
+    # print('flag gcm_4 unroll')
+    # print(type(diag_voltages), type(corr_conductance_matrix))   # lil_matrix > csr_matrix, csr_matrix
+    # print(diag_voltages.count_nonzero(), corr_conductance_matrix.count_nonzero())  # ~144 ~482k
 
+
+    _lft = diag_voltages.dot(corr_conductance_matrix)
+    _rgt = corr_conductance_matrix.dot(diag_voltages)
+
+    log_mem('gcm_4.1')
+
+    # print('flag gcm_4 unroll')
+    # print(type(_lft), type(_rgt))   # lil_matrix > csr_matrix, csr_matrix
+    # print(_lft.count_nonzero(), _rgt.count_nonzero())  # ~144 ~482k
+
+    currents = _lft - _rgt
+    log_mem('gcm_4')
+
+    # print(type(currents), currents.count_nonzero())  # csr_matrix ~482k
+
+    log_mem('gcm_4_del')
     # print type(currents)
 
     # we want them to be fully positive (so that the direction of flow doesn't matter)
     abs_current = sparse_abs(currents)
+    log_mem('gcm_5')
 
     # and symmetric so that the triangular upper matrix contains all the data
-    currents = abs_current+abs_current.T
+
+    # print(type(abs_current), type(currents))
+    log_mem('gcm_5.1')
+    # print(abs_current.count_nonzero(), currents.count_nonzero())
+    abs_current_t = abs_current.transpose()
+    abs_current_t = abs_current_t.tocsc()
+    log_mem('gcm_5.2')
+
+    # print('flag gcm_6 unroll')
+    # print(type(abs_current), type(abs_current_t))  # csc_matrix, csr_matrix > csc_matrix
+    # print(abs_current.count_nonzero(), abs_current_t.count_nonzero())  # ~482k, ~482k
+
+    alt_currents = abs_current + abs_current_t
+    log_mem('gcm_6')
+
+    # print(type(alt_currents), alt_currents.count_nonzero())  # csc_matrix, ~482k
+
+    log_mem('gcm_6_del')
+
+    # print(type(abs_current), type(currents))
+    log_mem('gcm_6.1')
+
+    # print('flag gcm_6.1 unroll')
+    tri_currents = triu(alt_currents, format='csc')
+    log_mem('gcm_6.2')
+
+    # print(type(tri_currents), tri_currents.count_nonzero())  # coo_matrix > csc_matrix, ~ 241 k
+    # print(abs_current.count_nonzero(), currents.count_nonzero())
+    log_mem('gcm_6.2_del')
 
     # positive_current = lil_matrix(currents.shape)
     # positive_current[currents > 0.0] = currents[currents > 0.0]
@@ -179,7 +269,9 @@ def get_current_matrix(conductivity_laplacian, node_potentials):
 
     # PB: we can't really use the triu because the flow matrix is not symmetric
 
-    return currents, triu(currents)
+    log_mem('gcm_7')
+
+    return None, tri_currents
 
 
 def get_current_through_nodes(triu_current_matrix):
@@ -266,15 +358,24 @@ def edge_current_iteration(conductivity_laplacian, index_pair,
     :param reach_limiter:
     :return: potential_difference, triu_current
     """
+    log_mem('eci_1')
+
     if solver is None and reach_limiter is None:
         log.warning('edge current computation could be accelerated by using a shared solver')
+
+    log_mem('eci_2')
 
     if reach_limiter:
         conductivity_laplacian = laplacian_reachable_filter(conductivity_laplacian, reach_limiter)
         solver = None
 
+    log_mem('eci_3')
+
     i, j = index_pair
 
+    log_mem('eci_4')
+
+    # TODO: this is a confusing logic > refactor
     if solver:
         if switch_to_splu:
             pass  # because the solver was not passed to start with
@@ -282,6 +383,7 @@ def edge_current_iteration(conductivity_laplacian, index_pair,
             # print 'solver branch picked'
             io_array = build_sink_source_current_array((i, j), conductivity_laplacian.shape)
             voltages = solver(io_array)
+            log_mem('eci_5.1')
     else:
         # print 'branch analysis: no solver provided'
         voltages = get_potentials(conductivity_laplacian, (i, j))
@@ -290,17 +392,20 @@ def edge_current_iteration(conductivity_laplacian, index_pair,
         if switch_to_splu:
             voltages = np.insert(voltages, j, 0, axis=0)
             # print 'voltages after 0-insertion', voltages.shape
+        log_mem('eci_5.2')
 
-    # print 'tracing voltages', voltages.shape
     _, current_upper = get_current_matrix(conductivity_laplacian, voltages)
+    log_mem('eci_6')
     potential_diff = abs(voltages[i, 0] - voltages[j, 0])
+
+    log_mem('eci_7')
 
     return potential_diff, current_upper
 
 
 def master_edge_current(conductivity_laplacian, index_list,
                         cancellation=True, potential_dominated=True, sampling=False,
-                        sampling_depth=10, memory_source=None, memoization=None,
+                        sampling_depth=10, memory_source=None, potential_diffs_remembered=None,
                         thread_hex='______'):
     """
     master method for all the required edge current calculations
@@ -312,10 +417,12 @@ def master_edge_current(conductivity_laplacian, index_list,
     :param sampling:
     :param sampling_depth:
     :param memory_source:
-    :param memoization:
+    :param potential_diffs_remembered:
     :return:
     """
-    # TODO: remove memoization option in order to reduce overhead nad mongo database load
+
+    if not memory_source_allowed:
+        memory_source = None
 
     log.info('thread hex: %s; master edge current starting to sample with %s nodes; cancellation: '
              '%s;'
@@ -323,8 +430,25 @@ def master_edge_current(conductivity_laplacian, index_list,
              % (thread_hex, len(index_list), cancellation,
                 potential_dominated, sampling, sampling_depth))
 
-    # for line in traceback.format_stack():
-    #     print (line.strip())
+    # log.info('debug: parameters supplied to master_edge_current: '
+    #          'conductivity_laplacian: %s,\n'
+    #          'index_list: %s,\n'
+    #          'cancellation: %s,\n'
+    #          'potential_dominated: %s,\n'
+    #          'sampling %s,\n'
+    #          'sampling_depth %s,\n'
+    #          'memory_source: %s,\n'
+    #          'potential_diffs_remembered: %s,\n'
+    #          'thread_hex: %s' % (
+    #     type(conductivity_laplacian),
+    #     type(index_list),
+    #     cancellation,
+    #     potential_dominated,
+    #     sampling,
+    #     sampling_depth,
+    #     type(memory_source),
+    #     potential_diffs_remembered,
+    #     thread_hex))
 
     # generate index list in agreement with the sampling strategy
     if sampling:
@@ -340,59 +464,75 @@ def master_edge_current(conductivity_laplacian, index_list,
     total_pairs = len(list_of_pairs)
 
     up_pair_2_voltage_current = {}
-    current_accumulator = lil_matrix(conductivity_laplacian.shape)
-    # dump(csc_matrix(conductivity_laplacian), open('debug_for_cholesky.dmp', 'w'))
-    # log.exception('debug dump occured here!')
-    # raw_input('press enter to continue!')
-
-    # raise Exception('tracing the execution stack')
+    current_accumulator = csc_matrix(conductivity_laplacian.shape)
 
     if switch_to_splu:
-        pass # for now we are not going to using smart iteration through i, j
+        pass  # for now we are not going to using smart iteration through i, j
         # solver = splu(csc_matrix(conductivity_laplacian))
     else:
         solver = cholesky(csc_matrix(conductivity_laplacian), line_loss)
 
-    # solver = cholesky(csc_matrix(conductivity_laplacian), line_loss)
-
     # run the main loop on the list of indexes in agreement with the memoization strategy:
     breakpoints = 300
     previous_time = time()
+
+    log_mem('start')
+    print('printing active')
 
     for counter, (i, j) in enumerate(list_of_pairs):
 
         # if counter % total_pairs/breakpoints == 0:
         #     log.debug('getting pairwise flow %s out of %s', counter + 1, total_pairs)
 
+        log_mem('1')
+
         if memory_source and tuple(sorted((i, j))) in list(memory_source.keys()):
             potential_diff, current_upper = memory_source[tuple(sorted((i, j)))]
+            log_mem('1.1')
 
         else:
             if switch_to_splu:
                 potential_diff, current_upper = \
                     edge_current_iteration(conductivity_laplacian, (i, j))
+                log_mem('1.2.1')
             else:
                 potential_diff, current_upper = \
                     edge_current_iteration(conductivity_laplacian, (i, j),
                                            solver=solver)
+                log_mem('1.2.2')  # a lot of memory is being freed up here
+            log_mem('1.2')
 
-        if memoization:
-            # print 'memoization_branch fired'
-            up_pair_2_voltage_current[tuple(sorted((i, j)))] = \
-                (potential_diff, current_upper)
+        log_mem('2')
+
+        if potential_diffs_remembered:
+            up_pair_2_voltage_current[tuple(sorted((i, j)))] = potential_diff
+
+        log_mem('3')
 
         # normalize to potential, if needed
         if potential_dominated:
             # raise Exception('tracing the stack!')
             if potential_diff != 0:
                 current_upper = current_upper / potential_diff
-
+                log_mem('4.1.1')
             # warn if potential difference is null or close to it
             else:
                 log.warning('pairwise flow. On indexes %s %s potential difference is null. %s',
                             i, j, 'Tension-normalization was aborted')
+                log_mem('4.1.2')
 
-        current_accumulator += sparse_abs(current_upper)
+        log_mem('4')
+
+        # print('flag 5 unroll')
+        # print(type(current_accumulator))  # lil_matrix > csc_matrix
+        # print(type(sparse_abs(current_upper)))  # csc_matrix
+
+        current_accumulator = current_accumulator + sparse_abs(current_upper)
+        log_mem('5')
+
+        # print(type(current_accumulator))  # lil_matrix >csc_matrix
+
+        log_mem('5_del')
 
         if counter % breakpoints == 0 and counter > 1:
             compops = float(breakpoints) / (time() - previous_time)
@@ -405,6 +545,12 @@ def master_edge_current(conductivity_laplacian, index_list,
                      % (thread_hex, counter, total_pairs, compops, mins_before_termination,
                         finish_time.strftime("%m/%d/%Y, %H:%M:%S")))
             previous_time = time()
+
+            log_mem('breakpoint')
+
+        global call_inc
+        call_inc += 1
+        log_mem('6')
 
     if cancellation:
         current_accumulator /= float(total_pairs)
@@ -449,7 +595,7 @@ def group_edge_current_memoized(conductivity_laplacian, index_list,
     return master_edge_current(conductivity_laplacian, index_list,
                                cancellation=cancellation,
                                memory_source=memory_source,
-                               memoization=True,
+                               potential_diffs_remembered=True,
                                thread_hex=thread_hex)
 
 

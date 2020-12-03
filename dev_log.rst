@@ -40,12 +40,33 @@ tends to pull as well the nodes that are not connected to the giant component in
     - Tentatively patched by making the pull from which the IDs are sampled stricter
 
 Random ID assignements to the the threads seem to be not working as well
-    - TODO: rename pool to thread
-    - TODO: add the ID to the treads
+    - DONE: rename pool to thread
+    - DONE: add the ID to the treads
+    - TODO: debug why objects all share the same ID across threads (random seed behavior?)
 
 Threading seem to be failing as well. The additional threads execute the first sampling, but
 never commit. Given that they freeze out somewhere in the middle, the most likely hypothesis is
 that they run out of RAM and only one thread - that keeps a lock on it  - continues going forwards.
+
+Memory bleeding:
+    does not concern python objects
+    most likely comes from the sparse matrix domain
+    cannot be corrected by explicit object destruction and gc passing
+
+    At this point, the memory leak seem to be localized to the summation/differentiation between
+csc_matrices. Next debugging steps:
+    - disable multithreading to see if there is any interference there
+    - create a reproductible example of the bug
+
+    Disabling multithreading did not do anything.
+    Extracting the summation alone did not reproduce the error.
+
+    At this point I will build a flowchart for transformation of the values and reproduce it in
+its entirety in an extract.
+
+    In the end the memory leak was caused by persistent memoization of trui of flows.
+
+    As a response, I am moving the flags enabling memoization into the deep configs
 
 
 Current refactoring:

@@ -2,6 +2,8 @@
 This module contains all the routines that are respojnsible for pulling
 the matrixes out of the neo4j graph and processing them.
 """
+# from pympler import muppy, summary, tracker
+
 import hashlib
 import itertools
 import json
@@ -914,7 +916,7 @@ class InteractomeInterface(object):
                 dict(((self.matrix_index_2_neo4j_id[i],
                        self.matrix_index_2_neo4j_id[j]),
                       voltage)
-                     for (i, j), (voltage, current) in up_pair_2_voltage_current.items()))
+                     for (i, j), voltage in up_pair_2_voltage_current.items()))
 
         if incremental:
             self.current_accumulator = self.current_accumulator + current_accumulator
@@ -1087,8 +1089,16 @@ class InteractomeInterface(object):
         # TODO: move that part to the interactome analysis section => Unique Interactome Interface
         # TODO: include the limitations on the types of nodes to sample:
 
+        # tr = tracker.SummaryTracker()
 
         for sample_size, iterations in zip(samples_size, samples_each_size):
+
+            # all_objects = muppy.get_objects()
+            # sum1 = summary.summarize(all_objects)
+            # summary.print_(sum1)  # > >(tee Logs.txt) makes it fail
+            # print("TOP-LEVEL MEM DIFF")
+            # tr.print_diff()
+
             for i in range(0, iterations):
                 shuffle(self.connected_uniprots)
                 analytics_uniprot_list = self.connected_uniprots[:sample_size]
