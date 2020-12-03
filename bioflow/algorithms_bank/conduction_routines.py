@@ -477,7 +477,6 @@ def master_edge_current(conductivity_laplacian, index_list,
     previous_time = time()
 
     log_mem('start')
-    print('printing active')
 
     for counter, (i, j) in enumerate(list_of_pairs):
 

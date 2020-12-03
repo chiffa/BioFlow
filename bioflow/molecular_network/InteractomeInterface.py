@@ -155,6 +155,10 @@ class InteractomeInterface(object):
         pt = time() - self.partial_time
         return pt
 
+    def reset_thread_hex(self):
+        char_set = string.ascii_uppercase + string.digits
+        self.thread_hex = ''.join(sample(char_set * 6, 6))
+
     def dump_matrices(self):
         """
         dumps self.adjacency_Matrix and self.laplacian_matrix

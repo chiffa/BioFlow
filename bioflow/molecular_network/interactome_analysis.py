@@ -66,6 +66,7 @@ def spawn_sampler(args_puck):
     sparse_rounds = args_puck[2]
     pool_no = args_puck[-1]
 
+    interactome_interface_instance.reset_thread_hex()
     interactome_interface_instance.randomly_sample(
         sample_size_list,
         iteration_list,
