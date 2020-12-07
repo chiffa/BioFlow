@@ -22,8 +22,12 @@ skip_hint = False
 skip_biogrid = False
 sparse_analysis_threshold = 200
 
-# TODO: those are mostly debug flags and should not be touched
+# those are mostly debug flags and should not be touched
 single_threaded = False
 psutil_main_loop_memory_tracing = False  # controls the log_mem behavior in conduction_routines.py
 memory_source_allowed = False
 switch_to_splu = False
+
+# Those are global variables that were used in order to check how algorithm variation performed
+use_normalized_laplacian = False
+fraction_edges_dropped_in_laplacian = 0.0

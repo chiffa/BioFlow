@@ -4,12 +4,21 @@ TODOs for the project in the future:
 On the table:
 -------------
 
+ - TODO: [OPTIMIZATION]: Profile the runtime in the main loop:
+    - TODO: check for consistency of the sparse matrix types in the main execution loop
+    - TODO: run a profiler to figure out the number of calls and time spend in each call. common
+        profilers include `cProfile` (packaged in the base python) and `pycallgraph` (although no
+        updates since 2016). Alternatively, `cProfile` can be piped into `gprof2dot` to generate
+        a call graph
+
+ - TODO: [DEBUG]: align BioKnowledgeInterface analysis on the InteractomeAnalysis:
+    - Take the background list into account
+    - Take in account the analytics UP list in the hashing (once background is taken into account)
 
 Current refactoring:
 --------------------
 
- - TODO: [DEBUG] [SHOW-STOPPER]: connections between the nodes seem to have disappeared
-    - TODO: check if this could have been related to memoization > run test on the glycogen set
+
 
  - TODO: [USABILITY] add limiters on the p_value that is printed out elements
 
@@ -27,12 +36,13 @@ Current refactoring:
 
  - TODO: [SANITY]: remove nested lists from auto-analyze
 
- - TODO: [DEBUG]: align BioKnowledgeInterface analysis on the InteractomeAnalysis:
-    - Take the background list into account
-    - Take in account the analytics UP list in the hashing (once background is taken into account)
+ - TODO: [USABILITY]: fold the current verbose state into a `-v/--vebose` argument
 
- - TODO: [USABILITY] fold the p-values into the GO_GDF export in the same way we do it for the
+ - TODO: [USABILITY]: fold the p-values into the GO_GDF export in the same way we do it for the
         interactome
+
+ - TODO: [USABILITY]: allow a fast analysis re-run by storing actual UP groups analysis in a
+        mongo database - aka a true memoization.
 
  - TODO: [SANITY] Configs management:
     - move the organism to the '~/bioflow'
@@ -57,13 +67,6 @@ Current refactoring:
     - TODO: move parameters that are currently being printed in the main loop in INFO channel to
         DEBUG channel
 
- - TODO: [OPTIMIZATION]: Profile the runtime in the main loop:
-    - TODO: check for consistency of the sparse matrix types in the main execution loop
-    - TODO: run a profiler to figure out the number of calls and time spend in each call. common
-        profilers include `cProfile` (packaged in the base python) and `pycallgraph` (although no
-        updates since 2016). Alternatively, `cProfile` can be piped into `gprof2dot` to generate
-        a call graph
-
  - TODO: [SANITY] Docker:
     - Add outputs folder map to the host filesystem to the docker-compose
     - Remove ank as point of storage for miniconda in Docker
@@ -71,7 +74,22 @@ Current refactoring:
  - TODO: [DOC] document where the user-mapped folders live from Docker
  - TODO: [DOC] document the user how to install and map to a local neo4j database
 
+ - TODO: [SANITY] convert the dicts to Type Aliases / NewType and perform proper type hinting
 
+ - TODO: [USABILITY] move logs to the results saving folder
+
+
+ - DONE: resolve the problem with "memoization" naming convention. in our cases it's remembering
+        potential diffs. It appears that it also interacts with "fast load" in "build extended
+        conduction system. Technically, by performing a memoization into a database, we could
+        have a searchable DB of past runs, so that the comparison is more immediate. So far the
+        usage is restricted to `InteractomeInterface.compute_current_and_potentials`, to enable a
+        `fast load` behavior
+
+ - DONE: [DEBUG] [SHOW-STOPPER]: connections between the nodes seem to have disappeared
+    - DONE: check if this could have been related to memoization. Unlikely. The
+        only place where the results of memoized were accessed was for voltages > it is.
+    - DONE: run test on the glycogen set. No problem detected there
 
  - DONE: [SANITY] Logs:
     => DONE: Pull the logs and internal dumps into the ~/bioflow directory

@@ -60,7 +60,7 @@ class ConductionRoutinesTester(unittest.TestCase):
         self.assertTrue(np.mean(np.abs(calc - ref)) < 1e-9)  # FAILING
 
     def test_group_induced_current_memoized(self):
-        triu_currents, memoizer = cr.group_edge_current_memoized(self.test_laplacian, [0, 1, 2])
+        triu_currents, memoizer = cr.group_edge_current_with_potentials(self.test_laplacian, [0, 1, 2])
         calc = triu_currents.toarray()[:, 2].tolist()
         ref = np.array([1.1111111111, 1.7777777778, 0.0, 0.0])
         self.assertTrue(np.mean(np.abs(calc - ref)) < 1e-9)  # FAILING

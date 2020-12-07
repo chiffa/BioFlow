@@ -579,9 +579,9 @@ def group_edge_current(conductivity_laplacian, index_list,
     return current_accumulator
 
 
-def group_edge_current_memoized(conductivity_laplacian, index_list,
-                                cancellation=True, memory_source=None,
-                                thread_hex='______'):
+def group_edge_current_with_potentials(conductivity_laplacian, index_list,
+                                       cancellation=True, memory_source=None,
+                                       thread_hex='______'):
     """
     Performs a pairwise computation and summation of the pairwise_flow
 
@@ -637,7 +637,7 @@ def group_edge_current_with_limitations(inflated_laplacian, idx_pair, reach_limi
     inverter = edge_current_iteration(inflated_laplacian, idx_pair,
                                       reach_limiter=reach_limiter)
 
-    return inverter[1]/inverter[0], inverter[0]
+    return inverter[1] / inverter[0], inverter[0]
 
 
 def perform_clustering(inter_node_tension, cluster_number, show='undefined clustering'):

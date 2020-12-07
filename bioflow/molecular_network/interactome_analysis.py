@@ -337,9 +337,12 @@ def compare_to_blank(blank_model_size, p_val=0.05, sparse_rounds=False,
 # TODO: source_list is a single list, not list of lists.
 # TODO: add support for a dict as source_list, not only list
 def auto_analyze(source_list,
-                 desired_depth=24, processors=4,
-                 background_list=None, skip_sampling=False,
-                 from_memoization=False, output_destination_prefix=''):
+                 desired_depth=24,
+                 processors=4,
+                 background_list=None,
+                 skip_sampling=False,
+                 from_memoization=False,  # should always be False, unless specificially stated
+                 output_destination_prefix=''):
     """
     Automatically analyzes the itneractome synergetic action of the RNA_seq results
 
@@ -378,7 +381,7 @@ def auto_analyze(source_list,
             log.info("spawning a sampler for %s proteins @ %s compops/sec",
                      len(interactome_interface.entry_point_uniprots_neo4j_ids), estimated_comp_ops)
 
-        # TODO: restructure to spawn a sampler pool that does not share an object in the Threading
+        # dense analysis
         if len(interactome_interface.entry_point_uniprots_neo4j_ids) < sparse_analysis_threshold:
 
             if not skip_sampling:
@@ -395,15 +398,16 @@ def auto_analyze(source_list,
                     interactome_interface_instance=interactome_interface)
 
             if not from_memoization:
-                interactome_interface.build_extended_conduction_system()
+                interactome_interface.compute_current_and_potentials()
             else:
-                interactome_interface.build_extended_conduction_system(fast_load=True)
+                interactome_interface.compute_current_and_potentials(fast_load=True)
 
             nr_nodes, p_val_dict = compare_to_blank(
                 len(interactome_interface.entry_point_uniprots_neo4j_ids),
                 p_val=0.9,
                 interactome_interface_instance=interactome_interface)
 
+        # sparse analysis
         else:
             ceiling = min(205, len(interactome_interface.entry_point_uniprots_neo4j_ids))
             sampling_depth = max((ceiling - 5) ** 2 //
@@ -427,10 +431,10 @@ def auto_analyze(source_list,
                                                                                               len(interactome_interface.entry_point_uniprots_neo4j_ids), sampling_depth))
 
             if not from_memoization:
-                interactome_interface.build_extended_conduction_system(sparse_samples=sampling_depth)
+                interactome_interface.compute_current_and_potentials(sparse_samples=sampling_depth)
                 # interactome_interface.export_conduction_system()
             else:
-                interactome_interface.build_extended_conduction_system(sparse_samples=sampling_depth, fast_load=True)
+                interactome_interface.compute_current_and_potentials(sparse_samples=sampling_depth, fast_load=True)
             nr_nodes, p_val_dict = compare_to_blank(
                 len(interactome_interface.entry_point_uniprots_neo4j_ids), p_val=0.9,
                 sparse_rounds=sampling_depth, interactome_interface_instance=interactome_interface)

@@ -25,17 +25,14 @@ from bioflow.utils.io_routines import write_to_csv, dump_object, undump_object
 from bioflow.utils.log_behavior import get_logger
 from bioflow.main_configs import Dumps, Outputs
 from bioflow.sample_storage.mongodb import insert_interactome_rand_samp
-from bioflow.user_configs import internal_storage, skip_hint, skip_biogrid, skip_reactome
+from bioflow.user_configs import internal_storage, skip_hint, skip_biogrid, skip_reactome, \
+    use_normalized_laplacian, fraction_edges_dropped_in_laplacian
 from bioflow.internal_configs import edge_type_filters, adjacency_matrix_weights, \
-    laplacian_matrix_weights, neo4j_names_dict
+    laplacian_matrix_weights
 from bioflow.algorithms_bank import conduction_routines as cr
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from bioflow.neo4j_db.db_io_routines import expand_from_seed, \
     erase_custom_fields, node_extend_once, get_db_id
-
-l_norm = False
-# edge_drop = 0.2
-edge_drop = 0.0
 
 log = get_logger(__name__)
 
@@ -119,7 +116,7 @@ class InteractomeInterface(object):
 
         self.entry_point_uniprots_neo4j_ids = []
         self.UP2UP_voltages = {}
-        self.uniprots_2_voltage_and_circulation = {}  # does not really seem to be used
+        self.uniprots_2_voltage = {}  # does not really seem to be used
         self.current_accumulator = np.zeros((2, 2))
         self.node_current = {}
 
@@ -234,6 +231,18 @@ class InteractomeInterface(object):
         log.debug("post-undump e_p_u_b_i length: %s", len(self.entry_point_uniprots_neo4j_ids))
 
     def dump_memoized(self):
+        """
+        In a JSON, stores a dump of the following properties:
+        {
+            'UP_hash': md5,
+            'sys_hash': self.md5_hash(),
+            'size': len(self.entry_point_uniprots_neo4j_ids),
+            'UPs': pickle.dumps(self.entry_point_uniprots_neo4j_ids),
+            'currents': pickle.dumps((self.current_accumulator, self.node_current)),
+            'voltages': pickle.dumps(self.uniprots_2_voltage)}
+
+        :return:
+        """
         md5 = hashlib.md5(
             json.dumps(
                 sorted(
@@ -241,16 +250,28 @@ class InteractomeInterface(object):
                 sort_keys=True).encode('utf-8')).hexdigest()
 
         payload = {
-            'UP_hash': md5, 'sys_hash': self.md5_hash(),
+            'UP_hash': md5,
+            'sys_hash': self.md5_hash(),
+            'size': len(self.entry_point_uniprots_neo4j_ids),
+            'UPs': pickle.dumps(self.entry_point_uniprots_neo4j_ids),
+            'currents': pickle.dumps((self.current_accumulator, self.node_current)),
+            'voltages': pickle.dumps(self.uniprots_2_voltage)}
+        dump_object(Dumps.Interactome_Analysis_memoized, payload)
+
+    @staticmethod
+    def undump_memoized() -> dict:
+        """
+        Retrieves a JSON dump of the following properties:
+        {
+            'UP_hash': md5,
+            'sys_hash': self.md5_hash(),
             'size': len(self.entry_point_uniprots_neo4j_ids),
             'UPs': pickle.dumps(self.entry_point_uniprots_neo4j_ids),
             'currents': pickle.dumps((self.current_accumulator, self.node_current)),
             'voltages': pickle.dumps(self.uniprots_2_voltage_and_circulation)}
-        dump_object(Dumps.Interactome_Analysis_memoized, payload)
 
-    @staticmethod
-    def undump_memoized():
-        """ undumps memoized analysis """
+        :return:
+        """
         return undump_object(Dumps.Interactome_Analysis_memoized)
 
     # TODO: we should refactor that element as a separate object, responsible only for
@@ -543,7 +564,7 @@ class InteractomeInterface(object):
         def insert_expansion_links(link_dict, link_type):
             for _key, values in link_dict.items():
                 for _val in values:
-                    if not edge_drop or np.random.random_sample() > edge_drop:  # TODO: check that no crash occurs
+                    if not fraction_edges_dropped_in_laplacian or np.random.random_sample() > fraction_edges_dropped_in_laplacian:  # TODO: check that no crash occurs
                         _link_indexes = (
                             self.neo4j_id_2_matrix_index[_key],
                             self.neo4j_id_2_matrix_index[_val])
@@ -782,8 +803,8 @@ class InteractomeInterface(object):
             self.full_impact,
             connected_ups,
             cr.line_loss,
-            l_norm,
-            edge_drop,
+            use_normalized_laplacian,
+            fraction_edges_dropped_in_laplacian,
             (skip_reactome, skip_hint, skip_biogrid)]
         md5 = hashlib.md5(json.dumps(data, sort_keys=True).encode('utf-8')).hexdigest()
 
@@ -797,15 +818,15 @@ class InteractomeInterface(object):
                   "\t edge drop: %s\n"
                   "\t skipping reactome|hint|biogrid: %s\n"
                   % (md5,
-                                            self.connexity_aware,
-                                            hashlib.md5(json.dumps(sorted_initial_set, sort_keys=True).encode('utf-8')).hexdigest(),
-                                            self.full_impact,
-                                            hashlib.md5(json.dumps(connected_ups, sort_keys=True).encode(
+                     self.connexity_aware,
+                     hashlib.md5(json.dumps(sorted_initial_set, sort_keys=True).encode('utf-8')).hexdigest(),
+                     self.full_impact,
+                     hashlib.md5(json.dumps(connected_ups, sort_keys=True).encode(
                                                 'utf-8')).hexdigest(),
-                                            cr.line_loss,
-                                            l_norm,
-                                            edge_drop,
-                                            (skip_reactome, skip_hint, skip_biogrid)))
+                     cr.line_loss,
+                     use_normalized_laplacian,
+                     fraction_edges_dropped_in_laplacian,
+                     (skip_reactome, skip_hint, skip_biogrid)))
 
         return str(md5)
 
@@ -836,25 +857,24 @@ class InteractomeInterface(object):
     #   - cancellation => to be kept
     #   - sparse_samples => to be kept
     #   - factor in the sampling run into this
-    def build_extended_conduction_system(
+    def compute_current_and_potentials(
             self,
-            memoized=True,
-            sourced=False,
-            incremental=False,
+            memoized=True,  # is required to enable the fast loading.
+            sourced=False,  # This is true in case of subsystem export. subsystem export is
+            # however deprecated
+            incremental=False,  # This is always false and was used in order to resume the sampling
             cancellation=True,
             sparse_samples=False,
-            lapl_normalized=l_norm,
             fast_load=False):
         """
         Builds a conduction matrix that integrates uniprots, in order to allow an easier
         knowledge flow analysis
 
-        :param bool memoized: if the tensions and individual relation matrices should be
-            stored in the matrix and dumped at the end computation (required for submatrix
-            re-computation)
+        :param bool memoized: if the tensions between individual nodes and voltages will be
+            remembered - required for clustering. Incompatible with `sparse_sample=True`
         :param bool sourced: if true, all the relations will be looked up and not computed.
             Useful for the retrieval of sub-circulation group, but requires the
-            uniprots_2_voltage_and_circulation to be pre-filled
+            `uniprots_2_voltage_and_circulation` to be pre-filled
         :param bool incremental: if True, all the circulation computation will be added to the
             existing ones. Useful for the computation of particularly big systems with
             intermediate dumps
@@ -862,25 +882,23 @@ class InteractomeInterface(object):
         :param int sparse_samples: if set to an integer the sampling will be sparse and not dense,
             i.e. instead of computation for each node pair, only an estimation will be made, equal to
             computing sparse_samples association with other randomly chosen nodes
-        :param lapl_normalized: Accounts whether the laplacian is normalized before calculation the
-            flow of information. Currently a place-holder
         :return: adjusted conduction system
         """
 
-        if lapl_normalized:
+        if use_normalized_laplacian:
             self.normalize_laplacian()
 
         if fast_load:
             payload = self.undump_memoized()
-            print('')
             UP_hash = hashlib.md5(
                 json.dumps(
                     sorted(self.entry_point_uniprots_neo4j_ids),
                     sort_keys=True).encode("utf-8")
-            ).hexdigest()
+                ).hexdigest()
+
             if payload['sys_hash'] == self.md5_hash() and payload['UP_hash'] == UP_hash:
                 self.current_accumulator, self.node_current = pickle.loads(payload['currents'])
-                self.uniprots_2_voltage_and_circulation = pickle.loads(payload['voltages'])
+                self.uniprots_2_voltage = pickle.loads(payload['voltages'])
 
             index_current = cr.get_current_through_nodes(self.current_accumulator)
             log.info('current accumulator shape %s', self.current_accumulator.shape)
@@ -895,7 +913,7 @@ class InteractomeInterface(object):
             self.UP2UP_voltages = {}
             self.node_current = defaultdict(float)
             if not sourced:
-                self.uniprots_2_voltage_and_circulation = {}
+                self.uniprots_2_voltage = {}
 
         if sparse_samples:
             current_accumulator = cr.sample_group_edge_current(
@@ -906,21 +924,19 @@ class InteractomeInterface(object):
                 thread_hex=self.thread_hex)
 
         else:
-            current_accumulator, up_pair_2_voltage_current =\
-                cr.group_edge_current_memoized(
+            current_accumulator, up_pair_2_voltage =\
+                cr.group_edge_current_with_potentials(
                     self.laplacian_matrix,
                     [self.neo4j_id_2_matrix_index[UP]
                      for UP in self.entry_point_uniprots_neo4j_ids],
                     cancellation=cancellation,
-                    # memoized=memoized,
-                    memory_source=self.uniprots_2_voltage_and_circulation,
                     thread_hex=self.thread_hex)
-            # self.uniprots_2_voltage_and_circulation.update(up_pair_2_voltage_current)
+
             self.UP2UP_voltages.update(
                 dict(((self.matrix_index_2_neo4j_id[i],
                        self.matrix_index_2_neo4j_id[j]),
                       voltage)
-                     for (i, j), voltage in up_pair_2_voltage_current.items()))
+                     for (i, j), voltage in up_pair_2_voltage.items()))
 
         if incremental:
             self.current_accumulator = self.current_accumulator + current_accumulator
@@ -1034,10 +1050,10 @@ class InteractomeInterface(object):
             min_current=0.0001,
             index_2_label=self.matrix_index_2_neo4j_id,
             label_2_index=self.neo4j_id_2_matrix_index,
-            current_matrix=self.current_accumulator)
+            current_matrix=self.current_accumulator)  # TODO: twister compared to random sample?
         gdf_exporter.write()
 
-    def export_subsystem(self, uniprot_system, uniprot_subsystem):
+    def deprecated_export_subsystem(self, uniprot_system, uniprot_subsystem):
         """
         Exports the subsystem of reached_uniprots_neo4j_id_list and circulation between
          them based on a larger precalculated system.This is possible only of the memoization
@@ -1049,39 +1065,33 @@ class InteractomeInterface(object):
         :raise Exception: if the set of uniprots for which the larger system was calculated
          doesn't correspond to what is stored in the dumps
         """
-        current_recombinator = self.undump_memoized()
+        memoization_payload = self.undump_memoized()
         if not set(uniprot_system) == set(
-                pickle.loads(current_recombinator['UPs'])):
+                pickle.loads(memoization_payload['UPs'])):
             raise Exception('Wrong UP system re-analyzed')
-        self.uniprots_2_voltage_and_circulation = pickle.loads(
-            current_recombinator['voltages'])
+        self.uniprots_2_voltage = pickle.loads(
+            memoization_payload['voltages'])
         self.set_uniprot_source(uniprot_subsystem)
-        self.build_extended_conduction_system(memoized=False, sourced=True)
+        self.compute_current_and_potentials(memoized=False, sourced=True)
+        # TODO: that will still execute the sampling run.
         self.export_conduction_system()
 
-    # TODO: parameters to remove:
-    #   chromosome_specific (not now) we might want instead to implement it otherwise later
-    #   memoized => we will never use ti
     def randomly_sample(
             self,
             samples_size,
             samples_each_size,
             sparse_rounds=False,
-            # chromosome_specific=False,
-            memoized=False,
             no_add=False,
             pool_no=None):
         """
         Randomly samples the set of reached_uniprots_neo4j_id_list used to create the model.
          This is the null model creation routine
 
-
+3
         :param samples_size: list of numbers of uniprots we would like to create the model for
         :param samples_each_size: how many times we would like to sample each uniprot number
         :param sparse_rounds:  if we want to use sparse sampling (useful in case of
         large uniprot sets), we would use this option
-        :param memoized: if set to True, the sampling would be remembered for export. Useful in
-        case of the chromosome comparison
         :param no_add: if set to True, the result of sampling will not be added to the
         database of samples. Useful if re-running tests with similar parameters several times.
         :raise Exception: if the number of items in the samples size ann samples_each size
@@ -1093,15 +1103,7 @@ class InteractomeInterface(object):
         # TODO: move that part to the interactome analysis section => Unique Interactome Interface
         # TODO: include the limitations on the types of nodes to sample:
 
-        # tr = tracker.SummaryTracker()
-
         for sample_size, iterations in zip(samples_size, samples_each_size):
-
-            # all_objects = muppy.get_objects()
-            # sum1 = summary.summarize(all_objects)
-            # summary.print_(sum1)  # > >(tee Logs.txt) makes it fail
-            # print("TOP-LEVEL MEM DIFF")
-            # tr.print_diff()
 
             for i in range(0, iterations):
                 shuffle(self.connected_uniprots)
@@ -1114,8 +1116,7 @@ class InteractomeInterface(object):
                          'sparse_rounds: %s' % (pool_no, self.thread_hex, self.md5_hash(),
                                                 sample_size, sparse_rounds))
 
-                self.build_extended_conduction_system(
-                    memoized=memoized, sourced=False, sparse_samples=sparse_rounds)
+                self.compute_current_and_potentials(memoized=False, sparse_samples=sparse_rounds)
 
                 md5 = hashlib.md5(
                     json.dumps(
@@ -1260,7 +1261,7 @@ if __name__ == "__main__":
     # print interactome_interface_instance.md5_hash()
 
     # interactome_interface_instance.set_Uniprot_source(test_set)
-    # interactome_interface_instance.export_subsystem(test_set, test2)
-    # interactome_interface_instance.build_extended_conduction_system()
+    # interactome_interface_instance.deprecated_export_subsystem(test_set, test2)
+    # interactome_interface_instance.compute_current_and_potentials()
     # interactome_interface_instance.export_conduction_system()
     # interactome_interface_instance.randomly_sample([100,250],[5,5], sparse_rounds=10)

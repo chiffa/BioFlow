@@ -1024,9 +1024,9 @@ if __name__ == '__main__':
     # go_interface_instance.randomly_sample([10, 25], [5]*2, chromosome_specific=15)
 
     # go_interface_instance.set_Uniprot_source(experimental)
-    # go_interface_instance.build_extended_conduction_system(sparse_samples=10)
+    # go_interface_instance.compute_current_and_potentials(sparse_samples=10)
     # go_interface_instance.export_conduction_system()
 
-    # go_interface_instance.export_subsystem(experimental, ['186958', '142401', '147798', '164077'])
+    # go_interface_instance.deprecated_export_subsystem(experimental, ['186958', '142401', '147798', '164077'])
 
     # data_array = np.array([log(val) for val in go

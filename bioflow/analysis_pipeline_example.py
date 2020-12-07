@@ -76,26 +76,29 @@ if __name__ == "__main__":
 
     # rebuild_the_laplacians(all_detectable_genes=background_bulbs_ids)
 
-
-
-    # perform the interactome analysis
+    # # perform the interactome analysis
     # interactome_analysis([hits_ids],
     #                      desired_depth=30,
     #                      processors=3,
     #                      background_list=background_bulbs_ids,
-    #                      skip_sampling=True,
+    #                      skip_sampling=False,
     #                      from_memoization=False)
-
+    #
     # # perform the knowledge analysis
     # knowledge_analysis([hits_ids],
     #                    desired_depth=20,
     #                    processors=3,
     #                    param_set=ref_param_set,
-    #                    skip_sampling=True)
+    #                    skip_sampling=False)
     #
+    #
+    # raise Exception('debugging')
 
     chromosomes_directory = "//home//kucharav//bioflow//sources//yeast_chr_genes"
     background_file = os.path.join(chromosomes_directory, "all_genes.tab")
+
+    # rebuild_the_laplacians(all_detectable_genes=background_bulbs_ids)
+
 
     background_set = False
     for filename in os.listdir(chromosomes_directory):
