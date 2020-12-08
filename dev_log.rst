@@ -4,20 +4,67 @@ TODOs for the project in the future:
 On the table:
 -------------
 
- - TODO: [OPTIMIZATION]: Profile the runtime in the main loop:
-    - TODO: check for consistency of the sparse matrix types in the main execution loop
-    - TODO: run a profiler to figure out the number of calls and time spend in each call. common
+ - DONE: [OPTIMIZATION]: Profile the runtime in the main loop:
+    - DONE: check for consistency of the sparse matrix types in the main execution loop
+    - DONE: run a profiler to figure out the number of calls and time spend in each call. common
         profilers include `cProfile` (packaged in the base python) and `pycallgraph` (although no
         updates since 2016). Alternatively, `cProfile` can be piped into `gprof2dot` to generate
         a call graph
+    - DONE: biggest time sinks are:
+        - csr_matrix.__binopt (likely binaries for csr matrices) (22056 calls, 81404 ms)
+        - lil_matrix.__sub__ (7350/79 968)
+        - lil_matrix.tocsr (7371/76 837)
+        - sparse_abs (7350/58 700)
+        - lil_matrix._sub_sparse (3675/48 192)
+        - csr_matrix.dot/__mul__/_mul_sparse_matrix (~7350 / ~48 000)
+        - triu (3675/47 592)
+        - csr_matrix.tocsc (7353 / 47 253)
+        - csc_matrix.__init__ (121332 / 47 253) (probably in-place multiplication is better)
+    - DONE: first correction:
+        - baseline: edge_current_iteration: 3675 calls, 362 662 ms, 40238 own time.
+        - DONE: uniformize the matrix types towards csc
+            - eliminated lil_matrix: performance dropped, lil_matrix still there)
+                (3675 calls, 366 321ms, 41 525 own time)
+            - elimitated a debug branch in get_current_through_nodes => No change
+                (3675 / 367 066 / 40 238)
+            - corrected all spmat.diag/triu calls to return csc matrices + all to csc => worse
+                (3675 / 408 557 / 40 657)
+            - tracked and imposed formats to all matrix calls inside the fast loop => 50% faster
+                (3675 / 262 627 / 40 420)
+                => csr_matrix still gets initialized a lot and a coo_matrix is somewhere.
+                lil_matrix is gone now though
+            - repaced all mat.csc() conversions by tocsc() calls
+                => was more or less already done
+    - DONE: profiled line per line execution.
+        - sparsity changes are the slowest part, but seem unavoidable
+        - followed by triu
+        - followed by additions/multiplications
+        - followed by cholesky
+    - DONE: delay the triu until after the current accumulator is filled
+        - baseline: 261 983
+        - after: 197 888 => huge improvement
+    - TODO: perform in-place multiplication => impossible (no in-place dot/add/subract
+versions)
+    - TODO: clean-up
+
+- TODO: [SANITY]: remove nested lists from auto-analyze ar link with output folders properly
 
  - TODO: [DEBUG]: align BioKnowledgeInterface analysis on the InteractomeAnalysis:
     - Take the background list into account
     - Take in account the analytics UP list in the hashing (once background is taken into account)
 
+ - TODO: [USABILITY] Improve the progress reporting
+        Move the INFO to a progress bar. The problem is that we are working with multiple threads in
+        async environment. This can be mitigated by using the `aptbar` library
+    - TODO: single sample loop to aptbar progress monitoring
+    - TODO: outer loop (X samples) to aptbar progress monitoring
+    - TODO: move parameters that are currently being printed in the main loop in INFO channel to
+        DEBUG channel
+
+- TODO: [USABILITY] move logs to the results saving folder
+
 Current refactoring:
 --------------------
-
 
 
  - TODO: [USABILITY] add limiters on the p_value that is printed out elements
@@ -33,8 +80,6 @@ Current refactoring:
  - TODO: [DEBUG] add the interactome_network_stats.png to the run folder
 
  - TODO: [USABILITY] format the run folders with the list send to the different methods
-
- - TODO: [SANITY]: remove nested lists from auto-analyze
 
  - TODO: [USABILITY]: fold the current verbose state into a `-v/--vebose` argument
 
@@ -59,13 +104,6 @@ Current refactoring:
  - TODO: [USABILITY] Add an option for the user to add the location for the output in the
         auto-analyse
 
- - TODO: [USABILITY] Improve the progress reporting
-        Move the INFO to a progress bar. The problem is that we are working with multiple threads in
-        async environment. This can be mitigated by using the `aptbar` library
-    - TODO: single sample loop to aptbar progress monitoring
-    - TODO: outer loop (X samples) to aptbar progress monitoring
-    - TODO: move parameters that are currently being printed in the main loop in INFO channel to
-        DEBUG channel
 
  - TODO: [SANITY] Docker:
     - Add outputs folder map to the host filesystem to the docker-compose
@@ -76,7 +114,6 @@ Current refactoring:
 
  - TODO: [SANITY] convert the dicts to Type Aliases / NewType and perform proper type hinting
 
- - TODO: [USABILITY] move logs to the results saving folder
 
 
  - DONE: resolve the problem with "memoization" naming convention. in our cases it's remembering

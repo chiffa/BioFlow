@@ -12,21 +12,30 @@ from time import time
 import datetime
 import numpy as np
 from itertools import combinations, repeat
-from scipy.sparse import csc_matrix, diags, triu, lil_matrix, csr_matrix
+import scipy.sparse as spmat
 from scipy.sparse.linalg import eigsh
 # noinspection PyUnresolvedReferences
-from scikits.sparse.cholmod import cholesky
+from scikits.sparse.cholmod import cholesky, Factor
 from scipy.sparse.linalg import splu
 from pickle import dump
 import warnings
+from typing import Any, Union, TypeVar, NewType, Tuple, List
 from bioflow.utils.log_behavior import get_logger
 from bioflow.utils.dataviz import render_2d_matrix
 from bioflow.internal_configs import line_loss
 from bioflow.user_configs import psutil_main_loop_memory_tracing, \
-    memory_source_allowed, switch_to_splu
+    memory_source_allowed, switch_to_splu, node_current_in_debug
 from bioflow.utils.linalg_routines import cluster_nodes, average_off_diag_in_sub_matrix, \
     average_interset_linkage, normalize_laplacian
 
+import traceback
+import warnings
+import sys
+
+import line_profiler
+import atexit
+profile = line_profiler.LineProfiler()
+atexit.register(profile.print_stats)
 
 log = get_logger(__name__)
 
@@ -47,7 +56,6 @@ log = get_logger(__name__)
 call_inc = 0
 last_mem_log = 0
 
-
 def log_mem(flag=''):
     if psutil_main_loop_memory_tracing:
         global last_mem_log
@@ -67,8 +75,19 @@ def log_mem(flag=''):
         pass
 
 
+def warn_with_traceback(message, category, filename, lineno, file=None, line=None):
+
+    log = file if hasattr(file,'write') else sys.stderr
+    traceback.print_stack(file=log)
+    log.write(warnings.formatwarning(message, category, filename, lineno, line))
+
+
+# warnings.showwarning = warn_with_traceback
+# warnings.simplefilter("always")
+
+
 def delete_row_csr(mat, i):
-    if not isinstance(mat, csr_matrix):
+    if not isinstance(mat, spmat.csr_matrix):
         raise ValueError("works only for CSR format -- use .tocsr() first")
     n = mat.indptr[i+1] - mat.indptr[i]
     if n > 0:
@@ -93,7 +112,7 @@ def trim_matrix(mat, i):
     return mat
 
 
-def sparse_abs(sparse_matrix):
+def sparse_abs(sparse_matrix: spmat.csc_matrix) -> spmat.csc_matrix:
     """
     Recovers an absolute value of a sparse matrix
 
@@ -106,18 +125,15 @@ def sparse_abs(sparse_matrix):
     # print('sparse_abs method unroll')
     # print(type(sparse_matrix), sparse_matrix.dtype, sparse_matrix.count_nonzero())
 
-    int_mat = sparse_matrix.tocsc()
-    sign = int_mat.sign()
-    ret_mat = int_mat.multiply(sign)
-
-    # print(type(int_mat), type(sign), type(ret_mat))  #
-    # print(int_mat.dtype, sign.dtype, ret_mat.dtype)  #
-    # print(int_mat.count_nonzero(), sign.count_nonzero(), ret_mat.count_nonzero())  #
+    sign = sparse_matrix.sign()  # csc
+    ret_mat = sparse_matrix.multiply(sign)  # csc
 
     return ret_mat
 
 
-def build_sink_source_current_array(io_index_pair, shape, splu=False):
+def build_sink_source_current_array(io_index_pair: Tuple[int, int],
+                                    shape: Tuple[int, int],
+                                    splu=False) -> spmat.csc_matrix:
     """
     converts index pair to a solver-compatible array
 
@@ -131,11 +147,11 @@ def build_sink_source_current_array(io_index_pair, shape, splu=False):
             io_array[io_index_pair[0], 0] = 1.0
         else:
             io_array[io_index_pair[0]-1, 0] = 1.0
-        return csr_matrix(io_array)
+        return spmat.csc_matrix(io_array)
     else:
         io_array = np.zeros((shape[0], 1))
         io_array[io_index_pair[0], 0], io_array[io_index_pair[1], 0] = (1.0, -1.0)
-        return csc_matrix(io_array)
+        return spmat.csc_matrix(io_array)
 
 
 def get_potentials(conductivity_laplacian, io_index_pair):
@@ -153,16 +169,19 @@ def get_potentials(conductivity_laplacian, io_index_pair):
         io_array = build_sink_source_current_array(io_index_pair, conductivity_laplacian.shape, splu=True)
         local_conductivity_laplacian = trim_matrix(conductivity_laplacian, io_index_pair[1])
         log.info('starting splu computation')
-        solver = splu(csc_matrix(local_conductivity_laplacian))
+        solver = splu(local_conductivity_laplacian.tocsc())
         log.info('splu computation done')
         return solver.solve(io_array.toarray())
     else:
         io_array = build_sink_source_current_array(io_index_pair, conductivity_laplacian.shape)
-        solver = cholesky(csc_matrix(conductivity_laplacian), line_loss)
+        solver = cholesky(conductivity_laplacian.tocsc(), line_loss)
         return solver(io_array)
 
 
-def get_current_matrix(conductivity_laplacian, node_potentials):
+# profiling 77% of execution time is spent here
+# @profile
+def get_current_matrix(conductivity_laplacian: spmat.csc_matrix,
+                       node_potentials: spmat.csc_matrix) -> Tuple[None, spmat.csc_matrix]:
     """
     Recovers the current matrix based on the conductivity laplacian and voltages in each node.
 
@@ -176,17 +195,21 @@ def get_current_matrix(conductivity_laplacian, node_potentials):
     log_mem('gcm_1')
 
     if switch_to_splu:
-        diag_voltages = csr_matrix(diags(node_potentials.toarray().T.tolist()[0], 0))
+        # csc
+        diag_voltages = spmat.diags(node_potentials.toarray().T.tolist()[0], 0,
+                                                     format="csc")
         log_mem('gcm_2.1')
     else:
-        # print type(node_potentials)
-        # print node_potentials.shape
-        # print node_potentials
-        diag_voltages = csr_matrix(diags(node_potentials.toarray().T.tolist()[0], 0))
+        # csc
+        diag_voltages = spmat.diags(node_potentials.toarray().T.tolist()[0], 0,
+                                                     format="csc")
         log_mem('gcm_2.1')
 
+    # csc
     corr_conductance_matrix = conductivity_laplacian - \
-                              csr_matrix(diags(conductivity_laplacian.diagonal(), 0))
+                              spmat.diags(conductivity_laplacian.diagonal(), 0,
+                                                           format="csc")
+
     log_mem('gcm_3')
 
     # true currents
@@ -194,9 +217,10 @@ def get_current_matrix(conductivity_laplacian, node_potentials):
     # print(type(diag_voltages), type(corr_conductance_matrix))   # lil_matrix > csr_matrix, csr_matrix
     # print(diag_voltages.count_nonzero(), corr_conductance_matrix.count_nonzero())  # ~144 ~482k
 
-
-    _lft = diag_voltages.dot(corr_conductance_matrix)
-    _rgt = corr_conductance_matrix.dot(diag_voltages)
+    # this instruction takes 15% of execution time
+    _lft = diag_voltages.dot(corr_conductance_matrix)  # csc
+    # this instruction takes 10% of execution time
+    _rgt = corr_conductance_matrix.dot(diag_voltages)  # csc
 
     log_mem('gcm_4.1')
 
@@ -204,7 +228,8 @@ def get_current_matrix(conductivity_laplacian, node_potentials):
     # print(type(_lft), type(_rgt))   # lil_matrix > csr_matrix, csr_matrix
     # print(_lft.count_nonzero(), _rgt.count_nonzero())  # ~144 ~482k
 
-    currents = _lft - _rgt
+    # this instruction takes 15% of execution time
+    currents = _lft - _rgt  # csc
     log_mem('gcm_4')
 
     # print(type(currents), currents.count_nonzero())  # csr_matrix ~482k
@@ -213,7 +238,10 @@ def get_current_matrix(conductivity_laplacian, node_potentials):
     # print type(currents)
 
     # we want them to be fully positive (so that the direction of flow doesn't matter)
-    abs_current = sparse_abs(currents)
+    # this instruction takes 10% of execution time
+    # abs_current = abs(currents)
+    # print(type(abs_current))
+    abs_current = sparse_abs(currents)  # csc
     log_mem('gcm_5')
 
     # and symmetric so that the triangular upper matrix contains all the data
@@ -221,15 +249,17 @@ def get_current_matrix(conductivity_laplacian, node_potentials):
     # print(type(abs_current), type(currents))
     log_mem('gcm_5.1')
     # print(abs_current.count_nonzero(), currents.count_nonzero())
-    abs_current_t = abs_current.transpose()
-    abs_current_t = abs_current_t.tocsc()
+    abs_current_t = abs_current.transpose()  # csr
+    # this instruction takes 12% of execution time
+    abs_current_t = abs_current_t.tocsc()  # csc
     log_mem('gcm_5.2')
 
     # print('flag gcm_6 unroll')
     # print(type(abs_current), type(abs_current_t))  # csc_matrix, csr_matrix > csc_matrix
     # print(abs_current.count_nonzero(), abs_current_t.count_nonzero())  # ~482k, ~482k
 
-    alt_currents = abs_current + abs_current_t
+    # this instruction takes 6% of execution time
+    alt_currents = abs_current + abs_current_t  # csc
     log_mem('gcm_6')
 
     # print(type(alt_currents), alt_currents.count_nonzero())  # csc_matrix, ~482k
@@ -240,7 +270,9 @@ def get_current_matrix(conductivity_laplacian, node_potentials):
     log_mem('gcm_6.1')
 
     # print('flag gcm_6.1 unroll')
-    tri_currents = triu(alt_currents, format='csc')
+    # this instruction takes 23% of execution time
+    # tri_currents = spmat.triu(alt_currents, format='csc')  # csc
+    tri_currents = alt_currents
     log_mem('gcm_6.2')
 
     # print(type(tri_currents), tri_currents.count_nonzero())  # coo_matrix > csc_matrix, ~ 241 k
@@ -274,7 +306,7 @@ def get_current_matrix(conductivity_laplacian, node_potentials):
     return None, tri_currents
 
 
-def get_current_through_nodes(triu_current_matrix):
+def get_current_through_nodes(triu_current_matrix: spmat.csc_matrix) -> List[np.float64]:
     """
     Recovers current flowing through each node
 
@@ -284,33 +316,29 @@ def get_current_through_nodes(triu_current_matrix):
      the get_current_matrix module
     :rtype: numpy.array
     """
-    positive_current = lil_matrix(triu_current_matrix.shape)
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", "Changing the sparsity structure")
+
+    triu_current_matrix = triu_current_matrix.tocsc()
+    positive_current = spmat.csc_matrix(triu_current_matrix.shape)
     positive_current[triu_current_matrix > 0.0] = triu_current_matrix[triu_current_matrix > 0.0]
-
-    negative_current = lil_matrix(triu_current_matrix.shape)
-    negative_current[triu_current_matrix < 0.0] = triu_current_matrix[triu_current_matrix < 0.0]
-
-    # print np.any(triu_current_matrix.diagonal())
+    # that's the part raising a warning about sparsity. not critical for performance
 
     incoming_current = np.array((positive_current + positive_current.T).sum(axis=1)).flatten() / 2
-    outgoing_current = np.array((negative_current + negative_current.T).sum(axis=1)).flatten() / 2
 
-    if np.any(outgoing_current):
-        print('incoming', incoming_current)
-        print('outgoing', outgoing_current)
-        print('diff', incoming_current + outgoing_current)
-        print(np.any(incoming_current + outgoing_current > 0.))
-        raise Exception('debug: assumption failed....')
+    if node_current_in_debug:
+        negative_current = spmat.csc_matrix(triu_current_matrix.shape)
+        negative_current[triu_current_matrix < 0.0] = triu_current_matrix[triu_current_matrix < 0.0]
+        outgoing_current = np.array((negative_current + negative_current.T).sum(axis=1)).flatten() / 2
+
+        if np.any(outgoing_current):
+            print('incoming', incoming_current)
+            print('outgoing', outgoing_current)
+            print('diff', incoming_current + outgoing_current)
+            print(np.any(incoming_current + outgoing_current > 0.))
+            raise Exception('debug: assumption failed....')
 
     ret = list(incoming_current)
-
-    # s = np.array(positive_current.sum(axis=1).T - negative_current.sum(axis=0))
-    # r = np.array(positive_current.sum(axis=0) - negative_current.sum(axis=1).T)
-    # ret = copy(s)
-    # ret[r > s] = r[r > s]
-    # ret = list(ret.flatten())
-    #
-    # print 'old ret', ret
 
     return ret
 
@@ -334,21 +362,24 @@ def laplacian_reachable_filter(laplacian, reachable_indexes):
     pad_array = [0] * laplacian.shape[0]
     for index in reachable_indexes:
         pad_array[index] = 1
-    diagonal_pad = diags(pad_array, 0, format="lil")
+    diagonal_pad = spmat.diags(pad_array, 0, format="csc")
     re_laplacian = copy(laplacian)
     re_laplacian = diagonal_pad.dot(re_laplacian.dot(diagonal_pad))
     re_laplacian = re_laplacian - \
-        diags(re_laplacian.diagonal(), 0, format="lil")
+        spmat.diags(re_laplacian.diagonal(), 0, format="csc")
     d = (-re_laplacian.sum(axis=0)).tolist()[0]
-    re_laplacian = re_laplacian + diags(d, 0, format="lil")
+    re_laplacian = re_laplacian + spmat.diags(d, 0, format="csc")
 
     # print 're_laplacian', re_laplacian.shape
 
     return re_laplacian
 
 
-def edge_current_iteration(conductivity_laplacian, index_pair,
-                           solver=None, reach_limiter=None):
+# profiling: 88% of time is spend here. of which 9.8% > 13.0 own time (solver execution it is)
+def edge_current_iteration(conductivity_laplacian: spmat.csc_matrix,
+                           index_pair: Tuple[int, int],
+                           solver: Union[Factor, Any] = None,
+                           reach_limiter=None) -> (np.float64, spmat.csc_matrix):
     """
     Master edge current retriever
 
@@ -381,8 +412,9 @@ def edge_current_iteration(conductivity_laplacian, index_pair,
             pass  # because the solver was not passed to start with
         else:
             # print 'solver branch picked'
-            io_array = build_sink_source_current_array((i, j), conductivity_laplacian.shape)
-            voltages = solver(io_array)
+            io_array = build_sink_source_current_array((i, j), conductivity_laplacian.shape)  # csc
+            # 17% of time is spend executing this line
+            voltages = solver(io_array)  # csc;
             log_mem('eci_5.1')
     else:
         # print 'branch analysis: no solver provided'
@@ -394,15 +426,16 @@ def edge_current_iteration(conductivity_laplacian, index_pair,
             # print 'voltages after 0-insertion', voltages.shape
         log_mem('eci_5.2')
 
-    _, current_upper = get_current_matrix(conductivity_laplacian, voltages)
-    log_mem('eci_6')
-    potential_diff = abs(voltages[i, 0] - voltages[j, 0])
+    # 82% of time is spend here
+    _, current_upper = get_current_matrix(conductivity_laplacian, voltages)  # None, csc;
+    potential_diff = abs(voltages[i, 0] - voltages[j, 0])  # np.float64
 
     log_mem('eci_7')
 
     return potential_diff, current_upper
 
 
+# profiling: 3 calls, byt 3 sec own time
 def master_edge_current(conductivity_laplacian, index_list,
                         cancellation=True, potential_dominated=True, sampling=False,
                         sampling_depth=10, memory_source=None, potential_diffs_remembered=None,
@@ -450,6 +483,9 @@ def master_edge_current(conductivity_laplacian, index_list,
     #     potential_diffs_remembered,
     #     thread_hex))
 
+    # convert the arguments to proper structure:
+    conductivity_laplacian = conductivity_laplacian.tocsc()
+
     # generate index list in agreement with the sampling strategy
     if sampling:
         list_of_pairs = []
@@ -463,14 +499,14 @@ def master_edge_current(conductivity_laplacian, index_list,
 
     total_pairs = len(list_of_pairs)
 
-    up_pair_2_voltage_current = {}
-    current_accumulator = csc_matrix(conductivity_laplacian.shape)
+    up_pair_2_voltage = {}
+    current_accumulator = spmat.csc_matrix(conductivity_laplacian.shape)
 
     if switch_to_splu:
         pass  # for now we are not going to using smart iteration through i, j
         # solver = splu(csc_matrix(conductivity_laplacian))
     else:
-        solver = cholesky(csc_matrix(conductivity_laplacian), line_loss)
+        solver = cholesky(conductivity_laplacian, line_loss)
 
     # run the main loop on the list of indexes in agreement with the memoization strategy:
     breakpoints = 300
@@ -495,6 +531,7 @@ def master_edge_current(conductivity_laplacian, index_list,
                     edge_current_iteration(conductivity_laplacian, (i, j))
                 log_mem('1.2.1')
             else:
+                # types : np.float64, csc_matrix
                 potential_diff, current_upper = \
                     edge_current_iteration(conductivity_laplacian, (i, j),
                                            solver=solver)
@@ -504,7 +541,7 @@ def master_edge_current(conductivity_laplacian, index_list,
         log_mem('2')
 
         if potential_diffs_remembered:
-            up_pair_2_voltage_current[tuple(sorted((i, j)))] = potential_diff
+            up_pair_2_voltage[tuple(sorted((i, j)))] = potential_diff
 
         log_mem('3')
 
@@ -512,6 +549,7 @@ def master_edge_current(conductivity_laplacian, index_list,
         if potential_dominated:
             # raise Exception('tracing the stack!')
             if potential_diff != 0:
+                # csc_matrix
                 current_upper = current_upper / potential_diff
                 log_mem('4.1.1')
             # warn if potential difference is null or close to it
@@ -526,6 +564,7 @@ def master_edge_current(conductivity_laplacian, index_list,
         # print(type(current_accumulator))  # lil_matrix > csc_matrix
         # print(type(sparse_abs(current_upper)))  # csc_matrix
 
+        # csc = csc + csc
         current_accumulator = current_accumulator + sparse_abs(current_upper)
         log_mem('5')
 
@@ -551,10 +590,13 @@ def master_edge_current(conductivity_laplacian, index_list,
         call_inc += 1
         log_mem('6')
 
+    current_accumulator = spmat.triu(current_accumulator)
+
     if cancellation:
+        # profiling verification if division is possible takes 2 seconds
         current_accumulator /= float(total_pairs)
 
-    return current_accumulator, up_pair_2_voltage_current
+    return current_accumulator, up_pair_2_voltage
 
 
 def group_edge_current(conductivity_laplacian, index_list,
@@ -653,7 +695,7 @@ def perform_clustering(inter_node_tension, cluster_number, show='undefined clust
                             for item in key]))
     local_index = dict((UP, i) for i, UP in enumerate(index_group))
     rev_idx = dict((i, UP) for i, UP in enumerate(index_group))
-    relations_matrix = lil_matrix((len(index_group), len(index_group)))
+    relations_matrix = spmat.lil_matrix((len(index_group), len(index_group)))
 
     for (UP1, UP2), tension in inter_node_tension.items():
         # TODO: change the metric used to cluster the nodes.

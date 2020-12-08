@@ -36,7 +36,7 @@ def insert_annotome_rand_samp(payload_dict):
 
 
 def insert_interactome_rand_samp(payload_dict):
-    loc_interactome_rand_samp().insert(payload_dict)
+    loc_interactome_rand_samp().insert(payload_dict) # TODO: change to insert_one
 
 
 def find_annotome_rand_samp(filter_dict):

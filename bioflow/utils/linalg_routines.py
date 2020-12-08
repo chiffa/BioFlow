@@ -17,7 +17,7 @@ from bioflow.utils.dataviz import render_2d_matrix
 
 log = get_logger(__name__)
 
-warnings.filterwarnings("ignore", message="Changing the sparsity structure")
+# warnings.filterwarnings("ignore", message="Changing the sparsity structure")
 
 
 @time_it_wrapper

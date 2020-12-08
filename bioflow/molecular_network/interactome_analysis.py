@@ -79,7 +79,7 @@ def spawn_sampler_pool(
         pool_size,
         sample_size_list,
         interaction_list_per_pool,
-        interactome_interface_instance,
+        interactome_interface_instance,  # actually unused
         sparse_rounds=False):
     """
     Spawns a pool of samplers of the information flow within the GO system
@@ -488,7 +488,7 @@ if __name__ == "__main__":
 
     local_matrix = InteractomeInterface(main_connex_only=True, full_impact=True)
     local_matrix.fast_load()
-
-    # spawn_sampler_pool(3, [2], [150], interactome_interface_instance=None)
+    # spawn_sampler_pool(3, [50], [3], interactome_interface_instance=None)
+    spawn_sampler(([50], [3], False, None, 0))
 
     # local_matrix.randomly_sample([195], [10], sparse_rounds=195)

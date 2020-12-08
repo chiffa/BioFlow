@@ -18,7 +18,7 @@ from time import time
 import traceback, sys
 
 import numpy as np
-from scipy.sparse import lil_matrix
+from scipy.sparse import lil_matrix, triu
 from scipy.sparse.csgraph import shortest_path
 
 from bioflow.algorithms_bank import conduction_routines as cr
@@ -791,6 +791,8 @@ class GeneOntologyInterface(object):
                 log.info("progress: %s/%s, current speed: %s compops, time remaining: %s min"
                          % (counter, total_pairs, compops, (total_pairs - counter) / compops / 60))
                 previous_time = time()
+
+        triu(self.current_accumulator)
 
         if cancellation:  # TODO: factor that one into the Conduction Routilens
             ln = len(self.analytic_uniprots)

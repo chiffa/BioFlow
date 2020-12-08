@@ -16,6 +16,7 @@ from random import shuffle, sample
 from time import time
 import numpy as np
 from scipy.sparse import lil_matrix
+import scipy.sparse as spmat
 from scipy.sparse.csgraph import connected_components
 from scipy.sparse.linalg import eigsh
 from itertools import chain
@@ -554,6 +555,7 @@ class InteractomeInterface(object):
         lpl_shape = self.laplacian_matrix.shape
         D = lil_matrix(lpl_shape)
         D.setdiag(mD)
+        D = D.tocsc()
         self.laplacian_matrix = (D.dot(self.laplacian_matrix)).dot(D)
 
     def create_val_matrix(self):
@@ -909,7 +911,7 @@ class InteractomeInterface(object):
             return None
 
         if not incremental or self.current_accumulator == np.zeros((2, 2)):
-            self.current_accumulator = lil_matrix(self.laplacian_matrix.shape)
+            self.current_accumulator = spmat.csc_matrix(self.laplacian_matrix.shape)
             self.UP2UP_voltages = {}
             self.node_current = defaultdict(float)
             if not sourced:
