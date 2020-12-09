@@ -43,9 +43,11 @@ On the table:
     - DONE: delay the triu until after the current accumulator is filled
         - baseline: 261 983
         - after: 197 888 => huge improvement
-    - TODO: perform in-place multiplication => impossible (no in-place dot/add/subract
-versions)
-    - TODO: clean-up
+    - NOPE: perform in-place multiplication => impossible (no in-place dot/add/subract
+        versions)
+    - TODO: clean-up:
+        - DONE: remove the debug filters connectors
+        - TODO: deal with the confusing logic of enabling the splu solver
 
 - TODO: [SANITY]: remove nested lists from auto-analyze ar link with output folders properly
 

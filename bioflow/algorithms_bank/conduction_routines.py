@@ -2,10 +2,6 @@
 Module containing the the general routines for processing of conduction matrices with
 IO current arrays.
 """
-# from pympler import muppy, summary, tracker
-import os
-import psutil
-
 import random
 from copy import copy
 from time import time
@@ -28,17 +24,7 @@ from bioflow.user_configs import psutil_main_loop_memory_tracing, \
 from bioflow.utils.linalg_routines import cluster_nodes, average_off_diag_in_sub_matrix, \
     average_interset_linkage, normalize_laplacian
 
-import traceback
-import warnings
-import sys
-
-import line_profiler
-import atexit
-profile = line_profiler.LineProfiler()
-atexit.register(profile.print_stats)
-
 log = get_logger(__name__)
-
 
 # switch_to_splu = False
 # # Looks like we are failing the normalization due to the matrix symmetry when using SPLU.
@@ -51,39 +37,6 @@ log = get_logger(__name__)
 # #   to the diagonal terms of the matrix that are being used as sinks/sources
 # #
 # #   A comparison with a proper SPLU showed we make an error that is extremely small but perform the calculation about 20x faster
-
-
-call_inc = 0
-last_mem_log = 0
-
-def log_mem(flag=''):
-    if psutil_main_loop_memory_tracing:
-        global last_mem_log
-        global call_inc
-        process = psutil.Process(os.getpid())
-        mem = process.memory_info().rss / 1024 / 1024
-
-        # print("DEBUG: memory load @ %s: %s" % (flag, mem))
-
-        if call_inc == 0:
-            print("DEBUG: memory load @ %s: %s" % (flag, mem))
-        if mem != last_mem_log:
-            print("DEBUG: memory load increased @ %s by %.2f on inc %d" % (flag, mem - last_mem_log,
-                                                                           call_inc))
-            last_mem_log = mem
-    else:
-        pass
-
-
-def warn_with_traceback(message, category, filename, lineno, file=None, line=None):
-
-    log = file if hasattr(file,'write') else sys.stderr
-    traceback.print_stack(file=log)
-    log.write(warnings.formatwarning(message, category, filename, lineno, line))
-
-
-# warnings.showwarning = warn_with_traceback
-# warnings.simplefilter("always")
 
 
 def delete_row_csr(mat, i):
@@ -178,8 +131,6 @@ def get_potentials(conductivity_laplacian, io_index_pair):
         return solver(io_array)
 
 
-# profiling 77% of execution time is spent here
-# @profile
 def get_current_matrix(conductivity_laplacian: spmat.csc_matrix,
                        node_potentials: spmat.csc_matrix) -> Tuple[None, spmat.csc_matrix]:
     """
@@ -192,116 +143,31 @@ def get_current_matrix(conductivity_laplacian: spmat.csc_matrix,
      it is negative.
     :rtype: scipy.sparse.lil_matrix
     """
-    log_mem('gcm_1')
-
     if switch_to_splu:
         # csc
         diag_voltages = spmat.diags(node_potentials.toarray().T.tolist()[0], 0,
                                                      format="csc")
-        log_mem('gcm_2.1')
     else:
         # csc
         diag_voltages = spmat.diags(node_potentials.toarray().T.tolist()[0], 0,
                                                      format="csc")
-        log_mem('gcm_2.1')
 
     # csc
     corr_conductance_matrix = conductivity_laplacian - \
                               spmat.diags(conductivity_laplacian.diagonal(), 0,
                                                            format="csc")
 
-    log_mem('gcm_3')
-
-    # true currents
-    # print('flag gcm_4 unroll')
-    # print(type(diag_voltages), type(corr_conductance_matrix))   # lil_matrix > csr_matrix, csr_matrix
-    # print(diag_voltages.count_nonzero(), corr_conductance_matrix.count_nonzero())  # ~144 ~482k
-
-    # this instruction takes 15% of execution time
     _lft = diag_voltages.dot(corr_conductance_matrix)  # csc
-    # this instruction takes 10% of execution time
     _rgt = corr_conductance_matrix.dot(diag_voltages)  # csc
 
-    log_mem('gcm_4.1')
-
-    # print('flag gcm_4 unroll')
-    # print(type(_lft), type(_rgt))   # lil_matrix > csr_matrix, csr_matrix
-    # print(_lft.count_nonzero(), _rgt.count_nonzero())  # ~144 ~482k
-
-    # this instruction takes 15% of execution time
     currents = _lft - _rgt  # csc
-    log_mem('gcm_4')
 
-    # print(type(currents), currents.count_nonzero())  # csr_matrix ~482k
-
-    log_mem('gcm_4_del')
-    # print type(currents)
-
-    # we want them to be fully positive (so that the direction of flow doesn't matter)
-    # this instruction takes 10% of execution time
-    # abs_current = abs(currents)
-    # print(type(abs_current))
     abs_current = sparse_abs(currents)  # csc
-    log_mem('gcm_5')
-
-    # and symmetric so that the triangular upper matrix contains all the data
-
-    # print(type(abs_current), type(currents))
-    log_mem('gcm_5.1')
-    # print(abs_current.count_nonzero(), currents.count_nonzero())
     abs_current_t = abs_current.transpose()  # csr
-    # this instruction takes 12% of execution time
     abs_current_t = abs_current_t.tocsc()  # csc
-    log_mem('gcm_5.2')
-
-    # print('flag gcm_6 unroll')
-    # print(type(abs_current), type(abs_current_t))  # csc_matrix, csr_matrix > csc_matrix
-    # print(abs_current.count_nonzero(), abs_current_t.count_nonzero())  # ~482k, ~482k
-
-    # this instruction takes 6% of execution time
     alt_currents = abs_current + abs_current_t  # csc
-    log_mem('gcm_6')
-
-    # print(type(alt_currents), alt_currents.count_nonzero())  # csc_matrix, ~482k
-
-    log_mem('gcm_6_del')
-
-    # print(type(abs_current), type(currents))
-    log_mem('gcm_6.1')
-
-    # print('flag gcm_6.1 unroll')
-    # this instruction takes 23% of execution time
     # tri_currents = spmat.triu(alt_currents, format='csc')  # csc
     tri_currents = alt_currents
-    log_mem('gcm_6.2')
-
-    # print(type(tri_currents), tri_currents.count_nonzero())  # coo_matrix > csc_matrix, ~ 241 k
-    # print(abs_current.count_nonzero(), currents.count_nonzero())
-    log_mem('gcm_6.2_del')
-
-    # positive_current = lil_matrix(currents.shape)
-    # positive_current[currents > 0.0] = currents[currents > 0.0]
-    # negative_current = lil_matrix(currents.shape)
-    # negative_current[currents < 0.0] = currents[currents < 0.0]
-    #
-    # incoming_current = np.array((positive_current + positive_current.T).sum(axis=1)).flatten()/2
-    # outgoing_current = np.array((negative_current + negative_current.T).sum(axis=1)).flatten()/2
-
-    # print incoming_current
-    # print outgoing_current
-    #
-    # print 'flow conservation', np.allclose(incoming_current, outgoing_current)
-    # print incoming_current+outgoing_current
-    # print 'discordant', np.nonzero(incoming_current+outgoing_current)
-    #
-    # # print 'symmetric', (currents-currents.T)
-    # # print 'positive', np.any(currents > 0.0)
-    # # print 'negative', np.any(currents < 0.0)
-    # raise Exception('debug')
-
-    # PB: we can't really use the triu because the flow matrix is not symmetric
-
-    log_mem('gcm_7')
 
     return None, tri_currents
 
@@ -322,7 +188,8 @@ def get_current_through_nodes(triu_current_matrix: spmat.csc_matrix) -> List[np.
     triu_current_matrix = triu_current_matrix.tocsc()
     positive_current = spmat.csc_matrix(triu_current_matrix.shape)
     positive_current[triu_current_matrix > 0.0] = triu_current_matrix[triu_current_matrix > 0.0]
-    # that's the part raising a warning about sparsity. not critical for performance
+    # that's the part raising a warning about sparsity. not critical for performance given it's
+    # outside the main loop
 
     incoming_current = np.array((positive_current + positive_current.T).sum(axis=1)).flatten() / 2
 
@@ -370,12 +237,9 @@ def laplacian_reachable_filter(laplacian, reachable_indexes):
     d = (-re_laplacian.sum(axis=0)).tolist()[0]
     re_laplacian = re_laplacian + spmat.diags(d, 0, format="csc")
 
-    # print 're_laplacian', re_laplacian.shape
-
     return re_laplacian
 
 
-# profiling: 88% of time is spend here. of which 9.8% > 13.0 own time (solver execution it is)
 def edge_current_iteration(conductivity_laplacian: spmat.csc_matrix,
                            index_pair: Tuple[int, int],
                            solver: Union[Factor, Any] = None,
@@ -389,53 +253,35 @@ def edge_current_iteration(conductivity_laplacian: spmat.csc_matrix,
     :param reach_limiter:
     :return: potential_difference, triu_current
     """
-    log_mem('eci_1')
-
     if solver is None and reach_limiter is None:
         log.warning('edge current computation could be accelerated by using a shared solver')
-
-    log_mem('eci_2')
 
     if reach_limiter:
         conductivity_laplacian = laplacian_reachable_filter(conductivity_laplacian, reach_limiter)
         solver = None
 
-    log_mem('eci_3')
-
     i, j = index_pair
-
-    log_mem('eci_4')
 
     # TODO: this is a confusing logic > refactor
     if solver:
         if switch_to_splu:
             pass  # because the solver was not passed to start with
         else:
-            # print 'solver branch picked'
             io_array = build_sink_source_current_array((i, j), conductivity_laplacian.shape)  # csc
-            # 17% of time is spend executing this line
             voltages = solver(io_array)  # csc;
             log_mem('eci_5.1')
     else:
-        # print 'branch analysis: no solver provided'
         voltages = get_potentials(conductivity_laplacian, (i, j))
-        # print 'voltages', voltages.shape
         # problem: are we retrieving anything with i, j when we cut the laplacian?
         if switch_to_splu:
             voltages = np.insert(voltages, j, 0, axis=0)
-            # print 'voltages after 0-insertion', voltages.shape
-        log_mem('eci_5.2')
 
-    # 82% of time is spend here
     _, current_upper = get_current_matrix(conductivity_laplacian, voltages)  # None, csc;
     potential_diff = abs(voltages[i, 0] - voltages[j, 0])  # np.float64
-
-    log_mem('eci_7')
 
     return potential_diff, current_upper
 
 
-# profiling: 3 calls, byt 3 sec own time
 def master_edge_current(conductivity_laplacian, index_list,
                         cancellation=True, potential_dominated=True, sampling=False,
                         sampling_depth=10, memory_source=None, potential_diffs_remembered=None,
@@ -512,65 +358,37 @@ def master_edge_current(conductivity_laplacian, index_list,
     breakpoints = 300
     previous_time = time()
 
-    log_mem('start')
-
     for counter, (i, j) in enumerate(list_of_pairs):
-
-        # if counter % total_pairs/breakpoints == 0:
-        #     log.debug('getting pairwise flow %s out of %s', counter + 1, total_pairs)
-
-        log_mem('1')
 
         if memory_source and tuple(sorted((i, j))) in list(memory_source.keys()):
             potential_diff, current_upper = memory_source[tuple(sorted((i, j)))]
-            log_mem('1.1')
 
         else:
             if switch_to_splu:
                 potential_diff, current_upper = \
                     edge_current_iteration(conductivity_laplacian, (i, j))
-                log_mem('1.2.1')
             else:
                 # types : np.float64, csc_matrix
                 potential_diff, current_upper = \
                     edge_current_iteration(conductivity_laplacian, (i, j),
                                            solver=solver)
-                log_mem('1.2.2')  # a lot of memory is being freed up here
-            log_mem('1.2')
-
-        log_mem('2')
 
         if potential_diffs_remembered:
             up_pair_2_voltage[tuple(sorted((i, j)))] = potential_diff
 
-        log_mem('3')
-
         # normalize to potential, if needed
         if potential_dominated:
-            # raise Exception('tracing the stack!')
             if potential_diff != 0:
                 # csc_matrix
                 current_upper = current_upper / potential_diff
-                log_mem('4.1.1')
+
             # warn if potential difference is null or close to it
             else:
                 log.warning('pairwise flow. On indexes %s %s potential difference is null. %s',
                             i, j, 'Tension-normalization was aborted')
-                log_mem('4.1.2')
-
-        log_mem('4')
-
-        # print('flag 5 unroll')
-        # print(type(current_accumulator))  # lil_matrix > csc_matrix
-        # print(type(sparse_abs(current_upper)))  # csc_matrix
 
         # csc = csc + csc
         current_accumulator = current_accumulator + sparse_abs(current_upper)
-        log_mem('5')
-
-        # print(type(current_accumulator))  # lil_matrix >csc_matrix
-
-        log_mem('5_del')
 
         if counter % breakpoints == 0 and counter > 1:
             compops = float(breakpoints) / (time() - previous_time)
@@ -584,16 +402,9 @@ def master_edge_current(conductivity_laplacian, index_list,
                         finish_time.strftime("%m/%d/%Y, %H:%M:%S")))
             previous_time = time()
 
-            log_mem('breakpoint')
-
-        global call_inc
-        call_inc += 1
-        log_mem('6')
-
     current_accumulator = spmat.triu(current_accumulator)
 
     if cancellation:
-        # profiling verification if division is possible takes 2 seconds
         current_accumulator /= float(total_pairs)
 
     return current_accumulator, up_pair_2_voltage
