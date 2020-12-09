@@ -122,6 +122,7 @@ def get_potentials(conductivity_laplacian: spmat.csc_matrix,
     if switch_to_splu:
         io_array = build_sink_source_current_array(io_index_pair, conductivity_laplacian.shape)
         local_conductivity_laplacian = trim_matrix(conductivity_laplacian, io_index_pair[1])
+        local_conductivity_laplacian += spmat.eye(*local_conductivity_laplacian.shape) * line_loss
         # log.info('starting splu computation')
         solver = splu(local_conductivity_laplacian)  # solver sharing for splu is impossible
         # log.info('splu computation done')
@@ -151,8 +152,10 @@ def get_current_matrix(conductivity_laplacian: spmat.csc_matrix,
      it is negative.
     :rtype: scipy.sparse.csc_matrix
     """
-    diag_voltages = spmat.diags(node_potentials.toarray().T.tolist()[0], 0,
-                                                     format="csc")
+    if switch_to_splu:
+        diag_voltages = spmat.diags(node_potentials.T.tolist()[0], 0, format="csc")
+    else:
+        diag_voltages = spmat.diags(node_potentials.toarray().T.tolist()[0], 0, format="csc")
 
     # csc
     corr_conductance_matrix = conductivity_laplacian - \

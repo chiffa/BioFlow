@@ -22,8 +22,8 @@ skip_hint = False
 skip_biogrid = False
 
 # those are deep configurations and should not be touched unless you know what you are doing:
-switch_to_splu = False
-share_solver = True
+switch_to_splu = False  # switching this to True incurs approximately an 100-fold slowdown
+share_solver = True  # switching this to False incurs approximately a 50-fold slowdown
 sparse_analysis_threshold = 200
 
 # those are mostly debug flags and should not be touched
