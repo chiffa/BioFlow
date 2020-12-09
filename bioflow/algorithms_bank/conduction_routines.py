@@ -13,14 +13,12 @@ from scipy.sparse.linalg import eigsh
 # noinspection PyUnresolvedReferences
 from scikits.sparse.cholmod import cholesky, Factor
 from scipy.sparse.linalg import splu
-from pickle import dump
 import warnings
 from typing import Any, Union, TypeVar, NewType, Tuple, List
 from bioflow.utils.log_behavior import get_logger
 from bioflow.utils.dataviz import render_2d_matrix
 from bioflow.internal_configs import line_loss
-from bioflow.user_configs import psutil_main_loop_memory_tracing, \
-    memory_source_allowed, switch_to_splu, node_current_in_debug
+from bioflow.user_configs import memory_source_allowed, switch_to_splu, node_current_in_debug, share_solver
 from bioflow.utils.linalg_routines import cluster_nodes, average_off_diag_in_sub_matrix, \
     average_interset_linkage, normalize_laplacian
 
@@ -85,16 +83,16 @@ def sparse_abs(sparse_matrix: spmat.csc_matrix) -> spmat.csc_matrix:
 
 
 def build_sink_source_current_array(io_index_pair: Tuple[int, int],
-                                    shape: Tuple[int, int],
-                                    splu=False) -> spmat.csc_matrix:
+                                    shape: Tuple[int, int]) -> spmat.csc_matrix:
     """
     converts index pair to a solver-compatible array
 
     :param shape: shape of the conductance matrix
     :param io_index_pair: pair of indexes where sinks/bioflow pair is
+    :param splu: boolean flag e are using a version of splu
     """
 
-    if splu:
+    if switch_to_splu:
         io_array = np.zeros((shape[0]-1, 1))
         if io_index_pair[0] < io_index_pair[1]:
             io_array[io_index_pair[0], 0] = 1.0
@@ -107,32 +105,42 @@ def build_sink_source_current_array(io_index_pair: Tuple[int, int],
         return spmat.csc_matrix(io_array)
 
 
-def get_potentials(conductivity_laplacian, io_index_pair):
+def get_potentials(conductivity_laplacian: spmat.csc_matrix,
+                   io_index_pair: Tuple[int, int],
+                   shared_solver: Union[Factor, None]) -> Union[Factor, np.array]:
     """
     Recovers voltages based on the conductivity Laplacian and the IO array
 
     :param conductivity_laplacian:
     :param io_index_pair:
 
-    :return: array of potential in each node
+    :return: array of potential in each node or solver - depending on method used
     """
     # technically, Cholesky is not the best solver. In approximation it is good enough and is faster
+    i, j = io_index_pair
 
     if switch_to_splu:
-        io_array = build_sink_source_current_array(io_index_pair, conductivity_laplacian.shape, splu=True)
+        io_array = build_sink_source_current_array(io_index_pair, conductivity_laplacian.shape)
         local_conductivity_laplacian = trim_matrix(conductivity_laplacian, io_index_pair[1])
-        log.info('starting splu computation')
-        solver = splu(local_conductivity_laplacian.tocsc())
-        log.info('splu computation done')
-        return solver.solve(io_array.toarray())
+        # log.info('starting splu computation')
+        solver = splu(local_conductivity_laplacian)  # solver sharing for splu is impossible
+        # log.info('splu computation done')
+        voltages = solver.solve(io_array.toarray())
+        voltages = np.insert(voltages, j, 0, axis=0)
+
     else:
         io_array = build_sink_source_current_array(io_index_pair, conductivity_laplacian.shape)
-        solver = cholesky(conductivity_laplacian.tocsc(), line_loss)
-        return solver(io_array)
+        if not share_solver or shared_solver is None:
+            solver = cholesky(conductivity_laplacian, line_loss)
+        else:
+            solver = shared_solver
+        voltages = solver(io_array)
+
+    return voltages
 
 
 def get_current_matrix(conductivity_laplacian: spmat.csc_matrix,
-                       node_potentials: spmat.csc_matrix) -> Tuple[None, spmat.csc_matrix]:
+                       node_potentials: spmat.csc_matrix) -> Tuple[spmat.csc_matrix, spmat.csc_matrix]:
     """
     Recovers the current matrix based on the conductivity laplacian and voltages in each node.
 
@@ -141,15 +149,9 @@ def get_current_matrix(conductivity_laplacian: spmat.csc_matrix,
     :return: matrix where M[i,j] = current intensity from i to j. Assymteric and Triangular
      superior iof the assymetric one. if current is from j to i, term is positive, otherwise
      it is negative.
-    :rtype: scipy.sparse.lil_matrix
+    :rtype: scipy.sparse.csc_matrix
     """
-    if switch_to_splu:
-        # csc
-        diag_voltages = spmat.diags(node_potentials.toarray().T.tolist()[0], 0,
-                                                     format="csc")
-    else:
-        # csc
-        diag_voltages = spmat.diags(node_potentials.toarray().T.tolist()[0], 0,
+    diag_voltages = spmat.diags(node_potentials.toarray().T.tolist()[0], 0,
                                                      format="csc")
 
     # csc
@@ -166,10 +168,11 @@ def get_current_matrix(conductivity_laplacian: spmat.csc_matrix,
     abs_current_t = abs_current.transpose()  # csr
     abs_current_t = abs_current_t.tocsc()  # csc
     alt_currents = abs_current + abs_current_t  # csc
+    # delayed triangularization for performance reasons
     # tri_currents = spmat.triu(alt_currents, format='csc')  # csc
     tri_currents = alt_currents
 
-    return None, tri_currents
+    return alt_currents, tri_currents
 
 
 def get_current_through_nodes(triu_current_matrix: spmat.csc_matrix) -> List[np.float64]:
@@ -242,44 +245,44 @@ def laplacian_reachable_filter(laplacian, reachable_indexes):
 
 def edge_current_iteration(conductivity_laplacian: spmat.csc_matrix,
                            index_pair: Tuple[int, int],
-                           solver: Union[Factor, Any] = None,
+                           shared_solver: Union[Factor, None] = None,
                            reach_limiter=None) -> (np.float64, spmat.csc_matrix):
     """
     Master edge current retriever
 
     :param conductivity_laplacian:
-    :param solver:
+    :param shared_solver:
     :param index_pair:
     :param reach_limiter:
     :return: potential_difference, triu_current
     """
-    if solver is None and reach_limiter is None:
+    if shared_solver is None and switch_to_splu is False and reach_limiter is None:
         log.warning('edge current computation could be accelerated by using a shared solver')
 
     if reach_limiter:
         conductivity_laplacian = laplacian_reachable_filter(conductivity_laplacian, reach_limiter)
-        solver = None
+        shared_solver = None  # solver cannot be shared because the reach filter changes solver
 
     i, j = index_pair
 
-    # TODO: this is a confusing logic > refactor
-    if solver:
-        if switch_to_splu:
-            pass  # because the solver was not passed to start with
-        else:
-            io_array = build_sink_source_current_array((i, j), conductivity_laplacian.shape)  # csc
-            voltages = solver(io_array)  # csc;
-            log_mem('eci_5.1')
-    else:
-        voltages = get_potentials(conductivity_laplacian, (i, j))
-        # problem: are we retrieving anything with i, j when we cut the laplacian?
-        if switch_to_splu:
-            voltages = np.insert(voltages, j, 0, axis=0)
+    voltages = get_potentials(conductivity_laplacian, index_pair, shared_solver)
 
-    _, current_upper = get_current_matrix(conductivity_laplacian, voltages)  # None, csc;
+    # if solver:
+    #     if switch_to_splu:
+    #         pass  # because the solver was not passed to start with
+    #     else:
+    #         io_array = build_sink_source_current_array((i, j), conductivity_laplacian.shape)  # csc
+    #         voltages = solver(io_array)  # csc;
+    # else:
+    #     voltages = get_potentials(conductivity_laplacian, (i, j))
+    #     # problem: are we retrieving anything with i, j when we cut the laplacian?
+    #     if switch_to_splu:
+    #         voltages = np.insert(voltages, j, 0, axis=0)
+
+    _, current = get_current_matrix(conductivity_laplacian, voltages)  # csc, csc;
     potential_diff = abs(voltages[i, 0] - voltages[j, 0])  # np.float64
 
-    return potential_diff, current_upper
+    return potential_diff, current
 
 
 def master_edge_current(conductivity_laplacian, index_list,
@@ -348,11 +351,16 @@ def master_edge_current(conductivity_laplacian, index_list,
     up_pair_2_voltage = {}
     current_accumulator = spmat.csc_matrix(conductivity_laplacian.shape)
 
-    if switch_to_splu:
-        pass  # for now we are not going to using smart iteration through i, j
-        # solver = splu(csc_matrix(conductivity_laplacian))
+    if share_solver and not switch_to_splu:
+        shared_solver = cholesky(conductivity_laplacian, line_loss)
     else:
-        solver = cholesky(conductivity_laplacian, line_loss)
+        shared_solver = None
+
+
+    # if not switch_to_splu and share_solver:
+    #     cholesky_shared_solver = cholesky(conductivity_laplacian, line_loss)
+    # else:
+    #     cholesky_shared_solver = None
 
     # run the main loop on the list of indexes in agreement with the memoization strategy:
     breakpoints = 300
@@ -364,14 +372,9 @@ def master_edge_current(conductivity_laplacian, index_list,
             potential_diff, current_upper = memory_source[tuple(sorted((i, j)))]
 
         else:
-            if switch_to_splu:
-                potential_diff, current_upper = \
-                    edge_current_iteration(conductivity_laplacian, (i, j))
-            else:
-                # types : np.float64, csc_matrix
-                potential_diff, current_upper = \
-                    edge_current_iteration(conductivity_laplacian, (i, j),
-                                           solver=solver)
+            # types : np.float64, csc_matrix
+            potential_diff, current_upper = \
+                edge_current_iteration(conductivity_laplacian, (i, j), shared_solver=shared_solver)
 
         if potential_diffs_remembered:
             up_pair_2_voltage[tuple(sorted((i, j)))] = potential_diff

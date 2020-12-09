@@ -20,13 +20,16 @@ logs_directory = os.path.join(internal_storage, 'logs')
 skip_reactome = False
 skip_hint = False
 skip_biogrid = False
+
+# those are deep configurations and should not be touched unless you know what you are doing:
+switch_to_splu = False
+share_solver = True
 sparse_analysis_threshold = 200
 
 # those are mostly debug flags and should not be touched
 single_threaded = False
 psutil_main_loop_memory_tracing = False  # controls the log_mem behavior in conduction_routines.py
 memory_source_allowed = False
-switch_to_splu = False
 node_current_in_debug = False
 
 # Those are global variables that were used in order to check how algorithm variation performed

@@ -47,7 +47,10 @@ On the table:
         versions)
     - TODO: clean-up:
         - DONE: remove the debug filters connectors
-        - TODO: deal with the confusing logic of enabling the splu solver
+        - DONE: deal with the confusing logic of enabling the splu solver
+            - problem => We run into the optimization of using a shared solver
+        - TODO: test the splu and the non-shared solver branch
+
 
 - TODO: [SANITY]: remove nested lists from auto-analyze ar link with output folders properly
 
