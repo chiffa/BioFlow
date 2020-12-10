@@ -4,7 +4,15 @@ TODOs for the project in the future:
 On the table:
 -------------
 
- - TODO: [SANITY]: remove nested lists from auto-analyze or link with output folders properly
+ - TODO: [PLANNED] implement the neo4j edge weight transfer into Laplacian
+    - TODO: trace the weights injection
+    - TODO: define the weighting rules for neo4j
+    - DONE: enable neo4j remote debugging on the lpdpc4.epfl.ch
+
+ - TODO: [SANITY]: Feed the location of the output folders for logs with the main parameters
+    - TODO: Move the "info" log outputs to the parameters
+    - TODO: Allow the user to provide the names for the locations where the informatio will be
+        stored
 
  - TODO: [DEBUG]: align BioKnowledgeInterface analysis on the InteractomeAnalysis:
     - Take the background list into account

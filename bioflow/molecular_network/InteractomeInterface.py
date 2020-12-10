@@ -1157,6 +1157,8 @@ class InteractomeInterface(object):
                              "{0:.2f}".format(sample_size * sparse_rounds / 2 / self._time()),
                              self.pretty_time(), sparse_rounds)
 
+                # TODO: the external loop load bar goes here
+
     @staticmethod
     def compare_dumps(dumps_folder_1, dumps_folder_2):
         neo4j_id_2_matrix_index_1,\

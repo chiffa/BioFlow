@@ -309,6 +309,7 @@ def show_correlations(
     return current_info_rel, cluster_props
 
 
+# TODO: [run path refactor] pipe hdd save destination here (2)
 def compare_to_blank(
         blank_model_size,
         zoom_range_selector,
@@ -363,8 +364,9 @@ def compare_to_blank(
         tensions = pickle.loads(sample['voltages'])
 
         if not sparse_rounds:
+            # TODO: [run path refactor] pipe hdd save destination here (1)
             _, _, mean_correlations, eigenvalues = perform_clustering(
-                tensions, cluster_no, show=False)
+                tensions, cluster_no, show='')
         else:
             mean_correlations = np.array([[(0, ), 0, 0]]*cluster_no)
             eigenvalues = np.array([-1]*cluster_no)
@@ -397,6 +399,7 @@ def compare_to_blank(
         curr_inf_conf_tot[0, :], curr_inf_conf_tot[ (1, 2, 3), :])  # fails here when no significant terms to print
     log.info('blank comparison: %s', curr_inf_conf.shape)
     if not sparse_rounds:
+        # TODO: [run path refactor] pipe hdd save destination here (1)
         group2avg_off_diag, _, mean_correlations, eigenvalue = perform_clustering(
             go_interface_instance.UP2UP_voltages, cluster_no, 'GO terms clustering')
     else:
@@ -472,6 +475,7 @@ def get_estimated_time(samples, sample_sizes, operations_per_sec=2.2):
 
 
 # TODO: add support for a background support
+# TODO: [run path refactor] pipe hdd save destination here (3)
 def auto_analyze(source_list,
                  go_interface_instance=None,
                  processors=3, desired_depth=24,
@@ -521,6 +525,7 @@ def auto_analyze(source_list,
                                    param_set=param_set)
 
             go_interface_instance.build_extended_conduction_system()
+            # TODO: [run path refactor] pipe hdd save destination here (2)
             nr_nodes, nr_groups = compare_to_blank(
                 len(go_interface_instance.analytic_uniprots),
                 [1100, 1300],
@@ -547,6 +552,7 @@ def auto_analyze(source_list,
 
             go_interface_instance.build_extended_conduction_system(sparse_samples=sampling_depth)
             # go_interface_instance.export_conduction_system()
+            # TODO: [run path refactor] pipe hdd save destination here (2)
             nr_nodes, nr_groups = compare_to_blank(
                 len(go_interface_instance.analytic_uniprots),
                 [1100, 1300],
@@ -554,6 +560,7 @@ def auto_analyze(source_list,
                 go_interface_instance=go_interface_instance,
                 param_set=param_set)
 
+        # TODO: [run path refactor] correct hdd pipe save location here
         if len(output_destination_prefix) > 0:
             prefix = os.path.join(Outputs.prefix, output_destination_prefix)
             mkdir_recursive(prefix)

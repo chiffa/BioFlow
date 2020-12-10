@@ -9,7 +9,7 @@ import datetime
 import numpy as np
 from itertools import combinations, repeat
 import scipy.sparse as spmat
-from scipy.sparse.linalg import eigsh
+# from scipy.sparse.linalg import eigsh
 # noinspection PyUnresolvedReferences
 from scikits.sparse.cholmod import cholesky, Factor
 from scipy.sparse.linalg import splu
@@ -397,6 +397,7 @@ def master_edge_current(conductivity_laplacian, index_list,
         current_accumulator = current_accumulator + sparse_abs(current_upper)
 
         if counter % breakpoints == 0 and counter > 1:
+            # TODO: the internal loop load bar goes here
             compops = float(breakpoints) / (time() - previous_time)
             mins_before_termination = (total_pairs-counter) / compops // 60
             finish_time = datetime.datetime.now() + datetime.timedelta(minutes=mins_before_termination)
@@ -499,7 +500,11 @@ def group_edge_current_with_limitations(inflated_laplacian, idx_pair, reach_limi
     return inverter[1] / inverter[0], inverter[0]
 
 
-def perform_clustering(inter_node_tension, cluster_number, show='undefined clustering'):
+# TODO: [run path refactor] pipe hdd save destination here (1)
+def perform_clustering(inter_node_tension: spmat.csc_matrix,
+                       cluster_number: int,
+                       show: str = 'undefined clustering') -> Tuple[np.array, np.float64,
+                                                                    np.array, np.array]:
     """
     Performs a clustering on the voltages of the nodes,
 
@@ -522,18 +527,20 @@ def perform_clustering(inter_node_tension, cluster_number, show='undefined clust
         relations_matrix[local_index[UP1], local_index[UP1]] += 1.0 / tension
 
     # underlying method is spectral clustering: do we really lie in a good zone for that?
+    # NOPE - we need a dynamic clusters number
+    # TODO: change clustering method to a different one
     groups = cluster_nodes(relations_matrix, cluster_number)
 
     relations_matrix = normalize_laplacian(relations_matrix)
 
     if relations_matrix.shape[0] < 5:
-        eigenvals, _ = eigsh(relations_matrix, k=2)
+        eigenvals, _ = spmat.linalg.eigsh(relations_matrix, k=2)
     elif relations_matrix.shape[0] < 10:
-        eigenvals, _ = eigsh(relations_matrix, k=4)
+        eigenvals, _ = spmat.linalg.eigsh(relations_matrix, k=4)
     else:
-        eigenvals, _ = eigsh(relations_matrix)
+        eigenvals, _ = spmat.linalg.eigsh(relations_matrix)
 
-    relations_matrix = -relations_matrix
+    relations_matrix = - relations_matrix
     relations_matrix.setdiag(1)
 
     group_sets = []
@@ -557,7 +564,8 @@ def perform_clustering(inter_node_tension, cluster_number, show='undefined clust
                                 for _, items, mean_corr in group_2_mean_off_diag])
 
     if show:
-        render_2d_matrix(relations_matrix.toarray(), show)
+        # TODO: [run path refactor] pipe hdd save destination here (0)
+        render_2d_matrix(relations_matrix.toarray(), name=show, destination='')
 
     return np.array(group_2_mean_off_diag), \
         remainder, \

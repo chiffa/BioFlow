@@ -6,8 +6,11 @@ from random import randrange, shuffle
 
 import matplotlib.pyplot as plt
 import numpy as np
+
+import scipy.sparse as spmat
 from scipy.sparse import lil_matrix, triu
 from scipy.sparse.linalg import eigsh
+
 from sklearn.cluster import spectral_clustering
 import warnings
 
@@ -20,8 +23,8 @@ log = get_logger(__name__)
 # warnings.filterwarnings("ignore", message="Changing the sparsity structure")
 
 
-@time_it_wrapper
-def normalize_laplacian(non_normalized_laplacian):
+# @time_it_wrapper
+def normalize_laplacian(non_normalized_laplacian: spmat.lil_matrix) -> spmat.lil_matrix:
     """
     performs a normalization of a laplacian of a graph
 
@@ -29,13 +32,13 @@ def normalize_laplacian(non_normalized_laplacian):
     :type non_normalized_laplacian: scipy.sparse matrix
     :return:
     """
-    non_normalized_laplacian = lil_matrix(non_normalized_laplacian)
+    non_normalized_laplacian = non_normalized_laplacian.tolil()
     diagonal_terms = np.array(non_normalized_laplacian.diagonal().tolist())
     diagonal_terms[diagonal_terms == 0] = 1
     diagonal_terms = np.reshape(
         diagonal_terms, (non_normalized_laplacian.shape[0], 1))
     normalisation_matrix = np.sqrt(np.dot(diagonal_terms, diagonal_terms.T))
-    matrix_to_return = lil_matrix(
+    matrix_to_return = spmat.lil_matrix(
         non_normalized_laplacian /
         normalisation_matrix)
     return matrix_to_return
@@ -82,7 +85,8 @@ def average_off_diag_in_sub_matrix(matrix, indexes, show=False):
         return 0
 
 
-def average_interset_linkage(matrix, index_sets):
+def average_interset_linkage(matrix,
+                             index_sets) -> np.float64:
     """
     Calculates the average linkage between several index sets within a matrix
 
@@ -152,7 +156,7 @@ def show_eigenvals_and_eigenvects(eigenvals, eigenvects, biggest_limit,
     return None
 
 
-@time_it_wrapper
+# @time_it_wrapper
 def analyze_eigenvects(
         non_normalized_laplacian,
         num_first_eigenvals_to_analyse,
@@ -222,7 +226,9 @@ def analyze_eigenvects(
         'random')
 
 
-def cluster_nodes(dist_laplacian, clusters=3, show=False):
+def cluster_nodes(dist_laplacian: spmat.lil_matrix,
+                  clusters: int = 3,
+                  show: bool = False) -> np.array:
     """
     Clusters indexes together based on a distance lapalacian. Basicall a wrapper for a spectral
     clustering from scipy package

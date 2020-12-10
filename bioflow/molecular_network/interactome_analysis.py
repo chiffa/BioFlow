@@ -179,7 +179,7 @@ def samples_scatter_and_hist(background_curr_deg_conf, true_sample_bi_corr_array
     plt.clf()
 
 
-
+# TODO: [run path refactor] pipe hdd save destination here (2)
 def compare_to_blank(blank_model_size, p_val=0.05, sparse_rounds=False,
                      interactome_interface_instance=None):
     """
@@ -402,6 +402,7 @@ def auto_analyze(source_list,
             else:
                 interactome_interface.compute_current_and_potentials(fast_load=True)
 
+            # TODO: [run path refactor] pipe hdd save destination here (2)
             nr_nodes, p_val_dict = compare_to_blank(
                 len(interactome_interface.entry_point_uniprots_neo4j_ids),
                 p_val=0.9,
@@ -435,10 +436,12 @@ def auto_analyze(source_list,
                 # interactome_interface.export_conduction_system()
             else:
                 interactome_interface.compute_current_and_potentials(sparse_samples=sampling_depth, fast_load=True)
+            # TODO: [run path refactor] pipe hdd save destination here (2)
             nr_nodes, p_val_dict = compare_to_blank(
                 len(interactome_interface.entry_point_uniprots_neo4j_ids), p_val=0.9,
                 sparse_rounds=sampling_depth, interactome_interface_instance=interactome_interface)
 
+        # TODO: [run path refactor] correct hdd pipe save location here
         if len(output_destination_prefix) > 0:
             prefix = os.path.join(Outputs.prefix, output_destination_prefix)
             mkdir_recursive(prefix)

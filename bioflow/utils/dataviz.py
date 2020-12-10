@@ -13,6 +13,7 @@ from scipy import histogram2d
 from scipy.stats import gaussian_kde
 import os
 from bioflow.user_configs import output_location
+from typing import Any, Union, TypeVar, NewType, Tuple, List
 
 
 def better_2d_density_plot(x_data, y_data, threshold=3, bins=(100, 100)):
@@ -128,8 +129,10 @@ def kde_compute(bi_array, bin_no=30, samples=10, show=True):
 #     plt.hist(arr, bins=100, log=True, histtype='step')
 #     plt.show()
 
-
-def render_2d_matrix(matrix, name):
+# TODO: [run path refactor] pipe hdd save destination here (0)
+def render_2d_matrix(matrix: np.array,
+                     name: str,
+                     destination: str = '') -> None:
     """
     Subroutine required by the rendering wrapper.
 
@@ -140,7 +143,8 @@ def render_2d_matrix(matrix, name):
     plt.title(name)
     plt.imshow(matrix, interpolation='nearest')
     plt.colorbar()
-    plt.savefig(os.path.join(output_location, name+'.png'))
+    # TODO: [run path refactor] here is where we save the clustering
+    plt.savefig(os.path.join(output_location, name + '.png'))
 
 
 if __name__ == "__main__":

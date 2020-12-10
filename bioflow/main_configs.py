@@ -19,9 +19,12 @@ current_run_start_time = current_run_start_time.replace(':', '.')
 dump_location = dumps_directory
 # output_location = path.join(path.abspath(os.path.expanduser('~')), 'outputs' + '_' +
 #                             current_run_start_time)
+# TODO: [run path refactor] Move this to auto_analyze (TOP)
 output_location = path.join(output_location, 'run started on ' + current_run_start_time)
+# TODO: [run path refactor] Move this to auto_analyze (TOP)
 log_location = logs_directory
 
+# TODO: [run path refactor] Move this to auto_analyze (TOP)
 hl_os_io.mkdir_recursive(dump_location)
 hl_os_io.mkdir_recursive(output_location)
 hl_os_io.mkdir_recursive(log_location)
@@ -31,7 +34,6 @@ Sources = parse_config('sources')
 DB_locations = parse_config('online_dbs')
 
 # SERVERS CONFIGURATIONS
-
 mongo_db_url = os.getenv('MONGOURL', Servers['PRODUCTION']['mongodb_server'])
 neo4j_server = os.getenv('NEO4URL', Servers['PRODUCTION']['server_neo4j'])
 source_db_paths = compute_full_paths(Sources, DB_locations, Servers['PRODUCTION'])
@@ -71,9 +73,6 @@ up_tax_ids = [tax_id.strip() for tax_id in Sources['UNIPROT'][
 pymongo_prefix = Sources['INTERNAL']['mongoprefix']
 pymongo_suffix = Sources['INTERNAL']['mongosuffix']
 estimated_comp_ops = int(Sources['INTERNAL']['compops'])  # pairwise flows computed per second
-
-# Builds static entry points for mongodatabase access
-# TODO: move into the
 
 
 class Dumps(object):
@@ -127,6 +126,7 @@ class Dumps(object):
 
 # TODO: modifier insertion in this case is pretty effed up I would guess - the evaluation is done
 #  immediately to build the variables
+# TODO: [run path refactor] pipe hdd save destination here (TOP)
 class Outputs(object):
     """
     Defines the locations to output actual results
