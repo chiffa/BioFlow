@@ -24,7 +24,7 @@ from itertools import chain
 from bioflow.utils.gdfExportInterface import GdfExportInterface
 from bioflow.utils.io_routines import write_to_csv, dump_object, undump_object
 from bioflow.utils.log_behavior import get_logger
-from bioflow.main_configs import Dumps, Outputs
+from bioflow.main_configs import Dumps, Outputs, NewOutputs
 from bioflow.sample_storage.mongodb import insert_interactome_rand_samp
 from bioflow.user_configs import internal_storage, skip_hint, skip_biogrid, skip_reactome, \
     use_normalized_laplacian, fraction_edges_dropped_in_laplacian
@@ -970,8 +970,10 @@ class InteractomeInterface(object):
                                                  self.non_norm_laplacian_matrix[i, i]]
         return characterization_dict
 
-    def export_conduction_system(self, p_value_dict=None,
-                                 output_location=Outputs.Interactome_GDF_output):
+    # TRACING: [run path refactor] pipe hdd save destination here
+    def export_conduction_system(self,
+                                 p_value_dict: dict = None,
+                                 output_location: str = ''):
         """
         Computes the conduction system of the GO terms and exports it to the GDF format and
          flushes it into a file that can be viewed with Gephi
@@ -1044,6 +1046,11 @@ class InteractomeInterface(object):
                 str(float(p_value_dict[int(NodeID)][1])),
                 str(float(p_value_dict[int(NodeID)][2]))]
 
+        # TRACING: [run path refactor] pipe hdd save destination here
+
+        if output_location == '':
+            output_location = NewOutputs().interactome_network_stats
+
         gdf_exporter = GdfExportInterface(
             target_fname=output_location,
             field_names=node_char_names,
@@ -1076,6 +1083,7 @@ class InteractomeInterface(object):
         self.set_uniprot_source(uniprot_subsystem)
         self.compute_current_and_potentials(memoized=False, sourced=True)
         # TODO: that will still execute the sampling run.
+        # TRACING: [run path refactor] pipe hdd save destination here
         self.export_conduction_system()
 
     def randomly_sample(

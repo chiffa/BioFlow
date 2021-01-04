@@ -145,6 +145,30 @@ class Outputs(object):
     interactome_network_output = prefix + '/interactome_stats.tsv'
 
 
+# CURRENTPASS:
+class NewOutputs(object):
+
+    def __init__(self, modifier=''):
+
+        if modifier != '':
+            root_path = path.join(output_location, modifier)
+        else:
+            root_path = output_location
+
+        mkdir_recursive(root_path)
+
+        self.GO_GDF_output = path.join(root_path, 'GO_Analysis_output.gdf')
+        self.Interactome_GDF_output = path.join(root_path, 'Interactome_Analysis_output.gdf')
+        self.RNA_pre_filter_output = path.join(root_path, 'RNA_pre_filter_output.tsv')
+        self.cross_refs = path.join(root_path, 'cross_refs.tsv')
+
+        self.knowledge_network_stats = path.join(root_path, 'knowledge_network_stats.png')
+        self.interactome_network_stats = path.join(root_path, 'interactome_network_stats.png')
+
+        self.knowledge_network_output = path.join(root_path, 'knowledge_analysis_stats.tsv')
+        self.interactome_network_output = path.join(root_path, 'interactome_analysis_stats.tsv')
+
+
 #  Declares overloaded IDs, pickles from the dumps of already computed
 forbidden_neo4j_ids = []
 if path.isfile(Dumps.Forbidden_IDs):

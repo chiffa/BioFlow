@@ -7,7 +7,7 @@ from csv import reader
 from multiprocessing import Pool
 import traceback
 import os
-
+import psutil
 import numpy as np
 from matplotlib import pyplot as plt
 from csv import writer as csv_writer

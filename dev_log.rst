@@ -4,15 +4,21 @@ TODOs for the project in the future:
 On the table:
 -------------
 
- - TODO: [PLANNED] implement the neo4j edge weight transfer into Laplacian
+ - TODO: [SANITY]: Feed the location of the output folders for logs with the main parameters
+    - TODO: create a function to generate paths from a root location
+    - DONE: define new "TODO"s : (TRACING, OPTIMIZE and CURRENT)
+    - TODO: Move the "info" log outputs to the parameters
+    - TODO: Allow the user to provide the names for the locations where the information will be
+        stored
+    - TODO: trace the pipings of the output / log locations
+    - TODO: remap the pipings of the output / log location
+
+ - TODO: [PLANNED] implement the neo4j edge weight transfer into the Laplacian
     - TODO: trace the weights injection
     - TODO: define the weighting rules for neo4j
     - DONE: enable neo4j remote debugging on the lpdpc4.epfl.ch
-
- - TODO: [SANITY]: Feed the location of the output folders for logs with the main parameters
-    - TODO: Move the "info" log outputs to the parameters
-    - TODO: Allow the user to provide the names for the locations where the informatio will be
-        stored
+    - TODO: change the neo4j password on lpdpc4.epfl.ch
+    - TODO: add the meta-information for loading (eg organ, context, ...)
 
  - TODO: [DEBUG]: align BioKnowledgeInterface analysis on the InteractomeAnalysis:
     - Take the background list into account
@@ -31,6 +37,11 @@ On the table:
 Current refactoring:
 --------------------
 
+ - TODO: [SANITY]: define appropriate types:
+    - neo4j IDs
+    - laplacian Matrix
+    - current
+    - potential
 
  - TODO: [USABILITY] add limiters on the p_value that is printed out elements
 
