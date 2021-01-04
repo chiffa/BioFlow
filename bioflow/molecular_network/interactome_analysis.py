@@ -10,14 +10,14 @@ from collections import defaultdict
 import traceback
 from pprint import pprint
 import os
-
+from typing import Any, Union, TypeVar, NewType, Tuple, List
 import numpy as np
 from matplotlib import pyplot as plt
 
 from bioflow.algorithms_bank.conduction_routines import perform_clustering
-from bioflow.main_configs import Outputs, Dumps, estimated_comp_ops
+from bioflow.main_configs import Dumps, estimated_comp_ops, NewOutputs
 from bioflow.sample_storage.mongodb import find_interactome_rand_samp, count_interactome_rand_samp
-from bioflow.user_configs import sparse_analysis_threshold, single_threaded
+from bioflow.user_configs import sparse_analysis_threshold, single_threaded, output_location
 from bioflow.molecular_network.InteractomeInterface import InteractomeInterface
 from bioflow.utils.dataviz import kde_compute
 from bioflow.utils.log_behavior import get_logger
@@ -30,7 +30,7 @@ log = get_logger(__name__)
 
 
 # TODO: factor that into the "retrieve" routine of the laplacian wrapper
-def get_interactome_interface():
+def get_interactome_interface() -> InteractomeInterface:
     """
     Retrieves an "InteractomeInterface" object
 
@@ -132,7 +132,10 @@ def local_indexed_select(bi_array, array_column, selection_span):
     return filtered_bi_array
 
 
-def samples_scatter_and_hist(background_curr_deg_conf, true_sample_bi_corr_array):
+# CURRENTPASS: take in account p-values to create a color map
+# TRACING: path injection
+def samples_scatter_and_hist(background_curr_deg_conf, true_sample_bi_corr_array,
+                             save_path: NewOutputs = None, p_value_dict: dict = None):
     """
     A general function that performs demonstration of an example of random samples of
      the same size as our sample and of our sample and conducts the statistical tests
@@ -179,9 +182,12 @@ def samples_scatter_and_hist(background_curr_deg_conf, true_sample_bi_corr_array
     plt.clf()
 
 
-# TODO: [run path refactor] pipe hdd save destination here (2)
-def compare_to_blank(blank_model_size, p_val=0.05, sparse_rounds=False,
-                     interactome_interface_instance=None):
+# TRACING: [run path refactor] pipe hdd save destination here (2)
+def compare_to_blank(blank_model_size: int,
+                     p_val: float = 0.05,
+                     sparse_rounds: boolean = False,
+                     interactome_interface_instance: InteractomeInterface = None,
+                     output_destination: NewOutputs = None) -> Tuple[list, dict]:
     """
     Recovers the statistics on the circulation nodes and shows the visual of a circulation system.
     There is no issue with using the same interactome interface instance, because they are forked when
@@ -270,6 +276,9 @@ def compare_to_blank(blank_model_size, p_val=0.05, sparse_rounds=False,
     # TODO: idea for the improved statistics, cluster a test node of degree k with 100 nodes with
     #  closest degrees
 
+    # CURRENTPASS: this needs to take in account the information about the p-value to highlight
+    #  statistically significant
+    # TRACING: path injection
     samples_scatter_and_hist(background_array, query_array)
 
     degrees = np.unique(query_array[1, :])
@@ -298,7 +307,7 @@ def compare_to_blank(blank_model_size, p_val=0.05, sparse_rounds=False,
 
         # samples_scatter_and_hist(max_set, entry)
 
-    r_nodes = background_density(query_array[(1, 0), :])  # this is currently used as a p-value, which is problematic.
+    r_nodes = background_density(query_array[(1, 0), :])  # legacy - unused now
     r_nodes = combined_p_vals
 
     for point in query_array.T:
@@ -333,26 +342,39 @@ def compare_to_blank(blank_model_size, p_val=0.05, sparse_rounds=False,
     return sorted(node_char_list, key=lambda x: x[4]), nodes_dict
 
 
-
-# TODO: source_list is a single list, not list of lists.
-# TODO: add support for a dict as source_list, not only list
-def auto_analyze(source_list,
-                 desired_depth=24,
-                 processors=4,
-                 background_list=None,
-                 skip_sampling=False,
-                 from_memoization=False,  # should always be False, unless specificially stated
-                 output_destination_prefix=''):
+# TODO: [weighted inputs] add support for a dict as source_list, not only list
+def auto_analyze(source_list: List[List[int]],
+                 output_destinations_list: Union[List[str], None] = None,
+                 desired_depth: int = 24,
+                 processors: int = 0,
+                 background_list: Union[List[int], None] = None,
+                 skip_sampling: bool = False,
+                 from_memoization: bool = False,  # should always be False
+                 output_destination_prefix=''  # deprecated
+                 ) -> None:
     """
     Automatically analyzes the itneractome synergetic action of the RNA_seq results
 
-    :param source_list: python list of "hit" physical entities
-    :param desired_depth: desired sampling depth
+    :param source_list: python list of hits for each condition
+    :param output_destinations_list: list of names for each condition
+    :param desired_depth: total samples we would like to compare each set of hits with
     :param processors: number of processes that will be loaded. as a rule of thumb,
-    for max performance, use N-1 processors, where N is the number of physical cores on the machine
+    for max performance, use N-1 processors, where N is the number of physical cores on the
+    machine, which is the default
     :param background_list list of physical entities that an experimental method can retrieve
     :param skip_sampling: if true, will skip background sampling step
     """
+    if len(output_destinations_list) != len(source_list):
+        log.warning('Output destination list has %d elements, whereas %d sources were supplied. '
+                    'Falling back to default output structure')
+        output_destinations_list = None
+
+    if output_destinations_list is None:
+        output_destinations_list = list(range(len(source_list)))
+
+    if processors == 0:
+        processors = psutil.cpu_count() - 1
+        log.info("Setting processor count to default: %s" % processors)
 
     # noinspection PyTypeChecker
     if desired_depth % processors != 0:
@@ -360,14 +382,16 @@ def auto_analyze(source_list,
     else:
         desired_depth = desired_depth // processors
 
-    for _list in source_list:
-        log.info('Auto analyzing list of interest: %s', len(_list))
+    for hits_list, output_destination in zip(source_list, output_destinations_list):
+        log.info('Auto analyzing list of interest: %s', len(hits_list))
+
+        outputs_subdirs = NewOutputs(output_destination)
 
         interactome_interface = get_interactome_interface()
         log.debug("retrieved interactome_interface instance e_p_u_b_i length: %s",
                   len(interactome_interface.entry_point_uniprots_neo4j_ids))
 
-        interactome_interface.set_uniprot_source(list(_list))
+        interactome_interface.set_uniprot_source(list(hits_list))
         log.debug(" e_p_u_b_i length after UP_source was set: %s",
                   len(interactome_interface.entry_point_uniprots_neo4j_ids))
 
@@ -397,16 +421,19 @@ def auto_analyze(source_list,
                     [desired_depth],
                     interactome_interface_instance=interactome_interface)
 
+            # CURRENTPASS: delete or make the switch more explicit
             if not from_memoization:
                 interactome_interface.compute_current_and_potentials()
             else:
                 interactome_interface.compute_current_and_potentials(fast_load=True)
 
-            # TODO: [run path refactor] pipe hdd save destination here (2)
+            # TRACING: [run path refactor] pipe hdd save destination here (2)
             nr_nodes, p_val_dict = compare_to_blank(
                 len(interactome_interface.entry_point_uniprots_neo4j_ids),
                 p_val=0.9,
-                interactome_interface_instance=interactome_interface)
+                interactome_interface_instance=interactome_interface,
+                output_destination=outputs_subdirs
+            )
 
         # sparse analysis
         else:
@@ -436,24 +463,16 @@ def auto_analyze(source_list,
                 # interactome_interface.export_conduction_system()
             else:
                 interactome_interface.compute_current_and_potentials(sparse_samples=sampling_depth, fast_load=True)
-            # TODO: [run path refactor] pipe hdd save destination here (2)
+            # TRACING: [run path refactor] pipe hdd save destination here (2)
             nr_nodes, p_val_dict = compare_to_blank(
                 len(interactome_interface.entry_point_uniprots_neo4j_ids), p_val=0.9,
-                sparse_rounds=sampling_depth, interactome_interface_instance=interactome_interface)
+                sparse_rounds=sampling_depth, interactome_interface_instance=interactome_interface,
+                output_destination=outputs_subdirs
+            )
 
-        # TODO: [run path refactor] correct hdd pipe save location here
-        if len(output_destination_prefix) > 0:
-            prefix = os.path.join(Outputs.prefix, output_destination_prefix)
-            mkdir_recursive(prefix)
-            corrected_interactome_GDF_output = os.path.join(prefix, 'Interactome_Analysis_output.gdf')
-            corrected_interactome_tables_output = os.path.join(prefix, 'interactome_stats.tsv')
-
-        else:
-            corrected_interactome_GDF_output = Outputs.Interactome_GDF_output
-            corrected_interactome_tables_output = Outputs.interactome_network_output
-
+        # TRACING: [run path refactor] pipe hdd save destination here
         interactome_interface.export_conduction_system(p_val_dict,
-                                                       output_location=corrected_interactome_GDF_output)
+                                                       output_location=outputs_subdirs.Interactome_GDF_output)
 
         log.info('\t %s \t %s \t %s \t %s \t %s', 'node id',
             'display name', 'info flow', 'degree', 'p value')
@@ -461,7 +480,7 @@ def auto_analyze(source_list,
         for node in nr_nodes:
             log.info('\t %s \t %s \t %s \t %s \t %s', *node)
 
-        with open(corrected_interactome_tables_output, 'wt') as output:
+        with open(outputs_subdirs.interactome_network_output, 'wt') as output:
             writer = csv_writer(output, delimiter='\t')
             writer.writerow(['node id', 'display name', 'info flow', 'degree', 'p value'])
             for node in nr_nodes:
