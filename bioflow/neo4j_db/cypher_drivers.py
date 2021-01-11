@@ -1,6 +1,6 @@
 import os
 from pprint import pprint
-from neo4j.v1 import GraphDatabase
+from neo4j import GraphDatabase
 from bioflow.utils.log_behavior import get_logger
 from bioflow.main_configs import neo4j_server
 
@@ -404,9 +404,14 @@ class GraphDBPipe(object):
 
     @staticmethod
     def _build_indexes(tx):
-        tx.run("CREATE INDEX ON :UNIPROT(legacyId)")
-        tx.run("CREATE INDEX ON :Annotation(tag)")
-        tx.run("CREATE INDEX ON :Annotation(tag, type)")
+        # Because neo4j breaks retro compatibility more often than I rebuild the database
+        # tx.run("CREATE INDEX IF NOT EXISTS ON :UNIPROT(legacyId)")
+        # tx.run("CREATE INDEX IF NOT EXISTS ON :Annotation(tag)")
+        # tx.run("CREATE INDEX IF NOT EXISTS ON :Annotation(tag, type)")
+
+        tx.run("CREATE INDEX IF NOT EXISTS FOR (n:UNIPROT) ON (n.legacyId)")
+        tx.run("CREATE INDEX IF NOT EXISTS FOR (n:Annotation) ON (n.tag)")
+        tx.run("CREATE INDEX IF NOT EXISTS FOR (n:Annotation) ON (n.tag, n.type)")
 
     def cross_link_on_annotations(self, annotation_type):
         with self._driver.session() as session:
