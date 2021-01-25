@@ -4,20 +4,29 @@ TODOs for the project in the future:
 On the table:
 -------------
 
+Currently, performing an output re-piping. The output destinations are piped around thanks to a
+NewOutput class in main_configs, which can be initialized with a local output directory (and will
+be initialized in the auto-analyze function for both the interactone and the knowledge analysis
+network)
+
+ - TODO: [SHOW-STOPPER]: ReactomeParser does not work anymore likely a node
+
+ - TODO: [SANITY]: move the location from which the base folder is read for it to be computed
+(for relative bioflow home insertion)
+
  - TODO: [SANITY]: Feed the location of the output folders for logs with the main parameters
-    - TODO: create a function to generate paths from a root location
+    - DONE: create a function to generate paths from a root location
     - DONE: define new "TODO"s : (TRACING, OPTIMIZE and CURRENT)
     - TODO: Move the "info" log outputs to the parameters
     - TODO: Allow the user to provide the names for the locations where the information will be
         stored
     - TODO: trace the pipings of the output / log locations
-    - TODO: remap the pipings of the output / log location
 
  - TODO: [PLANNED] implement the neo4j edge weight transfer into the Laplacian
     - TODO: trace the weights injection
     - TODO: define the weighting rules for neo4j
-    - DONE: enable neo4j remote debugging on the lpdpc4.epfl.ch
-    - TODO: change the neo4j password on lpdpc4.epfl.ch
+    - DONE: enable neo4j remote debugging on the remote lpdpc
+    - DONE: change the neo4j password on remote lpdpc
     - TODO: add the meta-information for loading (eg organ, context, ...)
 
  - TODO: [DEBUG]: align BioKnowledgeInterface analysis on the InteractomeAnalysis:
@@ -34,6 +43,8 @@ On the table:
 
 - TODO: [USABILITY] move logs to the results saving folder
 
+- TODO: [SANITY] move the additional from the "annotation_network" to somewhere saner
+
 Current refactoring:
 --------------------
 
@@ -46,6 +57,8 @@ Current refactoring:
  - TODO: [USABILITY] add limiters on the p_value that is printed out elements
 
  - TODO: [USABILITY] change colors of significant elements to red; all others to black (with alpha)
+        - This modification is to be peformed in the `samples scatter and hist` function in the
+        `interactome_analysis` module
 
  - TODO: [USABILITY] add the Laplacian nonzero elements to the shape one
 

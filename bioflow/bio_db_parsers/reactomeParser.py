@@ -213,7 +213,7 @@ class ReactomeParser(object):
         :param is_collection: Fall-through tag indicating if we are parsing a collection
         """
         if '}cellularLocation' in local_property.tag:
-            local_dict['cellularLocation'] = list(local_property.attrib.node_current_values())[0][1:]
+            local_dict['cellularLocation'] = list(local_property.attrib.values())[0][1:]
         if '}displayName' in local_property.tag:
             local_dict['displayName'] = local_property.text
         if '}name' in local_property.tag:
@@ -221,11 +221,11 @@ class ReactomeParser(object):
         if '}memberPhysicalEntity' in local_property.tag:
             is_collection = True
             local_dict['collectionMembers'].append(
-                list(local_property.attrib.node_current_values())[0][1:])
+                list(local_property.attrib.values())[0][1:])
         if '}entityReference' in local_property.tag:
             # print local_property.attrib.values()[0][1:]
             # TODO: temporary fix < HAHAHA
-            if not "EntityReference" in list(local_property.attrib.node_current_values())[0][1:]:
+            if not "EntityReference" in list(local_property.attrib.values())[0][1:]:
                 # pass
                 # print local_property.attrib.values()[0][1:]
                 # for ref in meta_refs.keys():
@@ -233,16 +233,16 @@ class ReactomeParser(object):
                 # meta_ref_types = set(''.join([i for i in ref if not i.isdigit()]) for ref in meta_refs.keys())
                 # print meta_ref_types
                 local_dict['references'] = \
-                        zip_dicts(meta_refs[list(local_property.attrib.node_current_values())[0][1:]],
+                        zip_dicts(meta_refs[list(local_property.attrib.values())[0][1:]],
                                   local_dict['references'])
         if '}feature' in local_property.tag \
-                and 'ModificationFeature' in list(local_property.attrib.node_current_values())[0]:
+                and 'ModificationFeature' in list(local_property.attrib.values())[0]:
             local_dict['modification'].append(self.ModificationFeatures[
-                                                  list(local_property.attrib.node_current_values())[0][1:]])
+                                                  list(local_property.attrib.values())[0][1:]])
         if '}component' in local_property.tag \
                 and 'Stoichiometry' not in local_property.tag:
                     local_dict['parts'].append(
-                        list(local_property.attrib.node_current_values())[0][1:])
+                        list(local_property.attrib.values())[0][1:])
         return is_collection
 
     def _meta_parse(self, primary_term, meta_dict, meta_collection_dict, meta_refs,
