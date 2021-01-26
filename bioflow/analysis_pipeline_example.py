@@ -6,11 +6,12 @@ from bioflow.db_importers.import_main import build_db, destroy_db
 from bioflow.annotation_network.knowledge_access_analysis import auto_analyze as \
     knowledge_analysis, ref_param_set
 from bioflow.molecular_network.interactome_analysis import auto_analyze as interactome_analysis
-from bioflow.utils.io_routines import get_source_bulbs_ids
+from bioflow.utils.io_routines import get_source_bulbs_ids, get_background_bulbs_ids
 from bioflow.utils.top_level import map_and_save_gene_ids, rebuild_the_laplacians
 from bioflow.utils.log_behavior import clear_logs
 from bioflow.user_configs import sources_location
 import os
+
 
 if __name__ == "__main__":
     pass  # for syntactic reasons
@@ -23,7 +24,7 @@ if __name__ == "__main__":
     # annotome_rand_samp.drop()
     # interactome_rand_samp_db.drop()
 
-    # setting static folders and urls for the databases
+    # # setting static folders and urls for the databases
     # set_folders(sources_location)
 
     # # pulling the online databases
@@ -72,7 +73,7 @@ if __name__ == "__main__":
     # hits_ids = get_source_bulbs_ids()
 
 
-    # background_bulbs_ids = get_background_bulbs_ids()
+    background_bulbs_ids = get_background_bulbs_ids()
 
     # rebuild_the_laplacians(all_detectable_genes=background_bulbs_ids)
 
@@ -94,10 +95,32 @@ if __name__ == "__main__":
     #
     # raise Exception('debugging')
 
-    chromosomes_directory = "//home//kucharav//bioflow//sources//yeast_chr_genes"
+    chromosomes_directory = "//localhome//kucharav//Projects//BioFlow paper//yeast_chr_genes"
     background_file = os.path.join(chromosomes_directory, "all_genes.tab")
 
     # rebuild_the_laplacians(all_detectable_genes=background_bulbs_ids)
+
+    # perform the interactome analysis
+
+    # currnetly we are having an issue where the name mapping generate a list that is buffered
+    # => Not that much of a problem actually
+
+    # interactome_analysis([hits_ids],
+    #                      desired_depth=20,
+    #                      processors=6,
+    #                      background_list=background_bulbs_ids,
+    #                      skip_sampling=False,
+    #                      from_memoization=False)
+    #
+    # # perform the knowledge analysis
+    # knowledge_analysis([hits_ids],
+    #                    desired_depth=20,
+    #                    processors=6,
+    #                    param_set=ref_param_set,
+    #                    skip_sampling=False)
+    #
+    #
+    # raise Exception('debugging')
 
 
     background_set = False
@@ -112,12 +135,12 @@ if __name__ == "__main__":
 
             # perform the interactome analysis
             interactome_analysis([hits_ids],
+                                 ['chr_%s' % filename[:-4]],
                                  desired_depth=20,
                                  processors=3,
                                  background_list=background_bulbs_ids,
                                  skip_sampling=False,
-                                 from_memoization=False,
-                                 output_destination_prefix='chr_%s' % filename[:-4])
+                                 from_memoization=False)
 
             skip_sampling = False
             # perform the knowledge analysis

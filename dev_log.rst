@@ -9,7 +9,9 @@ NewOutput class in main_configs, which can be initialized with a local output di
 be initialized in the auto-analyze function for both the interactone and the knowledge analysis
 network)
 
- - TODO: [SHOW-STOPPER]: ReactomeParser does not work anymore likely a node
+ - DONE: [SHOW-STOPPER]: ReactomeParser does not work anymore likely a node.
+        The issue was with a automated renaming during a refactoring to extract some additional
+        data
 
  - TODO: [SANITY]: move the location from which the base folder is read for it to be computed
 (for relative bioflow home insertion)
@@ -29,6 +31,10 @@ network)
     - DONE: change the neo4j password on remote lpdpc
     - TODO: add the meta-information for loading (eg organ, context, ...)
 
+ - TODO: [USABILITY] move the dumps into a mongo database instance to allow swaps between builds
+        - wrt backgrounds and the neo4j states
+
+
  - TODO: [DEBUG]: align BioKnowledgeInterface analysis on the InteractomeAnalysis:
     - Take the background list into account
     - Take in account the analytics UP list in the hashing (once background is taken into account)
@@ -40,10 +46,15 @@ network)
     - TODO: outer loop (X samples) to aptbar progress monitoring
     - TODO: move parameters that are currently being printed in the main loop in INFO channel to
         DEBUG channel
+    - TODO: provide progress bar binding for the importers as well
 
 - TODO: [USABILITY] move logs to the results saving folder
 
+- TODO: [USABILITY] add a general error log into the info files
+
 - TODO: [SANITY] move the additional from the "annotation_network" to somewhere saner
+
+- TODO: [USABILITY] add a catch-it-all for the logs
 
 Current refactoring:
 --------------------

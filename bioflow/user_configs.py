@@ -3,7 +3,7 @@ import os
 smtp_logging = False
 smtp_logging_parameters = {
     'local_host': 'lpdpc4.epfl.ch',
-    'local_mail_account': 'andrei@lpdpc28.epfl.ch',
+    'local_mail_account': 'andrei@lpdpc4.epfl.ch',
     'reporting_target_mail': 'andrei.kucharavy@epfl.ch',
 }
 
@@ -35,3 +35,6 @@ node_current_in_debug = False
 # Those are global variables that were used in order to check how algorithm variation performed
 use_normalized_laplacian = False
 fraction_edges_dropped_in_laplacian = 0.0
+
+# This is the p-value that is set by user and is to be propagated throughout the analyses.
+p_val_cutoff = 0.05

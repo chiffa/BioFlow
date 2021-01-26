@@ -970,7 +970,6 @@ class InteractomeInterface(object):
                                                  self.non_norm_laplacian_matrix[i, i]]
         return characterization_dict
 
-    # TRACING: [run path refactor] pipe hdd save destination here
     def export_conduction_system(self,
                                  p_value_dict: dict = None,
                                  output_location: str = ''):
@@ -1046,8 +1045,6 @@ class InteractomeInterface(object):
                 str(float(p_value_dict[int(NodeID)][1])),
                 str(float(p_value_dict[int(NodeID)][2]))]
 
-        # TRACING: [run path refactor] pipe hdd save destination here
-
         if output_location == '':
             output_location = NewOutputs().interactome_network_stats
 
@@ -1082,8 +1079,7 @@ class InteractomeInterface(object):
             memoization_payload['voltages'])
         self.set_uniprot_source(uniprot_subsystem)
         self.compute_current_and_potentials(memoized=False, sourced=True)
-        # TODO: that will still execute the sampling run.
-        # TRACING: [run path refactor] pipe hdd save destination here
+        # TODO: that will still execute the sampling run
         self.export_conduction_system()
 
     def randomly_sample(

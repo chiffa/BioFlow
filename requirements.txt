@@ -10,3 +10,4 @@ scikits.sparse
 mock
 requests-ftp
 neo4j-driver
+psutil

@@ -10,6 +10,7 @@ from collections import defaultdict
 import traceback
 from pprint import pprint
 import os
+import psutil
 from typing import Any, Union, TypeVar, NewType, Tuple, List
 import numpy as np
 from matplotlib import pyplot as plt
@@ -17,7 +18,7 @@ from matplotlib import pyplot as plt
 from bioflow.algorithms_bank.conduction_routines import perform_clustering
 from bioflow.main_configs import Dumps, estimated_comp_ops, NewOutputs
 from bioflow.sample_storage.mongodb import find_interactome_rand_samp, count_interactome_rand_samp
-from bioflow.user_configs import sparse_analysis_threshold, single_threaded, output_location
+from bioflow.user_configs import sparse_analysis_threshold, single_threaded, output_location, p_val_cutoff
 from bioflow.molecular_network.InteractomeInterface import InteractomeInterface
 from bioflow.utils.dataviz import kde_compute
 from bioflow.utils.log_behavior import get_logger
@@ -132,10 +133,9 @@ def local_indexed_select(bi_array, array_column, selection_span):
     return filtered_bi_array
 
 
-# CURRENTPASS: take in account p-values to create a color map
-# TRACING: path injection
+# CURRENTPASS: test if this works
 def samples_scatter_and_hist(background_curr_deg_conf, true_sample_bi_corr_array,
-                             save_path: NewOutputs = None, p_value_dict: dict = None):
+                             save_path: NewOutputs = None, p_values: np.array = None):
     """
     A general function that performs demonstration of an example of random samples of
      the same size as our sample and of our sample and conducts the statistical tests
@@ -145,6 +145,8 @@ def samples_scatter_and_hist(background_curr_deg_conf, true_sample_bi_corr_array
     characteristics of the random samples
     :param true_sample_bi_corr_array: [[current, informativity, confusion_potential], ...] -
     characteristics of the true sample. If none, nothing happens
+    :param save_path: where the thing will be saved
+    :param p_values: p-value map that will be used to save things after the analysis
     :return: None
     """
 
@@ -173,19 +175,34 @@ def samples_scatter_and_hist(background_curr_deg_conf, true_sample_bi_corr_array
     plt.subplot(212)
     plt.scatter(background_curr_deg_conf[1, :], background_curr_deg_conf[0, :])
 
+    # CURRENTPASS: relevant modification #1
     if true_sample_bi_corr_array is not None:
-        plt.scatter(true_sample_bi_corr_array[1, :], true_sample_bi_corr_array[0, :],
-                    color='r', alpha=0.5)
+        if p_values is not None:
+            _filter = p_values < p_val_cutoff
+            anti_filter = np.logical_not(_filter)
+            plt.scatter(true_sample_bi_corr_array[1, anti_filter],
+                        true_sample_bi_corr_array[0, anti_filter],
+                        color='gray', alpha=0.25)
 
+            plt.scatter(true_sample_bi_corr_array[1, _filter],
+                        true_sample_bi_corr_array[0, _filter],
+                        color='r', alpha=0.7)
+
+        else:
+            plt.scatter(true_sample_bi_corr_array[1, :],
+                        true_sample_bi_corr_array[0, :],
+                        color='r', alpha=0.5)
+
+    # CURRENTPASS: relevant modification #2
     # plt.show()
-    plt.savefig(Outputs.interactome_network_stats)
+    plt.savefig(save_path.interactome_network_scatterplot)
     plt.clf()
 
 
 # TRACING: [run path refactor] pipe hdd save destination here (2)
 def compare_to_blank(blank_model_size: int,
                      p_val: float = 0.05,
-                     sparse_rounds: boolean = False,
+                     sparse_rounds: bool = False,
                      interactome_interface_instance: InteractomeInterface = None,
                      output_destination: NewOutputs = None) -> Tuple[list, dict]:
     """
@@ -273,14 +290,6 @@ def compare_to_blank(blank_model_size: int,
     r_rels = []
     r_std_nodes = []
 
-    # TODO: idea for the improved statistics, cluster a test node of degree k with 100 nodes with
-    #  closest degrees
-
-    # CURRENTPASS: this needs to take in account the information about the p-value to highlight
-    #  statistically significant
-    # TRACING: path injection
-    samples_scatter_and_hist(background_array, query_array)
-
     degrees = np.unique(query_array[1, :])
 
     combined_p_vals = np.ones_like(query_array[1, :])
@@ -303,9 +312,12 @@ def compare_to_blank(blank_model_size: int,
 
         combined_p_vals[filter] = p_vals
 
-        # TODO: insert into appropriate locations => we assume that the order is preserved
+        # Insert into appropriate locations => we assume that the order is preserved
 
-        # samples_scatter_and_hist(max_set, entry)
+
+    samples_scatter_and_hist(background_array, query_array,
+                             save_path=output_destination,
+                             p_values=combined_p_vals)
 
     r_nodes = background_density(query_array[(1, 0), :])  # legacy - unused now
     r_nodes = combined_p_vals
@@ -427,7 +439,6 @@ def auto_analyze(source_list: List[List[int]],
             else:
                 interactome_interface.compute_current_and_potentials(fast_load=True)
 
-            # TRACING: [run path refactor] pipe hdd save destination here (2)
             nr_nodes, p_val_dict = compare_to_blank(
                 len(interactome_interface.entry_point_uniprots_neo4j_ids),
                 p_val=0.9,
@@ -463,14 +474,12 @@ def auto_analyze(source_list: List[List[int]],
                 # interactome_interface.export_conduction_system()
             else:
                 interactome_interface.compute_current_and_potentials(sparse_samples=sampling_depth, fast_load=True)
-            # TRACING: [run path refactor] pipe hdd save destination here (2)
             nr_nodes, p_val_dict = compare_to_blank(
                 len(interactome_interface.entry_point_uniprots_neo4j_ids), p_val=0.9,
                 sparse_rounds=sampling_depth, interactome_interface_instance=interactome_interface,
                 output_destination=outputs_subdirs
             )
 
-        # TRACING: [run path refactor] pipe hdd save destination here
         interactome_interface.export_conduction_system(p_val_dict,
                                                        output_location=outputs_subdirs.Interactome_GDF_output)
 

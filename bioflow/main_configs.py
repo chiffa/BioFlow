@@ -155,7 +155,7 @@ class NewOutputs(object):
         else:
             root_path = output_location
 
-        mkdir_recursive(root_path)
+        hl_os_io.mkdir_recursive(root_path)
 
         self.GO_GDF_output = path.join(root_path, 'GO_Analysis_output.gdf')
         self.Interactome_GDF_output = path.join(root_path, 'Interactome_Analysis_output.gdf')
@@ -167,6 +167,8 @@ class NewOutputs(object):
 
         self.knowledge_network_output = path.join(root_path, 'knowledge_analysis_stats.tsv')
         self.interactome_network_output = path.join(root_path, 'interactome_analysis_stats.tsv')
+
+        self.interactome_network_scatterplot = path.join(root_path, 'interactome.png')
 
 
 #  Declares overloaded IDs, pickles from the dumps of already computed
