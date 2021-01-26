@@ -9,20 +9,41 @@ NewOutput class in main_configs, which can be initialized with a local output di
 be initialized in the auto-analyze function for both the interactone and the knowledge analysis
 network)
 
- - DONE: [SHOW-STOPPER]: ReactomeParser does not work anymore likely a node.
-        The issue was with a automated renaming during a refactoring to extract some additional
-        data
+The next step will be to register user configurations in a more sane way. Basically, it can
+either be a persistent dump that is loaded every time the user is spooling up the program or an
+.ini file in additions to the ones already existing
+
+    - Peristent dump:
+        - PLUS: Removes the need to perform reading in and out of .ini files
+        - PLUS: Guarantees that the parameters will always be well formed
+        - MINUS: is non-trivial to modify for the users
+
+    - .ini files:
+        - PLUS: Works in a way that is familiar to most people
+        - PLUS: Allows
+        - MINUS: in case configurations are not properly defined, all crashes
+
+    - Both:
+        - REQUIRE a command line process to define the variables
+        - REQUIRE a command line to show all the active flags
+        - REQUIRE the configs folder to be gutted of active configs and them moved to the
+            ~/bioflow directory
+        - REQUIRE a refactor to show transparently the override between the default parameters
+            and the user-supplied parameters
+        - REQUIRE a refactor to remove the conflicting definitions (such as deployment vs test
+            server parameters)
+
 
  - TODO: [SANITY]: move the location from which the base folder is read for it to be computed
-(for relative bioflow home insertion)
+        (for relative bioflow home insertion) (basically the servers.ini override)
 
  - TODO: [SANITY]: Feed the location of the output folders for logs with the main parameters
-    - DONE: create a function to generate paths from a root location
+    - TEST: create a function to generate paths from a root location
     - DONE: define new "TODO"s : (TRACING, OPTIMIZE and CURRENT)
     - TODO: Move the "info" log outputs to the parameters
-    - TODO: Allow the user to provide the names for the locations where the information will be
+    - TEST: Allow the user to provide the names for the locations where the information will be
         stored
-    - TODO: trace the pipings of the output / log locations
+    - TEST: trace the pipings of the output / log locations
 
  - TODO: [PLANNED] implement the neo4j edge weight transfer into the Laplacian
     - TODO: trace the weights injection
@@ -33,7 +54,6 @@ network)
 
  - TODO: [USABILITY] move the dumps into a mongo database instance to allow swaps between builds
         - wrt backgrounds and the neo4j states
-
 
  - TODO: [DEBUG]: align BioKnowledgeInterface analysis on the InteractomeAnalysis:
     - Take the background list into account
@@ -48,13 +68,7 @@ network)
         DEBUG channel
     - TODO: provide progress bar binding for the importers as well
 
-- TODO: [USABILITY] move logs to the results saving folder
-
-- TODO: [USABILITY] add a general error log into the info files
-
 - TODO: [SANITY] move the additional from the "annotation_network" to somewhere saner
-
-- TODO: [USABILITY] add a catch-it-all for the logs
 
 Current refactoring:
 --------------------
@@ -113,6 +127,11 @@ Current refactoring:
 
  - TODO: [SANITY] convert the dicts to Type Aliases / NewType and perform proper type hinting
 
+
+
+ - DONE: [USABILITY] add a general error log into the info files
+
+ - DONE: [USABILITY] add a catch-it-all for the logs
 
  - DONE: [OPTIMIZATION]: Profile the runtime in the main loop:
     - DONE: check for consistency of the sparse matrix types in the main execution loop
@@ -254,6 +273,10 @@ Current refactoring:
         tends to pull as well the nodes that are not connected to the giant component in the neo4j graph.
         - Tentatively patched by making the pull from which the IDs are sampled stricter. Seems to
         work well
+
+ - DONE: [SHOW-STOPPER]: ReactomeParser does not work anymore likely a node.
+        The issue was with a automated renaming during a refactoring to extract some additional
+        data
 
 Bigger refactors
 ****************

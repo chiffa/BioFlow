@@ -6,7 +6,7 @@ import pickle
 from os import path, makedirs
 from pprint import PrettyPrinter
 from bioflow.configs_manager import parse_config, compute_full_paths
-from bioflow.user_configs import output_location, dumps_directory, logs_directory
+from bioflow.user_configs import output_location, dump_location, log_location
 from bioflow.utils.general_utils import high_level_os_io as hl_os_io
 from datetime import datetime
 
@@ -15,14 +15,14 @@ current_run_start_time = str(datetime.now())
 current_run_start_time = current_run_start_time.replace(':', '.')
 
 
-# TODO: remap those to the values in user configs
-dump_location = dumps_directory
+# # TODO: remap those to the values in user configs
+# dump_location = dumps_directory
 # output_location = path.join(path.abspath(os.path.expanduser('~')), 'outputs' + '_' +
 #                             current_run_start_time)
-# TODO: [run path refactor] Move this to auto_analyze (TOP)
-output_location = path.join(output_location, 'run started on ' + current_run_start_time)
-# TODO: [run path refactor] Move this to auto_analyze (TOP)
-log_location = logs_directory
+# # TODO: [run path refactor] Move this to auto_analyze (TOP)
+# output_location = path.join(output_location, 'run started on ' + current_run_start_time)
+# # TODO: [run path refactor] Move this to auto_analyze (TOP)
+# log_location = logs_directory  # TODO: this does nothing, given that logs already imported
 
 # TODO: [run path refactor] Move this to auto_analyze (TOP)
 hl_os_io.mkdir_recursive(dump_location)

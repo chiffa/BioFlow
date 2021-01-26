@@ -136,7 +136,7 @@ if __name__ == "__main__":
             # perform the interactome analysis
             interactome_analysis([hits_ids],
                                  ['chr_%s' % filename[:-4]],
-                                 desired_depth=20,
+                                 desired_depth=10,
                                  processors=3,
                                  background_list=background_bulbs_ids,
                                  skip_sampling=False,
@@ -145,7 +145,7 @@ if __name__ == "__main__":
             skip_sampling = False
             # perform the knowledge analysis
             knowledge_analysis([hits_ids],
-                               desired_depth=20,
+                               desired_depth=10,
                                processors=3,
                                param_set=ref_param_set,
                                skip_sampling=False,

@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 
 smtp_logging = False
 smtp_logging_parameters = {
@@ -14,7 +15,18 @@ sources_location = os.path.join(storage_location, 'sources')
 output_location = os.path.join(storage_location, 'outputs')
 internal_storage = os.path.join(storage_location, '.internal')
 dumps_directory = os.path.join(internal_storage, 'dumps')
-logs_directory = os.path.join(internal_storage, 'logs')
+logs_directory= os.path.join(internal_storage, 'logs')
+
+
+# build location used elsewhere
+log_location = logs_directory
+dump_location = dumps_directory
+
+# build output directory
+current_run_start_time = str(datetime.now())
+current_run_start_time = current_run_start_time.replace(':', '.')
+output_location = os.path.join(output_location, 'run started on ' + current_run_start_time)
+
 
 # TODO: add overrides from the command line by the user.
 skip_reactome = False

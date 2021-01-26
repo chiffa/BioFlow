@@ -12,13 +12,8 @@ from smtplib import SMTP
 from datetime import datetime
 from email.message import EmailMessage
 
-from bioflow.user_configs import smtp_logging_parameters, smtp_logging, logs_directory
+from bioflow.user_configs import smtp_logging_parameters, smtp_logging, log_location, output_location
 
-
-# TODO: give user control where to put the logs in
-# log_location = path.join(path.abspath(
-#         path.join(path.dirname(__file__), os.pardir)), 'logs')
-log_location = logs_directory
 
 on_unittest = os.environ.get('UNITTESTING') == 'True'  # if we are unittesting
 on_remote_unittest = os.environ.get('REMOTE_UNITTEST') == 'True'  # if we are testing on CI tools
@@ -75,7 +70,7 @@ def wipe_dir(_path):  # pragma: no cover
     return True
 
 
-def add_handler(_logger, level, file_name, rotating=False):
+def add_to_file_handler(_logger, level, file_name, rotating=False, log_location=log_location):
     """
     Adds a file-writing handler for the log.
 
@@ -102,8 +97,9 @@ formatter = logging.Formatter(
 if on_dev:
     wipe_dir(log_location)
 
-# create location where the code will be stored
+# create location where the logs will be stored
 mkdir_recursive(log_location)
+mkdir_recursive(output_location)
 
 
 def get_logger(logger_name):
@@ -114,12 +110,24 @@ def get_logger(logger_name):
     _logger = logging.getLogger(logger_name)
     _logger.setLevel(logging.DEBUG)
 
-    add_handler(_logger, logging.DEBUG, 'debug.log', rotating=True)
-    add_handler(_logger, logging.INFO, 'info.log')
-    add_handler(_logger, logging.WARNING, 'warning.log')
-    add_handler(_logger, logging.ERROR, 'error.log')
-    add_handler(_logger, logging.CRITICAL, 'critical.log')
-    # add_handler()
+    add_to_file_handler(_logger, logging.DEBUG, 'debug.log', rotating=True)
+    add_to_file_handler(_logger, logging.INFO, 'info.log')
+    add_to_file_handler(_logger, logging.INFO, 'run.log', log_location=output_location)
+    add_to_file_handler(_logger, logging.WARNING, 'warning.log')
+    add_to_file_handler(_logger, logging.ERROR, 'error.log')
+    add_to_file_handler(_logger, logging.CRITICAL, 'critical.log')
+    # add_to_file_handler()
+
+    def handle_exception(exc_type, exc_value, exc_traceback):
+
+        if issubclass(exc_type, KeyboardInterrupt):
+            sys.__excepthook__(exc_type, exc_value, exc_traceback)
+            return
+
+        _logger.critical("Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback))
+        # raise RuntimeError("Terminating the Exception handling")
+
+    sys.excepthook = handle_exception
 
     if not on_remote_unittest:  # pragma: no cover
         ch = logging.StreamHandler(sys.stderr)
