@@ -4,7 +4,7 @@ Top-Level scripts, examples of analysis pipelines.
 from bioflow.configs_manager import set_folders, build_source_config, pull_online_dbs
 from bioflow.db_importers.import_main import build_db, destroy_db
 from bioflow.annotation_network.knowledge_access_analysis import auto_analyze as \
-    knowledge_analysis, ref_param_set
+    knowledge_analysis, ref_param_set, _filter, _correlation_factors
 from bioflow.molecular_network.interactome_analysis import auto_analyze as interactome_analysis
 from bioflow.utils.io_routines import get_source_bulbs_ids, get_background_bulbs_ids
 from bioflow.utils.top_level import map_and_save_gene_ids, rebuild_the_laplacians
@@ -128,6 +128,7 @@ if __name__ == "__main__":
         if filename != "all_genes.tab":
             target_file = os.path.join(chromosomes_directory, filename)
             hits_ids, background_bulbs_ids = map_and_save_gene_ids(target_file, background_file)
+            paramset_with_background = tuple([_filter, background_bulbs_ids, (1, 1), True, 3])
 
             # if not background_set:
             #     rebuild_the_laplacians(all_detectable_genes=background_bulbs_ids)
@@ -136,7 +137,7 @@ if __name__ == "__main__":
             # perform the interactome analysis
             interactome_analysis([hits_ids],
                                  ['chr_%s' % filename[:-4]],
-                                 desired_depth=10,
+                                 desired_depth=3,
                                  processors=3,
                                  background_list=background_bulbs_ids,
                                  skip_sampling=False,
@@ -145,8 +146,8 @@ if __name__ == "__main__":
             skip_sampling = False
             # perform the knowledge analysis
             knowledge_analysis([hits_ids],
-                               desired_depth=10,
+                               desired_depth=3,
                                processors=3,
-                               param_set=ref_param_set,
+                               param_set=paramset_with_background,
                                skip_sampling=False,
                                output_destination_prefix='chr_%s' % filename[:-4])
