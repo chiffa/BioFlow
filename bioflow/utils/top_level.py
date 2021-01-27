@@ -36,3 +36,4 @@ def rebuild_the_laplacians(all_detectable_genes=[]):
 
     annot_matrix = AnnotomeInterface(*ref_param_set)
     annot_matrix.full_rebuild()
+

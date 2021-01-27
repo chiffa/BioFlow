@@ -4,10 +4,62 @@ TODOs for the project in the future:
 On the table:
 -------------
 
+ - DONE: [DEBUG]: align BioKnowledgeInterface analysis on the InteractomeAnalysis:
+    - Take the background list into account
+    - Take in account the analytics UP list in the hashing (once background is taken into account)
+
+We are dealing with a problem on the annotation analysis network not loading the proper
+background (proably due to the wrong computation of the laplacian). At this point we need to
+align the Annotation analysis on the molecular analysis.
+    - DONE: run git blame on the Molecular network interface, copy new modifications
+    - TODO: run git blame on molecular network analysis, copy the new modifications
+
+Itermediate problem: there is a loading problem for the `BioKnowledgeInterface` due to `InitSet`
+used on the construction (~6721 nodes) is significantly bigger than the `InitSet` used in order
+to generate the version that is being put into storage.
+    - `InitSet` is loaded as `InteractomeInterface.all_uniprots_neo4j_id_list`. In case
+    `reduced_set_uniprot_node_ids` is defined in the parameters, the source set from the
+    `InteractomeInterface` is trimmed to only nodes that are present in the limiter list.
+    - `InteractomeInterface` is the one currently stored in a way that can be retrieved by a
+    `.fast_load()` and is not changed since the last  since the last load. The `.fast_load()` call
+    is performed
+
+    - It looks like the problem is in the fact that the rebuild uses a background limiter (all
+    detectable genes), whereas the fast load doesn't.
+
+    => Temporary fix:
+        - DONE: define a paramset with background in the `analysis_pipeline_example`.
+
+    => In the end, it is a problem of organization of the parameters and of the context.
+        - TODO: Set a user flag to know if we are currently using a background.
+        - TODO: Set a checkers on the background loads to make sure we
+        - TODO: Version the builds of the MolecularInterface and BioKnowledge interface
+        - TODO: Provide a fast fail in case if the environment parameters differ between the
+            build and the fastload. Environment parameters are in the `user_configs.py` file.
+        - TODO: this is all wrapped in the environment variables
+        - TODO: for each run, this is saved as .env text file render.
+
+
+
 Currently, performing an output re-piping. The output destinations are piped around thanks to a
 NewOutput class in main_configs, which can be initialized with a local output directory (and will
 be initialized in the auto-analyze function for both the interactone and the knowledge analysis
 network)
+
+ - TODO: [SANITY] Configs management:
+    - move the organism to the '~/bioflow'
+    - all the stings `+` need to be `os.path.join`.
+    - active organism is now the only thing that is saved. It is stored in "shelve" file inside a
+        ".internal" directory
+    - fold in the sources for the databases into a single location, with a selector from "shelve"
+        indicating which organims to load.
+    - create a user interface command in order to set up the environment and a saving file that
+        allows the configs to be saved between the users.
+    - move the `online_dbs.ini`, `mouse.ini`, `yeast.ini` to the `~/bioflow/configs` and add
+    `user_configs.ini` to it to replace `user_configs.py`.
+
+ - TODO: [SANITY]: move the location from which the base folder is read for it to be computed
+        (for relative bioflow home insertion) (basically the servers.ini override)
 
 The next step will be to register user configurations in a more sane way. Basically, it can
 either be a persistent dump that is loaded every time the user is spooling up the program or an
@@ -33,9 +85,40 @@ either be a persistent dump that is loaded every time the user is spooling up th
         - REQUIRE a refactor to remove the conflicting definitions (such as deployment vs test
             server parameters)
 
+ - TODO: [PLANNED] implement the neo4j edge weight transfer into the Laplacian
+    - TODO: trace the weights injection
+    - TODO: define the weighting rules for neo4j
+    - DONE: enable neo4j remote debugging on the remote lpdpc
+    - DONE: change the neo4j password on remote lpdpc
+    - TODO: add the meta-information for loading (eg organ, context, ...)
 
- - TODO: [SANITY]: move the location from which the base folder is read for it to be computed
-        (for relative bioflow home insertion) (basically the servers.ini override)
+The other next step will be to register the context in the neo4j network in order to be able to
+perform loads of networks conditioned on things such as the protein abundance in an organ or the
+trust we have in the existence of a link.
+
+    - neo4j database:
+        - REQUIRE: add context data - basically determining the degree of confidence we want to
+            have in the node. This has to be a property, because the annotations will be used as
+            weights for edge matrix calculations and hence edges need to have them as well.
+
+    - database parsing/insertion functions:
+        - REQUIRE: add a parser to read the relevant information from the source files
+        - REQUIRE: add an inserter to add the additional information from the parse files into
+            the neo4j database
+        - REQUIRE: an intermediate dict mapping refs to property lists that will be attached to
+            the nodes or edges.
+
+    - laplacian construction:
+        - REQUIRE: a "strategy" for calculating weights from the data, that can reason on the in
+            and out nodes and the edge. They can take in properties returned by a retrieval pass.
+        - REQUIRE: the weighting strategy should be a function that can be plugged in by the end
+            user, so for a form neo4j_node, neo4j_node, neo4j_edge > properties.
+        - REQUIRE: the weighting strategy function should always return a positive float and be
+            able to account for the missing data, even if it is raising an error as a response to
+            it.
+        - REQUIRE: the current weighting strategy will be encoded as a function using node types
+            (or rather sources).
+
 
  - TODO: [SANITY]: Feed the location of the output folders for logs with the main parameters
     - TEST: create a function to generate paths from a root location
@@ -44,20 +127,6 @@ either be a persistent dump that is loaded every time the user is spooling up th
     - TEST: Allow the user to provide the names for the locations where the information will be
         stored
     - TEST: trace the pipings of the output / log locations
-
- - TODO: [PLANNED] implement the neo4j edge weight transfer into the Laplacian
-    - TODO: trace the weights injection
-    - TODO: define the weighting rules for neo4j
-    - DONE: enable neo4j remote debugging on the remote lpdpc
-    - DONE: change the neo4j password on remote lpdpc
-    - TODO: add the meta-information for loading (eg organ, context, ...)
-
- - TODO: [USABILITY] move the dumps into a mongo database instance to allow swaps between builds
-        - wrt backgrounds and the neo4j states
-
- - TODO: [DEBUG]: align BioKnowledgeInterface analysis on the InteractomeAnalysis:
-    - Take the background list into account
-    - Take in account the analytics UP list in the hashing (once background is taken into account)
 
  - TODO: [USABILITY] Improve the progress reporting
         Move the INFO to a progress bar. The problem is that we are working with multiple threads in
@@ -72,6 +141,18 @@ either be a persistent dump that is loaded every time the user is spooling up th
 
 Current refactoring:
 --------------------
+
+ - TODO: [FEATURE] currently, re-doing an analysis with an already analyzed set requires a complete
+        re-computation of flow generated by the set. However, if we start saving the results into
+        the mongoDB, we can just retrieve them, if the environement and the starting set are
+        identical.
+
+ - TODO: [FUTUREPROOFING] [CODESMELL] get away from using `_properties` of the neo4j database
+        objects.
+        => Basically, now this uses a Node[`property_name`] convention
+
+ - TODO: [USABILITY] move the dumps into a mongo database instance to allow swaps between builds
+        - wrt backgrounds and the neo4j states
 
  - TODO: [SANITY]: define appropriate types:
     - neo4j IDs
@@ -103,17 +184,6 @@ Current refactoring:
  - TODO: [USABILITY]: allow a fast analysis re-run by storing actual UP groups analysis in a
         mongo database - aka a true memoization.
 
- - TODO: [SANITY] Configs management:
-    - move the organism to the '~/bioflow'
-    - all the stings `+` need to be `os.path.join`.
-    - active organism is now the only thing that is saved. It is stored in "shelve" file inside a
-        ".internal" directory
-    - fold in the sources for the databases into a single location, with a selector from "shelve"
-        indicating which organims to load.
-    - create a user interface command in order to set up the environment and a saving file that
-        allows the configs to be saved between the users.
-    - move the `online_dbs.ini`, `mouse.ini`, `yeast.ini` to the `~/bioflow/configs` and add
-    `user_configs.ini` to it to replace `user_configs.py`.
 
  - TODO: [USABILITY] Add an option for the user to add the location for the output in the
         auto-analyse

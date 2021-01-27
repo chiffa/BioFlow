@@ -10,6 +10,7 @@ smtp_logging_parameters = {
 
 
 # TODO: add overrides from the command line by the user.
+# TODO: reconcile with the servers.ini paths loading.
 storage_location = os.path.join(os.environ['HOME'], 'bioflow')
 sources_location = os.path.join(storage_location, 'sources')
 output_location = os.path.join(storage_location, 'outputs')
@@ -29,9 +30,19 @@ output_location = os.path.join(output_location, 'run started on ' + current_run_
 
 
 # TODO: add overrides from the command line by the user.
-skip_reactome = False
-skip_hint = False
-skip_biogrid = False
+# TODO: wrap it all in an "environment" class
+env_skip_reactome = False
+env_skip_hint = False
+env_skip_biogrid = False
+# CURRENTPASS: [BKI normalization] Make sure those are injected into the BioKnowledgeInterface
+#  properly
+env_use_background = True
+env_bki_filter = ['biological_process']
+env_bki_correlation_factors = (1, 1)
+env_bki_ultraspec_clean = True  # BKI cleans ultra-specific terms
+env_bki_ultraspec_lvl = 3  # How many proteins at most would be annotated by a term considered as
+                           # ultra-specific
+
 
 # those are deep configurations and should not be touched unless you know what you are doing:
 switch_to_splu = False  # switching this to True incurs approximately an 100-fold slowdown

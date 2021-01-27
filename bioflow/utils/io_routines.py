@@ -57,7 +57,7 @@ def undump_object(dump_filename):
     :rtype: object
     """
     dump_file = open(dump_filename, 'rb')
-    print(dump_filename)
+    # print(dump_filename)
     return load(dump_file)
 
 

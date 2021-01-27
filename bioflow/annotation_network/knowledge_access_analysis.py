@@ -25,6 +25,7 @@ from bioflow.utils.general_utils.high_level_os_io import mkdir_recursive
 
 log = get_logger(__name__)
 
+# CURRENTPASS: [BKI normalization] Those need to go into the user_configs environment
 _filter = ['biological_process']
 _correlation_factors = (1, 1)
 ref_param_set = tuple([_filter, [], (1, 1), True, 3])
@@ -37,14 +38,8 @@ def get_go_interface_instance(param_set=ref_param_set):
 
     :return: a GO_interface object
     """
-    ################################
-    # Attention, manual switch here:
-    ################################
-
     go_interface_instance = GeneOntologyInterface(*param_set)
-    # go_interface_instance = GO_Interface(_filter, interactome_interface_instance.
-    # all_uniprots_neo4j_id_list, _correlation_factors, True, 3)
-    go_interface_instance.load()
+    go_interface_instance.fast_load()
     log.info(go_interface_instance.pretty_time())
     return go_interface_instance
 
@@ -70,7 +65,7 @@ def spawn_sampler(sample_size_list_plus_iteration_list_plus_args):
             sample_size_list,
             iteration_list,
             sparse_rounds,
-            chromosome_specific)
+            chromosome_specific)  # CURRENTPASS [BKI normalization] nothing to do here
 
     except Exception as e:
         msg = "{}\n\nOriginal {}".format(e, traceback.format_exc())
@@ -444,8 +439,8 @@ def compare_to_blank(
             dict_system[GO_id] + r_nodes[go_node_ids == float(GO_id)].tolist() +
             [[go_interface_instance.interactome_interface_instance.
                 neo4j_id_2_display_name[up_bulbs_id]
-             for up_bulbs_id in list(set(go_interface_instance.GO2UP_Reachable_nodes[GO_id]).
-                intersection(set(go_interface_instance.analytic_uniprots)))]]
+              for up_bulbs_id in list(set(go_interface_instance.GO2UP_Reachable_nodes[GO_id]).
+                                      intersection(set(go_interface_instance.annotated_uniprots)))]]
             for GO_id in not_random_nodes]
 
         return sorted(node_char_list, key=lambda x: x[5]), not_random_groups
@@ -505,56 +500,56 @@ def auto_analyze(source_list,
 
         if not skip_sampling:
             log.info("spawning a sampler for %s proteins @ %s compops/sec",
-                     len(go_interface_instance.analytic_uniprots), estimated_comp_ops)
+                     len(go_interface_instance.annotated_uniprots), estimated_comp_ops)
 
         # TODO: restructure to spawn a sampler pool that does not share an object in the Threading
-        if len(go_interface_instance.analytic_uniprots) < sparse_analysis_threshold:
+        if len(go_interface_instance.annotated_uniprots) < sparse_analysis_threshold:
 
             if not skip_sampling:
 
                 log.info('length: %s \t sampling depth: %s \t, estimated round time: %s min',
-                         len(go_interface_instance.analytic_uniprots),
+                         len(go_interface_instance.annotated_uniprots),
                          'full',
-                         len(go_interface_instance.analytic_uniprots)**2 / estimated_comp_ops /
+                         len(go_interface_instance.annotated_uniprots) ** 2 / estimated_comp_ops /
                          60)
 
                 spawn_sampler_pool(processors,
-                                   [len(go_interface_instance.analytic_uniprots)],
+                                   [len(go_interface_instance.annotated_uniprots)],
                                    [desired_depth],
                                    go_interface_instance=None,
                                    param_set=param_set)
 
-            go_interface_instance.build_extended_conduction_system()
+            go_interface_instance.compute_current_and_potentials()
             # TODO: [run path refactor] pipe hdd save destination here (2)
             nr_nodes, nr_groups = compare_to_blank(
-                len(go_interface_instance.analytic_uniprots),
+                len(go_interface_instance.annotated_uniprots),
                 [1100, 1300],
                 p_val=0.9,
                 go_interface_instance=go_interface_instance,
                 param_set=param_set)
 
         else:
-            sampling_depth = max(200 ** 2 // len(go_interface_instance.analytic_uniprots), 5)
+            sampling_depth = max(200 ** 2 // len(go_interface_instance.annotated_uniprots), 5)
 
             if not skip_sampling:
 
                 log.info('length: %s \t sampling depth: %s \t, estimated round time: %s min',
-                         len(go_interface_instance.analytic_uniprots),
+                         len(go_interface_instance.annotated_uniprots),
                          sampling_depth,
-                         len(go_interface_instance.analytic_uniprots) * sampling_depth / 2 / 60 / estimated_comp_ops)
+                         len(go_interface_instance.annotated_uniprots) * sampling_depth / 2 / 60 / estimated_comp_ops)
 
                 spawn_sampler_pool(processors,
-                                   [len(go_interface_instance.analytic_uniprots)],
+                                   [len(go_interface_instance.annotated_uniprots)],
                                    [desired_depth],
                                    sparse_rounds=sampling_depth,
                                    go_interface_instance=None,
                                    param_set=param_set)
 
-            go_interface_instance.build_extended_conduction_system(sparse_samples=sampling_depth)
+            go_interface_instance.compute_current_and_potentials(sparse_samples=sampling_depth)
             # go_interface_instance.export_conduction_system()
             # TODO: [run path refactor] pipe hdd save destination here (2)
             nr_nodes, nr_groups = compare_to_blank(
-                len(go_interface_instance.analytic_uniprots),
+                len(go_interface_instance.annotated_uniprots),
                 [1100, 1300],
                 p_val=0.9, sparse_rounds=sampling_depth,
                 go_interface_instance=go_interface_instance,
@@ -562,16 +557,17 @@ def auto_analyze(source_list,
 
         # TODO: [run path refactor] correct hdd pipe save location here
         if len(output_destination_prefix) > 0:
-            prefix = os.path.join(Outputs.prefix, output_destination_prefix)
+            prefix = os.path.join(Outputs.prefix, output_destination_prefix)  # TRACING: outputs
             mkdir_recursive(prefix)
             # TODO: make compatible with nested lists supplied to the program
             corrected_knowledge_GDF_output = os.path.join(prefix, 'GO_Analysis_output.gdf')
             corrected_knowledge_tables_output = os.path.join(prefix, 'knowledge_stats.tsv')
 
         else:
-            corrected_knowledge_GDF_output = Outputs.GO_GDF_output
-            corrected_knowledge_tables_output = Outputs.knowledge_network_output
+            corrected_knowledge_GDF_output = Outputs.GO_GDF_output  # TRACING: outputs
+            corrected_knowledge_tables_output = Outputs.knowledge_network_output  # TRACING: outputs
 
+        # TRACING: outputs remap
         go_interface_instance.export_conduction_system(output_location=corrected_knowledge_GDF_output)
 
         for group in nr_groups:

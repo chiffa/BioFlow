@@ -8,6 +8,7 @@ import pickle
 import random
 import string
 import math
+import datetime
 from collections import defaultdict
 from copy import copy
 from csv import reader
@@ -58,20 +59,23 @@ class GeneOntologyInterface(object):
      to be considered ultra-specific anymore
     """
 
+    # TRACING: move to configs
     _GOUpTypes = ["is_a_go", "is_part_of_go"]
     _GORegTypes = ["is_Regulant"]
 
-    def __init__(self, namespace_filter=('biological_process',),
-                 uniprot_node_ids=None,
+    def __init__(self,
+                 namespace_filter=('biological_process',),
+                 reduced_set_uniprot_node_ids=None,
                  correction_factor=(1, 1),
-                 ultraspec_clean=True, ultraspec_lvl=3):
+                 ultraspec_clean=True,
+                 ultraspec_lvl=3):
 
         self.interactome_interface_instance = InteractomeInterface(True, True)
         self.interactome_interface_instance.fast_load()
         init_set = self.interactome_interface_instance.all_uniprots_neo4j_id_list
 
-        if uniprot_node_ids:
-            init_set = list(set(init_set).intersection(set(uniprot_node_ids)))
+        if reduced_set_uniprot_node_ids is not None and len(reduced_set_uniprot_node_ids) > 0:
+            init_set = list(set(init_set).intersection(set(reduced_set_uniprot_node_ids)))
 
         self.go_namespace_filter = list(namespace_filter)
         self.InitSet = init_set
@@ -125,7 +129,7 @@ class GeneOntologyInterface(object):
         self.inflated_lbl2idx = {}
         self.binding_intensity = 0
 
-        self.analytic_uniprots = []
+        self.annotated_uniprots = []
         self.UP2UP_voltages = {}
         self.uniprots_2_voltage_and_circulation = {}  # can be safely renamed
 
@@ -134,10 +138,12 @@ class GeneOntologyInterface(object):
         self.call_coutner = 0
 
         char_set = string.ascii_uppercase + string.digits
-        self.random_tag = ''.join(random.sample(char_set * 6, 6))
+        self.thread_hex = ''.join(random.sample(char_set * 6, 6))
 
         self.Indep_Lapl = np.zeros((2, 2))
         self.uncomplete_compute = False
+        self.background = []  # CURRENTPASS [BKI normalization] to be used for environment compare
+        self.connected_uniprots = []
 
         self.main_set = self.InitSet
 
@@ -167,7 +173,8 @@ class GeneOntologyInterface(object):
         dump_object(
             Dumps.GO_builder_stat,
             (self.go_namespace_filter,
-             self.InitSet,
+             self.InitSet,          # it does dump the InitSet from which it will attempt to
+                                    # rebuild itself.
              self.correction_factor,
              self.ultraspec_cleaned,
              self.ultraspec_lvl))
@@ -239,16 +246,15 @@ class GeneOntologyInterface(object):
 
     def dump_memoized(self):
         md5 = hashlib.md5(
-            json.dumps(
-                sorted(
-                    self.analytic_uniprots),
-                sort_keys=True).encode('utf-8')).hexdigest()
+            json.dumps(sorted(self.annotated_uniprots), sort_keys=True).encode('utf-8')).hexdigest()
+
         payload = {
-            'UP_hash': md5, 'sys_hash': self.md5_hash(), 'size': len(
-                self.analytic_uniprots), 'UPs': pickle.dumps(
-                self.analytic_uniprots), 'currents': pickle.dumps(
-                (self.current_accumulator, self.node_current)), 'voltages': pickle.dumps(
-                    self.uniprots_2_voltage_and_circulation)}
+            'UP_hash': md5,
+            'sys_hash': self.md5_hash(),
+            'size': len(self.annotated_uniprots),
+            'UPs': pickle.dumps(self.annotated_uniprots),
+            'currents': pickle.dumps((self.current_accumulator, self.node_current)),
+            'voltages': pickle.dumps(self.uniprots_2_voltage_and_circulation)}
         dump_object(Dumps.GO_Analysis_memoized, payload)
 
     @staticmethod
@@ -282,7 +288,7 @@ class GeneOntologyInterface(object):
 
         log.info('Finished rebuilding the GO Interface object %s', self.pretty_time())
 
-    def load(self):
+    def fast_load(self):
         """
         loads itself from the saved dumps, in case the Filtering system is the same
 
@@ -293,10 +299,12 @@ class GeneOntologyInterface(object):
             log.critical("Wrong Filtering attempted to be recovered from storage")
             raise Exception(
                 "Wrong Filtering attempted to be recovered from storage")
-        if self.InitSet != initial_set:
-            print(len(self.InitSet))
-            print(len(initial_set))
-            print(traceback.print_stack())
+        if set(self.InitSet) != set(initial_set):
+            log.critical("Found self.InitSet of length: %s" % len(self.InitSet))
+            log.critical("Found initial_set of length: %s" % len(initial_set))
+            log.critical("self.InitSet - initial_set: %s" % (set(self.InitSet) - set(initial_set)))
+            log.critical("initial_set - self.InitSet: %s" % (set(initial_set) - set(self.InitSet)))
+            log.critical(traceback.print_stack())
             log.critical("Wrong initial_set attempted to be recovered from storage")
             raise Exception(
                 "Wrong initial_set attempted to be recovered from storage")
@@ -319,6 +327,8 @@ class GeneOntologyInterface(object):
         self.undump_informativities()
         self.undump_inflated_elements()
 
+        self.connected_uniprots = list(set(self.InitSet) - set(self.UPs_without_GO))
+
     def get_gene_ontology_access(self):
         """
         Loads all of the relations between the UNIPROTs and GOs as one giant dictionary
@@ -326,6 +336,7 @@ class GeneOntologyInterface(object):
         """
         uniprots_without_gene_ontology_terms = 0
         log.info('Starting GO matrix mapping starting from %s uniprots', len(self.InitSet))
+
         for uniprot_neo4j_id in self.InitSet:
             uniprot_specific_gos = []
 
@@ -334,6 +345,7 @@ class GeneOntologyInterface(object):
                                                up_node._properties['displayName']]
             attached_go_nodes = DatabaseGraph.get_linked(uniprot_neo4j_id,
                                                          link_type='is_go_annotation')
+
             for go_node in attached_go_nodes:
                 if go_node._properties['Namespace'] in self.go_namespace_filter:
                     go_node_neo4j_id = get_db_id(go_node)
@@ -346,6 +358,7 @@ class GeneOntologyInterface(object):
                 log.debug("UP without GO was found. UP bulbs_id: %s, \t name: %s",
                           uniprot_neo4j_id, self.UP_Names[uniprot_neo4j_id])
                 self.UPs_without_GO.add(uniprot_neo4j_id)
+
             else:
                 self.UP2GO_Dict[uniprot_neo4j_id] = copy(uniprot_specific_gos)
 
@@ -381,6 +394,7 @@ class GeneOntologyInterface(object):
 
                 if not related_go_nodes:
                     continue  # skip in case GO Node has no outgoing relations to other GO nodes
+
                 for go_node in related_go_nodes:
                     if go_node._properties['Namespace'] not in self.go_namespace_filter:
                         continue
@@ -430,6 +444,7 @@ class GeneOntologyInterface(object):
 
             """
             base_matrix = lil_matrix((len(self.All_GOs), len(self.All_GOs)))
+            # CURRENTPASS: [BKI normalization] "package" should be a named tuple
             for node, package in self.Reachable_nodes_dict.items():
                 fw_nodes = package[0]
                 if include_reg:
@@ -470,11 +485,14 @@ class GeneOntologyInterface(object):
         if number < 1.0:
             log.critical("Wrong value provided for entropy computation")
             raise Exception("Wrong value provided for entropy computation")
+
         if not self.total_Entropy:
             self.total_Entropy = - \
                 math.log(1 / float(len(list(self.UP2GO_Dict.keys()))), 2)
+
         if number == 1.0:
             return 2 * self.total_Entropy
+
         return pow(-self.correction_factor[0] * self.total_Entropy /
                    math.log(1 / float(number), 2), self.correction_factor[1])
 
@@ -494,6 +512,7 @@ class GeneOntologyInterface(object):
             """
             dict_len = {key: [len(val), len(list(step_reach[key].keys()))]
                         for key, val in reach.items()}
+
             for key, val in dict_len.items():
                 if val[1] != val[0]:
                     log.critical(
@@ -514,18 +533,15 @@ class GeneOntologyInterface(object):
                 summer += filter_function(key) * len(val_list)
             return summer
 
-        dir_reg_path = shortest_path(
-            self.dir_adj_matrix, directed=True, method='D')
+        dir_reg_path = shortest_path(self.dir_adj_matrix, directed=True, method='D')
         dir_reg_path[np.isinf(dir_reg_path)] = 0.0
         dir_reg_path = lil_matrix(dir_reg_path)
 
-        self.GO2UP_Reachable_nodes = dict(
-            (el, []) for el in list(self.Reachable_nodes_dict.keys()))
+        self.GO2UP_Reachable_nodes = dict((el, []) for el in list(self.Reachable_nodes_dict.keys()))
         self.GO2UP_Reachable_nodes.update(self.GO2UP)
 
-        pre_go2up_step_reachable_nodes = \
-            dict((key, dict((v, 0) for v in val))
-                 for key, val in self.GO2UP_Reachable_nodes.items())
+        pre_go2up_step_reachable_nodes = dict((key, dict((v, 0) for v in val))
+                                                for key, val in self.GO2UP_Reachable_nodes.items())
         # when called on possibly un-encoutenred items, anticipate a default
         # value of 10 000
 
@@ -534,17 +550,15 @@ class GeneOntologyInterface(object):
                               list(dir_reg_path.nonzero()[1])):
             self.GO2UP_Reachable_nodes[self.Num2GO[idx2]] +=\
                 self.GO2UP_Reachable_nodes[self.Num2GO[idx1]]
+
             if dir_reg_path[idx1, idx2] < 1.0:
                 log.critical("null in non-null patch")
                 raise Exception("null in non-null patch")
+
             step_reach_upgrade = dict(
-                (key,
-                 val +
-                 dir_reg_path[
-                     idx1,
-                     idx2]) for key,
-                val in pre_go2up_step_reachable_nodes[
-                    self.Num2GO[idx1]].items())
+                (key, val + dir_reg_path[idx1, idx2])
+                for key, val in pre_go2up_step_reachable_nodes[self.Num2GO[idx1]].items())
+
             for k, v in step_reach_upgrade.items():
                 pre_go2up_step_reachable_nodes[
                     self.Num2GO[idx2]][k] = min(
@@ -567,6 +581,7 @@ class GeneOntologyInterface(object):
             (key, defaultdict(list)) for key in list(self.UP2GO_Dict.keys()))
         self.GO2UP_step_Reachable_nodes = dict(
             (key, defaultdict(list)) for key in list(pre_go2up_step_reachable_nodes.keys()))
+
         for key, val_dict in pre_go2up_step_reachable_nodes.items():
             for k, v in val_dict.items():
                 self.GO2UP_step_Reachable_nodes[key][v].append(k)
@@ -577,10 +592,8 @@ class GeneOntologyInterface(object):
         # term
         self.GO2_Pure_Inf = dict((key, self.calculate_informativity(len(val)))
                                  for key, val in self.GO2UP_Reachable_nodes.items())
-        self.GO2_Weighted_Ent = dict(
-            (key,
-             self.calculate_informativity(special_sum(val_dict)))
-            for key, val_dict in self.GO2UP_step_Reachable_nodes.items())
+        self.GO2_Weighted_Ent = dict((key, self.calculate_informativity(special_sum(val_dict)))
+                                    for key, val_dict in self.GO2UP_step_Reachable_nodes.items())
 
     def get_laplacians(self):
         """
@@ -597,8 +610,7 @@ class GeneOntologyInterface(object):
         nz_list = copy(
             list(zip(list(base_matrix.nonzero()[0]), list(base_matrix.nonzero()[1]))))
 
-
-        # TODO: change that to
+        # TODO: change that to a version using a function to calculate the weights
         for idx1, idx2 in nz_list:
             min_inf = min(
                 self.GO2_Pure_Inf[self.Num2GO[idx1]],
@@ -653,30 +665,33 @@ class GeneOntologyInterface(object):
             self.correction_factor,
             self.ultraspec_cleaned,
             self.ultraspec_lvl]
+
         md5 = hashlib.md5(json.dumps(data, sort_keys=True).encode('utf-8')).hexdigest()
+
         return str(md5)
 
     def inflate_matrix_and_indexes(self):
         """
         Performs the laplacian matrix inflation to incorporate the uniprots on which we
-         will be running the
+         will be running the analysis
         """
         # branching distribution: at least 10x the biggest conductivity of the
         # system, unless too specific, in which case ~ specific level
         self.binding_intensity = 10 * self.calculate_informativity(self.ultraspec_lvl)
         fixed_index = self.laplacian_matrix.shape[0]
-        self_connectable_uniprots = list(
-            set(self.InitSet) - set(self.UPs_without_GO))
+        self.connected_uniprots = list(set(self.InitSet) - set(self.UPs_without_GO))
         up2idxs = dict((UP, fixed_index + Idx)
-                       for Idx, UP in enumerate(self_connectable_uniprots))
+                       for Idx, UP in enumerate(self.connected_uniprots))
         idx2ups = dict((Idx, UP) for UP, Idx in up2idxs.items())
+
         self.inflated_Laplacian = lil_matrix(
-            (self.laplacian_matrix.shape[0] + len(self_connectable_uniprots),
-             self.laplacian_matrix.shape[1] + len(self_connectable_uniprots)))
+            (self.laplacian_matrix.shape[0] + len(self.connected_uniprots),
+             self.laplacian_matrix.shape[1] + len(self.connected_uniprots)))
+
         self.inflated_Laplacian[:self.laplacian_matrix.shape[0], :self.laplacian_matrix.shape[1]] =\
             self.laplacian_matrix
 
-        for uniprot in self_connectable_uniprots:
+        for uniprot in self.connected_uniprots:
             for go_term in self.UP2GO_Dict[uniprot]:
                 self.inflated_Laplacian[
                     up2idxs[uniprot], up2idxs[uniprot]] += self.binding_intensity
@@ -707,14 +722,15 @@ class GeneOntologyInterface(object):
             log.warning('%s uniprots out of %s either were not present in the constructions set '
                         'or have no GO terms attached to them.', len(na_set), len(set(uniprots)))
             log.debug('full list of uniprots that cannot be analyzed: \n%s', na_set)
-        self.analytic_uniprots = [
+
+        self.annotated_uniprots = [
             uniprot for uniprot in uniprots if uniprot in list(self.UP2GO_Dict.keys())]
 
-    def build_extended_conduction_system(
+    def compute_current_and_potentials(
             self,
-            memoized=True,
-            sourced=False,
-            incremental=False,
+            memoized=True,  # Should never be set to true
+            sourced=False,  # Should never be set to true
+            incremental=False,  # This should always be false
             cancellation=True,
             sparse_samples=False):
         """
@@ -747,12 +763,12 @@ class GeneOntologyInterface(object):
         iterator = []
         if sparse_samples:
             for _ in range(0, sparse_samples):
-                _sample = copy(self.analytic_uniprots)
+                _sample = copy(self.annotated_uniprots)
                 random.shuffle(_sample)
                 iterator += list(zip(_sample[:len(_sample) // 2], _sample[len(_sample) // 2:]))
                 self.uncomplete_compute = True
         else:
-            iterator = combinations(self.analytic_uniprots, 2)
+            iterator = combinations(self.annotated_uniprots, 2)
 
         iterator = [item for item in iterator]
 
@@ -772,40 +788,53 @@ class GeneOntologyInterface(object):
             pre_reach = self.UP2GO_Reachable_nodes[UP1] + \
                 self.UP2GO_Reachable_nodes[UP2] + [UP1] + [UP2]
             reach = [self.inflated_lbl2idx[label] for label in pre_reach]
+
             current_upper, voltage_diff = cr.group_edge_current_with_limitations(
                 inflated_laplacian=self.inflated_Laplacian,
                 idx_pair=(idx1, idx2),
                 reach_limiter=reach)
+
             self.current_accumulator = self.current_accumulator +\
                 cr.sparse_abs(current_upper)
 
             self.UP2UP_voltages[(UP1, UP2)] = voltage_diff
 
-            if memoized:
-                self.uniprots_2_voltage_and_circulation[
-                    tuple(sorted((UP1, UP2)))] = \
-                    (voltage_diff, current_upper)
+            # if memoized:
+            #     # CURRENTPASS: [BKI normalization]  this would shred the memory into pieces
+            #     self.uniprots_2_voltage_and_circulation[
+            #         tuple(sorted((UP1, UP2)))] = \
+            #         (voltage_diff, current_upper)
 
             if counter % breakpoints == 0 and counter > 1:
+                # TODO: the internal loop load bar goes here
                 compops = float(breakpoints) / (time() - previous_time)
-                log.info("progress: %s/%s, current speed: %s compops, time remaining: %s min"
-                         % (counter, total_pairs, compops, (total_pairs - counter) / compops / 60))
+                mins_before_termination = (total_pairs-counter) / compops // 60
+                finish_time = datetime.datetime.now() + datetime.timedelta(minutes=mins_before_termination)
+                log.info("thread hex: %s; progress: %s/%s, current speed: %.2f compop/s, "
+                         "time remaining: "
+                         "%.0f "
+                         "min, finishing: %s "
+                         % (self.thread_hex, counter, total_pairs, compops, mins_before_termination,
+                            finish_time.strftime("%m/%d/%Y, %H:%M:%S")))
                 previous_time = time()
 
-        triu(self.current_accumulator)
+                # compops = float(breakpoints) / (time() - previous_time)
+                # log.info("progress: %s/%s, current speed: %s compops, time remaining: %s min"
+                #          % (counter, total_pairs, compops, (total_pairs - counter) / compops / 60))
+                # previous_time = time()
 
-        if cancellation:  # TODO: factor that one into the Conduction Routilens
-            ln = len(self.analytic_uniprots)
+        self.current_accumulator = triu(self.current_accumulator)
+
+        if cancellation:
+            ln = len(self.annotated_uniprots)
             self.current_accumulator /= (ln * (ln - 1) / 2)
 
         if memoized:
             self.dump_memoized()
 
         index_current = cr.get_current_through_nodes(self.current_accumulator)
-        self.node_current = dict(
-            (self.inflated_idx2lbl[idx],
-             val) for idx,
-            val in enumerate(index_current))
+        self.node_current = dict((self.inflated_idx2lbl[idx], val)
+                                 for idx, val in enumerate(index_current))
 
     def format_node_props(self, node_current, limit=0.01):
         """
@@ -829,7 +858,7 @@ class GeneOntologyInterface(object):
         return char_dict
 
     def export_conduction_system(self,
-                                 output_location=Outputs.GO_GDF_output):
+                                 output_location=Outputs.GO_GDF_output):  # TRACING: outputs remap
         """
         Computes the conduction system of the GO terms and exports it to the GDF format
          and flushes it into a file that can be viewed with Gephi
@@ -863,7 +892,7 @@ class GeneOntologyInterface(object):
                              str(self.GO2_Pure_Inf[GO]),
                              str(len(self.GO2UP_Reachable_nodes[GO]))]
 
-        for UP in self.analytic_uniprots:
+        for UP in self.annotated_uniprots:
             char_dict[UP] = [str(self.node_current[UP]),
                              'UP', self.UP_Names[UP][0],
                              str(self.UP_Names[UP][1]).replace(',', '-'),
@@ -881,8 +910,10 @@ class GeneOntologyInterface(object):
             current_matrix=self.current_accumulator)
         gdf_exporter.write()
 
-    def export_subsystem(self, uniprot_system, uniprot_subsystem):
+    def deprecated_export_subsystem(self, uniprot_system, uniprot_subsystem):
         """
+        DEPRECATED DUE TO MEMORY CONSUMPTION ISSUES.
+
         Exports the subsystem of reached_uniprots_neo4j_id_list and circulation between
         them based on a larger precalculated system.This is possible only of the memoization
         parameter was on during the execution of "build_extended_circulation_system()"
@@ -900,17 +931,18 @@ class GeneOntologyInterface(object):
         self.uniprots_2_voltage_and_circulation = pickle.loads(
             current_recombinator['voltages'])
         self.set_uniprot_source(uniprot_subsystem)
-        self.build_extended_conduction_system(memoized=False, sourced=True)
-        self.export_conduction_system()
+        self.compute_current_and_potentials(memoized=False, sourced=True)
+        self.export_conduction_system()  # TRACING: outputs remap
 
     def randomly_sample(
             self,
             samples_size,
             samples_each_size,
             sparse_rounds=False,
-            chromosome_specific=False,
+            # chromosome_specific=False,  # CURRENTPASS [BKI Normalization] deprecate this
             memoized=False,
-            no_add=False):
+            no_add=False,
+            pool_no=None):  # TRACING: make sure it is inserted properly in calls to this method
         """
         Randomly samples the set of reached_uniprots_neo4j_id_list used to create the model.
 
@@ -921,9 +953,6 @@ class GeneOntologyInterface(object):
         :param sparse_rounds:  if we want to use sparse sampling
         (usefull in case of large uniprot sets),
         we would use this option
-        :param chromosome_specific: if we want the sampling to be chromosome-specific,
-        set this parameter to the
-        number of chromosome to sample from
         :param memoized: if set to True, the sampling would be rememberd for export.
         Usefull in case of the chromosome comparison
         :param no_add: if set to True, the result of sampling will not be added to the database
@@ -934,23 +963,25 @@ class GeneOntologyInterface(object):
         if not len(samples_size) == len(samples_each_size):
             raise Exception('Not the same list sizes!')
 
-        self_connectable_uniprots = list(
-            set(self.InitSet) - set(self.UPs_without_GO))
-        # TODO: perform intersection with background (self.InitSet is not taking the background
-        #  into account)
-
-        if chromosome_specific:
-            self_connectable_uniprots = list(set(self_connectable_uniprots).intersection(
-                set(self.interactome_interface_instance.chromosomes_2_uniprot[str(
-                    chromosome_specific)])))
+        # if chromosome_specific:
+        #     self.connected_uniprots = list(set(self.connected_uniprots).intersection(
+        #         set(self.interactome_interface_instance.chromosomes_2_uniprot[str(
+        #             chromosome_specific)])))
 
         for sample_size, iterations in zip(samples_size, samples_each_size):
-            sample_size = min(sample_size, len(self_connectable_uniprots))
+            sample_size = min(sample_size, len(self.connected_uniprots))
             for i in range(0, iterations):
-                shuffle(self_connectable_uniprots)
-                analytics_up_list = self_connectable_uniprots[:sample_size]
+                shuffle(self.connected_uniprots)
+                analytics_up_list = self.connected_uniprots[:sample_size]
+
                 self.set_uniprot_source(analytics_up_list)
-                self.build_extended_conduction_system(
+
+                log.info('Sampling thread: %s, Thread hex: %s; sampling characteristics: sys_hash: '
+                         '%s, size: %s, '
+                         'sparse_rounds: %s' % (pool_no, self.thread_hex, self.md5_hash(),
+                                                sample_size, sparse_rounds))
+
+                self.compute_current_and_potentials(
                     memoized=memoized, sourced=False, sparse_samples=sparse_rounds)
 
                 md5 = hashlib.md5(
@@ -959,12 +990,16 @@ class GeneOntologyInterface(object):
                         sort_keys=True).encode('utf-8')).hexdigest()
 
                 if not no_add:
+                    log.info("Sampling thread %s: Adding a blanc:"
+                             "\t size: %s \t sys_hash: %s \t sparse_rounds: %s, matrix weight: %s" % (
+                                pool_no, sample_size, md5, sparse_rounds, np.sum(self.current_accumulator)))
+
                     insert_annotome_rand_samp(
                         {
                             'UP_hash': md5,
                             'sys_hash': self.md5_hash(),
                             'size': sample_size,
-                            'chrom': str(chromosome_specific),
+                            'chrom': 'False', # TODO: [ON DB rebuild]: delete
                             'sparse_rounds': sparse_rounds,
                             'UPs': pickle.dumps(analytics_up_list),
                             'currents': pickle.dumps(
@@ -974,18 +1009,20 @@ class GeneOntologyInterface(object):
                                 self.UP2UP_voltages)})
 
                 if not sparse_rounds:
-
-                    log.info(
-                        'Random ID: %s \t Sample size: %s \t iteration: %s\t compops: %s \t time: %s ',
-                        self.random_tag, sample_size, i,
-                        "{0:.2f}".format(sample_size * (sample_size - 1) / 2 / self._time()),
-                        self.pretty_time())
+                    log.info('Sampling thread %s: Thread hex: %s \t Sample size: %s \t iteration: %s\t compop/s: %s \t '
+                             'time: %s ',
+                             pool_no, self.thread_hex, sample_size, i,
+                             "{0:.2f}".format(sample_size * (sample_size - 1) / 2 / self._time()),
+                             self.pretty_time())
 
                 else:
-                    log.info('Random ID: %s \t Sample size: %s \t iteration: %s\t compops: %s \t '
-                             'time: %s ', self.random_tag, sample_size, i,
+                    log.info('Sampling thread %s: Thread hex: %s \t Sample size: %s \t iteration: %.2f \t compop/s: %.2f \t '
+                             'time: %s, sparse @ %s ',
+                             pool_no, self.thread_hex, sample_size, i,
                              "{0:.2f}".format(sample_size * sparse_rounds / 2 / self._time()),
-                             self.pretty_time())
+                             self.pretty_time(), sparse_rounds)
+
+                # TODO: the external loop load bar goes here
 
     def get_independent_linear_groups(self):
         """
@@ -1005,7 +1042,8 @@ class GeneOntologyInterface(object):
 if __name__ == '__main__':
     # Creates an instance of MatrixGetter and loads pre-computed values
 
-    go_interface_instance = GeneOntologyInterface(uniprot_node_ids=get_background_bulbs_ids())
+    go_interface_instance = GeneOntologyInterface(
+        reduced_set_uniprot_node_ids=get_background_bulbs_ids())
     go_interface_instance.full_rebuild()
 
     # loading takes 1-6 seconds.
@@ -1017,7 +1055,7 @@ if __name__ == '__main__':
     # full computation - 3 minutes 18 seconds; save 7 seconds, retrieval - 3
     # seconds
 
-    # go_interface_instance.load()
+    # go_interface_instance.fast_load()
     # print go_interface_instance.pretty_time()
 
     # go_interface_instance.get_indep_linear_groups()

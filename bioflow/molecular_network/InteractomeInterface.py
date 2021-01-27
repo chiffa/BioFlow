@@ -24,16 +24,16 @@ from itertools import chain
 from bioflow.utils.gdfExportInterface import GdfExportInterface
 from bioflow.utils.io_routines import write_to_csv, dump_object, undump_object
 from bioflow.utils.log_behavior import get_logger
-from bioflow.main_configs import Dumps, Outputs, NewOutputs
+from bioflow.main_configs import Dumps, NewOutputs
 from bioflow.sample_storage.mongodb import insert_interactome_rand_samp
-from bioflow.user_configs import internal_storage, skip_hint, skip_biogrid, skip_reactome, \
+from bioflow.user_configs import internal_storage, env_skip_hint, env_skip_biogrid, env_skip_reactome, \
     use_normalized_laplacian, fraction_edges_dropped_in_laplacian
 from bioflow.internal_configs import edge_type_filters, adjacency_matrix_weights, \
     laplacian_matrix_weights
 from bioflow.algorithms_bank import conduction_routines as cr
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from bioflow.neo4j_db.db_io_routines import expand_from_seed, \
-    erase_custom_fields, node_extend_once, get_db_id
+    erase_custom_fields, node_extend_once, get_db_id  # CURRENTPASS: fold under the neo4j_routines
 
 log = get_logger(__name__)
 
@@ -57,6 +57,7 @@ class InteractomeInterface(object):
     # used as roots to build the interaction network (not all nodes are necessary
     # within the connex part of the graph)
 
+    # TRACING: move to configs
     reactions_types_list = ['TemplateReaction', 'Degradation', 'BiochemicalReaction']
 
     def __init__(self, main_connex_only, full_impact):
@@ -117,11 +118,11 @@ class InteractomeInterface(object):
 
         self.entry_point_uniprots_neo4j_ids = []
         self.UP2UP_voltages = {}
-        self.uniprots_2_voltage = {}  # does not really seem to be used
+        self.uniprots_2_voltage = {}  # TODO: does not really seem to be used
         self.current_accumulator = np.zeros((2, 2))
         self.node_current = {}
 
-        # Ideally, should be removed
+        # TODO: Ideally, should be removed
         self.UP2Chrom = {}
         self.chromosomes_2_uniprot = defaultdict(list)
 
@@ -361,7 +362,7 @@ class InteractomeInterface(object):
                 local_list, count_increase = expand_from_seed(
                     element, edge_type_filter, self.connexity_aware)
                 if edge_type_filter == 'is_weakly_interacting':
-                    print(element, local_list, self.connexity_aware)
+                    log.info(element, local_list, self.connexity_aware)
 
                 if len(local_list) > 0:
                     clusters[element] = copy(local_list)
@@ -491,6 +492,7 @@ class InteractomeInterface(object):
             if list(node.labels)[0] == "UNIPROT":
                 self.reached_uniprots_neo4j_id_list.append(neo4j_node_id)
                 self.uniprot_matrix_index_list.append(counter)
+            # TODO: [future-proofing]
             if 'localization' in node._properties and node._properties['localization'] is not None:
                 self.neo4j_id_2_localization[neo4j_node_id] = request_location(
                     location_buffer_dict, node._properties['localization'])
@@ -590,7 +592,7 @@ class InteractomeInterface(object):
         self.laplacian_matrix = lil_matrix((load_len, load_len))
 
         # TODO: if the BioGRID tag is true, this will be reduced to the weak_contact links
-        if not skip_reactome:
+        if not env_skip_reactome:
             for reaction_participant_set in self.ReactLinks:
                 for reaction_participant in itertools.combinations(reaction_participant_set, 2):
                     link_indexes = (
@@ -602,11 +604,11 @@ class InteractomeInterface(object):
             insert_expansion_links(self.sec_links, "Contact_interaction")
             insert_expansion_links(self.GroupLinks_2, "Group")
 
-        if not skip_hint:
+        if not env_skip_hint:
             insert_expansion_links(self.hint_links, "Contact_interaction")
             insert_expansion_links(self.UP_Links, "Same")
 
-        if not skip_biogrid:
+        if not env_skip_biogrid:
             insert_expansion_links(self.biogrid_links, "weak_contact")
 
         if self.full_impact:
@@ -807,7 +809,8 @@ class InteractomeInterface(object):
             cr.line_loss,
             use_normalized_laplacian,
             fraction_edges_dropped_in_laplacian,
-            (skip_reactome, skip_hint, skip_biogrid)]
+            (env_skip_reactome, env_skip_hint, env_skip_biogrid)]
+
         md5 = hashlib.md5(json.dumps(data, sort_keys=True).encode('utf-8')).hexdigest()
 
         log.debug("md5 hashing done. hash: %s. parameters: \n"
@@ -828,7 +831,7 @@ class InteractomeInterface(object):
                      cr.line_loss,
                      use_normalized_laplacian,
                      fraction_edges_dropped_in_laplacian,
-                     (skip_reactome, skip_hint, skip_biogrid)))
+                     (env_skip_reactome, env_skip_hint, env_skip_biogrid)))
 
         return str(md5)
 
@@ -1061,6 +1064,8 @@ class InteractomeInterface(object):
 
     def deprecated_export_subsystem(self, uniprot_system, uniprot_subsystem):
         """
+        DEPRECATED DUE TO MEMORY CONSUMPTION ISSUES.
+
         Exports the subsystem of reached_uniprots_neo4j_id_list and circulation between
          them based on a larger precalculated system.This is possible only of the memoization
          parameter was on during the execution of "build_extended_circulation_system()"
@@ -1079,8 +1084,7 @@ class InteractomeInterface(object):
             memoization_payload['voltages'])
         self.set_uniprot_source(uniprot_subsystem)
         self.compute_current_and_potentials(memoized=False, sourced=True)
-        # TODO: that will still execute the sampling run
-        self.export_conduction_system()
+        self.export_conduction_system() # TRACING: outputs remap
 
     def randomly_sample(
             self,
@@ -1139,7 +1143,7 @@ class InteractomeInterface(object):
                             'UP_hash': md5,
                             'sys_hash': self.md5_hash(),
                             'size': sample_size,
-                            'chrom': 'False',
+                            'chrom': 'False', # TODO: [ON DB rebuild]: delete
                             'sparse_rounds': sparse_rounds,
                             'UPs': pickle.dumps(analytics_uniprot_list),
                             'currents': pickle.dumps(
