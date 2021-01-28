@@ -142,7 +142,7 @@ class GeneOntologyInterface(object):
 
         self.Indep_Lapl = np.zeros((2, 2))
         self.uncomplete_compute = False
-        self.background = []  # CURRENTPASS [BKI normalization] to be used for environment compare
+        self.background = init_set  # CURRENTPASS [BKI normalization] to be used for environment compare
         self.connected_uniprots = []
 
         self.main_set = self.InitSet

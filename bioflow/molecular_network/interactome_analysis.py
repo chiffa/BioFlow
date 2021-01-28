@@ -76,6 +76,7 @@ def spawn_sampler(args_puck):
     )
 
 
+# CURRENTPASS: [SANITY] args puck need to be a named tuple, preferably a typed one
 def spawn_sampler_pool(
         pool_size,
         sample_size_list,
@@ -153,6 +154,8 @@ def samples_scatter_and_hist(background_curr_deg_conf, true_sample_bi_corr_array
     fig = plt.figure()
     fig.set_size_inches(30, 20)
 
+    # bivect: [0, :] - current; [1, :] - informativity
+
     plt.subplot(211)
     plt.title('current through nodes')
 
@@ -161,8 +164,10 @@ def samples_scatter_and_hist(background_curr_deg_conf, true_sample_bi_corr_array
         background_curr_deg_conf[0, :].max(), 100)
 
     if true_sample_bi_corr_array is not None:
-        bins = np.linspace(min(background_curr_deg_conf[0, :].min(), true_sample_bi_corr_array[0, :].min()),
-                           max(background_curr_deg_conf[0, :].max(), true_sample_bi_corr_array[0, :].max()),
+        bins = np.linspace(min(background_curr_deg_conf[0, :].min(),
+                               true_sample_bi_corr_array[0, :].min()),
+                           max(background_curr_deg_conf[0, :].max(),
+                               true_sample_bi_corr_array[0, :].max()),
                            100)
 
     plt.hist(background_curr_deg_conf[0, :],
@@ -172,8 +177,10 @@ def samples_scatter_and_hist(background_curr_deg_conf, true_sample_bi_corr_array
         plt.hist(true_sample_bi_corr_array[0, :],
                  bins=bins, histtype='step', log=True, color='r')
 
+
     plt.subplot(212)
-    plt.scatter(background_curr_deg_conf[1, :], background_curr_deg_conf[0, :])
+    plt.scatter(background_curr_deg_conf[1, :],
+                background_curr_deg_conf[0, :], color='b', alpha=0.1)
 
     # CURRENTPASS: relevant modification #1
     if true_sample_bi_corr_array is not None:
@@ -246,21 +253,26 @@ def compare_to_blank(blank_model_size: int,
 
     log.info("samples found to test against:\t %s" %
              count_interactome_rand_samp({'size': blank_model_size,
-                                            'sys_hash': md5_hash,
-                                            'sparse_rounds': sparse_rounds}))
+                                          'sys_hash': md5_hash,
+                                          'sparse_rounds': sparse_rounds}))
 
-    for i, sample in enumerate(find_interactome_rand_samp(
-                                                            {'size': blank_model_size,
-                                                             'sys_hash': md5_hash,
-                                                             'sparse_rounds': sparse_rounds})):
+    background_sample = find_interactome_rand_samp({'size': blank_model_size,
+                                                    'sys_hash': md5_hash,
+                                                    'sparse_rounds': sparse_rounds})
+
+    for i, sample in enumerate(background_sample):
 
         _, node_currents = pickle.loads(sample['currents'])
+        tensions = pickle.loads(sample['voltages'])  # CURRENTPASS: might explode here
+        # TODO: restore clustering in case non-sparse calculation has been performed
 
-        dictionary_system = interactome_interface_instance.format_node_props(node_currents, limit=0)
-        background_sub_array = list(dictionary_system.values())
+        dict_system = interactome_interface_instance.format_node_props(node_currents, limit=0)
+        background_sub_array = list(dict_system.values())
+
         if np.array(background_sub_array).T.shape[0] < 2:
-            print(background_sub_array)
+            log.info(background_sub_array)
             continue
+
         background_sub_array_list.append(np.array(background_sub_array).T)
         # print(np.array(background_sub_array).T.shape)
         # pprint(background_sub_array)
@@ -274,11 +286,10 @@ def compare_to_blank(blank_model_size: int,
     background_array = np.concatenate(tuple(background_sub_array_list), axis=1)
     max_array = np.concatenate(tuple(max_sub_array_list), axis=1)
 
-
     node_currents = interactome_interface_instance.node_current
-    dictionary_system = interactome_interface_instance.format_node_props(node_currents)
-    curr_inf_conf_tot = np.array(
-        [[int(key)] + list(val) for key, val in list(dictionary_system.items())]).T
+    dict_system = interactome_interface_instance.format_node_props(node_currents)
+
+    curr_inf_conf_tot = np.array([[int(key)] + list(val) for key, val in list(dict_system.items())]).T
 
     node_ids, query_array = (curr_inf_conf_tot[0, :], curr_inf_conf_tot[(1, 2), :])
 
@@ -342,10 +353,13 @@ def compare_to_blank(blank_model_size: int,
 
     node_char_list = [
         [int(nr_node_id), interactome_interface_instance.neo4j_id_2_display_name[nr_node_id]] +
-        dictionary_system[nr_node_id] + r_nodes[node_ids == float(nr_node_id)].tolist()
+        dict_system[nr_node_id] + r_nodes[node_ids == float(nr_node_id)].tolist()
         for nr_node_id in not_random_nodes]
 
-    nodes_dict = np.hstack((node_ids[:, np.newaxis], r_nodes[:, np.newaxis], r_rels[:, np.newaxis], r_std_nodes[:, np.newaxis]))
+    nodes_dict = np.hstack((node_ids[:, np.newaxis],
+                            r_nodes[:, np.newaxis],
+                            r_rels[:, np.newaxis],
+                            r_std_nodes[:, np.newaxis]))
     nodes_dict = dict((node[0], (node[1], node[2], node[3])) for node in nodes_dict.tolist())
     nodes_dict = defaultdict(lambda: (1., 0., 0.), nodes_dict)  # corresponds to the cases of super low flow - never significant
 
@@ -395,6 +409,7 @@ def auto_analyze(source_list: List[List[int]],
         desired_depth = desired_depth // processors
 
     for hits_list, output_destination in zip(source_list, output_destinations_list):
+
         log.info('Auto analyzing list of interest: %s', len(hits_list))
 
         outputs_subdirs = NewOutputs(output_destination)
@@ -431,7 +446,7 @@ def auto_analyze(source_list: List[List[int]],
                     processors,
                     [len(interactome_interface.entry_point_uniprots_neo4j_ids)],
                     [desired_depth],
-                    interactome_interface_instance=interactome_interface)
+                    interactome_interface_instance=interactome_interface)  # CURRENTPASS: really?
 
             # CURRENTPASS: delete or make the switch more explicit
             if not from_memoization:
@@ -441,7 +456,7 @@ def auto_analyze(source_list: List[List[int]],
 
             nr_nodes, p_val_dict = compare_to_blank(
                 len(interactome_interface.entry_point_uniprots_neo4j_ids),
-                p_val=0.9,
+                p_val=0.9, # TRACING: p-value is not loaded here properly
                 interactome_interface_instance=interactome_interface,
                 output_destination=outputs_subdirs
             )
@@ -454,17 +469,18 @@ def auto_analyze(source_list: List[List[int]],
                                  5)
 
             if not skip_sampling:
+
                 log.info('length: %s \t sampling depth: %s \t, estimated round time: %s min',
                          len(interactome_interface.entry_point_uniprots_neo4j_ids),
                          sampling_depth,
                          len(interactome_interface.entry_point_uniprots_neo4j_ids) *
-                         sampling_depth / 2 / 60)
+                         sampling_depth / 2 / 60 / estimated_comp_ops)
 
                 spawn_sampler_pool(processors,
                                    [len(interactome_interface.entry_point_uniprots_neo4j_ids)],
                                    [desired_depth],
                                    sparse_rounds=sampling_depth,
-                                   interactome_interface_instance=interactome_interface)
+                                   interactome_interface_instance=interactome_interface)  # CURRENTPASS: really?
 
             log.info('real run characteristics: sys_hash: %s, size: %s, sparse_rounds: %s' % (interactome_interface.md5_hash(),
                                                                                               len(interactome_interface.entry_point_uniprots_neo4j_ids), sampling_depth))
@@ -472,11 +488,15 @@ def auto_analyze(source_list: List[List[int]],
             if not from_memoization:
                 interactome_interface.compute_current_and_potentials(sparse_samples=sampling_depth)
                 # interactome_interface.export_conduction_system()
+
             else:
                 interactome_interface.compute_current_and_potentials(sparse_samples=sampling_depth, fast_load=True)
+
             nr_nodes, p_val_dict = compare_to_blank(
-                len(interactome_interface.entry_point_uniprots_neo4j_ids), p_val=0.9,
-                sparse_rounds=sampling_depth, interactome_interface_instance=interactome_interface,
+                len(interactome_interface.entry_point_uniprots_neo4j_ids),
+                p_val=0.9,  # TRACING: p-value is not loaded here properly
+                sparse_rounds=sampling_depth,
+                interactome_interface_instance=interactome_interface,
                 output_destination=outputs_subdirs
             )
 

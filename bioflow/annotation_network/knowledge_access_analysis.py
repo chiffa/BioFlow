@@ -14,9 +14,9 @@ from csv import writer as csv_writer
 
 from bioflow.algorithms_bank.conduction_routines import perform_clustering
 from bioflow.annotation_network.BioKnowledgeInterface import GeneOntologyInterface
-from bioflow.main_configs import Dumps, Outputs, estimated_comp_ops
+from bioflow.main_configs import Dumps, Outputs, estimated_comp_ops, NewOutputs
 from bioflow.sample_storage.mongodb import find_annotome_rand_samp, count_annotome_rand_samp
-from bioflow.user_configs import sparse_analysis_threshold
+from bioflow.user_configs import sparse_analysis_threshold, single_threaded
 from bioflow.molecular_network.InteractomeInterface import InteractomeInterface
 from bioflow.utils.dataviz import kde_compute
 from bioflow.utils.io_routines import undump_object, get_source_bulbs_ids, get_background_bulbs_ids
@@ -32,7 +32,7 @@ ref_param_set = tuple([_filter, [], (1, 1), True, 3])
 
 
 # TODO: move ref_param_set to configs
-def get_go_interface_instance(param_set=ref_param_set):
+def get_go_interface_instance(param_set=ref_param_set) -> GeneOntologyInterface:
     """
     Generates a Matrix_Knowledge_DB interface for the use in the spawner. If
 
@@ -44,34 +44,30 @@ def get_go_interface_instance(param_set=ref_param_set):
     return go_interface_instance
 
 
-def spawn_sampler(sample_size_list_plus_iteration_list_plus_args):
+# CURRENTPASS: [SANITY] args puck need to be a named tuple, preferably a typed one
+def spawn_sampler(args_puck):
     """
     Spawns a sampler initialized from the default GO_Interface
 
-    :param sample_size_list_plus_iteration_list_plus_args: combined list of sample sizes
+    :param args_puck: combined list of sample sizes
      and iterations (required for Pool.map usage)
     """
-    try:
-        go_interface_instance = sample_size_list_plus_iteration_list_plus_args[4]
-        param_set = sample_size_list_plus_iteration_list_plus_args[5]
-        if go_interface_instance is None:
-            go_interface_instance = get_go_interface_instance(param_set)
+    go_interface_instance = args_puck[4]
+    param_set = args_puck[5]
 
-        sample_size_list = sample_size_list_plus_iteration_list_plus_args[0]
-        iteration_list = sample_size_list_plus_iteration_list_plus_args[1]
-        sparse_rounds = sample_size_list_plus_iteration_list_plus_args[2]
-        chromosome_specific = sample_size_list_plus_iteration_list_plus_args[3]
-        go_interface_instance.randomly_sample(
-            sample_size_list,
-            iteration_list,
-            sparse_rounds,
-            chromosome_specific)  # CURRENTPASS [BKI normalization] nothing to do here
+    if go_interface_instance is None:
+        go_interface_instance = get_go_interface_instance(param_set)
 
-    except Exception as e:
-        msg = "{}\n\nOriginal {}".format(e, traceback.format_exc())
-        raise type(e)(msg)
+    sample_size_list = args_puck[0]
+    iteration_list = args_puck[1]
+    sparse_rounds = args_puck[2]
+    chromosome_specific = args_puck[3]
 
-    # TODO: choromosome specific has nothing to do here; should be managed otherwise
+    go_interface_instance.randomly_sample(
+        sample_size_list,
+        iteration_list,
+        sparse_rounds,
+        chromosome_specific)  # CURRENTPASS: [BKI normalization] nothing to do here
 
 
 def spawn_sampler_pool(
@@ -79,7 +75,7 @@ def spawn_sampler_pool(
         sample_size_list,
         iterations_list_per_pool,
         sparse_rounds=False,
-        chromosome_specific=False,
+        chromosome_specific=False,  # CURRENTPASS: [BKI normalization] nothing to do here
         go_interface_instance=None,
         param_set=ref_param_set):
     """
@@ -94,7 +90,7 @@ def spawn_sampler_pool(
     :param go_interface_instance:
     :param param_set: set of parameters configuring the knowledge interface object
     """
-    p = Pool(pool_size)
+
     payload = [
         (sample_size_list,
          iterations_list_per_pool,
@@ -102,12 +98,25 @@ def spawn_sampler_pool(
          chromosome_specific,
          go_interface_instance,
          param_set)]
-    p.map(spawn_sampler, payload * pool_size)
+
+    if not single_threaded:  # TODO: this can be extracted as a shared routine to utils module
+        with Pool(processes=pool_size) as pool:  # This is the object we are using to spawn a thread pool
+            try:
+                log.debug('spawning the sampler with payload %s', payload)
+                pool.map(spawn_sampler, payload_list)  # This what we spawn as a sampler
+            except Exception as e:
+                msg = "{}\n\nOriginal {}".format(e, traceback.format_exc())
+                raise type(e)(msg)
+
+    else:
+        log.debug('spawning single-thread sampler with payload %s', payload)
+        for _payload in payload_list:
+            spawn_sampler(_payload)
 
 
-def select(tri_array, array_column, selection_span):
+def local_indexed_select(tri_array, array_column, selection_span):
     """
-    Convenient small function to select a from tri_array all the elements where the\ column
+    Convenient small function to local_indexed_select a from tri_array all the elements where the column
     number array_column is within the selection span
 
     :param tri_array: the matrix on which we will be performing the selection
@@ -125,18 +134,19 @@ def select(tri_array, array_column, selection_span):
     return decvec
 
 
+# CURRENTPASS: [BKI alignment] inject the p_values into the rendering
 def show_correlations(
-        tri_corr_array,
+        background_curr_deg_conf,
         mean_correlations,
         eigenvalues,
         selector,
-        test_tri_corr_array,
+        true_sample_tri_corr_array,
         test_mean_correlation,
         eigenvalue,
         re_samples,
         go_interface_instance=None,
         sparse=False,
-        param_set=ref_param_set):
+        param_set=ref_param_set):  # TRACING: add a path for saving here.
 
     # TODO: there is a lot of repetition depending on which values are the biggest,
     # test-setted or real setted. In all, we should be able to reduce it to two functions:
@@ -147,13 +157,13 @@ def show_correlations(
     and of our sample and conducts the statistical tests on whether any of nodes or
      functional groups in our sample are non-random
 
-    :param tri_corr_array: [[current, informativity, confusion_potential], ...] -
+    :param background_curr_deg_conf: [[current, informativity, confusion_potential], ...] -
     characteristics of the random samples
     :param mean_correlations: [[cluster size, average internode connection], ...] -
     characteristics of clustering random samples with the same parameters
     :param eigenvalues: eigenvalues associated to the interconnection matrix of random samples
     :param selector: range on which we would like to visually zoom and plot a histogram
-    :param test_tri_corr_array: [[current, informativity, confusion_potential], ...] -
+    :param true_sample_tri_corr_array: [[current, informativity, confusion_potential], ...] -
     characteristics of the true sample. If none, nothing happens
     :param test_mean_correlation: [[cluster size, average internode connection], ...] -
     characteristics of clustering the true sample
@@ -173,106 +183,143 @@ def show_correlations(
     fig = plt.figure()
     fig.set_size_inches(30, 20)
 
+    # trivect: [0, :] - current; [1, :] - informativity; [2, :] - confusion potential
+
     plt.subplot(331)
     plt.title('current through nodes')
-    bins = np.linspace(tri_corr_array[0, :].min(),
-                       tri_corr_array[0, :].max(),
+    bins = np.linspace(background_curr_deg_conf[0, :].min(),
+                       background_curr_deg_conf[0, :].max(),
                        100)
-    if test_tri_corr_array is not None:
-        bins = np.linspace(min(tri_corr_array[0, :].min(), test_tri_corr_array[0, :].min(
-        )), max(tri_corr_array[0, :].max(), test_tri_corr_array[0, :].max()), 100)
-    plt.hist(tri_corr_array[0, :],
+
+    if true_sample_tri_corr_array is not None:
+        bins = np.linspace(min(background_curr_deg_conf[0, :].min(),
+                               true_sample_tri_corr_array[0, :].min()),
+                           max(background_curr_deg_conf[0, :].max(),
+                               true_sample_tri_corr_array[0, :].max()),
+                           100)
+
+    plt.hist(background_curr_deg_conf[0, :],
              bins=bins, histtype='step', log=True, color='b')
-    if test_tri_corr_array is not None:
-        plt.hist(test_tri_corr_array[0, :],
+
+    if true_sample_tri_corr_array is not None:
+        plt.hist(true_sample_tri_corr_array[0, :],
                  bins=bins, histtype='step', log=True, color='r')
 
     plt.subplot(332)
     plt.title('test current vs pure informativity')
-    plt.scatter(tri_corr_array[1, :], tri_corr_array[0, :])
-    if test_tri_corr_array is not None:
+
+    plt.scatter(background_curr_deg_conf[1, :],
+                background_curr_deg_conf[0, :], color='b', alpha=0.1)
+
+    if true_sample_tri_corr_array is not None:
+
         plt.scatter(
-            test_tri_corr_array[1, :],
-            test_tri_corr_array[0, :],
+            true_sample_tri_corr_array[1, :],
+            true_sample_tri_corr_array[0, :],
             color='r', alpha=0.5)
+
     plt.axvspan(inf_sel[0], inf_sel[1], facecolor='0.5', alpha=0.3)
 
     plt.subplot(333)
     plt.title('test current v.s. confusion potential')
-    plt.scatter(tri_corr_array[2, :], tri_corr_array[0, :])
-    if test_tri_corr_array is not None:
+
+    plt.scatter(background_curr_deg_conf[2, :], background_curr_deg_conf[0, :])
+
+    if true_sample_tri_corr_array is not None:
         plt.scatter(
-            test_tri_corr_array[2, :],
-            test_tri_corr_array[0, :],
+            true_sample_tri_corr_array[2, :],
+            true_sample_tri_corr_array[0, :],
             color='r', alpha=0.5)
+
     plt.axvspan(selector[0], selector[1], facecolor='0.5', alpha=0.3)
 
     plt.subplot(334)
     plt.title('Gaussian KDE current_info')
-    estimator_function = kde_compute(tri_corr_array[(1, 0), :], 50, re_samples)
+
+    estimator_function = kde_compute(background_curr_deg_conf[(1, 0), :], 50, re_samples)
     current_info_rel = None
-    if test_tri_corr_array is not None:
-        current_info_rel = estimator_function(test_tri_corr_array[(1, 0), :])
+
+    if true_sample_tri_corr_array is not None:
+        # CURRENTPASS: [BKI alignment] this is used in order to compute p-values. it should not be.
+        current_info_rel = estimator_function(true_sample_tri_corr_array[(1, 0), :])
 
     plt.subplot(335)
-    plt.title('GO_term pure informativity')
+    plt.title('GO_term pure informativity distribution')
+
+     # CURRENTPASS: [BKI alignment] this needs to be moved elsewhere - this is a structural analysis
+
     bins = np.linspace(
-        tri_corr_array[1, :].min(),
-        tri_corr_array[1, :].max(),
+        background_curr_deg_conf[1, :].min(),
+        background_curr_deg_conf[1, :].max(),
         100)
-    if test_tri_corr_array is not None:
-        bins = np.linspace(min(tri_corr_array[1, :].min(),
-                               test_tri_corr_array[1, :].min()),
-                           max(tri_corr_array[1, :].max(),
-                               test_tri_corr_array[1, :].max()),
+
+    if true_sample_tri_corr_array is not None:
+        bins = np.linspace(min(background_curr_deg_conf[1, :].min(),
+                               true_sample_tri_corr_array[1, :].min()),
+                           max(background_curr_deg_conf[1, :].max(),
+                               true_sample_tri_corr_array[1, :].max()),
                            100)
-    plt.hist(tri_corr_array[1, :],
+
+    plt.hist(background_curr_deg_conf[1, :],
              bins=bins, histtype='step', log=True, color='b')
-    if test_tri_corr_array is not None:
-        plt.hist(test_tri_corr_array[1, :],
+
+    if true_sample_tri_corr_array is not None:
+        plt.hist(true_sample_tri_corr_array[1, :],
                  bins=bins, histtype='step', log=True, color='r')
 
     plt.subplot(336)
     plt.title('Density of current in the highlighted area')
-    bins = np.linspace(select(tri_corr_array, 2, selector)[0, :].min(),
-                       select(tri_corr_array, 2, selector)[0, :].max(),
+
+    bins = np.linspace(local_indexed_select(background_curr_deg_conf, 2, selector)[0, :].min(),
+                       local_indexed_select(background_curr_deg_conf, 2, selector)[0, :].max(),
                        100)
-    if test_tri_corr_array is not None:
+
+    if true_sample_tri_corr_array is not None:
         bins = np.linspace(
-            min(select(tri_corr_array, 2, selector)[0, :].min(),
-                select(test_tri_corr_array, 2, selector)[0, :].min()),
-            max(select(tri_corr_array, 2, selector)[0, :].max(),
-                select(test_tri_corr_array, 2, selector)[0, :].max()),
+            min(local_indexed_select(background_curr_deg_conf, 2, selector)[0, :].min(),
+                local_indexed_select(true_sample_tri_corr_array, 2, selector)[0, :].min()),
+            max(local_indexed_select(background_curr_deg_conf, 2, selector)[0, :].max(),
+                local_indexed_select(true_sample_tri_corr_array, 2, selector)[0, :].max()),
             100)
 
-    plt.hist(select(tri_corr_array, 2, selector)[0, :],
+    plt.hist(local_indexed_select(background_curr_deg_conf, 2, selector)[0, :],
              bins=bins, histtype='step', log=True, color='b')
-    if test_tri_corr_array is not None:
-        plt.hist(select(test_tri_corr_array, 2, selector)[0, :],
+
+    if true_sample_tri_corr_array is not None:
+        plt.hist(local_indexed_select(true_sample_tri_corr_array, 2, selector)[0, :],
                  bins=bins, histtype='step', log=True, color='r')
 
     # this property is better off viewed as a scatterplot of true points and
     # default points
+    # CURRENTPASS: [BKI alignment] - that's basically the extreme values theory cut-off.
 
     cluster_props = None
 
     plt.subplot(337)
     plt.title('Clustering correlation')
+
+    # CURRENTPASS: [BKI alignment] - that's a custering
+
     if not sparse:
         # plt.scatter(mean_correlations[0, :], mean_correlations[1, :], color = 'b')
         estimator_function = kde_compute(mean_correlations[(0, 1), :], 50, re_samples)
+
         cluster_props = None
         if test_mean_correlation is not None:
             plt.scatter(test_mean_correlation[0, :],
                         test_mean_correlation[1, :],
                         color='k', alpha=0.8)
+
             cluster_props = estimator_function(test_mean_correlation[(0, 1), :])
 
     plt.subplot(338)
     plt.title('Eigvals_hist')
+
+    # CURRENTPASS: [BKI alignment] this needs to be moved elsewhere - this is a structural analysis
+
     if not sparse:
         bins = np.linspace(eigenvalues.min(), eigenvalues.max(), 100)
-        if test_tri_corr_array is not None:
+        if true_sample_tri_corr_array is not None:
             bins = np.linspace(min(eigenvalues.min(), eigenvalue.min()),
                                max(eigenvalues.max(), eigenvalue.max()),
                                100)
@@ -282,29 +329,107 @@ def show_correlations(
 
     plt.subplot(339)
     plt.title('confusion potential')
-    bins = np.linspace(tri_corr_array[2, :].min(),
-                       tri_corr_array[2, :].max(),
+
+    bins = np.linspace(background_curr_deg_conf[2, :].min(),
+                       background_curr_deg_conf[2, :].max(),
                        100)
-    if test_tri_corr_array is not None:
-        bins = np.linspace(min(tri_corr_array[2, :].min(),
-                               test_tri_corr_array[2, :].min()),
-                           max(tri_corr_array[2, :].max(),
-                               test_tri_corr_array[2, :].max()),
+
+    if true_sample_tri_corr_array is not None:
+        bins = np.linspace(min(background_curr_deg_conf[2, :].min(),
+                               true_sample_tri_corr_array[2, :].min()),
+                           max(background_curr_deg_conf[2, :].max(),
+                               true_sample_tri_corr_array[2, :].max()),
                            100)
-    plt.hist(tri_corr_array[2, :],
+
+    plt.hist(background_curr_deg_conf[2, :],
              bins=bins, histtype='step', log=True, color='b')
-    if test_tri_corr_array is not None:
-        plt.hist(test_tri_corr_array[2, :],
+
+    if true_sample_tri_corr_array is not None:
+        plt.hist(true_sample_tri_corr_array[2, :],
                  bins=bins, histtype='step', log=True, color='r')
 
     # # plt.show()
-    # plt.savefig(Outputs.knowledge_network_stats)
+    # TRACING: add a path for saving here.
+    plt.savefig(Outputs.knowledge_network_stats)
 
     # pull the groups corresponding to non-random associations.
     return current_info_rel, cluster_props
 
 
-# TODO: [run path refactor] pipe hdd save destination here (2)
+# CURRENTPASS: test if this works
+def samples_scatter_and_hist(background_curr_deg_conf, true_sample_bi_corr_array,
+                             save_path: NewOutputs = None, p_values: np.array = None):
+    """
+    A general function that performs demonstration of an example of random samples of
+     the same size as our sample and of our sample and conducts the statistical tests
+     on wherther any of nodes or functional groups in our sample are non-random
+
+    :param background_curr_deg_conf: [[current, informativity, confusion_potential], ...] -
+    characteristics of the random samples
+    :param true_sample_bi_corr_array: [[current, informativity, confusion_potential], ...] -
+    characteristics of the true sample. If none, nothing happens
+    :param save_path: where the thing will be saved
+    :param p_values: p-value map that will be used to save things after the analysis
+    :return: None
+    """
+
+    fig = plt.figure()
+    fig.set_size_inches(30, 20)
+
+    # bivect: [0, :] - current; [1, :] - informativity
+
+    plt.subplot(211)
+    plt.title('current through nodes')
+
+    bins = np.linspace(
+        background_curr_deg_conf[0, :].min(),
+        background_curr_deg_conf[0, :].max(), 100)
+
+    if true_sample_bi_corr_array is not None:
+        bins = np.linspace(min(background_curr_deg_conf[0, :].min(),
+                               true_sample_bi_corr_array[0, :].min()),
+                           max(background_curr_deg_conf[0, :].max(),
+                               true_sample_bi_corr_array[0, :].max()),
+                           100)
+
+    plt.hist(background_curr_deg_conf[0, :],
+             bins=bins, histtype='step', log=True, color='b')
+
+    if true_sample_bi_corr_array is not None:
+        plt.hist(true_sample_bi_corr_array[0, :],
+                 bins=bins, histtype='step', log=True, color='r')
+
+
+    plt.subplot(212)
+    plt.scatter(background_curr_deg_conf[1, :],
+                background_curr_deg_conf[0, :], color='b', alpha=0.1)
+
+    # CURRENTPASS: relevant modification #1
+    if true_sample_bi_corr_array is not None:
+        if p_values is not None:
+            _filter = p_values < p_val_cutoff
+            anti_filter = np.logical_not(_filter)
+            plt.scatter(true_sample_bi_corr_array[1, anti_filter],
+                        true_sample_bi_corr_array[0, anti_filter],
+                        color='gray', alpha=0.25)
+
+            plt.scatter(true_sample_bi_corr_array[1, _filter],
+                        true_sample_bi_corr_array[0, _filter],
+                        color='r', alpha=0.7)
+
+        else:
+            plt.scatter(true_sample_bi_corr_array[1, :],
+                        true_sample_bi_corr_array[0, :],
+                        color='r', alpha=0.5)
+
+    # CURRENTPASS: relevant modification #2
+    # plt.show()
+    plt.savefig(save_path.interactome_network_scatterplot)
+    plt.clf()
+
+
+
+# TRACING: [run path refactor] pipe hdd save destination here (2)
 def compare_to_blank(
         blank_model_size,
         zoom_range_selector,
@@ -333,82 +458,175 @@ def compare_to_blank(
 
     md5_hash = go_interface_instance.md5_hash()
 
-    curr_inf_conf_general = []
+    background_sub_array_list = []
+    max_sub_array_list = []
     count = 0
+
     mean_correlation_accumulator = []
     eigenvalues_accumulator = []
 
-    log.info("requested: size: %s, sys_hash: %s, sparse_rounds: %s,",
-             blank_model_size, md5_hash,  sparse_rounds)
+    log.info("looking to test against:"
+             "\t size: %s \t sys_hash: %s \t sparse_rounds: %s" %
+             (blank_model_size, md5_hash,  sparse_rounds))
 
-    log.info("samples found to test against: \t %s",
+    log.info("samples found to test against:\t %s" %
              count_annotome_rand_samp({'size': blank_model_size,
-                                      'sys_hash': md5_hash,
-                                      'sparse_rounds': sparse_rounds}))
+                                            'sys_hash': md5_hash,
+                                            'sparse_rounds': sparse_rounds}))
 
     background_sample = find_annotome_rand_samp(
             {'size': blank_model_size, 'sys_hash': md5_hash, 'sparse_rounds': sparse_rounds})
 
-
     for i, sample in enumerate(background_sample):
-
-        if sparse_rounds:
-            log.warning('Blank done on sparse rounds. Clustering will not be performed')
 
         _, node_currents = pickle.loads(sample['currents'])
         tensions = pickle.loads(sample['voltages'])
 
         if not sparse_rounds:
-            # TODO: [run path refactor] pipe hdd save destination here (1)
+            # TRACING: [run path refactor] pipe hdd save destination here (1)
             _, _, mean_correlations, eigenvalues = perform_clustering(
                 tensions, cluster_no, show='')
         else:
-            mean_correlations = np.array([[(0, ), 0, 0]]*cluster_no)
-            eigenvalues = np.array([-1]*cluster_no)
+            # CURRENTPASS: [BKI alignment] they should remain undefined
+            mean_correlations = np.array([[(0, ), 0, 0]] * cluster_no)
+            eigenvalues = np.array([-1] * cluster_no)
 
         mean_correlation_accumulator.append(np.array(mean_correlations))
         eigenvalues_accumulator.append(eigenvalues)
+
+
         dict_system = go_interface_instance.format_node_props(node_currents)
-        curr_inf_conf = list(dict_system.values())
-        curr_inf_conf_general.append(np.array(curr_inf_conf).T)
+        background_sub_array = list(dict_system.values())
+
+        if np.array(background_sub_array).T.shape[0] < 2:
+            log.info(background_sub_array)
+            continue
+
+        background_sub_array_list.append(np.array(background_sub_array).T)
+
+        max_arr = get_max_for_each_degree(np.array(background_sub_array).T)
+        max_sub_array_list.append(max_arr)
 
         count = i
         if dict_system == {}:
             del mean_correlation_accumulator[-1]
-            del curr_inf_conf_general[-1]
+            del background_sub_array_list[-1]
+            del max_sub_array_list[-1]
             del eigenvalues_accumulator[-1]
-            log.critical("exceptional state: nothing in dict_system.")
+            log.critical("exceptional state: nothing in dict_system. Attempting to ignore")
 
     # This part declares the pre-operators required for the verification of a
     # real sample
 
-    final = np.concatenate(tuple(curr_inf_conf_general), axis=1)
+    background_array = np.concatenate(tuple(background_sub_array_list), axis=1)
+    max_array = np.concatenate(tuple(max_sub_array_list), axis=1)
+
+    final = np.concatenate(tuple(background_sub_array_list), axis=1)
     final_mean_correlations = np.concatenate(tuple(mean_correlation_accumulator), axis=0).T
     final_eigenvalues = np.concatenate(tuple(eigenvalues_accumulator), axis=0).T
 
     node_currents = go_interface_instance.node_current
     dict_system = go_interface_instance.format_node_props(node_currents)
-    curr_inf_conf_tot = np.array(
-        [[int(key)] + list(val) for key, val in dict_system.items()]).T
-    go_node_ids, curr_inf_conf = (
-        curr_inf_conf_tot[0, :], curr_inf_conf_tot[ (1, 2, 3), :])  # fails here when no significant terms to print
-    log.info('blank comparison: %s', curr_inf_conf.shape)
+
+    curr_inf_conf_tot = np.array([[int(key)] + list(val) for key, val in dict_system.items()]).T
+
+    go_node_ids, query_array = (curr_inf_conf_tot[0, :], curr_inf_conf_tot[(1, 2, 3), :])
+    # fails here when no significant terms to print
+
+    # # new p-values computation
+    # background_density = kde_compute(background_array[(1, 0), :], 50, count)
+    # base_bi_corr = background_array[(0, 1), :]
+    #
+    # r_rels = []
+    # r_std_nodes = []
+    #
+    # degrees = np.unique(query_array[1, :])
+    #
+    # combined_p_vals = np.ones_like(query_array[1, :])
+    #
+    # for degree in degrees.tolist():
+    #     filter = query_array[1, :] == degree
+    #
+    #     entry = query_array[:, filter]
+    #     background_set = background_array[:, background_array[1, :] == degree]
+    #     max_set = max_array[:, max_array[1, :] == degree]
+    #
+    #     params = gumbel_r.fit(max_set[0, :])
+    #     arg = params[:-2]
+    #     mu = params[-2]
+    #     beta = params[-1]
+    #
+    #     frozen_gumbel = gumbel_r(loc=mu, scale=beta)
+    #
+    #     p_vals = 1 - frozen_gumbel.cdf(entry[0, :])
+    #
+    #     combined_p_vals[filter] = p_vals
+    #
+    #
+    # # TRACING: [run path refactor] pipe the path to here.
+    # samples_scatter_and_hist(background_array, query_array,
+    #                          save_path=output_destination,
+    #                          p_values=combined_p_vals)
+    #
+    # r_nodes = background_density(query_array[(1, 0), :])  # legacy - unused now
+    # r_nodes = combined_p_vals
+    #
+    # for point in query_array.T:
+    #     selector = np.logical_and(base_bi_corr[1, :] > point[1]*0.9, base_bi_corr[1, :] < point[1]*1.1)
+    #     r_rels.append(point[0] / np.mean(base_bi_corr[0, selector]))
+    #     r_std_nodes.append((point[0] - np.mean(base_bi_corr[0, selector])) / np.std(base_bi_corr[0,
+    #                                                                                           selector]))
+    #
+    # r_rels = np.array(r_rels)
+    # r_std_nodes = np.array(r_std_nodes)
+    #
+    # not_random_nodes = [node_id for node_id in go_node_ids[r_nodes < p_val].tolist()]
+    #
+    # log.debug('debug, not random nodes: %s', not_random_nodes)
+    # log.debug('debug bulbs_id_disp_name: %s',
+    #           list(go_interface_instance.GO2UP_Reachable_nodes.items())[:10])
+    #
+    # node_char_list = [
+    #         [int(GO_id),
+    #          go_interface_instance.GO_Names[GO_id]] +
+    #         dict_system[GO_id] +
+    #         r_nodes[go_node_ids == float(GO_id)].tolist() +
+    #         [[go_interface_instance.interactome_interface_instance.neo4j_id_2_display_name[up_bulbs_id]
+    #           for up_bulbs_id in list(set(go_interface_instance.GO2UP_Reachable_nodes[GO_id]).
+    #                                   intersection(set(go_interface_instance.annotated_uniprots)))]]
+    #         for GO_id in not_random_nodes]
+    #
+    # nodes_dict = np.hstack((go_node_ids[:, np.newaxis],
+    #                         r_nodes[:, np.newaxis],
+    #                         r_rels[:, np.newaxis],
+    #                         r_std_nodes[:, np.newaxis]))
+    # nodes_dict = dict((node[0], (node[1], node[2], node[3])) for node in nodes_dict.tolist())
+    # nodes_dict = defaultdict(lambda: (1., 0., 0.), nodes_dict)  # corresponds to the cases of super low flow - never significant
+    #
+    # # TODO: pull the groups corresponding to non-random associations.
+    #
+    # return sorted(node_char_list, key=lambda x: x[4]), nodes_dict
+
+    # return to the old codepath
+
+    # Clustering analysis
+    log.info('clustering blank comparison: %s', query_array.shape)
     if not sparse_rounds:
-        # TODO: [run path refactor] pipe hdd save destination here (1)
+        # TRACING: [run path refactor] pipe hdd save destination here (1)
         group2avg_off_diag, _, mean_correlations, eigenvalue = perform_clustering(
             go_interface_instance.UP2UP_voltages, cluster_no, 'GO terms clustering')
+
     else:
         group2avg_off_diag = np.array([[(0, ), 0, 0]]*cluster_no)
         mean_correlations = np.array([[0, 0]]*cluster_no)
         eigenvalue = np.array([-1]*cluster_no)
 
+    # Continuation of pure stats analysis
     log.info('stats on %s samples', count)
 
-    # TODO: We could and should separate the visualisation from the gaussian
-    # estimators computation
     r_nodes, r_groups = show_correlations(
         final, final_mean_correlations, final_eigenvalues,
-        zoom_range_selector, curr_inf_conf, mean_correlations.T, eigenvalue.T, count,
+        zoom_range_selector, query_array, mean_correlations.T, eigenvalue.T, count,
         sparse=sparse_rounds, go_interface_instance=go_interface_instance)
 
     group_char = namedtuple(
@@ -423,8 +641,10 @@ def compare_to_blank(
                 (group2avg_off_diag,
                  np.reshape(r_groups, (3, 1))),
                 axis=1)[r_groups < p_val].tolist()
+
             not_random_groups = [group_char(*nr_group)
                                  for nr_group in not_random_groups]
+
         else:
             not_random_groups = []
 
@@ -435,10 +655,11 @@ def compare_to_blank(
         #  flow through the node that is considered as non-random
 
         node_char_list = [
-            [int(GO_id), go_interface_instance.GO_Names[GO_id]] +
-            dict_system[GO_id] + r_nodes[go_node_ids == float(GO_id)].tolist() +
-            [[go_interface_instance.interactome_interface_instance.
-                neo4j_id_2_display_name[up_bulbs_id]
+            [int(GO_id),
+             go_interface_instance.GO_Names[GO_id]] +
+            dict_system[GO_id] +
+            r_nodes[go_node_ids == float(GO_id)].tolist() +
+            [[go_interface_instance.interactome_interface_instance.neo4j_id_2_display_name[up_bulbs_id]
               for up_bulbs_id in list(set(go_interface_instance.GO2UP_Reachable_nodes[GO_id]).
                                       intersection(set(go_interface_instance.annotated_uniprots)))]]
             for GO_id in not_random_nodes]
@@ -470,11 +691,16 @@ def get_estimated_time(samples, sample_sizes, operations_per_sec=2.2):
 
 
 # TODO: add support for a background support
-# TODO: [run path refactor] pipe hdd save destination here (3)
+# TODO: [weighted inputs] add support for a dict as source_list, not only list
+# TRACING: [run path refactor] pipe hdd save destination here (3)
 def auto_analyze(source_list,
+                 # output_destinations_list: Union[List[str], None] = None,  # TRACING [output]
                  go_interface_instance=None,
-                 processors=3, desired_depth=24,
-                 skip_sampling=False, param_set=ref_param_set, output_destination_prefix=''):
+                 processors=3,
+                 desired_depth=24,
+                 skip_sampling=False,
+                 param_set=ref_param_set,
+                 output_destination_prefix=''):
     """
     Automatically analyzes the GO annotation of the RNA_seq results.
 
@@ -486,23 +712,43 @@ def auto_analyze(source_list,
     :param param_set:
     """
 
+    # if len(output_destinations_list) != len(source_list):
+    #     log.warning('Output destination list has %d elements, whereas %d sources were supplied. '
+    #                 'Falling back to default output structure')
+    #     output_destinations_list = None
+
+    # if output_destinations_list is None:
+    #     output_destinations_list = list(range(len(source_list)))
+
+    if processors == 0:
+        processors = psutil.cpu_count() - 1
+        log.info("Setting processor count to default: %s" % processors)
+
     if desired_depth % processors != 0:
         desired_depth = desired_depth // processors + 1
     else:
         desired_depth = desired_depth // processors
 
     # noinspection PyTypeChecker
-    for _list in source_list:
+    # for hits_list, output_destination in zip(source_list, output_destinations_list):  # TRACING
+    for hits_list in source_list:
+
+        log.info('Auto analyzing list of interest: %s', len(hits_list))
+
+        # outputs_subdirs = NewOutputs(output_destination)  # TRACING
+
         if go_interface_instance is None:
             go_interface_instance = get_go_interface_instance(param_set)
 
-        go_interface_instance.set_uniprot_source(_list)
+        go_interface_instance.set_uniprot_source(hits_list)
+
+        # go_intraface instance sets the background if it has one by itself.
+        # the background setting, however, works in a different way => check that.
 
         if not skip_sampling:
             log.info("spawning a sampler for %s proteins @ %s compops/sec",
                      len(go_interface_instance.annotated_uniprots), estimated_comp_ops)
 
-        # TODO: restructure to spawn a sampler pool that does not share an object in the Threading
         if len(go_interface_instance.annotated_uniprots) < sparse_analysis_threshold:
 
             if not skip_sampling:
@@ -519,16 +765,20 @@ def auto_analyze(source_list,
                                    go_interface_instance=None,
                                    param_set=param_set)
 
+            # CURRENTPASS: [BKI alignment] memoization logic is absent here
             go_interface_instance.compute_current_and_potentials()
-            # TODO: [run path refactor] pipe hdd save destination here (2)
+
+            # TRACING: [run path refactor] pipe hdd save destination here (2)
             nr_nodes, nr_groups = compare_to_blank(
                 len(go_interface_instance.annotated_uniprots),
-                [1100, 1300],
+                [1100, 1300],  # CURRENTPASS: this part should not be there in the new code path.
                 p_val=0.9,
                 go_interface_instance=go_interface_instance,
                 param_set=param_set)
 
+        # sparse analysis
         else:
+            # CURRENTPASS: [BKI alignment] logic for the ceiling calculation is absent
             sampling_depth = max(200 ** 2 // len(go_interface_instance.annotated_uniprots), 5)
 
             if not skip_sampling:
@@ -536,7 +786,8 @@ def auto_analyze(source_list,
                 log.info('length: %s \t sampling depth: %s \t, estimated round time: %s min',
                          len(go_interface_instance.annotated_uniprots),
                          sampling_depth,
-                         len(go_interface_instance.annotated_uniprots) * sampling_depth / 2 / 60 / estimated_comp_ops)
+                         len(go_interface_instance.annotated_uniprots) *
+                         sampling_depth / 2 / 60 / estimated_comp_ops)
 
                 spawn_sampler_pool(processors,
                                    [len(go_interface_instance.annotated_uniprots)],
@@ -545,17 +796,20 @@ def auto_analyze(source_list,
                                    go_interface_instance=None,
                                    param_set=param_set)
 
+            # CURRENTPASS: [BKI alignment] memoization logic is absent here
             go_interface_instance.compute_current_and_potentials(sparse_samples=sampling_depth)
+
             # go_interface_instance.export_conduction_system()
-            # TODO: [run path refactor] pipe hdd save destination here (2)
+            # TRACING: [run path refactor] pipe hdd save destination here (2)
             nr_nodes, nr_groups = compare_to_blank(
                 len(go_interface_instance.annotated_uniprots),
                 [1100, 1300],
-                p_val=0.9, sparse_rounds=sampling_depth,
+                p_val=0.9,  # TRACING: p-value is not loaded here properly
+                sparse_rounds=sampling_depth,
                 go_interface_instance=go_interface_instance,
                 param_set=param_set)
 
-        # TODO: [run path refactor] correct hdd pipe save location here
+        # TRACING: [run path refactor] correct hdd pipe save location here
         if len(output_destination_prefix) > 0:
             prefix = os.path.join(Outputs.prefix, output_destination_prefix)  # TRACING: outputs
             mkdir_recursive(prefix)
@@ -570,15 +824,18 @@ def auto_analyze(source_list,
         # TRACING: outputs remap
         go_interface_instance.export_conduction_system(output_location=corrected_knowledge_GDF_output)
 
+        log.info('GO groups')
         for group in nr_groups:
             log.info(group)
+
         log.info('\t NodeID \t Name \t current \t informativity \t confusion_potential \t p_val \t '
                  'UP_list')
+
         for node in nr_nodes:
             log.info('\t %s \t %s \t %s \t %s \t %s \t %s \t %s', *node)
 
+        # TRACING: outputs remap
         with open(corrected_knowledge_tables_output, 'wt') as output:
-            # TODO: add an override to the directory of export
             writer = csv_writer(output, delimiter='\t')
             writer.writerow(['NodeID', 'Name', 'current', 'informativity', 'confusion_potential',
                              'p_val', 'UP_list'])
