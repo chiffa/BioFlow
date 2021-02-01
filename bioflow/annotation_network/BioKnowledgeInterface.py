@@ -976,10 +976,11 @@ class GeneOntologyInterface(object):
 
                 self.set_uniprot_source(analytics_up_list)
 
-                log.info('Sampling thread: %s, Thread hex: %s; sampling characteristics: sys_hash: '
-                         '%s, size: %s, '
-                         'sparse_rounds: %s' % (pool_no, self.thread_hex, self.md5_hash(),
-                                                sample_size, sparse_rounds))
+                log.info('Sampling thread: %s, Thread hex: %s; '
+                         'sampling characteristics: sys_hash: %s, size: %s, '
+                         'sparse_rounds: %s' % (pool_no, self.thread_hex,
+                                                self.md5_hash(), sample_size,
+                                                sparse_rounds))
 
                 self.compute_current_and_potentials(
                     memoized=memoized, sourced=False, sparse_samples=sparse_rounds)
@@ -1009,16 +1010,22 @@ class GeneOntologyInterface(object):
                                 self.UP2UP_voltages)})
 
                 if not sparse_rounds:
-                    log.info('Sampling thread %s: Thread hex: %s \t Sample size: %s \t iteration: %s\t compop/s: %s \t '
+                    log.info('Sampling thread %s: Thread hex: %s \t'
+                             ' Sample size: %s \t iteration: %s\t'
+                             ' compop/s: %s \t '
                              'time: %s ',
-                             pool_no, self.thread_hex, sample_size, i,
+                             pool_no, self.thread_hex,
+                             sample_size, i,
                              "{0:.2f}".format(sample_size * (sample_size - 1) / 2 / self._time()),
                              self.pretty_time())
 
                 else:
-                    log.info('Sampling thread %s: Thread hex: %s \t Sample size: %s \t iteration: %.2f \t compop/s: %.2f \t '
+                    log.info('Sampling thread %s: Thread hex: %s \t'
+                             ' Sample size: %d \t iteration: %d \t'
+                             ' compop/s: %s \t '
                              'time: %s, sparse @ %s ',
-                             pool_no, self.thread_hex, sample_size, i,
+                             pool_no, self.thread_hex,
+                             sample_size, i,
                              "{0:.2f}".format(sample_size * sparse_rounds / 2 / self._time()),
                              self.pretty_time(), sparse_rounds)
 
