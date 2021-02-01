@@ -11,12 +11,13 @@ import psutil
 import numpy as np
 from matplotlib import pyplot as plt
 from csv import writer as csv_writer
+from typing import Any, Union, TypeVar, NewType, Tuple, List
 
 from bioflow.algorithms_bank.conduction_routines import perform_clustering
 from bioflow.annotation_network.BioKnowledgeInterface import GeneOntologyInterface
 from bioflow.main_configs import Dumps, Outputs, estimated_comp_ops, NewOutputs
 from bioflow.sample_storage.mongodb import find_annotome_rand_samp, count_annotome_rand_samp
-from bioflow.user_configs import sparse_analysis_threshold, single_threaded
+from bioflow.user_configs import sparse_analysis_threshold, single_threaded, p_val_cutoff
 from bioflow.molecular_network.InteractomeInterface import InteractomeInterface
 from bioflow.utils.dataviz import kde_compute
 from bioflow.utils.io_routines import undump_object, get_source_bulbs_ids, get_background_bulbs_ids
@@ -99,6 +100,9 @@ def spawn_sampler_pool(
          go_interface_instance,
          param_set)]
 
+    payload_list = payload * pool_size
+    payload_list = [list(item)+[i] for i, item in enumerate(payload_list)]  # prepare the payload
+
     if not single_threaded:  # TODO: this can be extracted as a shared routine to utils module
         with Pool(processes=pool_size) as pool:  # This is the object we are using to spawn a thread pool
             try:
@@ -146,7 +150,8 @@ def show_correlations(
         re_samples,
         go_interface_instance=None,
         sparse=False,
-        param_set=ref_param_set):  # TRACING: add a path for saving here.
+        param_set=ref_param_set,
+        save_path: NewOutputs = None):  # TRACING: add a path for saving here.
 
     # TODO: there is a lot of repetition depending on which values are the biggest,
     # test-setted or real setted. In all, we should be able to reduce it to two functions:
@@ -350,7 +355,7 @@ def show_correlations(
 
     # # plt.show()
     # TRACING: add a path for saving here.
-    plt.savefig(Outputs.knowledge_network_stats)
+    plt.savefig(save_path.knowledge_network_scatterplot)
 
     # pull the groups corresponding to non-random associations.
     return current_info_rel, cluster_props
@@ -437,7 +442,8 @@ def compare_to_blank(
         sparse_rounds=False,
         cluster_no=3,
         go_interface_instance=None,
-        param_set=ref_param_set):
+        param_set=ref_param_set,
+        output_destination: NewOutputs = None):
     """
     Recovers the statistics on the circulation nodes and shows the visual of a circulation system
 
@@ -453,6 +459,29 @@ def compare_to_blank(
     :return: None if no significant nodes, the node and group characterisitc dictionaries
      otherwise
     """
+
+    def get_max_for_each_degree(sample_sub_arrray):
+        # CURRENTPASS: this will work only if we are using confusion potential (which is the # of
+        #  nodes a term annotates)
+        # print('debug max_array_shape:', str(sample_sub_arrray.shape))
+        degrees = np.unique(sample_sub_arrray[1, :])
+        max_array = []
+
+        for degree in degrees:
+            filter = sample_sub_arrray[1, :] == degree
+            max_array.append([sample_sub_arrray[0, filter].max(), degree])
+
+        m_arr = np.array(max_array)
+        return m_arr.T
+
+    def to_bicorr(tricorr_array):
+        """
+        Basically drops the informativity component for the analysis
+        :param tricorr_array:
+        :return:
+        """
+        return tricorr_array[(0, 2), :]
+
     if go_interface_instance is None:
         go_interface_instance = get_go_interface_instance(param_set)
 
@@ -527,6 +556,7 @@ def compare_to_blank(
 
     node_currents = go_interface_instance.node_current
     dict_system = go_interface_instance.format_node_props(node_currents)
+    # CURRENTPASS: looks like this fails on a second pass
 
     curr_inf_conf_tot = np.array([[int(key)] + list(val) for key, val in dict_system.items()]).T
 
@@ -627,7 +657,8 @@ def compare_to_blank(
     r_nodes, r_groups = show_correlations(
         final, final_mean_correlations, final_eigenvalues,
         zoom_range_selector, query_array, mean_correlations.T, eigenvalue.T, count,
-        sparse=sparse_rounds, go_interface_instance=go_interface_instance)
+        sparse=sparse_rounds, go_interface_instance=go_interface_instance,
+        save_path=output_destination)  # TRACING [run path refactor]
 
     group_char = namedtuple(
         'Group_Char', [
@@ -694,13 +725,14 @@ def get_estimated_time(samples, sample_sizes, operations_per_sec=2.2):
 # TODO: [weighted inputs] add support for a dict as source_list, not only list
 # TRACING: [run path refactor] pipe hdd save destination here (3)
 def auto_analyze(source_list,
-                 # output_destinations_list: Union[List[str], None] = None,  # TRACING [output]
+                 output_destinations_list: Union[List[str], None] = None,  # TRACING [output]
                  go_interface_instance=None,
                  processors=3,
                  desired_depth=24,
                  skip_sampling=False,
                  param_set=ref_param_set,
-                 output_destination_prefix=''):
+                 output_destination_prefix=''  # deprecated
+                 ) -> None:
     """
     Automatically analyzes the GO annotation of the RNA_seq results.
 
@@ -712,13 +744,13 @@ def auto_analyze(source_list,
     :param param_set:
     """
 
-    # if len(output_destinations_list) != len(source_list):
-    #     log.warning('Output destination list has %d elements, whereas %d sources were supplied. '
-    #                 'Falling back to default output structure')
-    #     output_destinations_list = None
+    if len(output_destinations_list) != len(source_list):
+        log.warning('Output destination list has %d elements, whereas %d sources were supplied. '
+                    'Falling back to default output structure')
+        output_destinations_list = None
 
-    # if output_destinations_list is None:
-    #     output_destinations_list = list(range(len(source_list)))
+    if output_destinations_list is None:
+        output_destinations_list = list(range(len(source_list)))
 
     if processors == 0:
         processors = psutil.cpu_count() - 1
@@ -730,12 +762,12 @@ def auto_analyze(source_list,
         desired_depth = desired_depth // processors
 
     # noinspection PyTypeChecker
-    # for hits_list, output_destination in zip(source_list, output_destinations_list):  # TRACING
-    for hits_list in source_list:
+    for hits_list, output_destination in zip(source_list, output_destinations_list):  # TRACING
+    # for hits_list in source_list:
 
         log.info('Auto analyzing list of interest: %s', len(hits_list))
 
-        # outputs_subdirs = NewOutputs(output_destination)  # TRACING
+        outputs_subdirs = NewOutputs(output_destination)  # TRACING
 
         if go_interface_instance is None:
             go_interface_instance = get_go_interface_instance(param_set)
@@ -807,7 +839,8 @@ def auto_analyze(source_list,
                 p_val=0.9,  # TRACING: p-value is not loaded here properly
                 sparse_rounds=sampling_depth,
                 go_interface_instance=go_interface_instance,
-                param_set=param_set)
+                param_set=param_set,
+                output_destination=outputs_subdirs)
 
         # TRACING: [run path refactor] correct hdd pipe save location here
         if len(output_destination_prefix) > 0:

@@ -169,6 +169,7 @@ class NewOutputs(object):
         self.interactome_network_output = path.join(root_path, 'interactome_analysis_stats.tsv')
 
         self.interactome_network_scatterplot = path.join(root_path, 'interactome.png')
+        self.knowledge_network_scatterplot = path.join(root_path, 'knowledge.png')
 
 
 #  Declares overloaded IDs, pickles from the dumps of already computed

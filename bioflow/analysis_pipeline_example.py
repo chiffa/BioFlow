@@ -141,13 +141,15 @@ if __name__ == "__main__":
                                  processors=3,
                                  background_list=background_bulbs_ids,
                                  skip_sampling=False,
-                                 from_memoization=False)
+                                 from_memoization=False)  # CURRENTPASS: from_memoization is broken
 
             skip_sampling = False
             # perform the knowledge analysis
             knowledge_analysis([hits_ids],
+                               ['chr_%s' % filename[:-4]],
                                desired_depth=3,
                                processors=3,
                                param_set=paramset_with_background,
                                skip_sampling=False,
-                               output_destination_prefix='chr_%s' % filename[:-4])
+                               # output_destination_prefix='chr_%s' % filename[:-4]
+                               )
