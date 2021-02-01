@@ -375,7 +375,7 @@ def auto_analyze(source_list: List[List[int]],
                  processors: int = 0,
                  background_list: Union[List[int], None] = None,
                  skip_sampling: bool = False,
-                 from_memoization: bool = False,  # should always be False
+                 from_memoization: bool = False,  # should always be False. Don't work as of now
                  output_destination_prefix=''  # deprecated
                  ) -> None:
     """

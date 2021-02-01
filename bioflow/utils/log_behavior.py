@@ -129,6 +129,10 @@ def get_logger(logger_name):
 
     sys.excepthook = handle_exception
 
+    logging.captureWarnings(True)
+    default_warn_logger = logging.getLogger("py.warnings")
+    add_to_file_handler(default_warn_logger, logging.WARNING, 'dependencies_warnings.log')
+
     if not on_remote_unittest:  # pragma: no cover
         ch = logging.StreamHandler(sys.stderr)
         if on_unittest or on_dev:

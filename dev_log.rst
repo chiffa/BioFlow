@@ -12,7 +12,8 @@ We are dealing with a problem on the annotation analysis network not loading the
 background (proably due to the wrong computation of the laplacian). At this point we need to
 align the Annotation analysis on the molecular analysis.
     - DONE: run git blame on the Molecular network interface, copy new modifications
-    - TODO: run git blame on molecular network analysis, copy the new modifications
+    - DONE: run git blame on molecular network analysis, copy the new modifications
+
 
 Itermediate problem: there is a loading problem for the `BioKnowledgeInterface` due to `InitSet`
 used on the construction (~6721 nodes) is significantly bigger than the `InitSet` used in order
@@ -141,6 +142,8 @@ trust we have in the existence of a link.
 
 Current refactoring:
 --------------------
+
+ - TODO: re-align the command line interface onto the example of an analysis pipeline
 
  - TODO: [USABILITY] align the rendering of the conditions in annotations analysis with the
         interactome analysis
