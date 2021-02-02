@@ -55,6 +55,8 @@ def spawn_sampler(args_puck):
     :param args_puck: combined list of sample sizes and
     iterations (required for Pool.map usage)
     """
+    # log.info('Pool process %d started' % args_puck[-1])
+
     interactome_interface_instance_arg = args_puck[3]
 
     if interactome_interface_instance_arg is None:
@@ -65,7 +67,7 @@ def spawn_sampler(args_puck):
     sample_size_list = args_puck[0]
     iteration_list = args_puck[1]
     sparse_rounds = args_puck[2]
-    pool_no = args_puck[-1]
+    pool_no = args_puck[-1]   # CURRENTPASS: switch over to PID here
 
     interactome_interface_instance.reset_thread_hex()
     interactome_interface_instance.randomly_sample(
@@ -74,6 +76,8 @@ def spawn_sampler(args_puck):
         sparse_rounds,
         pool_no=pool_no
     )
+
+    # log.info('Pool process %d finished' % pool_no)
 
 
 # CURRENTPASS: [SANITY] args puck need to be a named tuple, preferably a typed one
@@ -106,9 +110,14 @@ def spawn_sampler_pool(
             try:
                 log.debug('spawning the sampler with payload %s', payload)
                 pool.map(spawn_sampler, payload_list)  # This what we spawn as a sampler
+                # CURRENTPASS: breaks upon a second start attempt. Only in interactome though
             except Exception as e:
                 msg = "{}\n\nOriginal {}".format(e, traceback.format_exc())
                 raise type(e)(msg)
+            # log.info('Last in-pool flag exiting')
+            pool.terminate()
+
+        # log.info('Pool terminated')
 
     else:
         log.debug('spawning single-thread sampler with payload %s', payload)

@@ -7,11 +7,13 @@ from copy import copy
 from time import time
 import datetime
 import numpy as np
+# import importlib
 from itertools import combinations, repeat
 import scipy.sparse as spmat
 # from scipy.sparse.linalg import eigsh
-# noinspection PyUnresolvedReferences
-from scikits.sparse.cholmod import cholesky, Factor
+
+import scikits.sparse.cholmod as chmd
+# from scikits.sparse.cholmod import cholesky, Factor
 from scipy.sparse.linalg import splu
 import warnings
 from typing import Any, Union, TypeVar, NewType, Tuple, List
@@ -107,7 +109,7 @@ def build_sink_source_current_array(io_index_pair: Tuple[int, int],
 
 def get_potentials(conductivity_laplacian: spmat.csc_matrix,
                    io_index_pair: Tuple[int, int],
-                   shared_solver: Union[Factor, None]) -> Union[Factor, np.array]:
+                   shared_solver: Union[chmd.Factor, None]) -> Union[chmd.Factor, np.array]:
     """
     Recovers voltages based on the conductivity Laplacian and the IO array
 
@@ -132,7 +134,9 @@ def get_potentials(conductivity_laplacian: spmat.csc_matrix,
     else:
         io_array = build_sink_source_current_array(io_index_pair, conductivity_laplacian.shape)
         if not share_solver or shared_solver is None:
-            solver = cholesky(conductivity_laplacian, line_loss)
+            solver = chmd.cholesky(conductivity_laplacian, line_loss)  # TRACING: potential thread
+            # lock
+            # conflict
         else:
             solver = shared_solver
         voltages = solver(io_array)
@@ -248,7 +252,7 @@ def laplacian_reachable_filter(laplacian, reachable_indexes):
 
 def edge_current_iteration(conductivity_laplacian: spmat.csc_matrix,
                            index_pair: Tuple[int, int],
-                           shared_solver: Union[Factor, None] = None,
+                           shared_solver: Union[chmd.Factor, None] = None,
                            reach_limiter=None) -> (np.float64, spmat.csc_matrix):
     """
     Master edge current retriever
@@ -313,7 +317,7 @@ def master_edge_current(conductivity_laplacian, index_list,
              '%s;'
              ' potential-dominated %s; sampling %s; sampling_depth %s'
              % (thread_hex, len(index_list), cancellation,
-                potential_dominated, sampling, sampling_depth))
+                potential_dominated, sampling, sampling_depth))  # TRACING: passes
 
     # log.info('debug: parameters supplied to master_edge_current: '
     #          'conductivity_laplacian: %s,\n'
@@ -355,7 +359,9 @@ def master_edge_current(conductivity_laplacian, index_list,
     current_accumulator = spmat.csc_matrix(conductivity_laplacian.shape)
 
     if share_solver and not switch_to_splu:
-        shared_solver = cholesky(conductivity_laplacian, line_loss)
+        # importlib.reload(chmd)
+        # log.info('Chmd reloaded')  # Correction tentative did not work.
+        shared_solver = chmd.cholesky(conductivity_laplacian, line_loss)
     else:
         shared_solver = None
 
