@@ -11,6 +11,8 @@ from shutil import rmtree
 from smtplib import SMTP
 from datetime import datetime
 from email.message import EmailMessage
+import traceback
+import warnings
 
 from bioflow.user_configs import smtp_logging_parameters, smtp_logging, log_location, output_location
 
@@ -28,6 +30,16 @@ on_dev = False
 #   f = open('../logs/Commander_logs.log','w')
 #   sys.stdout = f
 # ################################
+
+
+def warn_with_traceback(message, category, filename, lineno, file=None, line=None):
+
+    log = file if hasattr(file,'write') else sys.stderr
+    traceback.print_stack(file=log)
+    log.write(warnings.formatwarning(message, category, filename, lineno, line))
+
+
+warnings.showwarning = warn_with_traceback
 
 
 def mkdir_recursive(my_path):  # pragma: no cover
@@ -128,6 +140,8 @@ def get_logger(logger_name):
         # raise RuntimeError("Terminating the Exception handling")
 
     sys.excepthook = handle_exception
+
+
 
     logging.captureWarnings(True)
     default_warn_logger = logging.getLogger("py.warnings")
