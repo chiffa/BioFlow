@@ -1135,8 +1135,9 @@ class InteractomeInterface(object):
 
                 if not no_add:
                     log.info("Sampling thread %s: Adding a blanc:"
-                             "\t size: %s \t sys_hash: %s \t sparse_rounds: %s, matrix weight: %s" % (
-                                pool_no, sample_size, md5, sparse_rounds, np.sum(self.current_accumulator)))
+                             "\t size: %s \t UP_hash: %s \t sparse_rounds: %s, matrix weight: %s"
+                             % (pool_no, sample_size, md5, sparse_rounds,
+                    np.sum(self.current_accumulator)))
 
                     insert_interactome_rand_samp(
                         {
@@ -1159,7 +1160,7 @@ class InteractomeInterface(object):
                              "{0:.2f}".format(sample_size * (sample_size - 1) / 2 / self._time()),
                              self.pretty_time())
                 else:
-                    log.info('Sampling thread %s: Thread hex: %s \t Sample size: %s \t iteration: %.2f \t compop/s: %.2f \t '
+                    log.info('Sampling thread %s: Thread hex: %s \t Sample size: %s \t iteration: %.2f \t compop/s: %s \t '
                              'time: %s, sparse @ %s ',
                              pool_no, self.thread_hex, sample_size, i,
                              "{0:.2f}".format(sample_size * sparse_rounds / 2 / self._time()),

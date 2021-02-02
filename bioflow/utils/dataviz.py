@@ -108,7 +108,7 @@ def kde_compute(bi_array, bin_no=30, samples=10, show=True):
                  * repeated_sample_correction)
 
     if show:
-        plt.pcolormesh(xi, yi, zi.reshape(xi.shape))
+        plt.pcolormesh(xi, yi, zi.reshape(xi.shape), shading='auto')
 
     return lambda x_: np.tanh(k(x_) * repeated_sample_correction)
 

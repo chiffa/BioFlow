@@ -4,6 +4,14 @@ TODOs for the project in the future:
 On the table:
 -------------
 
+ - DONE: CRITICAL
+    There seems to be an interference between the "multiprocessing" pool method and a third-party
+    library (specifically cholmod). It looks like after a first pool spawn, cholmod is failing to
+    re-load a new solution again.
+        - DONE: try re-loading the problematic module every time => Fails
+        - DONE: try to explicitely terminate the pool. It worked.
+
+
  - DONE: [DEBUG]: align BioKnowledgeInterface analysis on the InteractomeAnalysis:
     - Take the background list into account
     - Take in account the analytics UP list in the hashing (once background is taken into account)

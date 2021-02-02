@@ -13,6 +13,7 @@ from datetime import datetime
 from email.message import EmailMessage
 import traceback
 import warnings
+import threading
 
 from bioflow.user_configs import smtp_logging_parameters, smtp_logging, log_location, output_location
 
@@ -141,7 +142,12 @@ def get_logger(logger_name):
 
     sys.excepthook = handle_exception
 
+    def handle_thread_exception(exc_type, exc_value, exc_traceback):
 
+        _logger.critical("Uncaught thread exception", exc_info=(exc_type, exc_value, exc_traceback))
+        raise RuntimeError("Terminating the Exception handling")
+
+    threading.excepthook = handle_exception
 
     logging.captureWarnings(True)
     default_warn_logger = logging.getLogger("py.warnings")

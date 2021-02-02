@@ -137,17 +137,16 @@ if __name__ == "__main__":
             # perform the interactome analysis
             interactome_analysis([hits_ids],
                                  ['chr_%s' % filename[:-4]],
-                                 desired_depth=3,
+                                 desired_depth=10,
                                  processors=3,
                                  background_list=background_bulbs_ids,
                                  skip_sampling=False,
                                  from_memoization=False)  # CURRENTPASS: from_memoization is broken
 
-            skip_sampling = False
-            # perform the knowledge analysis
+            # # perform the knowledge analysis
             knowledge_analysis([hits_ids],
                                ['chr_%s' % filename[:-4]],
-                               desired_depth=3,
+                               desired_depth=10,
                                processors=3,
                                param_set=paramset_with_background,
                                skip_sampling=False,
