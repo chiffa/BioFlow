@@ -23,7 +23,7 @@ from scipy.sparse import lil_matrix, triu
 from scipy.sparse.csgraph import shortest_path
 
 from bioflow.algorithms_bank import conduction_routines as cr
-from bioflow.main_configs import Dumps, Outputs
+from bioflow.main_configs import Dumps, NewOutputs
 from bioflow.sample_storage.mongodb import insert_annotome_rand_samp
 from bioflow.molecular_network.InteractomeInterface import InteractomeInterface
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
@@ -845,20 +845,19 @@ class GeneOntologyInterface(object):
          (compensates the minor currents in the gird)
         :return: {GO:[node current, pure GO informativity, Number of reachable nodes]}
         """
-        char_dict = {}
+        characterization_dict = {}
         limiting_current = max(node_current.values()) * limit
         for go_term in self.GO2Num.keys():
 
             if node_current[go_term] > limiting_current:
-                char_dict[go_term] = [
+                characterization_dict[go_term] = [
                     node_current[go_term],
                     self.GO2_Pure_Inf[go_term],
                     len(self.GO2UP_Reachable_nodes[go_term])]
 
-        return char_dict
+        return characterization_dict
 
-    def export_conduction_system(self,
-                                 output_location=Outputs.GO_GDF_output):  # TRACING: outputs remap
+    def export_conduction_system(self, output_destination: NewOutputs):
         """
         Computes the conduction system of the GO terms and exports it to the GDF format
          and flushes it into a file that can be viewed with Gephi
@@ -900,7 +899,7 @@ class GeneOntologyInterface(object):
                              '1']
 
         gdf_exporter = GdfExportInterface(
-            target_fname=output_location,
+            target_fname=output_destination.GO_GDF_output,
             field_names=node_char_names,
             field_types=node_char_types,
             node_properties_dict=char_dict,
@@ -932,14 +931,13 @@ class GeneOntologyInterface(object):
             current_recombinator['voltages'])
         self.set_uniprot_source(uniprot_subsystem)
         self.compute_current_and_potentials(memoized=False, sourced=True)
-        self.export_conduction_system()  # TRACING: outputs remap
+        self.export_conduction_system(None)  # TRACING: outputs remap
 
     def randomly_sample(
             self,
             samples_size,
             samples_each_size,
             sparse_rounds=False,
-            # chromosome_specific=False,  # CURRENTPASS [BKI Normalization] deprecate this
             memoized=False,
             no_add=False,
             pool_no=None):  # TRACING: make sure it is inserted properly in calls to this method

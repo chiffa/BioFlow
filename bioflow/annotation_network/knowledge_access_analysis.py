@@ -12,6 +12,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 from csv import writer as csv_writer
 from typing import Any, Union, TypeVar, NewType, Tuple, List
+from collections import defaultdict
+from scipy.stats import gumbel_r
 
 from bioflow.algorithms_bank.conduction_routines import perform_clustering
 from bioflow.annotation_network.BioKnowledgeInterface import GeneOntologyInterface
@@ -24,7 +26,9 @@ from bioflow.utils.io_routines import undump_object, get_source_bulbs_ids, get_b
 from bioflow.utils.log_behavior import get_logger
 from bioflow.utils.general_utils.high_level_os_io import mkdir_recursive
 
+
 log = get_logger(__name__)
+
 
 # CURRENTPASS: [BKI normalization] Those need to go into the user_configs environment
 _filter = ['biological_process']
@@ -53,8 +57,10 @@ def spawn_sampler(args_puck):
     :param args_puck: combined list of sample sizes
      and iterations (required for Pool.map usage)
     """
-    go_interface_instance = args_puck[4]
-    param_set = args_puck[5]
+    # log.info('Pool process %d started' % args_puck[-1])
+
+    go_interface_instance = args_puck[3]
+    param_set = args_puck[4]
 
     if go_interface_instance is None:
         go_interface_instance = get_go_interface_instance(param_set)
@@ -62,13 +68,15 @@ def spawn_sampler(args_puck):
     sample_size_list = args_puck[0]
     iteration_list = args_puck[1]
     sparse_rounds = args_puck[2]
-    chromosome_specific = args_puck[3]
+    pool_no = args_puck[-1]
 
     go_interface_instance.randomly_sample(
         sample_size_list,
         iteration_list,
         sparse_rounds,
-        chromosome_specific)  # CURRENTPASS: [BKI normalization] nothing to do here
+        pool_no=pool_no)
+
+    # log.info('Pool process %d finished' % pool_no)
 
 
 def spawn_sampler_pool(
@@ -76,7 +84,6 @@ def spawn_sampler_pool(
         sample_size_list,
         iterations_list_per_pool,
         sparse_rounds=False,
-        chromosome_specific=False,  # CURRENTPASS: [BKI normalization] nothing to do here
         go_interface_instance=None,
         param_set=ref_param_set):
     """
@@ -87,7 +94,6 @@ def spawn_sampler_pool(
     :param iterations_list_per_pool: number of iterations performing the pooling of the samples
      in each list
     :param sparse_rounds:
-    :param chromosome_specific:
     :param go_interface_instance:
     :param param_set: set of parameters configuring the knowledge interface object
     """
@@ -96,7 +102,6 @@ def spawn_sampler_pool(
         (sample_size_list,
          iterations_list_per_pool,
          sparse_rounds,
-         chromosome_specific,
          go_interface_instance,
          param_set)]
 
@@ -111,6 +116,10 @@ def spawn_sampler_pool(
             except Exception as e:
                 msg = "{}\n\nOriginal {}".format(e, traceback.format_exc())
                 raise type(e)(msg)
+            # log.info('Last in-pool flag exiting')
+            pool.terminate()  # potential solution to the issue
+
+        log.info('Pool terminated')
 
     else:
         log.debug('spawning single-thread sampler with payload %s', payload)
@@ -429,7 +438,7 @@ def samples_scatter_and_hist(background_curr_deg_conf, true_sample_bi_corr_array
 
     # CURRENTPASS: relevant modification #2
     # plt.show()
-    plt.savefig(save_path.interactome_network_scatterplot)
+    plt.savefig(save_path.knowledge_network_scatterplot)
     plt.clf()
 
 
@@ -438,7 +447,7 @@ def samples_scatter_and_hist(background_curr_deg_conf, true_sample_bi_corr_array
 def compare_to_blank(
         blank_model_size,
         zoom_range_selector,
-        p_val=0.05,
+        p_val: float = 0.05,
         sparse_rounds=False,
         cluster_no=3,
         go_interface_instance=None,
@@ -461,26 +470,26 @@ def compare_to_blank(
     """
 
     def get_max_for_each_degree(sample_sub_arrray):
-        # CURRENTPASS: this will work only if we are using confusion potential (which is the # of
+        # this will work only if we are using confusion potential (which is the # of
         #  nodes a term annotates)
         # print('debug max_array_shape:', str(sample_sub_arrray.shape))
-        degrees = np.unique(sample_sub_arrray[1, :])
+        degrees = np.unique(sample_sub_arrray[2, :])
         max_array = []
 
         for degree in degrees:
-            filter = sample_sub_arrray[1, :] == degree
+            filter = sample_sub_arrray[2, :] == degree
             max_array.append([sample_sub_arrray[0, filter].max(), degree])
 
         m_arr = np.array(max_array)
         return m_arr.T
 
-    def to_bicorr(tricorr_array):
-        """
-        Basically drops the informativity component for the analysis
-        :param tricorr_array:
-        :return:
-        """
-        return tricorr_array[(0, 2), :]
+    # def to_bicorr(tricorr_array):
+    #     """
+    #     Basically drops the informativity component for the analysis
+    #     :param tricorr_array:
+    #     :return:
+    #     """
+    #     return tricorr_array[(0, 2), :]
 
     if go_interface_instance is None:
         go_interface_instance = get_go_interface_instance(param_set)
@@ -491,8 +500,8 @@ def compare_to_blank(
     max_sub_array_list = []
     count = 0
 
-    mean_correlation_accumulator = []
-    eigenvalues_accumulator = []
+    # mean_correlation_accumulator = []
+    # eigenvalues_accumulator = []
 
     log.info("looking to test against:"
              "\t size: %s \t sys_hash: %s \t sparse_rounds: %s" %
@@ -500,29 +509,30 @@ def compare_to_blank(
 
     log.info("samples found to test against:\t %s" %
              count_annotome_rand_samp({'size': blank_model_size,
-                                            'sys_hash': md5_hash,
-                                            'sparse_rounds': sparse_rounds}))
+                                       'sys_hash': md5_hash,
+                                       'sparse_rounds': sparse_rounds}))
 
-    background_sample = find_annotome_rand_samp(
-            {'size': blank_model_size, 'sys_hash': md5_hash, 'sparse_rounds': sparse_rounds})
+    background_sample = find_annotome_rand_samp({'size': blank_model_size,
+                                                 'sys_hash': md5_hash,
+                                                 'sparse_rounds': sparse_rounds})
 
     for i, sample in enumerate(background_sample):
 
         _, node_currents = pickle.loads(sample['currents'])
         tensions = pickle.loads(sample['voltages'])
 
-        if not sparse_rounds:
-            # TRACING: [run path refactor] pipe hdd save destination here (1)
-            _, _, mean_correlations, eigenvalues = perform_clustering(
-                tensions, cluster_no, show='')
-        else:
-            # CURRENTPASS: [BKI alignment] they should remain undefined
-            mean_correlations = np.array([[(0, ), 0, 0]] * cluster_no)
-            eigenvalues = np.array([-1] * cluster_no)
-
-        mean_correlation_accumulator.append(np.array(mean_correlations))
-        eigenvalues_accumulator.append(eigenvalues)
-
+        # # Old code path for clustering
+        # if not sparse_rounds:
+        #     # TRACING: [run path refactor] pipe hdd save destination here (1)
+        #     _, _, mean_correlations, eigenvalues = perform_clustering(
+        #         tensions, cluster_no, show='')
+        # else:
+        #     # CURRENTPASS: [BKI alignment] they should remain undefined
+        #     mean_correlations = np.array([[(0, ), 0, 0]] * cluster_no)
+        #     eigenvalues = np.array([-1] * cluster_no)
+        #
+        # mean_correlation_accumulator.append(np.array(mean_correlations))
+        # eigenvalues_accumulator.append(eigenvalues)
 
         dict_system = go_interface_instance.format_node_props(node_currents)
         background_sub_array = list(dict_system.values())
@@ -538,10 +548,10 @@ def compare_to_blank(
 
         count = i
         if dict_system == {}:
-            del mean_correlation_accumulator[-1]
+            # del mean_correlation_accumulator[-1]
             del background_sub_array_list[-1]
             del max_sub_array_list[-1]
-            del eigenvalues_accumulator[-1]
+            # del eigenvalues_accumulator[-1]
             log.critical("exceptional state: nothing in dict_system. Attempting to ignore")
 
     # This part declares the pre-operators required for the verification of a
@@ -550,9 +560,9 @@ def compare_to_blank(
     background_array = np.concatenate(tuple(background_sub_array_list), axis=1)
     max_array = np.concatenate(tuple(max_sub_array_list), axis=1)
 
-    final = np.concatenate(tuple(background_sub_array_list), axis=1)
-    final_mean_correlations = np.concatenate(tuple(mean_correlation_accumulator), axis=0).T
-    final_eigenvalues = np.concatenate(tuple(eigenvalues_accumulator), axis=0).T
+    # final = np.concatenate(tuple(background_sub_array_list), axis=1)
+    # final_mean_correlations = np.concatenate(tuple(mean_correlation_accumulator), axis=0).T
+    # final_eigenvalues = np.concatenate(tuple(eigenvalues_accumulator), axis=0).T
 
     node_currents = go_interface_instance.node_current
     dict_system = go_interface_instance.format_node_props(node_currents)
@@ -563,129 +573,78 @@ def compare_to_blank(
     go_node_ids, query_array = (curr_inf_conf_tot[0, :], curr_inf_conf_tot[(1, 2, 3), :])
     # fails here when no significant terms to print
 
-    # # new p-values computation
-    # background_density = kde_compute(background_array[(1, 0), :], 50, count)
-    # base_bi_corr = background_array[(0, 1), :]
-    #
-    # r_rels = []
-    # r_std_nodes = []
-    #
-    # degrees = np.unique(query_array[1, :])
-    #
-    # combined_p_vals = np.ones_like(query_array[1, :])
-    #
-    # for degree in degrees.tolist():
-    #     filter = query_array[1, :] == degree
-    #
-    #     entry = query_array[:, filter]
-    #     background_set = background_array[:, background_array[1, :] == degree]
-    #     max_set = max_array[:, max_array[1, :] == degree]
-    #
-    #     params = gumbel_r.fit(max_set[0, :])
-    #     arg = params[:-2]
-    #     mu = params[-2]
-    #     beta = params[-1]
-    #
-    #     frozen_gumbel = gumbel_r(loc=mu, scale=beta)
-    #
-    #     p_vals = 1 - frozen_gumbel.cdf(entry[0, :])
-    #
-    #     combined_p_vals[filter] = p_vals
-    #
-    #
-    # # TRACING: [run path refactor] pipe the path to here.
-    # samples_scatter_and_hist(background_array, query_array,
-    #                          save_path=output_destination,
-    #                          p_values=combined_p_vals)
-    #
-    # r_nodes = background_density(query_array[(1, 0), :])  # legacy - unused now
-    # r_nodes = combined_p_vals
-    #
-    # for point in query_array.T:
-    #     selector = np.logical_and(base_bi_corr[1, :] > point[1]*0.9, base_bi_corr[1, :] < point[1]*1.1)
-    #     r_rels.append(point[0] / np.mean(base_bi_corr[0, selector]))
-    #     r_std_nodes.append((point[0] - np.mean(base_bi_corr[0, selector])) / np.std(base_bi_corr[0,
-    #                                                                                           selector]))
-    #
-    # r_rels = np.array(r_rels)
-    # r_std_nodes = np.array(r_std_nodes)
-    #
-    # not_random_nodes = [node_id for node_id in go_node_ids[r_nodes < p_val].tolist()]
-    #
-    # log.debug('debug, not random nodes: %s', not_random_nodes)
-    # log.debug('debug bulbs_id_disp_name: %s',
-    #           list(go_interface_instance.GO2UP_Reachable_nodes.items())[:10])
-    #
-    # node_char_list = [
-    #         [int(GO_id),
-    #          go_interface_instance.GO_Names[GO_id]] +
-    #         dict_system[GO_id] +
-    #         r_nodes[go_node_ids == float(GO_id)].tolist() +
-    #         [[go_interface_instance.interactome_interface_instance.neo4j_id_2_display_name[up_bulbs_id]
-    #           for up_bulbs_id in list(set(go_interface_instance.GO2UP_Reachable_nodes[GO_id]).
-    #                                   intersection(set(go_interface_instance.annotated_uniprots)))]]
-    #         for GO_id in not_random_nodes]
-    #
-    # nodes_dict = np.hstack((go_node_ids[:, np.newaxis],
-    #                         r_nodes[:, np.newaxis],
-    #                         r_rels[:, np.newaxis],
-    #                         r_std_nodes[:, np.newaxis]))
-    # nodes_dict = dict((node[0], (node[1], node[2], node[3])) for node in nodes_dict.tolist())
-    # nodes_dict = defaultdict(lambda: (1., 0., 0.), nodes_dict)  # corresponds to the cases of super low flow - never significant
-    #
-    # # TODO: pull the groups corresponding to non-random associations.
-    #
-    # return sorted(node_char_list, key=lambda x: x[4]), nodes_dict
+    # new p-values computation
+    background_density = kde_compute(background_array[(1, 0), :], 50, count)
+    base_bi_corr = background_array[(0, 1), :]
 
-    # return to the old codepath
+    r_rels = []
+    r_std_nodes = []
 
-    # Clustering analysis
-    log.info('clustering blank comparison: %s', query_array.shape)
-    if not sparse_rounds:
-        # TRACING: [run path refactor] pipe hdd save destination here (1)
-        group2avg_off_diag, _, mean_correlations, eigenvalue = perform_clustering(
-            go_interface_instance.UP2UP_voltages, cluster_no, 'GO terms clustering')
+    degrees = np.unique(query_array[2, :])
 
-    else:
-        group2avg_off_diag = np.array([[(0, ), 0, 0]]*cluster_no)
-        mean_correlations = np.array([[0, 0]]*cluster_no)
-        eigenvalue = np.array([-1]*cluster_no)
+    combined_p_vals = np.ones_like(query_array[2, :])
 
-    # Continuation of pure stats analysis
-    log.info('stats on %s samples', count)
+    for degree in degrees.tolist():  # TODO: there is currently a logic where the pb fails if
+        # there is elements with edge number in the analysis set that were not found in the test
+        # sets (which is not unexpected for GO terms)
+        filter = query_array[2, :] == degree
 
-    r_nodes, r_groups = show_correlations(
-        final, final_mean_correlations, final_eigenvalues,
-        zoom_range_selector, query_array, mean_correlations.T, eigenvalue.T, count,
-        sparse=sparse_rounds, go_interface_instance=go_interface_instance,
-        save_path=output_destination)  # TRACING [run path refactor]
+        entry = query_array[:, filter]
+        background_set = background_array[:, background_array[2, :] == degree]
+        max_set = max_array[:, max_array[1, :] == degree]
+        max_set_red = max_set[0, :].tolist()
 
-    group_char = namedtuple(
-        'Group_Char', [
-            'UPs', 'num_UPs', 'average_connection', 'p_value'])
+        if len(max_set_red) < 10:  # TRACING: factor out
+            temp_deg_plus = degree
+            temp_deg_minus = degree
 
-    if r_nodes is not None:
-        not_random_nodes = [GO_id for GO_id in go_node_ids[r_nodes < p_val].tolist()]
+            while len(max_set_red) < 10:  # TRACING: factor out
+                temp_deg_minus -= 1
+                temp_deg_plus += 1
 
-        if not sparse_rounds:
-            not_random_groups = np.concatenate(
-                (group2avg_off_diag,
-                 np.reshape(r_groups, (3, 1))),
-                axis=1)[r_groups < p_val].tolist()
+                _max_set = max_array[:, max_array[1, :] == temp_deg_minus]
+                max_set_red += _max_set[0, :].tolist()
 
-            not_random_groups = [group_char(*nr_group)
-                                 for nr_group in not_random_groups]
+                _max_set = max_array[:, max_array[1, :] == temp_deg_plus]
+                max_set_red += _max_set[0, :].tolist()
 
-        else:
-            not_random_groups = []
 
-        log.debug('not random nodes: %s', not_random_nodes)
-        log.debug('bulbs_id_disp_name: %s',
-                  list(go_interface_instance.GO2UP_Reachable_nodes.items())[:10])
-        # basically the second element below are the nodes that contribute to the information
-        #  flow through the node that is considered as non-random
+        log.info('deg: %s, list: %s' % (degree, max_set_red))
+        params = gumbel_r.fit(max_set_red)
+        arg = params[:-2]
+        mu = params[-2]
+        beta = params[-1]
 
-        node_char_list = [
+        frozen_gumbel = gumbel_r(loc=mu, scale=beta)
+
+        p_vals = 1 - frozen_gumbel.cdf(entry[0, :])
+
+        combined_p_vals[filter] = p_vals
+
+    # TRACING: [run path refactor] pipe the path to here.
+    samples_scatter_and_hist(background_array, query_array,
+                             save_path=output_destination,
+                             p_values=combined_p_vals)
+
+    r_nodes = background_density(query_array[(1, 0), :])  # legacy - unused now
+    r_nodes = combined_p_vals
+
+    for point in query_array.T:
+        selector = np.logical_and(base_bi_corr[1, :] > point[1]*0.9, base_bi_corr[1, :] < point[1]*1.1)
+        r_rels.append(point[0] / np.mean(base_bi_corr[0, selector]))
+        r_std_nodes.append((point[0] - np.mean(base_bi_corr[0, selector])) / np.std(base_bi_corr[0,
+                                                                                              selector]))
+
+    r_rels = np.array(r_rels)
+    r_std_nodes = np.array(r_std_nodes)
+
+    not_random_nodes = [node_id for node_id in go_node_ids[r_nodes < p_val].tolist()]
+
+    log.debug('debug, not random nodes: %s', not_random_nodes)
+    log.debug('debug bulbs_id_disp_name: %s',
+              list(go_interface_instance.GO2UP_Reachable_nodes.items())[:10])
+
+    node_char_list = [
             [int(GO_id),
              go_interface_instance.GO_Names[GO_id]] +
             dict_system[GO_id] +
@@ -695,9 +654,78 @@ def compare_to_blank(
                                       intersection(set(go_interface_instance.annotated_uniprots)))]]
             for GO_id in not_random_nodes]
 
-        return sorted(node_char_list, key=lambda x: x[5]), not_random_groups
+    nodes_dict = np.hstack((go_node_ids[:, np.newaxis],
+                            r_nodes[:, np.newaxis],
+                            r_rels[:, np.newaxis],
+                            r_std_nodes[:, np.newaxis]))
+    nodes_dict = dict((node[0], (node[1], node[2], node[3])) for node in nodes_dict.tolist())
+    nodes_dict = defaultdict(lambda: (1., 0., 0.), nodes_dict)  # corresponds to the cases of super low flow - never significant
 
-    return None, None
+    # TODO: pull the groups corresponding to non-random associations.
+
+    return sorted(node_char_list, key=lambda x: x[4]), nodes_dict
+
+    # # return to the old code path
+    #
+    # # Clustering analysis
+    # log.info('clustering blank comparison: %s', query_array.shape)
+    # if not sparse_rounds:
+    #     # TRACING: [run path refactor] pipe hdd save destination here (1)
+    #     group2avg_off_diag, _, mean_correlations, eigenvalue = perform_clustering(
+    #         go_interface_instance.UP2UP_voltages, cluster_no, 'GO terms clustering')
+    #
+    # else:
+    #     group2avg_off_diag = np.array([[(0, ), 0, 0]]*cluster_no)  # TODO: [dependencies broken]
+    #     mean_correlations = np.array([[0, 0]]*cluster_no)
+    #     eigenvalue = np.array([-1]*cluster_no)
+    #
+    # # Continuation of pure stats analysis
+    # log.info('stats on %s samples', count)
+    #
+    # r_nodes, r_groups = show_correlations(
+    #     final, final_mean_correlations, final_eigenvalues,
+    #     zoom_range_selector, query_array, mean_correlations.T, eigenvalue.T, count,
+    #     sparse=sparse_rounds, go_interface_instance=go_interface_instance,
+    #     save_path=output_destination)  # TRACING [run path refactor]
+    #
+    # group_char = namedtuple(
+    #     'Group_Char', [
+    #         'UPs', 'num_UPs', 'average_connection', 'p_value'])
+    #
+    # if r_nodes is not None:
+    #     not_random_nodes = [GO_id for GO_id in go_node_ids[r_nodes < p_val].tolist()]
+    #
+    #     if not sparse_rounds:
+    #         not_random_groups = np.concatenate(
+    #             (group2avg_off_diag,
+    #              np.reshape(r_groups, (3, 1))),
+    #             axis=1)[r_groups < p_val].tolist()
+    #
+    #         not_random_groups = [group_char(*nr_group)
+    #                              for nr_group in not_random_groups]
+    #
+    #     else:
+    #         not_random_groups = []
+    #
+    #     log.debug('not random nodes: %s', not_random_nodes)
+    #     log.debug('bulbs_id_disp_name: %s',
+    #               list(go_interface_instance.GO2UP_Reachable_nodes.items())[:10])
+    #     # basically the second element below are the nodes that contribute to the information
+    #     #  flow through the node that is considered as non-random
+    #
+    #     node_char_list = [
+    #         [int(GO_id),
+    #          go_interface_instance.GO_Names[GO_id]] +
+    #         dict_system[GO_id] +
+    #         r_nodes[go_node_ids == float(GO_id)].tolist() +
+    #         [[go_interface_instance.interactome_interface_instance.neo4j_id_2_display_name[up_bulbs_id]
+    #           for up_bulbs_id in list(set(go_interface_instance.GO2UP_Reachable_nodes[GO_id]).
+    #                                   intersection(set(go_interface_instance.annotated_uniprots)))]]
+    #         for GO_id in not_random_nodes]
+    #
+    #     return sorted(node_char_list, key=lambda x: x[5]), not_random_groups
+    #
+    # return None, None
 
 
 def get_estimated_time(samples, sample_sizes, operations_per_sec=2.2):
@@ -806,7 +834,8 @@ def auto_analyze(source_list,
                 [1100, 1300],  # CURRENTPASS: this part should not be there in the new code path.
                 p_val=0.9,
                 go_interface_instance=go_interface_instance,
-                param_set=param_set)
+                param_set=param_set,
+                output_destination=outputs_subdirs)
 
         # sparse analysis
         else:
@@ -842,20 +871,20 @@ def auto_analyze(source_list,
                 param_set=param_set,
                 output_destination=outputs_subdirs)
 
-        # TRACING: [run path refactor] correct hdd pipe save location here
-        if len(output_destination_prefix) > 0:
-            prefix = os.path.join(Outputs.prefix, output_destination_prefix)  # TRACING: outputs
-            mkdir_recursive(prefix)
-            # TODO: make compatible with nested lists supplied to the program
-            corrected_knowledge_GDF_output = os.path.join(prefix, 'GO_Analysis_output.gdf')
-            corrected_knowledge_tables_output = os.path.join(prefix, 'knowledge_stats.tsv')
-
-        else:
-            corrected_knowledge_GDF_output = Outputs.GO_GDF_output  # TRACING: outputs
-            corrected_knowledge_tables_output = Outputs.knowledge_network_output  # TRACING: outputs
+        # # TRACING: [run path refactor] correct hdd pipe save location here
+        # if len(output_destination_prefix) > 0:
+        #     prefix = os.path.join(Outputs.prefix, output_destination_prefix)  # TRACING: outputs
+        #     mkdir_recursive(prefix)
+        #     # TODO: make compatible with nested lists supplied to the program
+        #     corrected_knowledge_GDF_output = os.path.join(prefix, 'GO_Analysis_output.gdf')
+        #     corrected_knowledge_tables_output = os.path.join(prefix, 'knowledge_stats.tsv')
+        #
+        # else:
+        #     corrected_knowledge_GDF_output = Outputs.GO_GDF_output  # TRACING: outputs
+        #     corrected_knowledge_tables_output = Outputs.knowledge_network_output  # TRACING: outputs
 
         # TRACING: outputs remap
-        go_interface_instance.export_conduction_system(output_location=corrected_knowledge_GDF_output)
+        go_interface_instance.export_conduction_system(output_destination=outputs_subdirs)
 
         log.info('GO groups')
         for group in nr_groups:
@@ -868,7 +897,7 @@ def auto_analyze(source_list,
             log.info('\t %s \t %s \t %s \t %s \t %s \t %s \t %s', *node)
 
         # TRACING: outputs remap
-        with open(corrected_knowledge_tables_output, 'wt') as output:
+        with open(outputs_subdirs.knowledge_network_output, 'wt') as output:
             writer = csv_writer(output, delimiter='\t')
             writer.writerow(['NodeID', 'Name', 'current', 'informativity', 'confusion_potential',
                              'p_val', 'UP_list'])

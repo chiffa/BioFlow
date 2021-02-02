@@ -14,6 +14,7 @@ import psutil
 from typing import Any, Union, TypeVar, NewType, Tuple, List
 import numpy as np
 from matplotlib import pyplot as plt
+from scipy.stats import gumbel_r
 
 from bioflow.algorithms_bank.conduction_routines import perform_clustering
 from bioflow.main_configs import Dumps, estimated_comp_ops, NewOutputs
@@ -25,7 +26,6 @@ from bioflow.utils.log_behavior import get_logger
 from bioflow.utils.io_routines import get_source_bulbs_ids, get_background_bulbs_ids
 from bioflow.utils.general_utils.high_level_os_io import mkdir_recursive
 
-from scipy.stats import gumbel_r
 
 log = get_logger(__name__)
 
@@ -272,7 +272,7 @@ def compare_to_blank(blank_model_size: int,
     for i, sample in enumerate(background_sample):
 
         _, node_currents = pickle.loads(sample['currents'])
-        tensions = pickle.loads(sample['voltages'])  # CURRENTPASS: might explode here
+        tensions = pickle.loads(sample['voltages'])  # might explode here. actually didn't
         # TODO: restore clustering in case non-sparse calculation has been performed
 
         dict_system = interactome_interface_instance.format_node_props(node_currents, limit=0)
