@@ -16,10 +16,10 @@ import numpy as np
 from matplotlib import pyplot as plt
 from scipy.stats import gumbel_r
 
-from bioflow.algorithms_bank.conduction_routines import perform_clustering
+from bioflow.algorithms_bank.conduction_routines import deprecated_perform_clustering
 from bioflow.main_configs import Dumps, estimated_comp_ops, NewOutputs
 from bioflow.sample_storage.mongodb import find_interactome_rand_samp, count_interactome_rand_samp
-from bioflow.user_configs import sparse_analysis_threshold, single_threaded, output_location, p_val_cutoff
+from bioflow.user_configs import sparse_analysis_threshold, implicitely_threaded, output_location, p_val_cutoff
 from bioflow.molecular_network.InteractomeInterface import InteractomeInterface
 from bioflow.utils.dataviz import kde_compute
 from bioflow.utils.log_behavior import get_logger
@@ -80,7 +80,7 @@ def spawn_sampler(args_puck):
     # log.info('Pool process %d finished' % pool_no)
 
 
-# CURRENTPASS: [SANITY] args puck need to be a named tuple, preferably a typed one
+# TODO: [SANITY] args puck need to be a named tuple, preferably a typed one
 def spawn_sampler_pool(
         pool_size,
         sample_size_list,
@@ -105,12 +105,13 @@ def spawn_sampler_pool(
     payload_list = payload * pool_size
     payload_list = [list(item)+[i] for i, item in enumerate(payload_list)]  # prepare the payload
 
-    if not single_threaded:
+    if not implicitely_threaded:
         with Pool(processes=pool_size) as pool:  # This is the object we are using to spawn a thread pool
             try:
                 log.debug('spawning the sampler with payload %s', payload)
                 pool.map(spawn_sampler, payload_list)  # This what we spawn as a sampler
-                # CURRENTPASS: breaks upon a second start attempt. Only in interactome though
+                # KNOWNBUG: hangs with no message upon a second start attempt in Interactome
+                #  analysis due to cholmod
             except Exception as e:
                 msg = "{}\n\nOriginal {}".format(e, traceback.format_exc())
                 raise type(e)(msg)
@@ -143,7 +144,6 @@ def local_indexed_select(bi_array, array_column, selection_span):
     return filtered_bi_array
 
 
-# CURRENTPASS: test if this works
 def samples_scatter_and_hist(background_curr_deg_conf, true_sample_bi_corr_array,
                              save_path: NewOutputs = None, p_values: np.array = None):
     """
@@ -191,7 +191,6 @@ def samples_scatter_and_hist(background_curr_deg_conf, true_sample_bi_corr_array
     plt.scatter(background_curr_deg_conf[1, :],
                 background_curr_deg_conf[0, :], color='b', alpha=0.1)
 
-    # CURRENTPASS: relevant modification #1
     if true_sample_bi_corr_array is not None:
         if p_values is not None:
             _filter = p_values < p_val_cutoff
@@ -209,13 +208,11 @@ def samples_scatter_and_hist(background_curr_deg_conf, true_sample_bi_corr_array
                         true_sample_bi_corr_array[0, :],
                         color='r', alpha=0.5)
 
-    # CURRENTPASS: relevant modification #2
     # plt.show()
     plt.savefig(save_path.interactome_network_scatterplot)
     plt.clf()
 
 
-# TRACING: [run path refactor] pipe hdd save destination here (2)
 def compare_to_blank(blank_model_size: int,
                      p_val: float = 0.05,
                      sparse_rounds: bool = False,
@@ -373,6 +370,7 @@ def compare_to_blank(blank_model_size: int,
     nodes_dict = defaultdict(lambda: (1., 0., 0.), nodes_dict)  # corresponds to the cases of super low flow - never significant
 
     # TODO: pull the groups corresponding to non-random associations.
+    # => Will not implement, it's already done by Gephi
 
     return sorted(node_char_list, key=lambda x: x[4]), nodes_dict
 
@@ -384,8 +382,7 @@ def auto_analyze(source_list: List[List[int]],
                  processors: int = 0,
                  background_list: Union[List[int], None] = None,
                  skip_sampling: bool = False,
-                 from_memoization: bool = False,  # should always be False. Don't work as of now
-                 output_destination_prefix=''  # deprecated
+                 p_value_cutoff: float = -1,
                  ) -> None:
     """
     Automatically analyzes the itneractome synergetic action of the RNA_seq results
@@ -401,8 +398,8 @@ def auto_analyze(source_list: List[List[int]],
     """
     # Multiple re-spawns of threaded processing are incompatbile with scikits.sparse.cholmod
     if len(source_list) > 1:
-        global single_threaded
-        single_threaded = True
+        global implicitely_threaded
+        implicitely_threaded = True
 
     if len(output_destinations_list) != len(source_list):
         log.warning('Output destination list has %d elements, whereas %d sources were supplied. '
@@ -421,6 +418,9 @@ def auto_analyze(source_list: List[List[int]],
         desired_depth = desired_depth // processors + 1
     else:
         desired_depth = desired_depth // processors
+
+    if p_value_cutoff < 0:
+        p_value_cutoff = p_val_cutoff
 
     for hits_list, output_destination in zip(source_list, output_destinations_list):
 
@@ -460,17 +460,13 @@ def auto_analyze(source_list: List[List[int]],
                     processors,
                     [len(interactome_interface.entry_point_uniprots_neo4j_ids)],
                     [desired_depth],
-                    interactome_interface_instance=interactome_interface)  # CURRENTPASS: really?
+                    interactome_interface_instance=None)  # Last correction - looks like working
 
-            # CURRENTPASS: delete or make the switch more explicit
-            if not from_memoization:
-                interactome_interface.compute_current_and_potentials()
-            else:
-                interactome_interface.compute_current_and_potentials(fast_load=True)
+            interactome_interface.compute_current_and_potentials()
 
             nr_nodes, p_val_dict = compare_to_blank(
                 len(interactome_interface.entry_point_uniprots_neo4j_ids),
-                p_val=0.9, # TRACING: p-value is not loaded here properly
+                p_val=p_value_cutoff,
                 interactome_interface_instance=interactome_interface,
                 output_destination=outputs_subdirs
             )
@@ -494,21 +490,16 @@ def auto_analyze(source_list: List[List[int]],
                                    [len(interactome_interface.entry_point_uniprots_neo4j_ids)],
                                    [desired_depth],
                                    sparse_rounds=sampling_depth,
-                                   interactome_interface_instance=interactome_interface)  # CURRENTPASS: really?
+                                   interactome_interface_instance=None)  # Last correction - looks like working
 
             log.info('real run characteristics: sys_hash: %s, size: %s, sparse_rounds: %s' % (interactome_interface.md5_hash(),
                                                                                               len(interactome_interface.entry_point_uniprots_neo4j_ids), sampling_depth))
 
-            if not from_memoization:
-                interactome_interface.compute_current_and_potentials(sparse_samples=sampling_depth)
-                # interactome_interface.export_conduction_system()
-
-            else:
-                interactome_interface.compute_current_and_potentials(sparse_samples=sampling_depth, fast_load=True)
+            interactome_interface.compute_current_and_potentials(sparse_samples=sampling_depth)
 
             nr_nodes, p_val_dict = compare_to_blank(
                 len(interactome_interface.entry_point_uniprots_neo4j_ids),
-                p_val=0.9,  # TRACING: p-value is not loaded here properly
+                p_val=p_value_cutoff,
                 sparse_rounds=sampling_depth,
                 interactome_interface_instance=interactome_interface,
                 output_destination=outputs_subdirs

@@ -124,10 +124,7 @@ class Dumps(object):
     background_set_bulbs_ids = prefix + prefix_2 + '/current_background_set_bulbs_id_list.csv'
 
 
-# TODO: modifier insertion in this case is pretty effed up I would guess - the evaluation is done
-#  immediately to build the variables
-# TODO: [run path refactor] pipe hdd save destination here (TOP)
-class Outputs(object):
+class deprecated_Outputs(object):
     """
     Defines the locations to output actual results
     """
@@ -145,7 +142,6 @@ class Outputs(object):
     interactome_network_output = prefix + '/interactome_stats.tsv'
 
 
-# CURRENTPASS:
 class NewOutputs(object):
 
     def __init__(self, modifier=''):

@@ -134,9 +134,8 @@ def get_potentials(conductivity_laplacian: spmat.csc_matrix,
     else:
         io_array = build_sink_source_current_array(io_index_pair, conductivity_laplacian.shape)
         if not share_solver or shared_solver is None:
-            solver = chmd.cholesky(conductivity_laplacian, line_loss)  # TRACING: potential thread
-            # lock
-            # conflict
+            # KNOWNBUG: unsolved issue with a thread/pool vs import vs cholesky problem here
+            solver = chmd.cholesky(conductivity_laplacian, line_loss)
         else:
             solver = shared_solver
         voltages = solver(io_array)
@@ -317,7 +316,7 @@ def master_edge_current(conductivity_laplacian, index_list,
              '%s;'
              ' potential-dominated %s; sampling %s; sampling_depth %s'
              % (thread_hex, len(index_list), cancellation,
-                potential_dominated, sampling, sampling_depth))  # TRACING: passes
+                potential_dominated, sampling, sampling_depth))
 
     # log.info('debug: parameters supplied to master_edge_current: '
     #          'conductivity_laplacian: %s,\n'
@@ -506,10 +505,9 @@ def group_edge_current_with_limitations(inflated_laplacian, idx_pair, reach_limi
     return inverter[1] / inverter[0], inverter[0]
 
 
-# TRACING: [run path refactor] pipe hdd save destination here (1)
-def perform_clustering(inter_node_tension: spmat.csc_matrix,
-                       cluster_number: int,
-                       show: str = 'undefined clustering') -> Tuple[np.array, np.float64,
+def deprecated_perform_clustering(inter_node_tension: spmat.csc_matrix,
+                                  cluster_number: int,
+                                  show: str = 'undefined clustering') -> Tuple[np.array, np.float64,
                                                                     np.array, np.array]:
     """
     Performs a clustering on the voltages of the nodes,
@@ -570,7 +568,6 @@ def perform_clustering(inter_node_tension: spmat.csc_matrix,
                                 for _, items, mean_corr in group_2_mean_off_diag])
 
     if show:
-        # TRACING: [run path refactor] pipe hdd save destination here (0)
         render_2d_matrix(relations_matrix.toarray(), name=show, destination='')
 
     return np.array(group_2_mean_off_diag), \

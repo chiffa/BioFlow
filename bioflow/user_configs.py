@@ -50,7 +50,7 @@ share_solver = True  # switching this to False incurs approximately a 50-fold sl
 sparse_analysis_threshold = 200
 
 # those are mostly debug flags and should not be touched
-single_threaded = True
+implicitely_threaded = True
 psutil_main_loop_memory_tracing = False  # controls the log_mem behavior in conduction_routines.py
 memory_source_allowed = False
 node_current_in_debug = False
@@ -60,4 +60,4 @@ use_normalized_laplacian = False
 fraction_edges_dropped_in_laplacian = 0.0
 
 # This is the p-value that is set by user and is to be propagated throughout the analyses.
-p_val_cutoff = 0.05
+p_val_cutoff = 0.2

@@ -59,7 +59,7 @@ class GeneOntologyInterface(object):
      to be considered ultra-specific anymore
     """
 
-    # TRACING: move to configs
+    # REFACTOR: move to configs
     _GOUpTypes = ["is_a_go", "is_part_of_go"]
     _GORegTypes = ["is_Regulant"]
 
@@ -142,7 +142,7 @@ class GeneOntologyInterface(object):
 
         self.Indep_Lapl = np.zeros((2, 2))
         self.uncomplete_compute = False
-        self.background = init_set  # CURRENTPASS [BKI normalization] to be used for environment compare
+        self.background = init_set  # TODO [environment] to be used for environment compare
         self.connected_uniprots = []
 
         self.main_set = self.InitSet
@@ -444,7 +444,7 @@ class GeneOntologyInterface(object):
 
             """
             base_matrix = lil_matrix((len(self.All_GOs), len(self.All_GOs)))
-            # CURRENTPASS: [BKI normalization] "package" should be a named tuple
+            # REFACTOR: [BKI normalization] "package" should be a named tuple
             for node, package in self.Reachable_nodes_dict.items():
                 fw_nodes = package[0]
                 if include_reg:
@@ -799,12 +799,6 @@ class GeneOntologyInterface(object):
 
             self.UP2UP_voltages[(UP1, UP2)] = voltage_diff
 
-            # if memoized:
-            #     # CURRENTPASS: [BKI normalization]  this would shred the memory into pieces
-            #     self.uniprots_2_voltage_and_circulation[
-            #         tuple(sorted((UP1, UP2)))] = \
-            #         (voltage_diff, current_upper)
-
             if counter % breakpoints == 0 and counter > 1:
                 # TODO: the internal loop load bar goes here
                 compops = float(breakpoints) / (time() - previous_time)
@@ -817,11 +811,6 @@ class GeneOntologyInterface(object):
                          % (self.thread_hex, counter, total_pairs, compops, mins_before_termination,
                             finish_time.strftime("%m/%d/%Y, %H:%M:%S")))
                 previous_time = time()
-
-                # compops = float(breakpoints) / (time() - previous_time)
-                # log.info("progress: %s/%s, current speed: %s compops, time remaining: %s min"
-                #          % (counter, total_pairs, compops, (total_pairs - counter) / compops / 60))
-                # previous_time = time()
 
         self.current_accumulator = triu(self.current_accumulator)
 
@@ -857,11 +846,14 @@ class GeneOntologyInterface(object):
 
         return characterization_dict
 
-    def export_conduction_system(self, output_destination: NewOutputs):
+    def export_conduction_system(self,
+                                 p_value_dict: dict = None,
+                                 output_location: str = ''):
         """
         Computes the conduction system of the GO terms and exports it to the GDF format
          and flushes it into a file that can be viewed with Gephi
 
+        :param p_value_dict:
         :raise Warning:
         """
         node_char_names = [
@@ -870,14 +862,25 @@ class GeneOntologyInterface(object):
             'Legacy_ID',
             'Names',
             'Pure_informativity',
-            'Confusion_potential']
+            'Confusion_potential',
+            'p-value',
+            'p_p-value']
+
         node_char_types = [
             'DOUBLE',
             'VARCHAR',
             'VARCHAR',
             'VARCHAR',
             'DOUBLE',
+            'DOUBLE',
+            'DOUBLE',
             'DOUBLE']
+
+        if p_value_dict is None:
+            p_value_dict = defaultdict(lambda: (np.nan, np.nan, np.nan))
+
+        nan_neg_log10 = lambda x: x if type(x) is str else -np.log10(x)
+
         char_dict = {}
 
         if self.uncomplete_compute:
@@ -889,17 +892,24 @@ class GeneOntologyInterface(object):
                              'GO', self.GO_Legacy_IDs[GO],
                              self.GO_Names[GO].replace(',', '-'),
                              str(self.GO2_Pure_Inf[GO]),
-                             str(len(self.GO2UP_Reachable_nodes[GO]))]
+                             str(len(self.GO2UP_Reachable_nodes[GO])),
+                             str(p_value_dict[int(GO)][0]),
+                             str(nan_neg_log10(p_value_dict[int(GO)][0]))]
 
         for UP in self.annotated_uniprots:
             char_dict[UP] = [str(self.node_current[UP]),
                              'UP', self.UP_Names[UP][0],
                              str(self.UP_Names[UP][1]).replace(',', '-'),
                              str(self.binding_intensity),
-                             '1']
+                             '1',
+                             '0.1',
+                             '1']  #DOC: document the defaults
+
+        if output_location == '':
+            output_location = NewOutputs().GO_GDF_output
 
         gdf_exporter = GdfExportInterface(
-            target_fname=output_destination.GO_GDF_output,
+            target_fname=output_location,
             field_names=node_char_names,
             field_types=node_char_types,
             node_properties_dict=char_dict,
@@ -909,30 +919,6 @@ class GeneOntologyInterface(object):
             current_matrix=self.current_accumulator)
         gdf_exporter.write()
 
-    def deprecated_export_subsystem(self, uniprot_system, uniprot_subsystem):
-        """
-        DEPRECATED DUE TO MEMORY CONSUMPTION ISSUES.
-
-        Exports the subsystem of reached_uniprots_neo4j_id_list and circulation between
-        them based on a larger precalculated system.This is possible only of the memoization
-        parameter was on during the execution of "build_extended_circulation_system()"
-        function execution.
-
-        :param uniprot_system: The set of uniprots for which the larger system was calculated
-        :param uniprot_subsystem: the set of reached_uniprots_neo4j_id_list we are interested in
-        :raise Exception: if the set of uniprots for which the larger system was calculated
-         doesn't correspond to what is stored in the dumps
-        """
-        current_recombinator = self.undump_memoized()
-        if not set(uniprot_system) == set(
-                pickle.loads(current_recombinator['UPs'])):
-            raise Exception('Wrong UP system re-analyzed')
-        self.uniprots_2_voltage_and_circulation = pickle.loads(
-            current_recombinator['voltages'])
-        self.set_uniprot_source(uniprot_subsystem)
-        self.compute_current_and_potentials(memoized=False, sourced=True)
-        self.export_conduction_system(None)  # TRACING: outputs remap
-
     def randomly_sample(
             self,
             samples_size,
@@ -940,7 +926,7 @@ class GeneOntologyInterface(object):
             sparse_rounds=False,
             memoized=False,
             no_add=False,
-            pool_no=None):  # TRACING: make sure it is inserted properly in calls to this method
+            pool_no=None):
         """
         Randomly samples the set of reached_uniprots_neo4j_id_list used to create the model.
 

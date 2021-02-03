@@ -33,7 +33,7 @@ from bioflow.internal_configs import edge_type_filters, adjacency_matrix_weights
 from bioflow.algorithms_bank import conduction_routines as cr
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from bioflow.neo4j_db.db_io_routines import expand_from_seed, \
-    erase_custom_fields, node_extend_once, get_db_id  # CURRENTPASS: fold under the neo4j_routines
+    erase_custom_fields, node_extend_once, get_db_id
 
 log = get_logger(__name__)
 
@@ -57,7 +57,7 @@ class InteractomeInterface(object):
     # used as roots to build the interaction network (not all nodes are necessary
     # within the connex part of the graph)
 
-    # TRACING: move to configs
+    # CURRENTPASS: move to configs
     reactions_types_list = ['TemplateReaction', 'Degradation', 'BiochemicalReaction']
 
     def __init__(self, main_connex_only, full_impact):
@@ -870,7 +870,7 @@ class InteractomeInterface(object):
             incremental=False,  # This is always false and was used in order to resume the sampling
             cancellation=True,
             sparse_samples=False,
-            fast_load=False):
+            fast_load=False):  # TODO: this should not be implemented this way.
         """
         Builds a conduction matrix that integrates uniprots, in order to allow an easier
         knowledge flow analysis
@@ -1049,7 +1049,8 @@ class InteractomeInterface(object):
                 str(float(p_value_dict[int(NodeID)][2]))]
 
         if output_location == '':
-            output_location = NewOutputs().interactome_network_stats
+            output_location = NewOutputs().Interactome_GDF_output
+
 
         gdf_exporter = GdfExportInterface(
             target_fname=output_location,
@@ -1084,7 +1085,7 @@ class InteractomeInterface(object):
             memoization_payload['voltages'])
         self.set_uniprot_source(uniprot_subsystem)
         self.compute_current_and_potentials(memoized=False, sourced=True)
-        self.export_conduction_system() # TRACING: outputs remap
+        self.export_conduction_system()  # [run path refactor]
 
     def randomly_sample(
             self,

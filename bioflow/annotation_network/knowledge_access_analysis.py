@@ -15,11 +15,11 @@ from typing import Any, Union, TypeVar, NewType, Tuple, List
 from collections import defaultdict
 from scipy.stats import gumbel_r
 
-from bioflow.algorithms_bank.conduction_routines import perform_clustering
+from bioflow.algorithms_bank.conduction_routines import deprecated_perform_clustering
 from bioflow.annotation_network.BioKnowledgeInterface import GeneOntologyInterface
-from bioflow.main_configs import Dumps, Outputs, estimated_comp_ops, NewOutputs
+from bioflow.main_configs import Dumps, estimated_comp_ops, NewOutputs
 from bioflow.sample_storage.mongodb import find_annotome_rand_samp, count_annotome_rand_samp
-from bioflow.user_configs import sparse_analysis_threshold, single_threaded, p_val_cutoff
+from bioflow.user_configs import sparse_analysis_threshold, implicitely_threaded, p_val_cutoff
 from bioflow.molecular_network.InteractomeInterface import InteractomeInterface
 from bioflow.utils.dataviz import kde_compute
 from bioflow.utils.io_routines import undump_object, get_source_bulbs_ids, get_background_bulbs_ids
@@ -49,7 +49,7 @@ def get_go_interface_instance(param_set=ref_param_set) -> GeneOntologyInterface:
     return go_interface_instance
 
 
-# CURRENTPASS: [SANITY] args puck need to be a named tuple, preferably a typed one
+# REFACTOR: [SANITY] args puck need to be a named tuple, preferably a typed one
 def spawn_sampler(args_puck):
     """
     Spawns a sampler initialized from the default GO_Interface
@@ -108,7 +108,7 @@ def spawn_sampler_pool(
     payload_list = payload * pool_size
     payload_list = [list(item)+[i] for i, item in enumerate(payload_list)]  # prepare the payload
 
-    if not single_threaded:  # TODO: this can be extracted as a shared routine to utils module
+    if not implicitely_threaded:  # TODO: this can be extracted as a shared routine to utils module
         with Pool(processes=pool_size) as pool:  # This is the object we are using to spawn a thread pool
             try:
                 log.debug('spawning the sampler with payload %s', payload)
@@ -147,8 +147,8 @@ def local_indexed_select(tri_array, array_column, selection_span):
     return decvec
 
 
-# CURRENTPASS: [BKI alignment] inject the p_values into the rendering
-def show_correlations(
+# REFACTOR: Legacy code containing static analysis and clustering logic
+def deprectated_show_correlations(
         background_curr_deg_conf,
         mean_correlations,
         eigenvalues,
@@ -160,7 +160,7 @@ def show_correlations(
         go_interface_instance=None,
         sparse=False,
         param_set=ref_param_set,
-        save_path: NewOutputs = None):  # TRACING: add a path for saving here.
+        save_path: NewOutputs = None):
 
     # TODO: there is a lot of repetition depending on which values are the biggest,
     # test-setted or real setted. In all, we should be able to reduce it to two functions:
@@ -254,13 +254,13 @@ def show_correlations(
     current_info_rel = None
 
     if true_sample_tri_corr_array is not None:
-        # CURRENTPASS: [BKI alignment] this is used in order to compute p-values. it should not be.
+        # Used to be the way to compute the p-values
         current_info_rel = estimator_function(true_sample_tri_corr_array[(1, 0), :])
 
     plt.subplot(335)
     plt.title('GO_term pure informativity distribution')
 
-     # CURRENTPASS: [BKI alignment] this needs to be moved elsewhere - this is a structural analysis
+     # REFACTOR: this needs to be moved elsewhere - this is a structural analysis
 
     bins = np.linspace(
         background_curr_deg_conf[1, :].min(),
@@ -303,16 +303,12 @@ def show_correlations(
         plt.hist(local_indexed_select(true_sample_tri_corr_array, 2, selector)[0, :],
                  bins=bins, histtype='step', log=True, color='r')
 
-    # this property is better off viewed as a scatterplot of true points and
-    # default points
-    # CURRENTPASS: [BKI alignment] - that's basically the extreme values theory cut-off.
-
     cluster_props = None
 
     plt.subplot(337)
     plt.title('Clustering correlation')
 
-    # CURRENTPASS: [BKI alignment] - that's a custering
+    # REFACTOR: that's the custering logic to be extracted elsewhere
 
     if not sparse:
         # plt.scatter(mean_correlations[0, :], mean_correlations[1, :], color = 'b')
@@ -329,7 +325,7 @@ def show_correlations(
     plt.subplot(338)
     plt.title('Eigvals_hist')
 
-    # CURRENTPASS: [BKI alignment] this needs to be moved elsewhere - this is a structural analysis
+    # REFACTOR: this needs to be moved elsewhere - this is a structural analysis
 
     if not sparse:
         bins = np.linspace(eigenvalues.min(), eigenvalues.max(), 100)
@@ -363,14 +359,12 @@ def show_correlations(
                  bins=bins, histtype='step', log=True, color='r')
 
     # # plt.show()
-    # TRACING: add a path for saving here.
     plt.savefig(save_path.knowledge_network_scatterplot)
 
     # pull the groups corresponding to non-random associations.
     return current_info_rel, cluster_props
 
 
-# CURRENTPASS: test if this works
 def samples_scatter_and_hist(background_curr_deg_conf, true_sample_bi_corr_array,
                              save_path: NewOutputs = None, p_values: np.array = None):
     """
@@ -418,7 +412,6 @@ def samples_scatter_and_hist(background_curr_deg_conf, true_sample_bi_corr_array
     plt.scatter(background_curr_deg_conf[1, :],
                 background_curr_deg_conf[0, :], color='b', alpha=0.1)
 
-    # CURRENTPASS: relevant modification #1
     if true_sample_bi_corr_array is not None:
         if p_values is not None:
             _filter = p_values < p_val_cutoff
@@ -436,20 +429,15 @@ def samples_scatter_and_hist(background_curr_deg_conf, true_sample_bi_corr_array
                         true_sample_bi_corr_array[0, :],
                         color='r', alpha=0.5)
 
-    # CURRENTPASS: relevant modification #2
     # plt.show()
     plt.savefig(save_path.knowledge_network_scatterplot)
     plt.clf()
 
 
-
-# TRACING: [run path refactor] pipe hdd save destination here (2)
 def compare_to_blank(
         blank_model_size,
-        zoom_range_selector,
-        p_val: float = 0.05,
+        p_value_cutoff: float = 0.05,
         sparse_rounds=False,
-        cluster_no=3,
         go_interface_instance=None,
         param_set=ref_param_set,
         output_destination: NewOutputs = None):
@@ -457,9 +445,7 @@ def compare_to_blank(
     Recovers the statistics on the circulation nodes and shows the visual of a circulation system
 
     :param blank_model_size: the number of uniprots in the blanc model
-    :param zoom_range_selector: tuple representing the coverage range for which we would want
-     to see the histogram of current distributions
-    :param p_val: desired p_value for the returned terms
+    :param p_value_cutoff: desired p_value for the returned terms
     :param sparse_rounds: if set to a number, sparse computation technique would be used with
      the number of rounds equal to the number
     :param cluster_no: specifies the number of cluster_no we want to have
@@ -483,14 +469,6 @@ def compare_to_blank(
         m_arr = np.array(max_array)
         return m_arr.T
 
-    # def to_bicorr(tricorr_array):
-    #     """
-    #     Basically drops the informativity component for the analysis
-    #     :param tricorr_array:
-    #     :return:
-    #     """
-    #     return tricorr_array[(0, 2), :]
-
     if go_interface_instance is None:
         go_interface_instance = get_go_interface_instance(param_set)
 
@@ -499,9 +477,6 @@ def compare_to_blank(
     background_sub_array_list = []
     max_sub_array_list = []
     count = 0
-
-    # mean_correlation_accumulator = []
-    # eigenvalues_accumulator = []
 
     log.info("looking to test against:"
              "\t size: %s \t sys_hash: %s \t sparse_rounds: %s" %
@@ -523,11 +498,11 @@ def compare_to_blank(
 
         # # Old code path for clustering
         # if not sparse_rounds:
-        #     # TRACING: [run path refactor] pipe hdd save destination here (1)
-        #     _, _, mean_correlations, eigenvalues = perform_clustering(
+        #     # REAFACTOR: [run path refactor] pipe hdd save destination here (1)
+        #     _, _, mean_correlations, eigenvalues = deprecated_perform_clustering(
         #         tensions, cluster_no, show='')
         # else:
-        #     # CURRENTPASS: [BKI alignment] they should remain undefined
+        #     # REFACTOR: [BKI alignment] they should remain undefined
         #     mean_correlations = np.array([[(0, ), 0, 0]] * cluster_no)
         #     eigenvalues = np.array([-1] * cluster_no)
         #
@@ -566,7 +541,6 @@ def compare_to_blank(
 
     node_currents = go_interface_instance.node_current
     dict_system = go_interface_instance.format_node_props(node_currents)
-    # CURRENTPASS: looks like this fails on a second pass
 
     curr_inf_conf_tot = np.array([[int(key)] + list(val) for key, val in dict_system.items()]).T
 
@@ -594,6 +568,7 @@ def compare_to_blank(
         max_set = max_array[:, max_array[1, :] == degree]
         max_set_red = max_set[0, :].tolist()
 
+        # CURRENTPASS: factor out as a function
         if len(max_set_red) < 10:  # TRACING: factor out
             temp_deg_plus = degree
             temp_deg_minus = degree
@@ -621,7 +596,6 @@ def compare_to_blank(
 
         combined_p_vals[filter] = p_vals
 
-    # TRACING: [run path refactor] pipe the path to here.
     samples_scatter_and_hist(background_array, query_array,
                              save_path=output_destination,
                              p_values=combined_p_vals)
@@ -638,7 +612,7 @@ def compare_to_blank(
     r_rels = np.array(r_rels)
     r_std_nodes = np.array(r_std_nodes)
 
-    not_random_nodes = [node_id for node_id in go_node_ids[r_nodes < p_val].tolist()]
+    not_random_nodes = [node_id for node_id in go_node_ids[r_nodes < p_value_cutoff].tolist()]
 
     log.debug('debug, not random nodes: %s', not_random_nodes)
     log.debug('debug bulbs_id_disp_name: %s',
@@ -662,6 +636,7 @@ def compare_to_blank(
     nodes_dict = defaultdict(lambda: (1., 0., 0.), nodes_dict)  # corresponds to the cases of super low flow - never significant
 
     # TODO: pull the groups corresponding to non-random associations.
+    # => Will not implement, it's already done by Gephi
 
     return sorted(node_char_list, key=lambda x: x[4]), nodes_dict
 
@@ -670,8 +645,8 @@ def compare_to_blank(
     # # Clustering analysis
     # log.info('clustering blank comparison: %s', query_array.shape)
     # if not sparse_rounds:
-    #     # TRACING: [run path refactor] pipe hdd save destination here (1)
-    #     group2avg_off_diag, _, mean_correlations, eigenvalue = perform_clustering(
+    #     # REFACTOR: [run path refactor] pipe hdd save destination here (1)
+    #     group2avg_off_diag, _, mean_correlations, eigenvalue = deprecated_perform_clustering(
     #         go_interface_instance.UP2UP_voltages, cluster_no, 'GO terms clustering')
     #
     # else:
@@ -682,11 +657,11 @@ def compare_to_blank(
     # # Continuation of pure stats analysis
     # log.info('stats on %s samples', count)
     #
-    # r_nodes, r_groups = show_correlations(
+    # r_nodes, r_groups = deprectated_show_correlations(
     #     final, final_mean_correlations, final_eigenvalues,
     #     zoom_range_selector, query_array, mean_correlations.T, eigenvalue.T, count,
     #     sparse=sparse_rounds, go_interface_instance=go_interface_instance,
-    #     save_path=output_destination)  # TRACING [run path refactor]
+    #     save_path=output_destination)  # REFACTOR [run path refactor]
     #
     # group_char = namedtuple(
     #     'Group_Char', [
@@ -749,17 +724,15 @@ def get_estimated_time(samples, sample_sizes, operations_per_sec=2.2):
     return counter
 
 
-# TODO: add support for a background support
 # TODO: [weighted inputs] add support for a dict as source_list, not only list
-# TRACING: [run path refactor] pipe hdd save destination here (3)
 def auto_analyze(source_list,
-                 output_destinations_list: Union[List[str], None] = None,  # TRACING [output]
+                 output_destinations_list: Union[List[str], None] = None,
                  go_interface_instance=None,
                  processors=3,
                  desired_depth=24,
                  skip_sampling=False,
                  param_set=ref_param_set,
-                 output_destination_prefix=''  # deprecated
+                 p_value_cutoff: float = -1,
                  ) -> None:
     """
     Automatically analyzes the GO annotation of the RNA_seq results.
@@ -774,8 +747,8 @@ def auto_analyze(source_list,
 
     # Multiple re-spawns of threaded processing are incompatbile with scikits.sparse.cholmod
     if len(source_list) > 1:
-        global single_threaded
-        single_threaded = True
+        global implicitely_threaded
+        implicitely_threaded = True
 
     if len(output_destinations_list) != len(source_list):
         log.warning('Output destination list has %d elements, whereas %d sources were supplied. '
@@ -794,13 +767,14 @@ def auto_analyze(source_list,
     else:
         desired_depth = desired_depth // processors
 
-    # noinspection PyTypeChecker
-    for hits_list, output_destination in zip(source_list, output_destinations_list):  # TRACING
-    # for hits_list in source_list:
+    if p_value_cutoff < 0:
+        p_value_cutoff = p_val_cutoff
+
+    for hits_list, output_destination in zip(source_list, output_destinations_list):
 
         log.info('Auto analyzing list of interest: %s', len(hits_list))
 
-        outputs_subdirs = NewOutputs(output_destination)  # TRACING
+        outputs_subdirs = NewOutputs(output_destination)
 
         if go_interface_instance is None:
             go_interface_instance = get_go_interface_instance(param_set)
@@ -830,22 +804,19 @@ def auto_analyze(source_list,
                                    go_interface_instance=None,
                                    param_set=param_set)
 
-            # CURRENTPASS: [BKI alignment] memoization logic is absent here
             go_interface_instance.compute_current_and_potentials()
 
-            # TRACING: [run path refactor] pipe hdd save destination here (2)
-            nr_nodes, nr_groups = compare_to_blank(
+            nr_nodes, p_val_dict = compare_to_blank(
                 len(go_interface_instance.annotated_uniprots),
-                [1100, 1300],  # CURRENTPASS: this part should not be there in the new code path.
-                p_val=0.9,
+                p_value_cutoff=p_value_cutoff,
                 go_interface_instance=go_interface_instance,
                 param_set=param_set,
                 output_destination=outputs_subdirs)
 
         # sparse analysis
         else:
-            # CURRENTPASS: [BKI alignment] logic for the ceiling calculation is absent
-            sampling_depth = max(200 ** 2 // len(go_interface_instance.annotated_uniprots), 5)
+            ceiling = min(205, len(go_interface_instance.annotated_uniprots))
+            sampling_depth = max((ceiling - 5) ** 2 // len(go_interface_instance.annotated_uniprots), 5)
 
             if not skip_sampling:
 
@@ -862,38 +833,19 @@ def auto_analyze(source_list,
                                    go_interface_instance=None,
                                    param_set=param_set)
 
-            # CURRENTPASS: [BKI alignment] memoization logic is absent here
             go_interface_instance.compute_current_and_potentials(sparse_samples=sampling_depth)
 
             # go_interface_instance.export_conduction_system()
-            # TRACING: [run path refactor] pipe hdd save destination here (2)
-            nr_nodes, nr_groups = compare_to_blank(
+            nr_nodes, p_val_dict = compare_to_blank(
                 len(go_interface_instance.annotated_uniprots),
-                [1100, 1300],
-                p_val=0.9,  # TRACING: p-value is not loaded here properly
+                p_value_cutoff=p_value_cutoff,
                 sparse_rounds=sampling_depth,
                 go_interface_instance=go_interface_instance,
                 param_set=param_set,
                 output_destination=outputs_subdirs)
 
-        # # TRACING: [run path refactor] correct hdd pipe save location here
-        # if len(output_destination_prefix) > 0:
-        #     prefix = os.path.join(Outputs.prefix, output_destination_prefix)  # TRACING: outputs
-        #     mkdir_recursive(prefix)
-        #     # TODO: make compatible with nested lists supplied to the program
-        #     corrected_knowledge_GDF_output = os.path.join(prefix, 'GO_Analysis_output.gdf')
-        #     corrected_knowledge_tables_output = os.path.join(prefix, 'knowledge_stats.tsv')
-        #
-        # else:
-        #     corrected_knowledge_GDF_output = Outputs.GO_GDF_output  # TRACING: outputs
-        #     corrected_knowledge_tables_output = Outputs.knowledge_network_output  # TRACING: outputs
-
-        # TRACING: outputs remap
-        go_interface_instance.export_conduction_system(output_destination=outputs_subdirs)
-
-        log.info('GO groups')
-        for group in nr_groups:
-            log.info(group)
+        go_interface_instance.export_conduction_system(p_val_dict,
+                                                       output_location=outputs_subdirs.GO_GDF_output)
 
         log.info('\t NodeID \t Name \t current \t informativity \t confusion_potential \t p_val \t '
                  'UP_list')
@@ -901,7 +853,6 @@ def auto_analyze(source_list,
         for node in nr_nodes:
             log.info('\t %s \t %s \t %s \t %s \t %s \t %s \t %s', *node)
 
-        # TRACING: outputs remap
         with open(outputs_subdirs.knowledge_network_output, 'wt') as output:
             writer = csv_writer(output, delimiter='\t')
             writer.writerow(['NodeID', 'Name', 'current', 'informativity', 'confusion_potential',
