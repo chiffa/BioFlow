@@ -4,23 +4,15 @@ TODOs for the project in the future:
 On the table:
 -------------
 
- - DONE: CRITICAL
+ - TODO: CRITICAL: pool fail to restart on cholmod usage
     There seems to be an interference between the "multiprocessing" pool method and a third-party
     library (specifically cholmod). It looks like after a first pool spawn, cholmod is failing to
     re-load a new solution again.
         - DONE: try re-loading the problematic module every time => Fails
-        - DONE: try to explicitely terminate the pool. It worked.
-
-
- - DONE: [DEBUG]: align BioKnowledgeInterface analysis on the InteractomeAnalysis:
-    - Take the background list into account
-    - Take in account the analytics UP list in the hashing (once background is taken into account)
-
-We are dealing with a problem on the annotation analysis network not loading the proper
-background (proably due to the wrong computation of the laplacian). At this point we need to
-align the Annotation analysis on the molecular analysis.
-    - DONE: run git blame on the Molecular network interface, copy new modifications
-    - DONE: run git blame on molecular network analysis, copy the new modifications
+        - DONE: try to explicitely terminate the pool. It didn't work in the end
+        - TODO: extract a minimal example and post it to StackOverflow
+        - TODO: add an implicit switch if there is a single element to analysis or multiple
+            between explicitely multi-threaded and implicitely single-threaded
 
 
 Itermediate problem: there is a loading problem for the `BioKnowledgeInterface` due to `InitSet`
@@ -47,7 +39,6 @@ to generate the version that is being put into storage.
             build and the fastload. Environment parameters are in the `user_configs.py` file.
         - TODO: this is all wrapped in the environment variables
         - TODO: for each run, this is saved as .env text file render.
-
 
 
 Currently, performing an output re-piping. The output destinations are piped around thanks to a
@@ -128,15 +119,6 @@ trust we have in the existence of a link.
         - REQUIRE: the current weighting strategy will be encoded as a function using node types
             (or rather sources).
 
-
- - TODO: [SANITY]: Feed the location of the output folders for logs with the main parameters
-    - TEST: create a function to generate paths from a root location
-    - DONE: define new "TODO"s : (TRACING, OPTIMIZE and CURRENT)
-    - TODO: Move the "info" log outputs to the parameters
-    - TEST: Allow the user to provide the names for the locations where the information will be
-        stored
-    - TEST: trace the pipings of the output / log locations
-
  - TODO: [USABILITY] Improve the progress reporting
         Move the INFO to a progress bar. The problem is that we are working with multiple threads in
         async environment. This can be mitigated by using the `aptbar` library
@@ -214,6 +196,23 @@ Current refactoring:
  - TODO: [SANITY] convert the dicts to Type Aliases / NewType and perform proper type hinting
 
 
+ - DONE: [DEBUG]: align BioKnowledgeInterface analysis on the InteractomeAnalysis:
+    - Take the background list into account
+    - Take in account the analytics UP list in the hashing (once background is taken into account)
+    We are dealing with a problem on the annotation analysis network not loading the proper
+    background (proably due to the wrong computation of the laplacian). At this point we need to
+    align the Annotation analysis on the molecular analysis.
+        - DONE: run git blame on the Molecular network interface, copy new modifications
+        - DONE: run git blame on molecular network analysis, copy the new modifications
+
+
+ - TODO: [SANITY]: Feed the location of the output folders for logs with the main parameters
+    - DONE: create a function to generate paths from a root location
+    - DONE: define new "TODO"s : (TRACING, OPTIMIZE and CURRENT)
+    - DONE: Move the "info" log outputs to the parameters
+    - NOIMP: Allow the user to provide the names for the locations where the information will be
+        stored
+    - DONE: trace the pipings of the output / log locations
 
  - DONE: [USABILITY] add a general error log into the info files
 

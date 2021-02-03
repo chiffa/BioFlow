@@ -772,6 +772,11 @@ def auto_analyze(source_list,
     :param param_set:
     """
 
+    # Multiple re-spawns of threaded processing are incompatbile with scikits.sparse.cholmod
+    if len(source_list) > 1:
+        global single_threaded
+        single_threaded = True
+
     if len(output_destinations_list) != len(source_list):
         log.warning('Output destination list has %d elements, whereas %d sources were supplied. '
                     'Falling back to default output structure')
