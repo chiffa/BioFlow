@@ -143,11 +143,11 @@ if __name__ == "__main__":
                                  skip_sampling=False
                                  )
 
-            # # # perform the knowledge analysis
-            # knowledge_analysis([hits_ids[:20]],
-            #                    ['chr_%s' % filename[:-4]],
-            #                    desired_depth=1,
-            #                    processors=1,
-            #                    param_set=paramset_with_background,
-            #                    skip_sampling=False,
-            #                    )
+            # # perform the knowledge analysis
+            knowledge_analysis([hits_ids[:20]],
+                               ['chr_%s' % filename[:-4]],
+                               desired_depth=1,
+                               processors=1,
+                               param_set=paramset_with_background,
+                               skip_sampling=False,
+                               )

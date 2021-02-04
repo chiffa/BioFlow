@@ -43,7 +43,6 @@ env_bki_ultraspec_clean = True  # BKI cleans ultra-specific terms
 env_bki_ultraspec_lvl = 3  # How many proteins at most would be annotated by a term considered as
                            # ultra-specific
 
-
 # those are deep configurations and should not be touched unless you know what you are doing:
 switch_to_splu = False  # switching this to True incurs approximately an 100-fold slowdown
 share_solver = True  # switching this to False incurs approximately a 50-fold slowdown
@@ -61,3 +60,5 @@ fraction_edges_dropped_in_laplacian = 0.0
 
 # This is the p-value that is set by user and is to be propagated throughout the analyses.
 p_val_cutoff = 0.2
+# This is the minimum nodes per degree used in p_value calculation
+min_nodes_for_p_val = 10

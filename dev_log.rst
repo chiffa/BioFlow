@@ -4,11 +4,10 @@ TODOs for the project in the future:
 On the table:
 -------------
 
- - TODO: [FEATURE]:
-    - add p-value and pp-value to the GO annotation export
+<CONFIGS sanity>
 
- - TODO: [FEATURE]:
-    - add the selection of the degree width window for stat. significance calculation.
+ - TODO: [USABILITY] store a header of what was analyzed and where it was pulled from + env
+        parameters in a text file in the beginning of a run.
 
 Itermediate problem: there is a loading problem for the `BioKnowledgeInterface` due to `InitSet`
 used on the construction (~6721 nodes) is significantly bigger than the `InitSet` used in order
@@ -75,6 +74,9 @@ either be a persistent dump that is loaded every time the user is spooling up th
         - REQUIRE a refactor to remove the conflicting definitions (such as deployment vs test
             server parameters)
 
+
+<node weights/context forwarding>
+
  - TODO: [PLANNED] implement the neo4j edge weight transfer into the Laplacian
     - TODO: trace the weights injection
     - TODO: define the weighting rules for neo4j
@@ -109,6 +111,9 @@ trust we have in the existence of a link.
         - REQUIRE: the current weighting strategy will be encoded as a function using node types
             (or rather sources).
 
+
+<pretty progress>
+
  - TODO: [USABILITY] Improve the progress reporting
         Move the INFO to a progress bar. The problem is that we are working with multiple threads in
         async environment. This can be mitigated by using the `aptbar` library
@@ -118,10 +123,19 @@ trust we have in the existence of a link.
         DEBUG channel
     - TODO: provide progress bar binding for the importers as well
 
-- TODO: [SANITY] move the additional from the "annotation_network" to somewhere saner
+
+<Documentation>
+
+ - TODO: [DOC] put an explanation of overall workflow of the library
+
+ - TODO: [MAINTENABILITY] put a straightjacket of the
 
 Current refactoring:
 --------------------
+
+ - TODO: [REFACTOR/maintainability]:
+
+ - TODO: [SANITY] move the additional from the "annotation_network" to somewhere saner
 
  - TODO: [SANITY]: put all the imports  under the umbrella making clear where they come from
 
@@ -135,13 +149,11 @@ Current refactoring:
         - DONE: add an implicit switch if there is a single element to analysis or multiple
             between explicitely multi-threaded and implicitely single-threaded
 
- - TODO: [FEATURE]: Factor out the structural analysis of the network properties to a location
+ - TODO: [FEATURE]: Factor out the structural analysis of the network properties to a module
 
  - TODO: [FEATURE]: Factor out the clustering analysis of the network to a different function in
         the knowledge/interactome analyses
 
- - TODO: [USABILITY] store a header of what was analyzed and where it was pulled from + env
-        parameters in a text file in the beginning of a run.
 
  - TODO: [REFACTOR] re-align the command line interface onto the example of an analysis pipeline
 
@@ -176,10 +188,6 @@ Current refactoring:
 
  - TODO: [USABILITY] add a proper tabulation and limit float length in the final results print-out
 
- - DONE: [USABILITY] save the final table as a tsv into the run directory
-
- - DONE: [USABILITY] format the run folders with the list send to the different methods
-
  - TODO: [USABILITY]: fold the current verbose state into a `-v/--vebose` argument
 
  - TODO: [USABILITY]: allow a fast analysis re-run by storing actual UP groups analysis in a
@@ -195,6 +203,12 @@ Current refactoring:
  - TODO: [SANITY] convert the dicts to Type Aliases / NewType and perform proper type hinting
 
 
+
+ - DONE: [FEATURE] [REFACTOR]:
+    - add the selection of the degree width window for stat. significance calculation.
+
+ - DONE: [FEATURE]:
+    - add p-value and pp-value to the GO annotation export
 
  - DONE: Currently, performing an output re-piping. The output destinations are piped around thanks
     to a NewOutput class in main_configs, which can be initialized with a local output directory
@@ -231,6 +245,10 @@ Current refactoring:
     - DONE: trace the pipings of the output / log locations
 
  - DONE: [USABILITY] add a general error log into the info files
+
+ - DONE: [USABILITY] save the final table as a tsv into the run directory
+
+ - DONE: [USABILITY] format the run folders with the list send to the different methods
 
  - DONE: [USABILITY] add a catch-it-all for the logs
 

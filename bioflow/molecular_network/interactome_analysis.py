@@ -19,12 +19,14 @@ from scipy.stats import gumbel_r
 from bioflow.algorithms_bank.conduction_routines import deprecated_perform_clustering
 from bioflow.main_configs import Dumps, estimated_comp_ops, NewOutputs
 from bioflow.sample_storage.mongodb import find_interactome_rand_samp, count_interactome_rand_samp
-from bioflow.user_configs import sparse_analysis_threshold, implicitely_threaded, output_location, p_val_cutoff
+from bioflow.user_configs import sparse_analysis_threshold, implicitely_threaded, \
+    output_location, min_nodes_for_p_val, p_val_cutoff
 from bioflow.molecular_network.InteractomeInterface import InteractomeInterface
 from bioflow.utils.dataviz import kde_compute
 from bioflow.utils.log_behavior import get_logger
 from bioflow.utils.io_routines import get_source_bulbs_ids, get_background_bulbs_ids
 from bioflow.utils.general_utils.high_level_os_io import mkdir_recursive
+from bioflow.algorithms_bank.flow_significance_evaluation import get_neighboring_degrees, get_p_val_by_gumbel
 
 
 log = get_logger(__name__)
@@ -312,25 +314,17 @@ def compare_to_blank(blank_model_size: int,
     combined_p_vals = np.ones_like(query_array[1, :])
 
     for degree in degrees.tolist():
-        filter = query_array[1, :] == degree
+        _filter = query_array[1, :] == degree
 
-        entry = query_array[:, filter]
+        entry = query_array[:, _filter]
         background_set = background_array[:, background_array[1, :] == degree]
-        max_set = max_array[:, max_array[1, :] == degree]
 
-        params = gumbel_r.fit(max_set[0, :])
-        arg = params[:-2]
-        mu = params[-2]
-        beta = params[-1]
+        max_current_per_run = get_neighboring_degrees(degree,
+                                                      max_array,
+                                                      min_nodes=min_nodes_for_p_val)
 
-        frozen_gumbel = gumbel_r(loc=mu, scale=beta)
-
-        p_vals = 1 - frozen_gumbel.cdf(entry[0, :])
-
-        combined_p_vals[filter] = p_vals
-
-        # Insert into appropriate locations => we assume that the order is preserved
-
+        p_vals = get_p_val_by_gumbel(entry, max_current_per_run)
+        combined_p_vals[_filter] = p_vals
 
     samples_scatter_and_hist(background_array, query_array,
                              save_path=output_destination,
@@ -460,7 +454,7 @@ def auto_analyze(source_list: List[List[int]],
                     processors,
                     [len(interactome_interface.entry_point_uniprots_neo4j_ids)],
                     [desired_depth],
-                    interactome_interface_instance=None)  # Last correction - looks like working
+                    interactome_interface_instance=None)
 
             interactome_interface.compute_current_and_potentials()
 
@@ -490,7 +484,7 @@ def auto_analyze(source_list: List[List[int]],
                                    [len(interactome_interface.entry_point_uniprots_neo4j_ids)],
                                    [desired_depth],
                                    sparse_rounds=sampling_depth,
-                                   interactome_interface_instance=None)  # Last correction - looks like working
+                                   interactome_interface_instance=None)
 
             log.info('real run characteristics: sys_hash: %s, size: %s, sparse_rounds: %s' % (interactome_interface.md5_hash(),
                                                                                               len(interactome_interface.entry_point_uniprots_neo4j_ids), sampling_depth))
@@ -512,7 +506,7 @@ def auto_analyze(source_list: List[List[int]],
             'display name', 'info flow', 'degree', 'p value')
 
         for node in nr_nodes:
-            log.info('\t %s \t %s \t %s \t %s \t %s', *node)
+            log.info('\t %s \t %s \t %.3g \t %d \t %.3g', *node)
 
         with open(outputs_subdirs.interactome_network_output, 'wt') as output:
             writer = csv_writer(output, delimiter='\t')
