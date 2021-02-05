@@ -151,3 +151,6 @@ if __name__ == "__main__":
                                param_set=paramset_with_background,
                                skip_sampling=False,
                                )
+
+            raise Exception('debug')
+

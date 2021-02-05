@@ -10,11 +10,12 @@ from matplotlib import pyplot as plt
 from csv import writer as csv_writer
 from typing import Union, List
 from collections import defaultdict
+from tabulate import tabulate
 
 from bioflow.annotation_network.BioKnowledgeInterface import GeneOntologyInterface
 from bioflow.main_configs import estimated_comp_ops, NewOutputs
 from bioflow.sample_storage.mongodb import find_annotome_rand_samp, count_annotome_rand_samp
-from bioflow.user_configs import sparse_analysis_threshold, p_val_cutoff, min_nodes_for_p_val
+from bioflow.user_configs import sparse_analysis_threshold, p_val_cutoff, min_nodes_for_p_val, implicitely_threaded
 from bioflow.utils.dataviz import kde_compute
 from bioflow.utils.io_routines import get_source_bulbs_ids
 from bioflow.utils.log_behavior import get_logger
@@ -101,6 +102,8 @@ def spawn_sampler_pool(
 
     payload_list = payload * pool_size
     payload_list = [list(item)+[i] for i, item in enumerate(payload_list)]  # prepare the payload
+
+    global implicitely_threaded
 
     if not implicitely_threaded:  # TODO: this can be extracted as a shared routine to utils module
         with Pool(processes=pool_size) as pool:  # This is the object we are using to spawn a thread pool
@@ -356,7 +359,7 @@ def compare_to_blank(
     # TODO: pull the groups corresponding to non-random associations.
     # => Will not implement, it's already done by Gephi
 
-    return sorted(node_char_list, key=lambda x: x[4]), nodes_dict
+    return sorted(node_char_list, key=lambda x: x[5]), nodes_dict
 
 
 def get_estimated_time(samples, sample_sizes, operations_per_sec=2.2):
@@ -503,11 +506,13 @@ def auto_analyze(source_list,
         go_interface_instance.export_conduction_system(p_val_dict,
                                                        output_location=outputs_subdirs.GO_GDF_output)
 
-        log.info('\t NodeID \t Name \t current \t informativity \t confusion_potential \t p_val \t '
-                 'UP_list')
 
-        for node in nr_nodes:
-            log.info('\t %s \t %s \t %.3g \t %.3g \t %d \t %.3g \t %s', *node)
+        # # old results print-out
+        # log.info('\t NodeID \t Name \t current \t informativity \t confusion_potential \t p_val \t '
+        #          'UP_list')
+        #
+        # for node in nr_nodes:
+        #     log.info('\t %s \t %s \t %.3g \t %.3g \t %d \t %.3g \t %s', *node)
 
         with open(outputs_subdirs.knowledge_network_output, 'wt') as output:
             writer = csv_writer(output, delimiter='\t')
@@ -515,6 +520,14 @@ def auto_analyze(source_list,
                              'p_val', 'UP_list'])
             for node in nr_nodes:
                 writer.writerow(node)
+
+        # using tabulate
+
+        headers = ['NodeID', 'Name', 'current', 'informativity', 'confusion_potential', 'p_val',
+                   'UP_list']
+
+        print(tabulate(nr_nodes, headers, tablefmt='simple', floatfmt=".3g"))
+
 
 
 if __name__ == "__main__":

@@ -15,6 +15,7 @@ from typing import Any, Union, TypeVar, NewType, Tuple, List
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy.stats import gumbel_r
+from tabulate import tabulate
 
 from bioflow.algorithms_bank.conduction_routines import deprecated_perform_clustering
 from bioflow.main_configs import Dumps, estimated_comp_ops, NewOutputs
@@ -106,6 +107,8 @@ def spawn_sampler_pool(
              interactome_interface_instance)]
     payload_list = payload * pool_size
     payload_list = [list(item)+[i] for i, item in enumerate(payload_list)]  # prepare the payload
+
+    global implicitely_threaded
 
     if not implicitely_threaded:
         with Pool(processes=pool_size) as pool:  # This is the object we are using to spawn a thread pool
@@ -502,17 +505,24 @@ def auto_analyze(source_list: List[List[int]],
         interactome_interface.export_conduction_system(p_val_dict,
                                                        output_location=outputs_subdirs.Interactome_GDF_output)
 
-        log.info('\t %s \t %s \t %s \t %s \t %s', 'node id',
-            'display name', 'info flow', 'degree', 'p value')
-
-        for node in nr_nodes:
-            log.info('\t %s \t %s \t %.3g \t %d \t %.3g', *node)
+        # # old results print-out
+        # log.info('\t %s \t %s \t %s \t %s \t %s', 'node id',
+        #     'display name', 'info flow', 'degree', 'p value')
+        #
+        # for node in nr_nodes:
+        #     log.info('\t %s \t %s \t %.3g \t %d \t %.3g', *node)
 
         with open(outputs_subdirs.interactome_network_output, 'wt') as output:
             writer = csv_writer(output, delimiter='\t')
             writer.writerow(['node id', 'display name', 'info flow', 'degree', 'p value'])
             for node in nr_nodes:
                 writer.writerow(node)
+
+        # using tabulate
+
+        headers = ['node id', 'display name', 'info flow', 'degree', 'p value']
+
+        print(tabulate(nr_nodes, headers, tablefmt='simple', floatfmt=".3g"))
 
 
 if __name__ == "__main__":
