@@ -13,9 +13,9 @@ from collections import defaultdict
 from tabulate import tabulate
 
 from bioflow.annotation_network.BioKnowledgeInterface import GeneOntologyInterface
-from bioflow.main_configs import estimated_comp_ops, NewOutputs
+from bioflow.configs.main_configs import estimated_comp_ops, NewOutputs, sparse_analysis_threshold, \
+    implicitely_threaded, p_val_cutoff, min_nodes_for_p_val
 from bioflow.sample_storage.mongodb import find_annotome_rand_samp, count_annotome_rand_samp
-from bioflow.user_configs import sparse_analysis_threshold, p_val_cutoff, min_nodes_for_p_val, implicitely_threaded
 from bioflow.utils.dataviz import kde_compute
 from bioflow.utils.io_routines import get_source_bulbs_ids
 from bioflow.utils.log_behavior import get_logger

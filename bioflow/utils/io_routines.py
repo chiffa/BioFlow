@@ -3,7 +3,7 @@ Defines a couple of useful method to perform IO on dumping files
 """
 from pickle import load, dump
 from csv import reader
-from bioflow.main_configs import Dumps
+from bioflow.configs.main_configs import Dumps
 from time import time
 import subprocess
 import numpy as np

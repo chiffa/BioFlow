@@ -4,7 +4,7 @@ without the need to export the whole relation matrix
 """
 import numpy as np
 from scipy.sparse import lil_matrix
-from bioflow.main_configs import Dumps
+from bioflow.configs.main_configs import Dumps
 from bioflow.utils.general_utils.high_level_os_io import mkdir_recursive
 
 # TODO: this class needs to be split into the GDF core that does all the work on a matrix rendering

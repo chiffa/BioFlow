@@ -12,7 +12,7 @@ import numpy as np
 from scipy import histogram2d
 from scipy.stats import gaussian_kde
 import os
-from bioflow.user_configs import output_location
+from bioflow.configs.bioflow_home import output_location
 from typing import Any, Union, TypeVar, NewType, Tuple, List
 
 

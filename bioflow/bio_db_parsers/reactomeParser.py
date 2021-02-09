@@ -4,7 +4,7 @@ Module containing the Reactome Biopax lvl3 .owl file parser
 import xml.etree.ElementTree as ET
 from collections import defaultdict
 from bioflow.utils.log_behavior import get_logger
-from bioflow import main_configs
+from bioflow.configs import main_configs
 import os
 
 

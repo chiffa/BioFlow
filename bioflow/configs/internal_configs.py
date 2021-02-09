@@ -3,6 +3,7 @@ Contains internal configurations that the user might want to act upon. For now, 
 the API_doc, just code comments for the maintainers
 """
 
+# CURRENTPASS: [EDGE WEIGHTS] refactor this into a more clear state.
 
 #  Configures the mappings between concrete edge types and meta-types used for confidence
 # calculation
@@ -47,9 +48,6 @@ forbidden_verification_list = ['Small Molecule',
 
 
 # TODO: Those need to be used to a module that is user-modifiable
-
-#  Fudge for matrix diagonalization and other solver functions
-line_loss = 1e-10
 
 # Coefficients values for the value_Matrix
 adjacency_matrix_weights = {

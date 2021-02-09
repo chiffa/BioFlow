@@ -3,7 +3,7 @@ from matplotlib import pyplot as plt
 
 from bioflow.annotation_network.knowledge_access_analysis import ref_param_set, \
     get_go_interface_instance
-from bioflow.main_configs import NewOutputs
+from bioflow.configs.main_configs import NewOutputs
 from bioflow.utils.dataviz import kde_compute
 
 

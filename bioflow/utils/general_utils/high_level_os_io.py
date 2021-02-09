@@ -2,7 +2,7 @@
 Saner io and filesystem manipulation compared to python defaults
 """
 import os
-from shutil import rmtree
+from shutil import rmtree, copyfile
 from bioflow.utils.log_behavior import get_logger
 
 
@@ -67,3 +67,10 @@ def wipe_dir(path):  # pragma: no cover
     log.debug('performing a rmtree')
     rmtree(directory_name)
     return True
+
+
+def copy_if_doesnt_exist(source, destination):  # pragma: no cover
+    if not os.path.isfile(destination):
+        log.info('Did not detect file %s at the destination, copying from source %s' % (source,
+                                                                                        destination))
+        copyfile(source, destination)

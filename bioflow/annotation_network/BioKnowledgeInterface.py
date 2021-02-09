@@ -23,7 +23,7 @@ from scipy.sparse import lil_matrix, triu
 from scipy.sparse.csgraph import shortest_path
 
 from bioflow.algorithms_bank import conduction_routines as cr
-from bioflow.main_configs import Dumps, NewOutputs
+from bioflow.configs.main_configs import Dumps, NewOutputs
 from bioflow.sample_storage.mongodb import insert_annotome_rand_samp
 from bioflow.molecular_network.InteractomeInterface import InteractomeInterface
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph

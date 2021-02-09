@@ -1,13 +1,13 @@
 """
 This module is responsible for the import of the data parsed from the UNIPROT text file
 """
-from bioflow import main_configs
+from bioflow.configs import main_configs
 from bioflow.utils.log_behavior import get_logger
 from bioflow.bio_db_parsers.geneOntologyParser import GOTermsParser
 from bioflow.bio_db_parsers.uniprotParser import UniProtParser
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from bioflow.neo4j_db.db_io_routines import get_db_id
-from bioflow.internal_configs import neo4j_names_dict
+from bioflow.configs.internal_configs import neo4j_names_dict
 
 log = get_logger(__name__)
 

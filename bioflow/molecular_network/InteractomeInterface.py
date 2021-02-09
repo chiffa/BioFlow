@@ -21,14 +21,15 @@ from scipy.sparse.csgraph import connected_components
 from scipy.sparse.linalg import eigsh
 from itertools import chain
 
+import bioflow.configs.main_configs
 from bioflow.utils.gdfExportInterface import GdfExportInterface
 from bioflow.utils.io_routines import write_to_csv, dump_object, undump_object
 from bioflow.utils.log_behavior import get_logger
-from bioflow.main_configs import Dumps, NewOutputs
+from bioflow.configs.main_configs import Dumps, NewOutputs, env_skip_reactome, env_skip_hint, \
+    env_skip_biogrid, use_normalized_laplacian, fraction_edges_dropped_in_laplacian
 from bioflow.sample_storage.mongodb import insert_interactome_rand_samp
-from bioflow.user_configs import internal_storage, env_skip_hint, env_skip_biogrid, env_skip_reactome, \
-    use_normalized_laplacian, fraction_edges_dropped_in_laplacian
-from bioflow.internal_configs import edge_type_filters, adjacency_matrix_weights, \
+from bioflow.configs.bioflow_home import internal_storage
+from bioflow.configs.internal_configs import edge_type_filters, adjacency_matrix_weights, \
     laplacian_matrix_weights
 from bioflow.algorithms_bank import conduction_routines as cr
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
@@ -57,7 +58,7 @@ class InteractomeInterface(object):
     # used as roots to build the interaction network (not all nodes are necessary
     # within the connex part of the graph)
 
-    # CURRENTPASS: move to configs
+    # CURRENTPASS: move to internal_configs
     reactions_types_list = ['TemplateReaction', 'Degradation', 'BiochemicalReaction']
 
     def __init__(self, main_connex_only, full_impact):
@@ -806,7 +807,7 @@ class InteractomeInterface(object):
             sorted_initial_set,
             self.full_impact,
             connected_ups,
-            cr.line_loss,
+            bioflow.configs.main_configs.line_loss,
             use_normalized_laplacian,
             fraction_edges_dropped_in_laplacian,
             (env_skip_reactome, env_skip_hint, env_skip_biogrid)]
@@ -828,7 +829,7 @@ class InteractomeInterface(object):
                      self.full_impact,
                      hashlib.md5(json.dumps(connected_ups, sort_keys=True).encode(
                                                 'utf-8')).hexdigest(),
-                     cr.line_loss,
+                     bioflow.configs.main_configs.line_loss,
                      use_normalized_laplacian,
                      fraction_edges_dropped_in_laplacian,
                      (env_skip_reactome, env_skip_hint, env_skip_biogrid)))

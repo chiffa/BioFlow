@@ -11,7 +11,7 @@ from scipy.stats import t
 
 from bioflow.utils.io_routines import dump_object
 from bioflow.utils.log_behavior import get_logger
-from bioflow.main_configs import rna_source, Dumps
+from bioflow.configs.main_configs import Dumps
 from bioflow.neo4j_db import db_io_routines
 
 log = get_logger(__name__)
@@ -200,6 +200,7 @@ if __name__ == "__main__":
     exp_groups = [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
     test_groups_to_compare = [[0, 1], [0, 2]]
 
+    rna_source = "/home/ank/Documents/External_Predictions/Ben_RNA_seq/counts.tsv"
     # TODO: unittest
     run_analysis_suite(
         rna_source,

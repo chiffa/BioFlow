@@ -3,7 +3,7 @@ Responsible for the injection of the phosphosite phosphorilation regulation into
 """
 from bioflow.bio_db_parsers.PhosphositeParser import parse_phosphosite
 from bioflow.utils.log_behavior import get_logger
-from bioflow.main_configs import phosphosite_path, phosphosite_organism
+from bioflow.configs.main_configs import phosphosite_path, phosphosite_organism
 from bioflow.neo4j_db.db_io_routines import convert_to_internal_ids
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from time import time

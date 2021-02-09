@@ -11,13 +11,11 @@ from bioflow.sample_storage.mongodb import count_interactome_rand_samp, find_int
 from bioflow.utils.log_behavior import get_logger
 from bioflow.molecular_network.InteractomeInterface import InteractomeInterface
 from bioflow.algorithms_bank.conduction_routines import deprecated_perform_clustering
-from bioflow.main_configs import Dumps
+from bioflow.configs.main_configs import Dumps
 from bioflow.utils.top_level import map_and_save_gene_ids
 # from bioflow.algorithms_bank.conduction_routines import get_current_through_nodes
 from matplotlib.cm import get_cmap
-from bioflow.main_configs import output_location
-from bioflow.user_configs import sources_location
-
+from bioflow.configs.bioflow_home import sources_location, output_location
 
 log = get_logger(__name__)
 

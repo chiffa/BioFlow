@@ -1,5 +1,5 @@
 from pymongo import MongoClient
-from bioflow.main_configs import mongo_db_url, pymongo_prefix, pymongo_suffix
+from bioflow.configs.main_configs import mongo_db_url, pymongo_prefix, pymongo_suffix
 
 
 # Original module ported from main_configs

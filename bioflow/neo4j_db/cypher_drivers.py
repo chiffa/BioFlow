@@ -2,11 +2,11 @@ import os
 from pprint import pprint
 from neo4j import GraphDatabase
 from bioflow.utils.log_behavior import get_logger
-from bioflow.main_configs import neo4j_server
+from bioflow.configs.main_configs import neo4j_server_url
 
 log = get_logger(__name__)
 
-uri = neo4j_server
+uri = neo4j_server_url
 user = 'neo4j'
 password = os.environ['NEOPASS']
 

@@ -2,7 +2,7 @@ from csv import reader as csv_reader
 import numpy as np
 from collections import defaultdict
 import os
-import bioflow.main_configs as mc
+import bioflow.configs.main_configs as mc
 
 
 def parse_TRRUST(trrust_file):

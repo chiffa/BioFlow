@@ -19,8 +19,9 @@ from typing import Any, Union, TypeVar, NewType, Tuple, List
 
 from bioflow.utils.log_behavior import get_logger
 from bioflow.utils.dataviz import render_2d_matrix
-from bioflow.internal_configs import line_loss
-from bioflow.user_configs import memory_source_allowed, switch_to_splu, node_current_in_debug, share_solver
+# from bioflow.internal_configs import line_loss
+from bioflow.configs.main_configs import switch_to_splu, share_solver, memory_source_allowed, \
+    node_current_in_debug, line_loss
 from bioflow.utils.linalg_routines import cluster_nodes, average_off_diag_in_sub_matrix, \
     average_interset_linkage, normalize_laplacian
 

@@ -18,10 +18,10 @@ from scipy.stats import gumbel_r
 from tabulate import tabulate
 
 from bioflow.algorithms_bank.conduction_routines import deprecated_perform_clustering
-from bioflow.main_configs import Dumps, estimated_comp_ops, NewOutputs
+from bioflow.configs.main_configs import Dumps, estimated_comp_ops, NewOutputs, \
+    sparse_analysis_threshold, implicitely_threaded, p_val_cutoff, min_nodes_for_p_val
 from bioflow.sample_storage.mongodb import find_interactome_rand_samp, count_interactome_rand_samp
-from bioflow.user_configs import sparse_analysis_threshold, implicitely_threaded, \
-    output_location, min_nodes_for_p_val, p_val_cutoff
+from bioflow.configs.bioflow_home import output_location
 from bioflow.molecular_network.InteractomeInterface import InteractomeInterface
 from bioflow.utils.dataviz import kde_compute
 from bioflow.utils.log_behavior import get_logger
@@ -410,6 +410,7 @@ def auto_analyze(source_list: List[List[int]],
         processors = psutil.cpu_count() - 1
         log.info("Setting processor count to default: %s" % processors)
 
+    # TODO: check MongoDb to see if we have enough samples of the needed type, adjust the sampling
     # noinspection PyTypeChecker
     if desired_depth % processors != 0:
         desired_depth = desired_depth // processors + 1

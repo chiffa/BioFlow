@@ -2,21 +2,16 @@
 File managing most of the logging behavior of the application.
 """
 import os
-from os import path
+# from os import path
 import logging
 import logging.handlers
 import sys
 from shutil import rmtree
-
-from smtplib import SMTP
-from datetime import datetime
-from email.message import EmailMessage
 import traceback
 import warnings
 import threading
 
-from bioflow.user_configs import smtp_logging_parameters, smtp_logging, log_location, output_location
-
+from bioflow.configs.bioflow_home import output_location, log_location
 
 on_unittest = os.environ.get('UNITTESTING') == 'True'  # if we are unittesting
 on_remote_unittest = os.environ.get('REMOTE_UNITTEST') == 'True'  # if we are testing on CI tools
@@ -110,6 +105,7 @@ formatter = logging.Formatter(
 if on_dev:
     wipe_dir(log_location)
 
+
 # create location where the logs will be stored
 mkdir_recursive(log_location)
 mkdir_recursive(output_location)
@@ -147,7 +143,7 @@ def get_logger(logger_name):
         _logger.critical("Uncaught thread exception", exc_info=(exc_type, exc_value, exc_traceback))
         raise RuntimeError("Terminating the Exception handling")
 
-    threading.excepthook = handle_exception
+    threading.excepthook = handle_thread_exception
 
     logging.captureWarnings(True)
     default_warn_logger = logging.getLogger("py.warnings")
@@ -162,45 +158,10 @@ def get_logger(logger_name):
         ch.setFormatter(formatter)
         _logger.addHandler(ch)
 
-    if smtp_logging:
-        mail_handler = logging.handlers.SMTPHandler(
-            mailhost=smtp_logging_parameters['local_host'],
-            fromaddr=smtp_logging_parameters['local_mail_account'],
-            toaddrs=smtp_logging_parameters['reporting_target_mail'],
-            subject="BioFlow runtime error"
-        )
-
-        mail_handler.setLevel(logging.ERROR)
-        _logger.addHandler(mail_handler)
-
     return _logger
 
-
-mime_message = EmailMessage()
-mime_message['From'] = smtp_logging_parameters['local_mail_account']
-mime_message['To'] = smtp_logging_parameters['reporting_target_mail']
-
-
-def successfully_completed(start_date, start_device):
-
-    with SMTP(host=smtp_logging_parameters['local_host']) as smtp_server:
-        mime_message['Subject'] = 'Run started on %s and %s has completed' % (start_date.isoformat(), start_device)
-        mime_message.set_content('Run has completed successfully after %s minutes' % ((datetime.now() -
-                   start_date).total_seconds()/60.))
-
-        smtp_server.send_message(mime_message)
-
-
-def smtp_error_bail_out():
-
-    with SMTP(host=smtp_logging_parameters['local_host']) as smtp_server:
-        mime_message['Subject'] = 'SMTPHandler error bail-out'
-        mime_message.set_content("There was an error in the code and the logger's SMPTHandler bailed out.")
-        print(smtp_server.noop())
-        smtp_server.send_message(mime_message)
-
-
-logger = get_logger('this_logger_needs_to_be_renamed')
+# # test everything is working
+# logger = get_logger('this_logger_needs_to_be_renamed')
 
 
 def clear_logs():

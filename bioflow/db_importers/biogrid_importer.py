@@ -3,7 +3,7 @@ Responsible for the injection of the BioGRID parse into the main space.
 """
 from bioflow.bio_db_parsers.proteinRelParsers import parse_bio_grid
 from bioflow.utils.log_behavior import get_logger
-from bioflow.main_configs import biogrid_path
+from bioflow.configs.main_configs import biogrid_path
 from bioflow.neo4j_db.db_io_routines import convert_to_internal_ids
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from time import time

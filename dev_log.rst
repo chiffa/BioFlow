@@ -4,77 +4,6 @@ TODOs for the project in the future:
 On the table:
 -------------
 
-<CONFIGS sanity>
-
- - TODO: [USABILITY] store a header of what was analyzed and where it was pulled from + env
-        parameters in a text file in the beginning of a run.
-
-Itermediate problem: there is a loading problem for the `BioKnowledgeInterface` due to `InitSet`
-used on the construction (~6721 nodes) is significantly bigger than the `InitSet` used in order
-to generate the version that is being put into storage.
-    - `InitSet` is loaded as `InteractomeInterface.all_uniprots_neo4j_id_list`. In case
-    `reduced_set_uniprot_node_ids` is defined in the parameters, the source set from the
-    `InteractomeInterface` is trimmed to only nodes that are present in the limiter list.
-    - `InteractomeInterface` is the one currently stored in a way that can be retrieved by a
-    `.fast_load()` and is not changed since the last  since the last load. The `.fast_load()` call
-    is performed
-
-    - It looks like the problem is in the fact that the rebuild uses a background limiter (all
-    detectable genes), whereas the fast load doesn't.
-
-    => Temporary fix:
-        - DONE: define a paramset with background in the `analysis_pipeline_example`.
-
-    => In the end, it is a problem of organization of the parameters and of the context.
-        - TODO: Set a user flag to know if we are currently using a background.
-        - TODO: Set a checkers on the background loads to make sure we
-        - TODO: Version the builds of the MolecularInterface and BioKnowledge interface
-        - TODO: Provide a fast fail in case if the environment parameters differ between the
-            build and the fastload. Environment parameters are in the `user_configs.py` file.
-        - TODO: this is all wrapped in the environment variables
-        - TODO: for each run, this is saved as .env text file render.
-
-
- - TODO: [SANITY] Configs management:
-    - move the organism to the '~/bioflow'
-    - all the stings `+` need to be `os.path.join`.
-    - active organism is now the only thing that is saved. It is stored in "shelve" file inside a
-        ".internal" directory
-    - fold in the sources for the databases into a single location, with a selector from "shelve"
-        indicating which organims to load.
-    - create a user interface command in order to set up the environment and a saving file that
-        allows the configs to be saved between the users.
-    - move the `online_dbs.ini`, `mouse.ini`, `yeast.ini` to the `~/bioflow/configs` and add
-    `user_configs.ini` to it to replace `user_configs.py`.
-
- - TODO: [SANITY]: move the location from which the base folder is read for it to be computed
-        (for relative bioflow home insertion) (basically the servers.ini override)
-
-The next step will be to register user configurations in a more sane way. Basically, it can
-either be a persistent dump that is loaded every time the user is spooling up the program or an
-.ini file in additions to the ones already existing
-
-    - Peristent dump:
-        - PLUS: Removes the need to perform reading in and out of .ini files
-        - PLUS: Guarantees that the parameters will always be well formed
-        - MINUS: is non-trivial to modify for the users
-
-    - .ini files:
-        - PLUS: Works in a way that is familiar to most people
-        - PLUS: Allows
-        - MINUS: in case configurations are not properly defined, all crashes
-
-    - Both:
-        - REQUIRE a command line process to define the variables
-        - REQUIRE a command line to show all the active flags
-        - REQUIRE the configs folder to be gutted of active configs and them moved to the
-            ~/bioflow directory
-        - REQUIRE a refactor to show transparently the override between the default parameters
-            and the user-supplied parameters
-        - REQUIRE a refactor to remove the conflicting definitions (such as deployment vs test
-            server parameters)
-
-
 <node weights/context forwarding>
 
  - TODO: [FUTUREPROOFING] [CODESMELL] get away from using `_properties` of the neo4j database
@@ -115,7 +44,6 @@ trust we have in the existence of a link.
         - REQUIRE: the current weighting strategy will be encoded as a function using node types
             (or rather sources).
 
-
 <pretty progress>
 
  - TODO: [USABILITY] Improve the progress reporting
@@ -129,7 +57,18 @@ trust we have in the existence of a link.
 
  - TODO: [USABILITY]: fold the current verbose state into a `-v/--vebose` argument
 
+
 <Documentation>
+
+ - TODO: [DOC] Document the proper boot cycle of the application
+    - $BIOFLOWHOME check, use the default location (~/bioflow)
+    - in case the user configs .yaml is not found, copy it from its own registry to $BIOFLOWHOME
+    - use the $BIOFLOWHOME/config/main_config.yaml to populate variables in main_configs
+    - use the information there to load the databases from the internet and set the parsing
+        locations
+    - be careful with edits - configs are read safely but are not checked, so you can get random
+        deep python errors that will need to be debugged.
+    - everything is logged to the run directory and the $BIOFLOWHOME/.internal/logs
 
  - TODO: [DOC] put an explanation of overall workflow of the library
 
@@ -165,7 +104,7 @@ trust we have in the existence of a link.
 Current refactoring:
 --------------------
 
- - TODO: [CRITICAL]: pool fail to restart on cholmod usage
+ - TODO: [KNOWN BUG] [CRITICAL]: pool fail to restart on cholmod usage
     There seems to be an interference between the "multiprocessing" pool method and a third-party
     library (specifically cholmod). It looks like after a first pool spawn, cholmod is failing to
     re-load a new solution again.
@@ -176,13 +115,36 @@ Current refactoring:
             between explicitely multi-threaded and implicitely single-threaded
         - DONE: temporary patch and flag it as a known bug
 
+
  - TODO: [FEATURE]: Factor out the structural analysis of the network properties to a module
 
  - TODO: [FEATURE]: Factor out the clustering analysis of the network to a different function in
         the knowledge/interactome analyses
 
- - TODO: [REFACTOR] factor out the process spawning logic shared between knowledge and
+ - TODO: [REFACTOR]: factor out the process spawning logic shared between knowledge and
         interactome analysis to a "utility" domain of BioFlow
+
+ - TODO: [USABILITY]: adjust the sampling spin-up according to how many "good" samples are
+        already in the mongodb
+
+<Environment registration>
+
+ - TODO: [USABILITY] store a header of what was analyzed and where it was pulled from + env
+        parameters in a text file in the beginning of a run.
+
+ - TODO: define a persistent "environment_state" file in the $BIOFLOWHOME/.interal/
+    - TODO: log the organism currently operating
+        => check_organism() -> base, neo4j, laplacians
+        => update_organism(base, neo4j, laplacians) -> None
+    - TODO: log the organism loaded in the neo4j
+    - TODO: log the organism loaded in laplacians
+    - TODO: define a "check_org_state" function
+    - TODO: define an "update_org_state" function
+    - TODO: make sure that the organisms in operating/neo4j/laplacian are all synced
+        => "check_sync()" (calls check_organism, raises if inconsistency)
+    - TODO: make sure that the neo4j is erased before a new organism is loaded into it.
+        => "check_neo4j_empty" (calls check_organism, checks that neo4j is "None")
+    - TODO: make sure that the retrieved backtround set is still valid
 
 <Memoization of actual analysis runs>
 
@@ -200,6 +162,118 @@ Current refactoring:
 
 
  - ????: [USABILITY] add the Laplacian nonzero elements to the shape one (????)
+
+
+
+<DONE: CONFIGS sanity>
+
+Current architecture:
+    - `user_configs.py`, containing the defaults that can be overriden
+    - `XXX.yaml` in  `$BIOFLOWHOME/configs` that allow them to be overriden
+    - the override is performed in the `user_configs.py`
+    - `main_configs` imports them and performs the calculation of the relative import paths
+    - all other modules import `main_configs as configs` and use variables as `configs.var`
+
+    - the injection is performed by an explicit if-else loop after having read in a sanitized way
+    the yamls needed.
+
+    - example_configs.yaml are deployed during the installation, that the user can modify.
+    - the import will look for user_configs.yaml, that the user would have modified
+    - the yaml file would contain a version of configs, se
+
+    - DONE: how do we find where is $BIOFLOWHOME to read the configs from?
+        - Look up the environment variable. If none found, proceed with default location
+            (~/bioflow). ask user to register it explicitly upon installation.
+
+    - DONE: define the copy to the user directory without overwrite
+
+    - DONE: test that the edits did not break anything by defining a new $BIOFLOWHOME and pulling
+        all online dbs again
+
+    - DONE: move user_configs.py to the .yaml
+
+
+A possible approach is to use the `cfg_load` library and the recommended good application practices:
+    - define the configurations dictionary ()
+    - load the defaults (stored in the configs file within the library)
+    - load the $BIOFLOWHOME/configs/<> - potential overrides for the defaults
+    - update the configurations with user's overrides
+    - update the configurations with the environment variables (or alternatively read for the
+        command line and inject into the environment)
+
+    - PROBLEM: we use typing/naming assist from IDE
+        We can override this issue by still assigning all the the values retrieved from the
+    config files to the variable names defined in the main_configs file.
+        In this way, our default variable definitions are the "default", whereas the user's yaml
+    file supplies potential overrides
+
+    - PROBLEM: storing the build/background parameters for the Interactome_Analysis and the
+        Annotome_Analysis classes
+
+Itermediate problem: there is a loading problem for the `BioKnowledgeInterface` due to `InitSet`
+used on the construction (~6721 nodes) is significantly bigger than the `InitSet` used in order
+to generate the version that is being put into storage.
+    - `InitSet` is loaded as `InteractomeInterface.all_uniprots_neo4j_id_list`. In case
+    `reduced_set_uniprot_node_ids` is defined in the parameters, the source set from the
+    `InteractomeInterface` is trimmed to only nodes that are present in the limiter list.
+    - `InteractomeInterface` is the one currently stored in a way that can be retrieved by a
+    `.fast_load()` and is not changed since the last  since the last load. The `.fast_load()` call
+    is performed
+
+    - It looks like the problem is in the fact that the rebuild uses a background limiter (all
+    detectable genes), whereas the fast load doesn't.
+
+    => Temporary fix:
+        - DONE: define a paramset with background in the `analysis_pipeline_example`.
+
+    => In the end, it is a problem of organization of the parameters and of the context.
+        - TODO: Set a user flag to know if we are currently using a background.
+        - TODO: Set a checkers on the background loads to make sure we
+        - TODO: Version the builds of the MolecularInterface and BioKnowledge interface
+        - TODO: Provide a fast fail in case if the environment parameters differ between the
+            build and the fastload. Environment parameters are in the `user_configs.py` file.
+        - TODO: this is all wrapped in the environment variables
+        - TODO: for each run, this is saved as .env text file render.
+
+
+ - DONE: [SANITY] Configs management:
+    - DONE: move the organism to the '~/bioflow'
+    - DONE: all the stings `+` need to be `os.path.join`.
+    - DONE: active organism is now the only thing that is saved. It is stored in "shelve" file
+    inside the ".internal" directory
+    - NOIMP: fold in the sources for the databases into a single location, with a selector from
+    "shelve" indicating which organims to load.
+    - NOIMP: create a user interface command in order to set up the environment and a saving file
+    that allows the configs to be saved between the users.
+    - DONE: move the `online_dbs.ini`, `mouse.ini`, `yeast.ini` to the `~/bioflow/configs` and add
+    `user_configs.ini` to it to replace `user_configs.py`.
+
+ - DONE: [SANITY]: move the location from which the base folder is read for it to be computed
+        (for relative bioflow home insertion) (basically the servers.ini override)
+
+The next step will be to register user configurations in a more sane way. Basically, it can
+either be a persistent dump that is loaded every time the user is spooling up the program or an
+.ini file in additions to the ones already existing
+
+    - Peristent dump:
+        - PLUS: Removes the need to perform reading in and out of .ini files
+        - PLUS: Guarantees that the parameters will always be well formed
+        - MINUS: is non-trivial to modify for the users
+
+    - .ini files: => selected, but in the .yaml incarnation
+        - PLUS: Works in a way that is familiar to most people
+        - PLUS: Allows
+        - MINUS: in case configurations are not properly defined, all crashes
+
+    - Both:
+        - NOPE: a command line process to define the variables
+        - NOPE: a command line to show all the active flags
+        - DONE: the configs folder to be gutted of active configs and them moved to the
+            ~/bioflow directory
+        - DONE: a refactor to show transparently the override between the default parameters
+            and the user-supplied parameters
+        - DONE: a refactor to remove the conflicting definitions (such as deployment vs test
+            server parameters)
 
 
  - DONE: [USABILITY] add a proper tabulation and limit float length in the final results print-out

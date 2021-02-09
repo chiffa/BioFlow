@@ -2,7 +2,7 @@
 Set of tools to work with HiNT database
 """
 from bioflow.bio_db_parsers.proteinRelParsers import parse_hint
-from bioflow.main_configs import hint_csv_path
+from bioflow.configs.main_configs import hint_csv_path
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from bioflow.utils.log_behavior import get_logger
 

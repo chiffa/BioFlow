@@ -4,7 +4,7 @@ The main method of the neo4j database building
 On a clean database, we should be able to yeast databases in ~ 6-7 hours and humans in less than
 24 hours.
 """
-from bioflow import main_configs
+from bioflow.configs import main_configs
 from bioflow.bio_db_parsers.geneOntologyParser import GOTermsParser
 from bioflow.bio_db_parsers.uniprotParser import UniProtParser
 from bioflow.db_importers.hint_importer import cross_ref_hint
@@ -17,7 +17,7 @@ from bioflow.db_importers.go_and_uniprot_importer import memoize_go_terms, impor
     import_uniprots, pull_up_acc_nums_from_reactome
 from bioflow.neo4j_db.db_io_routines import recompute_forbidden_ids, clear_all, run_diagnostics,\
     cross_link_identifiers, compute_annotation_informativity
-from bioflow.internal_configs import forbidden_verification_list, full_list
+from bioflow.configs.internal_configs import forbidden_verification_list, full_list
 
 
 def build_db():
@@ -34,7 +34,7 @@ def build_db():
     cross_ref_bio_grid()
     cross_ref_kinases_factors()
 
-    if main_configs.organism_meta_flag == 'Human':
+    if main_configs.organism == 'Human':
         cross_ref_tf_factors('t')
         insert_complexes()
 

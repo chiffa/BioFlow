@@ -8,9 +8,8 @@ import pickle
 from collections import defaultdict
 from csv import reader, writer
 from pprint import PrettyPrinter, pprint
-from bioflow.main_configs import forbidden_neo4j_ids, Dumps, analysis_protein_ids_csv, \
-    background_protein_ids_csv
-from bioflow.internal_configs import edge_type_filters, Leg_ID_Filter, annotation_nodes_ptypes, \
+from bioflow.configs.main_configs import forbidden_neo4j_ids, Dumps
+from bioflow.configs.internal_configs import edge_type_filters, Leg_ID_Filter, annotation_nodes_ptypes, \
     neo4j_names_dict, forbidden_verification_list, full_list
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from bioflow.utils.log_behavior import get_logger
@@ -221,7 +220,7 @@ def annotation_ids_from_csv(source_csv):
     return analysis_bulbs_ids
 
 
-def cast_analysis_set_to_bulbs_ids(analysis_set_csv_location=analysis_protein_ids_csv):
+def cast_analysis_set_to_bulbs_ids(analysis_set_csv_location):
     """
     Unwraps the bioflow file specified in the analysis_protein_ids_csv, translates its database
     internal ids for further use
@@ -236,8 +235,8 @@ def cast_analysis_set_to_bulbs_ids(analysis_set_csv_location=analysis_protein_id
     writer(open(Dumps.analysis_set_bulbs_ids, 'wt'), delimiter='\n').writerow(source[2])
 
 
-def cast_background_set_to_bulbs_id(background_set_csv_location=background_protein_ids_csv,
-                                    analysis_set_csv_location=analysis_protein_ids_csv):
+def cast_background_set_to_bulbs_id(background_set_csv_location,
+                                    analysis_set_csv_location):
     """
     Unwraps the bioflow file specified in the background_bulbs_ids, translates it to the database
     internal ids for further use

@@ -1,15 +1,15 @@
 """
 Top-Level scripts, examples of analysis pipelines.
 """
-from bioflow.configs_manager import set_folders, build_source_config, pull_online_dbs
-from bioflow.db_importers.import_main import build_db, destroy_db
+from bioflow.utils.log_behavior import clear_logs
+from bioflow.utils.source_dbs_download import pull_online_dbs
+from bioflow.configs.bioflow_home import sources_location
+from bioflow.db_importers.import_main import destroy_db, build_db
 from bioflow.annotation_network.knowledge_access_analysis import auto_analyze as \
-    knowledge_analysis, ref_param_set, _filter, _correlation_factors
+    knowledge_analysis, ref_param_set, _filter
 from bioflow.molecular_network.interactome_analysis import auto_analyze as interactome_analysis
 from bioflow.utils.io_routines import get_source_bulbs_ids, get_background_bulbs_ids
 from bioflow.utils.top_level import map_and_save_gene_ids, rebuild_the_laplacians
-from bioflow.utils.log_behavior import clear_logs
-from bioflow.user_configs import sources_location
 import os
 
 
@@ -24,16 +24,8 @@ if __name__ == "__main__":
     # annotome_rand_samp.drop()
     # interactome_rand_samp_db.drop()
 
-    # # setting static folders and urls for the databases
-    # set_folders(sources_location)
-
     # # pulling the online databases
-    # pull_online_dbs()
-
-    # # setting the organism to XXXX
-    # build_source_config('yeast')
-
-    # raise Exception('planned interrupt')
+    pull_online_dbs()
 
     ##########################################
     # After you've changed folders/sources above, you need to re-start python to force
@@ -73,7 +65,7 @@ if __name__ == "__main__":
     # hits_ids = get_source_bulbs_ids()
 
 
-    background_bulbs_ids = get_background_bulbs_ids()
+    # background_bulbs_ids = get_background_bulbs_ids()
 
     # rebuild_the_laplacians(all_detectable_genes=background_bulbs_ids)
 
@@ -123,34 +115,34 @@ if __name__ == "__main__":
     # raise Exception('debugging')
 
 
-    background_set = False
-    for filename in os.listdir(chromosomes_directory):
-        if filename != "all_genes.tab":
-            target_file = os.path.join(chromosomes_directory, filename)
-            hits_ids, background_bulbs_ids = map_and_save_gene_ids(target_file, background_file)
-            paramset_with_background = tuple([_filter, background_bulbs_ids, (1, 1), True, 3])
-
-            # if not background_set:
-            #     rebuild_the_laplacians(all_detectable_genes=background_bulbs_ids)
-            #     background_set = True
-
-            # # perform the interactome analysis
-            interactome_analysis([hits_ids[:20]],
-                                 ['chr_%s' % filename[:-4]],
-                                 desired_depth=1,
-                                 processors=1,
-                                 background_list=background_bulbs_ids,
-                                 skip_sampling=False
-                                 )
-
-            # # perform the knowledge analysis
-            knowledge_analysis([hits_ids[:20]],
-                               ['chr_%s' % filename[:-4]],
-                               desired_depth=1,
-                               processors=1,
-                               param_set=paramset_with_background,
-                               skip_sampling=False,
-                               )
-
-            raise Exception('debug')
+    # background_set = False
+    # for filename in os.listdir(chromosomes_directory):
+    #     if filename != "all_genes.tab":
+    #         target_file = os.path.join(chromosomes_directory, filename)
+    #         hits_ids, background_bulbs_ids = map_and_save_gene_ids(target_file, background_file)
+    #         paramset_with_background = tuple([_filter, background_bulbs_ids, (1, 1), True, 3])
+    #
+    #         # if not background_set:
+    #         #     rebuild_the_laplacians(all_detectable_genes=background_bulbs_ids)
+    #         #     background_set = True
+    #
+    #         # # perform the interactome analysis
+    #         interactome_analysis([hits_ids[:20]],
+    #                              ['chr_%s' % filename[:-4]],
+    #                              desired_depth=1,
+    #                              processors=1,
+    #                              background_list=background_bulbs_ids,
+    #                              skip_sampling=False
+    #                              )
+    #
+    #         # # perform the knowledge analysis
+    #         knowledge_analysis([hits_ids[:20]],
+    #                            ['chr_%s' % filename[:-4]],
+    #                            desired_depth=1,
+    #                            processors=1,
+    #                            param_set=paramset_with_background,
+    #                            skip_sampling=False,
+    #                            )
+    #
+    #         raise Exception('debug')
 

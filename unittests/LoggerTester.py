@@ -3,7 +3,7 @@ Tests the logger behavior
 """
 import unittest
 import os
-from bioflow.main_configs import log_location
+from bioflow.configs.bioflow_home import log_location
 from bioflow.utils.general_utils.high_level_os_io import wipe_dir
 from bioflow.utils.log_behavior import get_logger
 
