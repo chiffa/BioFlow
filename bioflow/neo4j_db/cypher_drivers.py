@@ -1,17 +1,37 @@
 import os
 from pprint import pprint
 from neo4j import GraphDatabase
+from neo4j.graph import Node, Relationship, Path
+from typing import List, Tuple, NewType
 from bioflow.utils.log_behavior import get_logger
 from bioflow.configs.main_configs import neo4j_server_url
 
+
 log = get_logger(__name__)
 
+
+# default connection parameters
 uri = neo4j_server_url
 user = 'neo4j'
 password = os.environ['NEOPASS']
 
 
+# Type hinting support
+db_id = NewType('db_id', int)
+db_n_type = NewType('db_n_type', str)
+# CURRNETPASS: add a db_n_type for annotation node and an umbrella?
+db_e_type = NewType('db_e_type', str)
+e_orientation = NewType('e_orientation', str)
+
+
+
 def neo4j_sanitize(string):
+    """
+    Auxilary functions making sure that backdashes are properly noted and managed in Python.
+
+    :param string: string to sanitize
+    :return:
+    """
     if isinstance(string, str):
         return string.replace('\'', '\"').replace('\\', '\\\\')
     else:
@@ -19,17 +39,37 @@ def neo4j_sanitize(string):
 
 
 class GraphDBPipe(object):
+    """
+    A class that encapsulates the methods needed to work with a database storing the graph of
+    biological entities and annotation relationships. This implements a neo4j backend, but can be
+    subclassed to use a different backend by overriding _driver static method and the _XXX static
+    methods that actually implement what functions XXX() expose.
+    """
 
-    def __init__(self):
+    def __init__(self):  # CURRENTPASS: add an option to supply uri, user and pwd not from configs
         self._driver = GraphDatabase.driver(uri, auth=(user, password))
 
     def close(self):
+        """
+        Closes the connection to the database
+
+        :return:
+        """
         try:
             self._driver.close()
         except TypeError:
             pass
 
-    def create(self, node_type, param_dict):
+    def create(self,
+               node_type: db_n_type,
+               param_dict: dict) -> Node:
+        """
+        Creates a node
+
+        :param node_type: neo4j type of the node
+        :param param_dict: parameters of the node to be set in the database
+        :return: the created node
+        """
         with self._driver.session() as session:
             new_node = session.write_transaction(self._create, node_type, param_dict)
             return new_node
@@ -49,7 +89,16 @@ class GraphDBPipe(object):
 
         return result.single()['n']
 
-    def delete(self, node_id, node_type=None):
+    def delete(self,
+               node_id: db_id,
+               node_type: db_n_type = None) -> Node:
+        """
+        Deletes a node based on its id and potentially the node type
+
+        :param node_id: internal database id of the node to be deleted
+        :param node_type: (optional type of the node to be deleted)
+        :return:
+        """
         with self._driver.session() as session:
             deleted = session.write_transaction(self._delete, node_id, node_type)
             return deleted
@@ -68,10 +117,16 @@ class GraphDBPipe(object):
                             "DETACH DELETE a, n " % node_type, node_id)
         return [res for res in result]
 
-    def delete_all(self, node_type):
+    def delete_all(self, node_type: db_n_type) -> List[Node]:
+        """
+        Batch-deletes all they nodes of a given type
+
+        :param node_type: types of the nodes to be deleted
+        :return:
+        """
         with self._driver.session() as session:
-            supression = session.write_transaction(self._delete_all, node_type)
-            return supression
+            suppression = session.write_transaction(self._delete_all, node_type)
+            return suppression
 
     @staticmethod
     def _delete_all(tx, nodetype):
@@ -80,7 +135,16 @@ class GraphDBPipe(object):
                         "DETACH DELETE a, n " % nodetype)
         return result
 
-    def get(self, node_id, node_type=None):
+    def get(self,
+            node_id: db_id,
+            node_type: db_n_type = None) -> Node:
+        """
+        Gets a single node based on its internal database id and optional type
+
+        :param node_id: internal database id of the node to be retrieved
+        :param node_type: (optional) type of the node to be retrieved
+        :return:
+        """
         with self._driver.session() as session:
             node = session.write_transaction(self._get, node_type, node_id)
             return node
@@ -105,7 +169,13 @@ class GraphDBPipe(object):
         else:
             return node[0]
 
-    def get_all(self, node_type):
+    def get_all(self, node_type: db_n_type) -> List[Node]:
+        """
+        Batch-gets all the nodes of a given type
+
+        :param node_type: type of the nodes to get
+        :return:
+        """
         with self._driver.session() as session:
             nodes = session.write_transaction(self._get_all, node_type)
             return nodes
@@ -116,7 +186,13 @@ class GraphDBPipe(object):
                         "RETURN n" % node_type)
         return [node['n'] for node in result]
 
-    def count(self, node_type):
+    def count(self, node_type: db_n_type) -> int:
+        """
+        Counts all the nodes of a given type
+
+        :param node_type: type of nodes to count
+        :return:
+        """
         with self._driver.session() as session:
             nodes_count = session.write_transaction(self._count, node_type)
             return nodes_count
@@ -128,7 +204,16 @@ class GraphDBPipe(object):
 
         return result.single()['count(distinct n)']
 
-    def find(self, filter_dict, node_type=None):
+    def find(self,
+             filter_dict: dict,
+             node_type: db_n_type = None) -> List[Node]:
+        """
+        Finds all nodes matching the properties supplied by the filter dictionnary
+
+        :param filter_dict: dictionary containing the parameters and values on which to match
+        :param node_type: (optional) type of nodes among which to search
+        :return: list of found nodes
+        """
         with self._driver.session() as session:
             nodes = session.write_transaction(self._find, node_type, filter_dict)
             return nodes
@@ -153,7 +238,20 @@ class GraphDBPipe(object):
 
         return [node['a'] for node in nodes]
 
-    def link(self, node_id_from, node_id_to, link_type=None, params=None):
+    def link(self,
+             node_id_from: db_id,
+             node_id_to: db_id,
+             link_type: db_e_type = None,
+             params: dict = None) -> List[Relationship]:
+        """
+        Links two nodes based on their IDs with a link of provided type with provided parameters
+
+        :param node_id_from: internal database id of the node from which the links starts
+        :param node_id_to: internal database id of the node to which the links end
+        :param link_type: link type
+        :param params: provided link parameters
+        :return: list containing the the created link object
+        """
         with self._driver.session() as session:
             link = session.write_transaction(self._link_create, node_id_from, node_id_to, link_type, params)
             return link
@@ -180,7 +278,21 @@ class GraphDBPipe(object):
 
         return [rel['r'] for rel in rels]
 
-    def get_linked(self, node_id, orientation='both', link_type=None, link_param_filter=None):
+    def get_linked(self,
+                   node_id: db_id,
+                   orientation: e_orientation = 'both',
+                   link_type: db_e_type = None,
+                   link_param_filter: dict = None) -> List[Node]:
+        """
+        Get all nodes linked to a given node by a link of a given type
+
+        :param node_id: internal database id of the node from which to start
+        :param orientation: 'both'|'in'|'out'. default is 'both'
+        :param link_type: (optional) type of links to follow
+        :param link_param_filter: (optional) only links whose parameters match this filter will
+        be followed
+        :return: list of nodes that were found
+        """
         with self._driver.session() as session:
             results = session.write_transaction(self._get_linked, node_id, orientation, link_type, link_param_filter)
             return results
@@ -218,7 +330,17 @@ class GraphDBPipe(object):
 
         return [node['b'] for node in linked_nodes]
 
-    def set_attributes(self, node_id, attributes_dict):
+    def set_attributes(self,
+                       node_id: db_id,
+                       attributes_dict: dict) -> Node:
+        """
+        For the node designated by the internal database identifier, sets the properties provided
+        by the attributes dictionary
+
+        :param node_id: internal database identifier
+        :param attributes_dict: dictionary of properties to set
+        :return: edited node
+        """
         with self._driver.session() as session:
             edited_node = session.write_transaction(self._set_attributes, node_id, attributes_dict)
             return edited_node
@@ -235,7 +357,20 @@ class GraphDBPipe(object):
 
         return result.single()
 
-    def attach_annotation_tag(self, node_id, annotation_tag, tag_type=None, preferential=False):
+    def attach_annotation_tag(self,
+                              node_id: db_id,
+                              annotation_tag: str,
+                              tag_type: db_n_type = None,
+                              preferential: bool = False) -> Node:
+        """
+        For a given node, set a tag with its identifier in a database of a given type.
+
+        :param node_id: id of the node we will be annotating
+        :param annotation_tag: the external identifier with witch the node will be annotated
+        :param tag_type: (optional) type of the annotation
+        :param preferential: (optional) if this is the preferential external identifier
+        :return: new node containing the annotation
+        """
         with self._driver.session() as session:
             annot_tag = session.write_transaction(self._attach_annotation_tag, node_id, annotation_tag, tag_type, preferential)
             return annot_tag
@@ -271,7 +406,16 @@ class GraphDBPipe(object):
 
         return result.single()
 
-    def get_from_annotation_tag(self, annotation_tag, tag_type=None):
+    def get_from_annotation_tag(self,
+                                annotation_tag: str,
+                                tag_type: db_n_type = None) -> List[Node]:
+        """
+        Recovers all node annotated by a given external identifier of a given type
+
+        :param annotation_tag: external identifier
+        :param tag_type: (optional) the type of the external identifier
+        :return: list of nodes that are annotated by the external identifier
+        """
         with self._driver.session() as session:
             annotated_nodes = session.write_transaction(self._get_from_annotation_tag, annotation_tag, tag_type)
             return annotated_nodes
@@ -291,9 +435,9 @@ class GraphDBPipe(object):
 
         pre_return_puck = list(set([node['target'] for node in result]))
 
-
-        # the issue here is that sometimes the same tag annotates different nodes and we need a way to distinguishing them.
-        # Thus we check if we have more than one Uniprot returned. If yes, we re-run the query checking for
+        # The issue here is that sometimes the same tag annotates different nodes and we need a way
+        # to distinguishing them. Thus we check if we have more than one Uniprot returned. If
+        # yes, we re-run the query checking for it
 
         node_types = [list(node.labels)[0] for node in pre_return_puck]
 
@@ -326,7 +470,18 @@ class GraphDBPipe(object):
 
         return return_puck
 
-    def attach_all_node_annotations(self, node_id, annot_type_2_annot_list, preferential=False):
+    def attach_all_node_annotations(self,
+                                    node_id: db_id,
+                                    annot_type_2_annot_list: dict,
+                                    preferential: bool = False) -> List[Node]:
+        """
+        Attaches all the external identifiers of given types to a node based on its ID
+
+        :param node_id: internal database id of the node to annotate
+        :param annot_type_2_annot_list: {annotation_type: [external identifiers]}
+        :param preferential: (optional) if the annotation is preferential
+        :return: list of all newly created annotation nodes
+        """
         with self._driver.session() as session:
             tx = session.begin_transaction()
             annot_nodes = []
@@ -339,7 +494,18 @@ class GraphDBPipe(object):
             tx.commit()
             return annot_nodes
 
-    def batch_insert(self, type_list, param_dicts_list, batch_size=1000):
+    def batch_insert(self,
+                     type_list: List[db_n_type],
+                     param_dicts_list: List[dict],
+                     batch_size: int = 1000) -> List[Node]:
+        """
+        Performs a batch insertions of nodes whose types and parameters are specified by lists
+
+        :param type_list: types of nodes to be inserted into the database
+        :param param_dicts_list: parameters of nodes to be inserted into teh database
+        :param batch_size: (optional) how many nodes insert per batch
+        :return: list of created nodes
+        """
         with self._driver.session() as session:
             tx = session.begin_transaction()
             new_nodes = []
@@ -351,19 +517,44 @@ class GraphDBPipe(object):
             tx.commit()
             return new_nodes
 
-    def batch_link(self, id_pairs_list, type_list, param_dicts_list, batch_size=1000):
+    def batch_link(self,
+                   id_pairs_list: List[Tuple[db_id, db_id]],
+                   type_list: List[db_e_type],
+                   param_dicts_list: List[dict],
+                   batch_size: int = 1000) -> List[Relationship]:
+        """
+        Performs a batch link of nodes in the list by the links fo type in the list and assign
+        them parameters from the dict
+
+        :param id_pairs_list: pairs nodes to link
+        :param type_list: types of the links
+        :param param_dicts_list: list of parameters to be assinged to the links
+        :param batch_size: (optional) links created in each transaction
+        :return: list of set links
+        """
         with self._driver.session() as session:
             tx = session.begin_transaction()
             new_links = []
             for i, (_from, _to), n_type, n_params in enumerate(zip(id_pairs_list, type_list, param_dicts_list)):
-                new_links.append(self._link_create(tx, _from, _to, n_type, n_params))
+                new_links += self._link_create(tx, _from, _to, n_type, n_params)
                 if i % batch_size == 0:
                     tx.commit()
                     tx = session.begin_transaction()
             tx.commit()
             return new_links
 
-    def batch_set_attributes(self, id_list, param_dicts_list, batch_size=1000):
+    def batch_set_attributes(self,
+                             id_list: List[db_id],
+                             param_dicts_list: List[dict],
+                             batch_size: int = 1000) -> List[Node]:
+        """
+        Batch sets the attributes of nodes
+
+        :param id_list: list of internal db ids of nodes to set the attributes
+        :param param_dicts_list: list of dicts of node attributes to be set
+        :param batch_size: (optional) nodes to set parameters in each batch
+        :return: list of updated nodes
+        """
         with self._driver.session() as session:
             tx = session.begin_transaction()
             edited_nodes = []
@@ -375,21 +566,33 @@ class GraphDBPipe(object):
             tx.commit()
             return edited_nodes
 
-    def batch_retrieve_from_annotation_tags(self, annotation_tags_list, annotations_types, batch_size=1000):
+    def batch_retrieve_from_annotation_tags(self,
+                                            annotation_tags_list: List[str],
+                                            annotations_types: List[db_n_type],
+                                            batch_size=1000) -> List[Node]:
+        """
+        Batch retrieve all the nodes annotated by a given list of tags.
+
+        :param annotation_tags_list: list of external db identifiers
+        :param annotations_types: list of types of external db identifiers
+        :param batch_size: (optional) nodes to find per batch
+        :return: list of found physical entity nodes
+        """
         log.info('Batch retrieval started with %s elements' % len(annotation_tags_list))
         with self._driver.session() as session:
             tx = session.begin_transaction()
             annotated_nodes = []
             if annotations_types is None or isinstance(annotations_types, str):
                 for i, annotation_tag in enumerate(annotation_tags_list):
-                    annotated_nodes.append(self._get_from_annotation_tag(tx, annotation_tag, annotations_types))
+                    annotated_nodes += self._get_from_annotation_tag(tx, annotation_tag,
+                                                                  annotations_types)
                     if i % batch_size == 0:
                         log.info('\t %.2f %%' % (float(i) / float(len(annotation_tags_list))*100))
                         tx.commit()
                         tx = session.begin_transaction()
             else:  # we assume it's a list
                 for i, (annot_tag, annot_type) in enumerate(annotation_tags_list, annotations_types):
-                    annotated_nodes.append(self._get_from_annotation_tag(tx, annot_tag, annot_type))
+                    annotated_nodes += self._get_from_annotation_tag(tx, annot_tag, annot_type)
                     if i % batch_size == 0:
                         log.info('\t %.2f %%' % (float(i) / float(len(annotation_tags_list)) * 100))
                         tx.commit()
@@ -398,22 +601,32 @@ class GraphDBPipe(object):
             tx.commit()
             return annotated_nodes
 
-    def build_indexes(self):
+    def build_indexes(self) -> None:
+        """
+        Build indexes on the Uniprots and annotations for an accelerated search if they haven't
+        been build yet
+
+        :return:
+        """
         with self._driver.session() as session:
             session.write_transaction(self._build_indexes)
 
     @staticmethod
     def _build_indexes(tx):
         # Because neo4j breaks retro compatibility more often than I rebuild the database
-        # tx.run("CREATE INDEX IF NOT EXISTS ON :UNIPROT(legacyId)")
-        # tx.run("CREATE INDEX IF NOT EXISTS ON :Annotation(tag)")
-        # tx.run("CREATE INDEX IF NOT EXISTS ON :Annotation(tag, type)")
-
         tx.run("CREATE INDEX IF NOT EXISTS FOR (n:UNIPROT) ON (n.legacyId)")
         tx.run("CREATE INDEX IF NOT EXISTS FOR (n:Annotation) ON (n.tag)")
         tx.run("CREATE INDEX IF NOT EXISTS FOR (n:Annotation) ON (n.tag, n.type)")
 
-    def cross_link_on_annotations(self, annotation_type):
+    def cross_link_on_annotations(self,
+                                  annotation_type: List[db_n_type]) -> List[Node]:
+        """
+        Connects the nodes that have the same identifiers of the type `annotation_type` with an
+        `is_likely_same` bidirectional edge.
+
+        :param annotation_type: source of annotation on which the cross-linking is done
+        :return: nodes that has been cross-linked
+        """
         with self._driver.session() as session:
             dirty_nodes = session.write_transaction(self._cross_link_on_annotations, annotation_type)
             return dirty_nodes
@@ -429,7 +642,14 @@ class GraphDBPipe(object):
                         "SET k.linked_on = '%s' " % (annotation_type, annotation_type, annotation_type))
         return [node for node in result]
 
-    def count_go_annotation_cover(self):
+    def count_go_annotation_cover(self) -> None:
+        """
+        Computes and writes the number of UNIOPROT nodes each GO term annotates, directly and
+        indirectly, computes the informativity of each GO term and finally the total annotation
+        information available on the UNIPROT
+
+        :return:
+        """
         with self._driver.session() as session:
             session.write_transaction(self._count_direct_coverage)
             session.write_transaction(self._count_indirect_coverage)
@@ -460,7 +680,13 @@ class GraphDBPipe(object):
                "WITH n, sum(b.information_content) as tot_inf "
                "SET n.total_information = tot_inf")
 
-    def get_preferential_gene_names(self):
+    def get_preferential_gene_names(self) -> dict:
+        """
+        Get a dict that maps the legacy ids of all UNIPROT nodes to their single preferential
+        external database identifier
+
+        :return: {UNIPROT.LegacyId: preferential annotation tag}
+        """
         with self._driver.session() as session:
             name_maps = session.write_transaction(self._get_preferential_gene_names)
             return name_maps
@@ -468,14 +694,25 @@ class GraphDBPipe(object):
     @staticmethod
     def _get_preferential_gene_names(tx):
         name_maps = tx.run("MATCH (n:UNIPROT)-[r:annotates]-(a:Annotation) "
-                      "WHERE r.preferential = True AND a.type = 'UNIPROT_GeneName' "
-                      "RETURN n, a")
+                           "WHERE r.preferential = True AND a.type = 'UNIPROT_GeneName' "
+                           "RETURN n, a")
 
-        name_maps = dict((res['n']._properties['legacyId'], res['a']._properties['tag']) for res in name_maps)
+        name_maps = dict((res['n']._properties['legacyId'], res['a']._properties['tag'])
+                         for res in name_maps)
 
         return name_maps
 
-    def check_connection_permutation(self, legacy_id_1, legacy_id_2):
+    def check_connection_permutation(self,
+                                     legacy_id_1: str,
+                                     legacy_id_2: str) -> int:
+        """
+        Counts the number of paths between Uniprots with given legacy IDs that includes an
+        `is_likely_same` edge connection.
+
+        :param legacy_id_1: LegacyId of a first Uniprot node
+        :param legacy_id_2: LegacyId of a second Uniprot node
+        :return: how many paths including an `is_likely_same` edge are between the two nodes
+        """
         with self._driver.session() as session:
             legal = session.write_transaction(self._check_connection_permutation, legacy_id_1, legacy_id_2)
             log.info('checking_permutation')

@@ -305,7 +305,7 @@ class InteractomeInterface(object):
         This function fills in the self.Set and self.Links elements of the MatrixGetter object
         """
 
-        def get_reaction_blocks():
+        def get_reaction_blocks():  # TRACING [lapl build]
             """
             Recovers the blocks if interaction that are due to a common set of reactions
             for the elements. They will be used as roots to build the complete interaction
@@ -322,10 +322,11 @@ class InteractomeInterface(object):
             seeds = set()
             total_reaction_participants = 0
 
-            for ReactionType in self.reactions_types_list:
+            for ReactionType in self.reactions_types_list:  # TRACING [lapl build] self.react_types
                 for Reaction in DatabaseGraph.get_all(ReactionType):
                     reaction_participants, reaction_participants_no = node_extend_once(
                         edge_type_filters["Reaction"], self.connexity_aware, Reaction)
+                    # TRACING [lapl build] edge_type_filters, Reaction
                     total_reaction_participants += reaction_participants_no
 
                     if len(reaction_participants) > 1:

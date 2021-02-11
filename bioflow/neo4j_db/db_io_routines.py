@@ -9,7 +9,7 @@ from collections import defaultdict
 from csv import reader, writer
 from pprint import PrettyPrinter, pprint
 from bioflow.configs.main_configs import forbidden_neo4j_ids, Dumps
-from bioflow.configs.internal_configs import edge_type_filters, Leg_ID_Filter, annotation_nodes_ptypes, \
+from bioflow.configs.internal_configs import edge_type_filters, Leg_ID_Filter, deprecated_annotation_nodes_ptypes, \
     neo4j_names_dict, forbidden_verification_list, full_list
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from bioflow.utils.log_behavior import get_logger
@@ -18,6 +18,7 @@ from bioflow.utils.io_routines import write_to_csv, memoize, time_exection
 log = get_logger(__name__)
 
 
+# CURRENTPASS: it is no more a hidden attribute
 def get_db_id(neo4j_node):
     """
     gets bulbs_id for a node, since it's a hidden attribute
@@ -29,7 +30,7 @@ def get_db_id(neo4j_node):
 
 
 # TODO: WILL NOT IMPLEMENT: offload annotations to ElasticSearch engine
-def get_attached_annotations(neo4j_node_id):
+def deprecated_get_attached_annotations(neo4j_node_id):
     """
     Recovers ids of annotation nodes attached the the node with a given bulbs id
 
@@ -47,7 +48,8 @@ def get_attached_annotations(neo4j_node_id):
         return list_of_annotations
 
 
-def node_generator_2_db_ids(node_generator):
+# CURRENTPASS: a single call to this function, is it really needed?
+def node_generator_2_db_ids(node_generator):  # TRACING: switch to list comprenension
     """
     Get bulb ids of nodes in the generator
 
@@ -65,7 +67,8 @@ def node_generator_2_db_ids(node_generator):
     return node_set
 
 
-def look_up_annotation_node(p_load, p_type=''):
+# CURRENTPASS: no calls to that function
+def deprecated_look_up_annotation_node(p_load, p_type=''):
     """
     Looks up nodes accessible via the annotation nodes with a given annotation and given
     annotation  type.
@@ -158,7 +161,7 @@ def erase_custom_fields():
             DatabaseGraph.set_attributes(node.id, {'custom': '', 'main_connex': False})
 
 
-# TODO: used once elsewhere - consider folding it there
+# CURRENTPASS: used once elsewhere - consider folding it there
 def node_extend_once(edge_type_filter, main_connex_only, core_node):
     """
 
@@ -182,7 +185,7 @@ def node_extend_once(edge_type_filter, main_connex_only, core_node):
     return node_neighbors, node_neighbor_no
 
 
-# TODO: WILL NOT IMPLEMENT: add direction notion.
+# CURRENTPASS: used once elsewhere - consider folding it there
 def expand_from_seed(seed_node_id, edge_filter, main_connex_only):
     """
     Recovers all the nodes accessible in one jump from a seed_node with a given database ID by
@@ -205,7 +208,8 @@ def expand_from_seed(seed_node_id, edge_filter, main_connex_only):
     return node_neighbors, len(node_neighbors)
 
 
-def annotation_ids_from_csv(source_csv):
+
+def _auxilary_annotation_ids_from_csv(source_csv):
     """
     Recovers the set of annotation ids from a csv document
 
@@ -228,9 +232,10 @@ def cast_analysis_set_to_bulbs_ids(analysis_set_csv_location):
     :param analysis_set_csv_location:
     :return:
     """
-    analysis_bulbs_ids = annotation_ids_from_csv(analysis_set_csv_location)
+    analysis_bulbs_ids = _auxilary_annotation_ids_from_csv(analysis_set_csv_location)
     analysis_bulbs_ids = [ret for ret in analysis_bulbs_ids]
     source = look_up_annotation_set(analysis_bulbs_ids)
+    #CURRENTPASS: this is not exactly needed and is a more of a log/debug step
     PrettyPrinter(indent=4, stream=open(Dumps.analysis_set_display_names, 'wt')).pprint(source[1])
     writer(open(Dumps.analysis_set_bulbs_ids, 'wt'), delimiter='\n').writerow(source[2])
 
@@ -247,15 +252,16 @@ def cast_background_set_to_bulbs_id(background_set_csv_location,
     """
     background_bulbs_ids = []
     if background_set_csv_location:
-        background_bulbs_ids += annotation_ids_from_csv(analysis_set_csv_location)
-        background_bulbs_ids += annotation_ids_from_csv(background_set_csv_location)
+        background_bulbs_ids += _auxilary_annotation_ids_from_csv(analysis_set_csv_location)
+        background_bulbs_ids += _auxilary_annotation_ids_from_csv(background_set_csv_location)
         background_bulbs_ids = list(set(ret for ret in background_bulbs_ids))
 
     source = look_up_annotation_set(background_bulbs_ids)
     writer(open(Dumps.background_set_bulbs_ids, 'wt'), delimiter='\n').writerow(source[2])
 
 
-def neo4j_memoize_type(node_type, dict_to_load_into=None):
+# CURRENTPASS: no more used
+def deprecated_neo4j_memoize_type(node_type, dict_to_load_into=None):
 
     if dict_to_load_into is None:
         dict_to_load_into = {}
@@ -268,7 +274,7 @@ def neo4j_memoize_type(node_type, dict_to_load_into=None):
     return dict_to_load_into
 
 
-def recompute_forbidden_ids(forbidden_entities_list):
+def excluded_nodes_ids_from_names_list(forbidden_entities_list):
     """
     Recomputes the list of nodes that contain overloaded terms.
 
@@ -281,11 +287,12 @@ def recompute_forbidden_ids(forbidden_entities_list):
     """
     forbidden_ids_list = set()
     for name in forbidden_entities_list:
-        for forbidden_legacy_id in Leg_ID_Filter:
+        for forbidden_legacy_id in Leg_ID_Filter: # TRACING: switch to parameters
+            # CURRENTPASS: factor into the arguments of the function
             bulbs_class = neo4j_names_dict[name]
             generator = DatabaseGraph.find({"displayName": forbidden_legacy_id}, bulbs_class)
 
-            associated_node_ids = node_generator_2_db_ids(generator)
+            associated_node_ids = node_generator_2_db_ids(generator)  # TRACING: list comprehension
             forbidden_ids_list.update(associated_node_ids)
 
     log.info('recomputed %s forbidden IDs.' % len(forbidden_ids_list))
@@ -298,9 +305,9 @@ def recompute_forbidden_ids(forbidden_entities_list):
 
 def clear_all(instruction_list):
     """
-    empties the whole BioPax-bound node set.
+    Clears all the nodes from the database
 
-    :param instruction_list:
+    :param instruction_list: types of nodes to be cleared
     """
 
     for name in instruction_list:
@@ -312,7 +319,7 @@ def clear_all(instruction_list):
 
 def run_diagnostics(instructions_list):
     """
-    Checks the number of nodes of each type.
+    Computes the number of nodes of each type.
 
     :param instructions_list:
     """
@@ -329,7 +336,8 @@ def run_diagnostics(instructions_list):
 
 def convert_to_internal_ids(base):
     """"
-    converts names of proteins to database_ids, preferably matching to UNIPROTS
+    Converts ids attached to proteins and physical entities to internal db ids,preferentially
+    matching to UNIPROTS.
 
     :param base:
     :return:
@@ -341,22 +349,31 @@ def convert_to_internal_ids(base):
     breakpoints = 300
     size = len(results_tuple_list)
 
-    for i, (key, match_list) in enumerate(results_tuple_list):
+    for i, (_key, match_list) in enumerate(results_tuple_list):
         if i % breakpoints == 0:
+            # TODO: change to a loading bar
             log.info("\t %.2f %%" % (float(i) / float(size)*100))
-        if key not in warn_list:
+        if _key not in warn_list:
             for match in match_list:
                 if match[0] == 'UNIPROT':
-                    return_dict[key] = match[2]
+                    return_dict[_key] = match[2]
                 else:
-                    return_dict[key] = match_list[0][2]
+                    return_dict[_key] = match_list[0][2]
 
     log.debug('ID cast converter length: %s', len(return_dict))
 
     return return_dict
 
 
+# CURRENTPASS: this has to be parametrized and moved to the configs .yaml file for the user to
+#  modify the identifiers on which the cross-linking is done.
 def cross_link_identifiers():
+    """
+    Connects all the nodes that share the same uniprot accession numbers. names or gene names
+    with an `is_likely_same`
+
+    :return:
+    """
     log.info('Cross-linking the identifiers: Uniprot Acnums')
     DatabaseGraph.cross_link_on_annotations('UNIPROT_Accnum')
     log.info('Cross-linking the identifiers: Uniprot Names')
@@ -366,28 +383,43 @@ def cross_link_identifiers():
 
 
 def compute_annotation_informativity():
+    """
+    Computes and writes the number of UNIOPROT nodes each GO term annotates, directly and
+    indirectly, computes the informativity of each GO term and finally the total annotation
+    information available on the UNIPROT
+
+    :return:
+    """
     log.info('Computing the annotation information contents')
     DatabaseGraph.count_go_annotation_cover()
 
 
+# CURRENTPASS: move to structural diagnostics
+#   use tabulate for printing the list
+#   return the compiled list itself
 def pull_up_inf_density():
-    # cur_list = [node for node in DatabaseGraph.get_all('UNIPROT') if node._properties.get(
-    # 'total_information', 0)]
+    """
+    Prints out the UIPROT nodes sorted by the amount of information available about them.
+
+    :return:
+    """
     name_maps = DatabaseGraph.get_preferential_gene_names()
     print("rank \t informativity \t UNIPROT ID \t gene name")
-    for i, node in enumerate(sorted(DatabaseGraph.get_all('UNIPROT'), key=lambda nde: nde._properties.get('total_information', 0), reverse=True)):
-        print("%4.d \t %.2f \t %s \t %s" % (i+1, node._properties.get('total_information', 0), node._properties['legacyId'], name_maps.get(node._properties['legacyId'], None)))
+    for i, node in enumerate(sorted(DatabaseGraph.get_all('UNIPROT'),
+                                    key=lambda nde: nde._properties.get('total_information', 0),
+                                    reverse=True)):
+        print("%4.d \t %.2f \t %s \t %s" % (i+1,
+                                            node._properties.get('total_information', 0),
+                                            node._properties['legacyId'],
+                                            name_maps.get(node._properties['legacyId'], None)))
 
 
-# Yes, I know what goes below here is ugly and shouldn't be in the
-# production part of the code
-
+# TODO: find a more safe and permanent way to do it
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
 on_unittest = os.environ.get('UNITTESTING') == 'True'
 
 if on_unittest:
-    # Yes, this is dangerous as hell. Can't see a better way of doing it
-    # though for now.
+    # TODO: find a more safe and permanent way to do it
     import sys
     import unittests.Mocks.DB_IO_Mocks as SelfMock
     sys.modules[__name__] = SelfMock
@@ -395,7 +427,7 @@ if on_unittest:
 
 if __name__ == "__main__":
     # erase_custom_fields()
-    # recompute_forbidden_ids(forbidden_verification_list)
+    # excluded_nodes_ids_from_names_list(forbidden_verification_list)
     # print cast_analysis_set_to_bulbs_ids()
     # print look_up_annotation_set('CTR86')
     # print look_up_annotation_set('ENSG00000131981', 'UNIPROT_Ensembl')

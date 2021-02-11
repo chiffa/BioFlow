@@ -6,6 +6,22 @@ On the table:
 
 <node weights/context forwarding>
 
+ - TODO: record the origin of the nodes and relationships:
+    - Reactome
+    - UNIPROT
+
+ - TODO: define trust into the names of different databases and make use it as mask when pulling
+    relationships
+
+ - TODO: rename the 'meta_objects' to 'Reactome_base_object'
+
+ - TODO: [REFACTOR] remove the GraphDeclarator.py and re-point it directly into the cypher_drivers
+
+ - TODO: [REFACTOR] wrap the cypher_drivers into the db_io_routines class
+
+
+
+
  - TODO: [FUTUREPROOFING] [CODESMELL] get away from using `_properties` of the neo4j database
         objects.
         => Basically, now this uses a Node[`property_name`] convention
@@ -127,6 +143,17 @@ Current refactoring:
  - TODO: [USABILITY]: adjust the sampling spin-up according to how many "good" samples are
         already in the mongodb
 
+ - TODO: [SANITY] [REFACTOR]: sanify the database management
+    - TODO: create the `data_stores` package and move everything relating to mongoDB and neo4j there
+    - TODO: remove the `GraphDeclarator.py`, fold the logic directly into the `cypher_drivers`
+    - TODO: rename `db_io_routines` to `bionet_routines`
+    - TODO: import `cypher_drivers` as `bionet_store`
+    - TODO: rename `cypher_drivers` to `_neo4j_backend`
+    - TODO: import the `mongodb.py` as an alias with `samples_storage`
+    - TODO: fold the laplacians .dump object storage in dumps as `auxilary_data_storage`
+    - TODO: put a straight-jacket
+
+
 <Environment registration>
 
  - TODO: [USABILITY] store a header of what was analyzed and where it was pulled from + env
@@ -158,7 +185,6 @@ Current refactoring:
 
  - TODO: [USABILITY]: allow a fast analysis re-run by storing actual UP groups analysis in a
         mongo database - aka a true memoization.
-
 
 
  - ????: [USABILITY] add the Laplacian nonzero elements to the shape one (????)

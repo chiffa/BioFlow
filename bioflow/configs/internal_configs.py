@@ -29,10 +29,9 @@ edge_type_filters = {
     "TRRUST_TF_Regulation": ["is_interacting"]}
 
 
-# if
-
-
-#  Defines what nodes are to be masked to avoid conduction overload of non-informative nodes
+# CURRENTPASS: move to the configs .yaml
+#  Set an alternative method of computing (eg edge number)
+# Defines what nodes are to be masked to avoid conduction overload of non-informative nodes
 Leg_ID_Filter = ['H+', 'ATP', 'GTP', 'Pi', 'H2O', 'ADP', 'PPi', 'GDP', 'O2', 'CO2', 'NTP',
                  'Ubiquitin', 'cAMP', 'Actin']
 
@@ -70,7 +69,8 @@ laplacian_matrix_weights = {
     "skipped": 0}
 
 # allowed payload types for the annotation nodes
-annotation_nodes_ptypes = [
+# CURRENTPASS: not used anymore
+deprecated_annotation_nodes_ptypes = [
     'name',
     'eCNumber',
     'ENSEMBL',
@@ -90,6 +90,10 @@ annotation_nodes_ptypes = [
     'UNIPROT_PDB',
     'UNIPROT_GeneID', ]
 
+# CURRENTPASS: Investigate the use
+#  Eithere a dynamic registration (in which case Reactome importing is unskippable)
+#  > Or a recovery from the neo4j as "source:Reactome"
+#  Or user configuration file of what to import
 neo4j_names_dict = {
     'DNA': "DNA",
     'DNA Collection': "DNA_Collection",
