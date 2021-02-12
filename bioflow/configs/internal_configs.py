@@ -121,3 +121,5 @@ neo4j_names_dict = {
 }
 
 full_list = list(neo4j_names_dict.keys())
+
+reactome_reactions_types_list = ['TemplateReaction', 'Degradation', 'BiochemicalReaction']

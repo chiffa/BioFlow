@@ -171,7 +171,7 @@ class GeneOntologyInterface(object):
 
     def dump_statics(self):
         dump_object(
-            Dumps.GO_builder_stat,
+            confs.Dumps.GO_builder_stat,
             (self.go_namespace_filter,
              self.InitSet,          # it does dump the InitSet from which it will attempt to
                                     # rebuild itself.
@@ -181,11 +181,11 @@ class GeneOntologyInterface(object):
 
     @staticmethod
     def undump_statics():
-        return undump_object(Dumps.GO_builder_stat)
+        return undump_object(confs.Dumps.GO_builder_stat)
 
     def dump_core(self):
         dump_object(
-            Dumps.GO_dump,
+            confs.Dumps.GO_dump,
             (self.UP2GO_Dict,
              self.GO2UP,
              self.SeedSet,
@@ -203,22 +203,22 @@ class GeneOntologyInterface(object):
         self.UP2GO_Dict, self.GO2UP, self.SeedSet, self.Reachable_nodes_dict,\
             self.GO_Names, self.GO_Legacy_IDs, self.rev_GO_IDs, self.All_GOs,\
             self.GO2Num, self.Num2GO, self.UP_Names, self.UPs_without_GO =\
-            undump_object(Dumps.GO_dump)
+            undump_object(confs.Dumps.GO_dump)
 
     def dump_matrices(self):
         dump_object(
-            Dumps.GO_Mats,
+            confs.Dumps.GO_Mats,
             (self.adjacency_matrix,
              self.dir_adj_matrix,
              self.laplacian_matrix))
 
     def undump_matrices(self):
         self.adjacency_matrix, self.dir_adj_matrix, self.laplacian_matrix = undump_object(
-            Dumps.GO_Mats)
+            confs.Dumps.GO_Mats)
 
     def dump_informativities(self):
         dump_object(
-            Dumps.GO_Infos,
+            confs.Dumps.GO_Infos,
             (self.UP2GO_Reachable_nodes,
              self.GO2UP_Reachable_nodes,
              self.UP2GO_step_Reachable_nodes,
@@ -229,11 +229,11 @@ class GeneOntologyInterface(object):
     def undump_informativities(self):
         self.UP2GO_Reachable_nodes, self.GO2UP_Reachable_nodes, self.UP2GO_step_Reachable_nodes, \
             self.GO2UP_step_Reachable_nodes, self.GO2_Pure_Inf, self.GO2_Weighted_Ent = \
-            undump_object(Dumps.GO_Infos)
+            undump_object(confs.Dumps.GO_Infos)
 
     def dump_inflated_elements(self):
         dump_object(
-            Dumps.GO_Inflated,
+            confs.Dumps.GO_Inflated,
             (self.inflated_Laplacian,
              self.inflated_idx2lbl,
              self.inflated_lbl2idx,
@@ -242,7 +242,7 @@ class GeneOntologyInterface(object):
     def undump_inflated_elements(self):
         self.inflated_Laplacian, self.inflated_idx2lbl, \
             self.inflated_lbl2idx, self.binding_intensity = \
-            undump_object(Dumps.GO_Inflated)
+            undump_object(confs.Dumps.GO_Inflated)
 
     def dump_memoized(self):
         md5 = hashlib.md5(
@@ -255,20 +255,20 @@ class GeneOntologyInterface(object):
             'UPs': pickle.dumps(self.annotated_uniprots),
             'currents': pickle.dumps((self.current_accumulator, self.node_current)),
             'voltages': pickle.dumps(self.uniprots_2_voltage_and_circulation)}
-        dump_object(Dumps.GO_Analysis_memoized, payload)
+        dump_object(confs.Dumps.GO_Analysis_memoized, payload)
 
     @staticmethod
     def undump_memoized():
         """
         :return: undumped memoized analysis
         """
-        return undump_object(Dumps.GO_Analysis_memoized)
+        return undump_object(confs.Dumps.GO_Analysis_memoized)
 
     def dump_independent_linear_sets(self):
-        dump_object(Dumps.GO_Indep_Linset, self.Indep_Lapl)
+        dump_object(confs.Dumps.GO_Indep_Linset, self.Indep_Lapl)
 
     def undump_independent_linear_sets(self):
-        self.Indep_Lapl = undump_object(Dumps.GO_Indep_Linset)
+        self.Indep_Lapl = undump_object(confs.Dumps.GO_Indep_Linset)
 
     def full_rebuild(self):
         self.get_gene_ontology_access()
@@ -635,7 +635,7 @@ class GeneOntologyInterface(object):
             uniprot_dict[alt_id] = (
                 elt, self.interactome_interface_instance.neo4j_id_2_display_name[elt])
             uniprot_dict[elt] = alt_id
-        pickle.dump(uniprot_dict, open(Dumps.Up_dict_dump, 'wb'))
+        pickle.dump(uniprot_dict, open(confs.Dumps.Up_dict_dump, 'wb'))
         return uniprot_dict
 
     def filter_out_too_specific(self):

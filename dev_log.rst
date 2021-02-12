@@ -6,6 +6,41 @@ On the table:
 
 <node weights/context forwarding>
 
+ - TODO: [REFACTOR] The policy for the building of a laplacian relies on neo4j crawl (2 steps)
+    and the matrix build:
+    - neo4j crawl
+        - A rule/routine to retrieve the seeds of the expansion
+        - A rule/routine to expand from those routines and insert nodes into the network
+    - matrix build
+        - creates the maps for the names, ids, legacy IDs and matrix indexes for the physical
+            entities that will be in the interactome
+        - connect the nodes with the links according to a weighting scheme
+        - normalize the weights for the laplacian
+
+
+Current rewriting logic would involve:
+    - TODO: Upon external insertion, insert as well the properties that might influence the
+    weight computation for the laplacian construction
+        - cross-link the Reactome nodes linked with a "reaction" so that it's a direct linking in
+        the database
+    - TODO: Changing neo4j crawl so that it uses the edges properties rather than node types
+        - For now we will be proceeding with the "class" node properties as a filter
+        - Crawl allowed to pass through edges with a set of qualitative properties
+        - Crawl allowed to pass through nodes with a set of qualitative properties
+        - Record the link properties {(node_id, node_id): link (neo4j object)}
+        - Record the node properties {node_id: node (neo4j object)}
+        - Let the crawl run along the edges until:
+            - either the allowed number of steps to crawl is exhausted
+            - there is no more nodes to use as a seed
+    - TODO: change the weight calculation that will be using the link properties that were recorded
+        - use the properties of the link and the node pair to calculate the weights for both
+        matrices
+
+
+
+ - TODO: [FEATURE] [USABILITY] upon organism insertion and retrieval, use the 'orgnism' flag on the
+        proteins and relationships to allow for simultaneous loading of several organisms.
+
  - TODO: record the origin of the nodes and relationships:
     - Reactome
     - UNIPROT
@@ -18,8 +53,6 @@ On the table:
  - TODO: [REFACTOR] remove the GraphDeclarator.py and re-point it directly into the cypher_drivers
 
  - TODO: [REFACTOR] wrap the cypher_drivers into the db_io_routines class
-
-
 
 
  - TODO: [FUTUREPROOFING] [CODESMELL] get away from using `_properties` of the neo4j database
@@ -152,6 +185,7 @@ Current refactoring:
     - TODO: import the `mongodb.py` as an alias with `samples_storage`
     - TODO: fold the laplacians .dump object storage in dumps as `auxilary_data_storage`
     - TODO: put a straight-jacket
+    - TODO: move the `internet_io` to the `data_stores` package
 
 
 <Environment registration>

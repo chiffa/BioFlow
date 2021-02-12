@@ -21,29 +21,24 @@ from scipy.sparse.csgraph import connected_components
 from scipy.sparse.linalg import eigsh
 from itertools import chain
 
-import bioflow.configs.main_configs
+import bioflow.configs.main_configs as confs
 from bioflow.utils.gdfExportInterface import GdfExportInterface
 from bioflow.utils.io_routines import write_to_csv, dump_object, undump_object
 from bioflow.utils.log_behavior import get_logger
-from bioflow.configs.main_configs import Dumps, NewOutputs, env_skip_reactome, env_skip_hint, \
-    env_skip_biogrid, use_normalized_laplacian, fraction_edges_dropped_in_laplacian
+# from bioflow.configs.main_configs import Dumps, NewOutputs, env_skip_reactome, env_skip_hint, \
+#     env_skip_biogrid, use_normalized_laplacian, fraction_edges_dropped_in_laplacian
 from bioflow.sample_storage.mongodb import insert_interactome_rand_samp
 from bioflow.configs.bioflow_home import internal_storage
 from bioflow.configs.internal_configs import edge_type_filters, adjacency_matrix_weights, \
-    laplacian_matrix_weights
+    laplacian_matrix_weights, reactome_reactions_types_list
 from bioflow.algorithms_bank import conduction_routines as cr
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
-from bioflow.neo4j_db.db_io_routines import expand_from_seed, \
-    erase_custom_fields, node_extend_once, get_db_id
+from bioflow.neo4j_db.db_io_routines import expand_from_seed, erase_custom_fields, node_extend_once,\
+    get_db_id
+
 
 log = get_logger(__name__)
 
-# Debug Log:
-#   Main connex set is 24k nodes, with 4331 UP links and 1051 Hint links
-#   With the full UP import, the main connex set is 25k Nodes, with 4336
-#   UP Links and 1191 HiNT links
-# With forbidding overloaded items: 24k771 Nodes, 4293 UP Links, 1186 HiNT
-# links
 
 class InteractomeInterface(object):
     """
@@ -59,7 +54,6 @@ class InteractomeInterface(object):
     # within the connex part of the graph)
 
     # CURRENTPASS: move to internal_configs
-    reactions_types_list = ['TemplateReaction', 'Degradation', 'BiochemicalReaction']
 
     def __init__(self, main_connex_only, full_impact):
         self.connexity_aware = main_connex_only
@@ -123,8 +117,8 @@ class InteractomeInterface(object):
         self.current_accumulator = np.zeros((2, 2))
         self.node_current = {}
 
-        # TODO: Ideally, should be removed
-        self.UP2Chrom = {}
+        # CURRENTPASS: remove in the disk items rebuild
+        self.deprecated_UP2Chrom = {}
         self.chromosomes_2_uniprot = defaultdict(list)
 
         self.incomplete_compute = False  # used in case of sparse sampling
@@ -140,11 +134,10 @@ class InteractomeInterface(object):
         :return: tuple containing the time since the creation of the Matrix_getter object and
          since the last cal of function formatted as string
         """
-        # TODO: datetime deltatime with strf
-        it, pt = (round(time() - self.init_time),
-                  round(time() - self.partial_time))
+        init_time, partial_time = (round(time() - self.init_time),
+                                   round(time() - self.partial_time))
         pload = 'total: %s m %s s, \t partial: %s m %s s' % (
-            int(it) // 60, it % 60, int(pt) //60, pt % 60)
+            int(init_time) // 60, init_time % 60, int(partial_time) // 60, partial_time % 60)
         self.partial_time = time()
         return pload
 
@@ -152,37 +145,44 @@ class InteractomeInterface(object):
         """
         time since previous partial timer flag was reset.
         """
-        pt = time() - self.partial_time
-        return pt
+        partial_time = time() - self.partial_time
+        return partial_time
 
     def reset_thread_hex(self):
+        """
+        Reset the hex identifier of the object. used when multiprocessing
+
+        :return:
+        """
         char_set = string.ascii_uppercase + string.digits
         self.thread_hex = ''.join(sample(char_set * 6, 6))
 
+    # TODO: potential improvement for all dump/undump methods is to use mongo storage and index
+    #  from environment not to re-compute them every time
     def dump_matrices(self):
         """
         dumps self.adjacency_Matrix and self.laplacian_matrix
         """
-        dump_object(Dumps.interactome_adjacency_matrix, self.adjacency_Matrix)
-        dump_object(Dumps.interactome_laplacian_matrix, self.laplacian_matrix)
+        dump_object(confs.Dumps.interactome_adjacency_matrix, self.adjacency_Matrix)
+        dump_object(confs.Dumps.interactome_laplacian_matrix, self.laplacian_matrix)
 
     def undump_matrices(self):
         """
         undumps self.adjacency_Matrix and self.laplacian_matrix
         """
-        self.adjacency_Matrix = undump_object(Dumps.interactome_adjacency_matrix)
-        self.laplacian_matrix = undump_object(Dumps.interactome_laplacian_matrix)
+        self.adjacency_Matrix = undump_object(confs.Dumps.interactome_adjacency_matrix)
+        self.laplacian_matrix = undump_object(confs.Dumps.interactome_laplacian_matrix)
         self.non_norm_laplacian_matrix = self.laplacian_matrix.copy()
 
     def dump_eigen(self):
         """
         dumps self.adj_eigenvals and self.laplacian_matrix and writes them to csv
         """
-        write_to_csv(Dumps.eigen_VaMat, self.adj_eigenvals)
-        write_to_csv(Dumps.eigen_ConMat, self.cond_eigenvals)
-        dump_object(Dumps.val_eigen, (self.adj_eigenvals, self.adj_eigenvects))
+        write_to_csv(confs.eigen_VaMat, self.adj_eigenvals)
+        write_to_csv(confs.Dumps.eigen_ConMat, self.cond_eigenvals)
+        dump_object(confs.val_eigen, (self.adj_eigenvals, self.adj_eigenvects))
         dump_object(
-            Dumps.cond_eigen,
+            confs.Dumps.cond_eigen,
             (self.cond_eigenvals,
              self.cond_eigenvects))
 
@@ -191,9 +191,9 @@ class InteractomeInterface(object):
         undumps self.adj_eigenvals and self.laplacian_matrix
         """
         self.adj_eigenvals, self.adj_eigenvects = undump_object(
-            Dumps.val_eigen)
+            confs.Dumps.val_eigen)
         self.cond_eigenvals, self.cond_eigenvects = undump_object(
-            Dumps.cond_eigen)
+            confs.Dumps.cond_eigen)
 
     def dump_maps(self):
         """
@@ -201,9 +201,9 @@ class InteractomeInterface(object):
          of database entries and matrix columns
         """
         log.debug("pre-dump e_p_u_b_i length: %s", len(self.entry_point_uniprots_neo4j_ids))
-        log.debug("dumping into: %s", Dumps.interactome_maps)
+        log.debug("dumping into: %s", confs.Dumps.interactome_maps)
         dump_object(
-            Dumps.interactome_maps,
+            confs.Dumps.interactome_maps,
             (self.neo4j_id_2_matrix_index,
              self.matrix_index_2_neo4j_id,
              self.neo4j_id_2_display_name,
@@ -213,7 +213,7 @@ class InteractomeInterface(object):
              self.reached_uniprots_neo4j_id_list,
              self.all_uniprots_neo4j_id_list,
              self.Uniprot_attachments,
-             self.UP2Chrom,
+             self.deprecated_UP2Chrom,
              self.chromosomes_2_uniprot,
              self.uniprot_matrix_index_list,
              self.entry_point_uniprots_neo4j_ids))  # TODO: delete here and below entry point u_b_i
@@ -223,14 +223,14 @@ class InteractomeInterface(object):
         undumps all the elements required for the mapping between the types and ids of
         database entries and matrix columns
         """
-        log.debug("undumping from %s", Dumps.interactome_maps)
+        log.debug("undumping from %s", confs.Dumps.interactome_maps)
         self.neo4j_id_2_matrix_index, self.matrix_index_2_neo4j_id, \
         self.neo4j_id_2_display_name, self.neo4j_id_2_legacy_id, self.neo4j_id_2_node_type, \
         self.neo4j_id_2_localization, self.reached_uniprots_neo4j_id_list, \
-        self.all_uniprots_neo4j_id_list, self.Uniprot_attachments, self.UP2Chrom, \
+        self.all_uniprots_neo4j_id_list, self.Uniprot_attachments, self.deprecated_UP2Chrom, \
         self.chromosomes_2_uniprot, self.uniprot_matrix_index_list, \
         self.entry_point_uniprots_neo4j_ids = \
-            undump_object(Dumps.interactome_maps)
+            undump_object(confs.Dumps.interactome_maps)
         log.debug("post-undump e_p_u_b_i length: %s", len(self.entry_point_uniprots_neo4j_ids))
 
     def dump_memoized(self):
@@ -259,7 +259,7 @@ class InteractomeInterface(object):
             'UPs': pickle.dumps(self.entry_point_uniprots_neo4j_ids),
             'currents': pickle.dumps((self.current_accumulator, self.node_current)),
             'voltages': pickle.dumps(self.uniprots_2_voltage)}
-        dump_object(Dumps.Interactome_Analysis_memoized, payload)
+        dump_object(confs.Dumps.Interactome_Analysis_memoized, payload)
 
     @staticmethod
     def undump_memoized() -> dict:
@@ -275,7 +275,7 @@ class InteractomeInterface(object):
 
         :return:
         """
-        return undump_object(Dumps.Interactome_Analysis_memoized)
+        return undump_object(confs.Dumps.Interactome_Analysis_memoized)
 
     # TODO: we should refactor that element as a separate object, responsible only for
     # laplacian_pulling
@@ -284,7 +284,8 @@ class InteractomeInterface(object):
         """
         Performs the loading of all the objects and the relations in the database
          according to the following algorithm:
-            - get all the reaction nodes, i.e. reactions specified in the self.Reaction_List.
+            - get all the reaction nodes, i.e. reactions specified in the
+            reactome_reactions_type_list
             - for each reaction, add the participants to the "seeds" list and create a set of
             groups linking them all together
             - for each element of hte "seeds" list, crawl the objects reachable from this seed
@@ -302,7 +303,8 @@ class InteractomeInterface(object):
             The exact relations in each group of relation abbreviations are specified in the
             configs.py file,
 
-        This function fills in the self.Set and self.Links elements of the MatrixGetter object
+        This function fills in the self.Set and self.Links elements of the parent
+        object
         """
 
         def get_reaction_blocks():  # TRACING [lapl build]
@@ -322,10 +324,12 @@ class InteractomeInterface(object):
             seeds = set()
             total_reaction_participants = 0
 
-            for ReactionType in self.reactions_types_list:  # TRACING [lapl build] self.react_types
+            for ReactionType in reactome_reactions_types_list:  # TRACING [lapl build] self.react_types
                 for Reaction in DatabaseGraph.get_all(ReactionType):
                     reaction_participants, reaction_participants_no = node_extend_once(
-                        edge_type_filters["Reaction"], self.connexity_aware, Reaction)
+                        edge_type_filters["Reaction"],  # TRACING: neo4j typing > can be a property
+                        self.connexity_aware,
+                        Reaction)
                     # TRACING [lapl build] edge_type_filters, Reaction
                     total_reaction_participants += reaction_participants_no
 
@@ -362,8 +366,10 @@ class InteractomeInterface(object):
             for element in sub_seed:
                 # TODO: refactor below: edge_type_filter -> edge_type_filters[edge_type]
                 local_list, count_increase = expand_from_seed(
-                    element, edge_type_filter, self.connexity_aware)
-                if edge_type_filter == 'is_weakly_interacting':
+                    element,
+                    edge_type_filter,  # TRACING: neo4j edge types
+                    self.connexity_aware)
+                if edge_type_filter == 'is_weakly_interacting':  # TRACING: never reached. Also why?
                     log.info(element, local_list, self.connexity_aware)
 
                 if len(local_list) > 0:
@@ -390,7 +396,7 @@ class InteractomeInterface(object):
 
         def n_expansion(starting_group, edge_type, char_name, expansions_n=1):
             """
-            performs a single round of expansion/characterization
+            performs n rounds of expansion/characterization
 
             :param starting_group:
             :param edge_type:
@@ -403,7 +409,8 @@ class InteractomeInterface(object):
             for _i in range(0, expansions_n):
                 round_name = '%s %s' % (char_name, _i+1)
                 tmp_links, tmp_group, _count = get_expansion(
-                    tmp_group, edge_type_filters[edge_type])  # TODO: edit here for edge type retrieval
+                    tmp_group,
+                    edge_type_filters[edge_type])  # TRACING: neo4j edge types
                 if expansions_n > 1:
                     print_characteristics(round_name, tmp_links, tmp_group, _count)
                 else:
@@ -417,6 +424,9 @@ class InteractomeInterface(object):
 
         # TODO: following the addition of new tools, this needs to be refactored for more clarity
         #       and to eliminate indirect link names dict
+
+        # CURRENTPASS: a lot of self.XXX here are used only to drive the expansions and record
+        #  values for the matrix building. Is this really necessary?
 
         self.ReactLinks, self.InitSet, count = get_reaction_blocks()
         print_characteristics('Reactions', self.ReactLinks, self.InitSet, count)
@@ -446,7 +456,7 @@ class InteractomeInterface(object):
                                                     'possibly_same',
                                                     'Looks_similar Links', 3)
 
-    # TODO: complexity too high (11); needs to be reduced.
+    # REFACTOR: complexity too high (11); needs to be reduced.
     # This method actually contains two methods.
     #   1) One that pulls the uniprots reachable within the reactome routes
     #   2) Second one that pulls all the uniprots from
@@ -455,7 +465,7 @@ class InteractomeInterface(object):
         """
         Maps Node Database IDs, Legacy IDs, display names and types to matrix row/column indexes;
         """
-        # TODO: memoization wrapper needed here
+        # REFACTOR: memoization wrapper possible
         def request_location(_location_buffer_dict, location):
             """
             Just a Buffered lookup of location, since the number of cellular location
@@ -470,7 +480,7 @@ class InteractomeInterface(object):
             if location in list(_location_buffer_dict.keys()):
                 return _location_buffer_dict[location]
             else:
-                for location_node in DatabaseGraph.find({'legacyId':location}, 'Location'):
+                for location_node in DatabaseGraph.find({'legacyId': location}, 'Location'):
                     _location_buffer_dict[location] = location_node._properties['displayName']
                     return location_node._properties['displayName']
 
@@ -483,29 +493,38 @@ class InteractomeInterface(object):
         self.matrix_index_2_neo4j_id = {}
 
         log.info('nodes in Highest Set: %s', len(self.Highest_Set))
-        for neo4j_node_id in self.Highest_Set:
+        for neo4j_node_id in self.Highest_Set:  # CURRENTPASS: that's an enumerate
+            # bidirectional map between the node ID and matrix index
             self.neo4j_id_2_matrix_index[neo4j_node_id] = counter
             self.matrix_index_2_neo4j_id[counter] = neo4j_node_id
 
             node = DatabaseGraph.get(neo4j_node_id)
+            # record node type, display Name and the legacy ID
             self.neo4j_id_2_display_name[neo4j_node_id] = node._properties['displayName']
             self.neo4j_id_2_node_type[neo4j_node_id] = list(node.labels)[0]
             self.neo4j_id_2_legacy_id[neo4j_node_id] = node._properties['legacyId']
+
+            # since UNIPROT is our main entry point due to the external reference indexing,
+            # we maintain two special lists for them
             if list(node.labels)[0] == "UNIPROT":
                 self.reached_uniprots_neo4j_id_list.append(neo4j_node_id)
                 self.uniprot_matrix_index_list.append(counter)
-            # TODO: [future-proofing]
+
+            # maps the ID of the localization to the name of the localization
             if 'localization' in node._properties and node._properties['localization'] is not None:
                 self.neo4j_id_2_localization[neo4j_node_id] = request_location(
                     location_buffer_dict, node._properties['localization'])
 
             counter += 1
 
-        # This is a pointer
+        # Get the set of all the uniprots reached during the neo4j crawl.
+        # Neither of them is a pointer
         self.all_uniprots_neo4j_id_list += self.reached_uniprots_neo4j_id_list
         self.reached_uniprots_neo4j_id_list = list(set(self.reached_uniprots_neo4j_id_list))
-        log.info("reached uniprots: %s", len(self.reached_uniprots_neo4j_id_list))
+        log.info("Reached uniprots in the expansion: %d", len(self.reached_uniprots_neo4j_id_list))
 
+        # pull the desired information even for the uniprots that were not reached in the expansion
+        # and add them to the list of all the uniprots
         for up_node in DatabaseGraph.get_all('UNIPROT'):
             neo4j_node_id = get_db_id(up_node)
 
@@ -516,7 +535,7 @@ class InteractomeInterface(object):
                 self.neo4j_id_2_legacy_id[neo4j_node_id] = up_node._properties['legacyId']
 
         self.all_uniprots_neo4j_id_list = list(set(self.all_uniprots_neo4j_id_list))
-        log.info("analyzable uniprots: %s", len(self.all_uniprots_neo4j_id_list))
+        log.info("All uniprots in the neo4j database: %d", len(self.all_uniprots_neo4j_id_list))
 
 
     def fast_row_insert(self, element, index_type):
@@ -568,9 +587,18 @@ class InteractomeInterface(object):
         """
 
         def insert_expansion_links(link_dict, link_type):
+            """
+            Routine that actually performs the insertion of all the links stored in a dict into
+            the laplacian matrix
+
+            :param link_dict:
+            :param link_type:
+            :return:
+            """
             for _key, values in link_dict.items():
                 for _val in values:
-                    if not fraction_edges_dropped_in_laplacian or np.random.random_sample() > fraction_edges_dropped_in_laplacian:  # TODO: check that no crash occurs
+                    if not confs.fraction_edges_dropped_in_laplacian \
+                            or np.random.random_sample() > confs.fraction_edges_dropped_in_laplacian:
                         _link_indexes = (
                             self.neo4j_id_2_matrix_index[_key],
                             self.neo4j_id_2_matrix_index[_val])
@@ -585,16 +613,16 @@ class InteractomeInterface(object):
 
         self.map_rows_to_names()
 
-        log.info("mapped neo4j_ids_to_ %s", self.pretty_time())
+        log.info("Mapped neo4j_ids_to_ in %s", self.pretty_time())
 
-        log.info("building the ValMatrix %s ", self.pretty_time())
+        log.info("Starting to building the ValMatrix %s ", self.pretty_time())
 
         load_len = len(self.Highest_Set)
         self.adjacency_Matrix = lil_matrix((load_len, load_len))
         self.laplacian_matrix = lil_matrix((load_len, load_len))
 
         # TODO: if the BioGRID tag is true, this will be reduced to the weak_contact links
-        if not env_skip_reactome:
+        if not confs.env_skip_reactome:
             for reaction_participant_set in self.ReactLinks:
                 for reaction_participant in itertools.combinations(reaction_participant_set, 2):
                     link_indexes = (
@@ -606,11 +634,11 @@ class InteractomeInterface(object):
             insert_expansion_links(self.sec_links, "Contact_interaction")
             insert_expansion_links(self.GroupLinks_2, "Group")
 
-        if not env_skip_hint:
+        if not confs.env_skip_hint:
             insert_expansion_links(self.hint_links, "Contact_interaction")
             insert_expansion_links(self.UP_Links, "Same")
 
-        if not env_skip_biogrid:
+        if not confs.env_skip_biogrid:
             insert_expansion_links(self.biogrid_links, "weak_contact")
 
         if self.full_impact:
@@ -713,9 +741,6 @@ class InteractomeInterface(object):
         self.create_val_matrix()
         self.get_eigen_spectrum(100)
 
-        # self.map_UPs_to_chromosomes()  #TODO: revert once the chromosome
-        # downloading from BioMart and assembly has been succesfully completed
-
         self.dump_maps()
         self.dump_matrices()
         self.dump_eigen()
@@ -808,10 +833,10 @@ class InteractomeInterface(object):
             sorted_initial_set,
             self.full_impact,
             connected_ups,
-            bioflow.configs.main_configs.line_loss,
-            use_normalized_laplacian,
-            fraction_edges_dropped_in_laplacian,
-            (env_skip_reactome, env_skip_hint, env_skip_biogrid)]
+            confs.line_loss,
+            confs.use_normalized_laplacian,
+            confs.fraction_edges_dropped_in_laplacian,
+            (confs.env_skip_reactome, confs.env_skip_hint, confs.env_skip_biogrid)]
 
         md5 = hashlib.md5(json.dumps(data, sort_keys=True).encode('utf-8')).hexdigest()
 
@@ -830,10 +855,10 @@ class InteractomeInterface(object):
                      self.full_impact,
                      hashlib.md5(json.dumps(connected_ups, sort_keys=True).encode(
                                                 'utf-8')).hexdigest(),
-                     bioflow.configs.main_configs.line_loss,
-                     use_normalized_laplacian,
-                     fraction_edges_dropped_in_laplacian,
-                     (env_skip_reactome, env_skip_hint, env_skip_biogrid)))
+                     confs.line_loss,
+                     confs.use_normalized_laplacian,
+                     confs.fraction_edges_dropped_in_laplacian,
+                     (confs.env_skip_reactome, confs.env_skip_hint, confs.env_skip_biogrid)))
 
         return str(md5)
 
@@ -892,7 +917,7 @@ class InteractomeInterface(object):
         :return: adjusted conduction system
         """
 
-        if use_normalized_laplacian:
+        if confs.use_normalized_laplacian:
             self.normalize_laplacian()
 
         if fast_load:
@@ -1051,7 +1076,7 @@ class InteractomeInterface(object):
                 str(float(p_value_dict[int(NodeID)][2]))]
 
         if output_location == '':
-            output_location = NewOutputs().Interactome_GDF_output
+            output_location = confs.NewOutputs().Interactome_GDF_output
 
 
         gdf_exporter = GdfExportInterface(

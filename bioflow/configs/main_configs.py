@@ -10,6 +10,9 @@ from pprint import pprint
 from bioflow.configs.configs_manager import compute_full_paths
 from bioflow.configs.bioflow_home import output_location, log_location, dump_location, \
     sources_location, confs_location
+from bioflow.configs.internal_configs import edge_type_filters, Leg_ID_Filter, \
+    forbidden_verification_list, adjacency_matrix_weights, laplacian_matrix_weights, \
+    neo4j_names_dict, full_list, reactome_reactions_types_list
 from bioflow.utils.general_utils import high_level_os_io as hl_os_io
 from bioflow.utils.log_behavior import get_logger
 

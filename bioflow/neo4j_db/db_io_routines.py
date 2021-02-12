@@ -162,6 +162,7 @@ def erase_custom_fields():
 
 
 # CURRENTPASS: used once elsewhere - consider folding it there
+# TRACING: first argument is a filter on the edge type
 def node_extend_once(edge_type_filter, main_connex_only, core_node):
     """
 
@@ -174,7 +175,9 @@ def node_extend_once(edge_type_filter, main_connex_only, core_node):
     node_neighbor_no = 0
     for edge_type in edge_type_filter:
 
-        for node in DatabaseGraph.get_linked(get_db_id(core_node), link_type=edge_type):
+        for node in DatabaseGraph.get_linked(get_db_id(core_node),
+                                             link_type=edge_type):  # TRACING: link type.
+            # TRACING: can be switched to a property filter.
             node_is_connex = node._properties['main_connex']
             if (main_connex_only and node_is_connex) or not main_connex_only:
                 node_neo4j_id = get_db_id(node)
@@ -186,7 +189,7 @@ def node_extend_once(edge_type_filter, main_connex_only, core_node):
 
 
 # CURRENTPASS: used once elsewhere - consider folding it there
-def expand_from_seed(seed_node_id, edge_filter, main_connex_only):
+def expand_from_seed(seed_node_id, edge_filter, main_connex_only):  # TRACING: neo4j property
     """
     Recovers all the nodes accessible in one jump from a seed_node with a given database ID by
     jumping only via the relations of types specified in the edge_filter
@@ -201,7 +204,8 @@ def expand_from_seed(seed_node_id, edge_filter, main_connex_only):
     node_neighbors = []
     for edge_type in edge_filter:
         seed_node_is_connex = DatabaseGraph.get(seed_node_id)._properties['main_connex']
-        for linked_node in DatabaseGraph.get_linked(seed_node_id, 'both', edge_type):
+        for linked_node in DatabaseGraph.get_linked(seed_node_id, 'both', edge_type):  # TRACING
+            # TRACING: neo4j property
             if linked_node.id not in forbidden_neo4j_ids and (seed_node_is_connex or not main_connex_only):
                 node_neighbors.append(linked_node.id)
 
