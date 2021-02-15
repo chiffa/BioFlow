@@ -11,7 +11,7 @@ from bioflow.configs.internal_configs import neo4j_names_dict
 
 log = get_logger(__name__)
 
-# TODO: REFACTORING: this should be refactored into a class to wrap memoization dicts
+# REFACTOR: this should be refactored into a class to wrap memoization dicts
 # Stores relations between GO IDs and the objects in the neo4j database
 GO_term_memoization_dict = {}
 # Stores relations between the SWISSPROT UNIPROT IDs and the neo4j database objects
@@ -40,7 +40,9 @@ def import_gene_ontology(go_terms, go_terms_structure):
                               'Name': term['name'],
                               'displayName': term['name'],
                               'Namespace': term['namespace'],
-                              'Definition': term['def']})
+                              'Definition': term['def'],
+                              'source': 'Gene Ontology',
+                              'parse_type': 'annotation'})
 
     # Create the structure between them:
     go_links_number = len(go_terms_structure)
@@ -57,31 +59,52 @@ def import_gene_ontology(go_terms, go_terms_structure):
         go_relation_type = relation[1]
 
         if go_relation_type == 'is_a':
-            DatabaseGraph.link(get_db_id(go_term_1), get_db_id(go_term_2), 'is_a_go')
+            DatabaseGraph.link(get_db_id(go_term_1),
+                               get_db_id(go_term_2),
+                               'is_a_go',
+                               {'source': 'Gene Ontology',
+                                'parse_type': 'annotation_relationship'})
 
         if go_relation_type == 'part_of':
-            DatabaseGraph.link(get_db_id(go_term_1), get_db_id(go_term_2), 'is_part_of_go')
+            DatabaseGraph.link(get_db_id(go_term_1),
+                               get_db_id(go_term_2),
+                               'is_part_of_go',
+                               {'source': 'Gene Ontology',
+                                'parse_type': 'annotation_relationship'})
 
         if 'regul' in go_relation_type:
             if go_relation_type == 'positively_regulates':
-                DatabaseGraph.link(get_db_id(go_term_1), get_db_id(go_term_2),
+                DatabaseGraph.link(get_db_id(go_term_1),
+                                   get_db_id(go_term_2),
                                    'is_regulant',
-                                   {'controlType': 'ACTIVATES',
-                                    'ID': str('GO' + go_term_1._properties['legacyId'] +
-                                              go_term_2._properties['legacyId'])})
+                                   {'source': 'Gene Ontology',
+                                    'parse_type': 'annotation_relationship',
+                                    'source_controlType': 'ACTIVATES',
+                                    # 'ID': str('GO' + go_term_1._properties['legacyId'] +
+                                    #           go_term_2._properties['legacyId'])
+                                    })
 
             if go_relation_type == 'negatively_regulates':
-                DatabaseGraph.link(get_db_id(go_term_1), get_db_id(go_term_2),
+                DatabaseGraph.link(get_db_id(go_term_1),
+                                   get_db_id(go_term_2),
                                    'is_regulant',
-                                   {'controlType': 'INHIBITS',
-                                    'ID': str('GO' + go_term_1._properties['legacyId'] +
-                                              go_term_2._properties['legacyId'])})
+                                   {'source': 'Gene Ontology',
+                                    'parse_type': 'annotation_relationship',
+                                    'source_controlType': 'INHIBITS',
+                                    # 'ID': str('GO' + go_term_1._properties['legacyId'] +
+                                    #           go_term_2._properties['legacyId'])
+                                    })
 
             else:
-                DatabaseGraph.link(get_db_id(go_term_1), get_db_id(go_term_2),
+                DatabaseGraph.link(get_db_id(go_term_1),
+                                   get_db_id(go_term_2),
                                    'is_regulant',
-                                   {'ID': str('GO' + go_term_1._properties['legacyId'] +
-                                              go_term_2._properties['legacyId'])})
+                                   {'source': 'Gene Ontology',
+                                    'parse_type': 'annotation_relationship',
+                                    'source_controlType': 'UNKNOWN',
+                                    # 'ID': str('GO' + go_term_1._properties['legacyId'] +
+                                    #           go_term_2._properties['legacyId'])
+                                    })
 
 
 def pull_up_acc_nums_from_reactome():
@@ -145,7 +168,7 @@ def manage_acc_nums(acc_num, acc_num_2_reactome_proteins):
     if acc_num in list(acc_num_2_reactome_proteins.keys()):
         return acc_num_2_reactome_proteins[acc_num]
 
-
+# TRACING: inject source
 def link_annotation(uniprot_id, p_type, p_load, preferential=False):
     """
     Links a uniprot node to an annotation node
@@ -153,9 +176,12 @@ def link_annotation(uniprot_id, p_type, p_load, preferential=False):
     :param uniprot_id: uniprot/swissprot ID
     :param p_type: type of the annotation
     :param p_load: content of the annotation
+    :param preferential: if the annotation is preferrential reference
+    :param source: source of the annotation
     """
     prot_node = Uniprot_memoization_dict[uniprot_id]
-    DatabaseGraph.attach_annotation_tag(prot_node.id, p_load, p_type, preferential)
+    # TRACING: inject source
+    DatabaseGraph.attach_annotation_tag(prot_node.id, p_load, p_type, preferential, 'Uniprot')
 
 
 def insert_uniprot_annotations(swiss_prot_id, data_container):
@@ -230,6 +256,8 @@ def import_uniprots(uniprot, reactome_acnum_bindings):
             neo4j_names_dict['UNIPROT'],
             {'legacyId': swiss_prot_id,
              'displayName': data_container['Names']['Full'],
+             'source': 'UNIPROT',
+             'parse_type': 'physical_entity',
              'main_connex': False})
 
         log.debug('uniprot %s created @ %s', swiss_prot_id, uniprot_node)
@@ -254,14 +282,22 @@ def import_uniprots(uniprot, reactome_acnum_bindings):
         for GO_Term in data_container['GO']:
             if GO_Term in list(GO_term_memoization_dict.keys()):
                 linked_go_term = GO_term_memoization_dict[GO_Term]
-                DatabaseGraph.link(get_db_id(uniprot_node), get_db_id(linked_go_term), 'is_go_annotation')
+                DatabaseGraph.link(get_db_id(uniprot_node),
+                                   get_db_id(linked_go_term),
+                                   'is_go_annotation',
+                                   {'source': 'UNIPROT',
+                                    'parse_type': 'annotates'})
 
         for acnum in data_container['Acnum']:
             proteins = manage_acc_nums(acnum, reactome_acnum_bindings)
             if proteins is not []:
                 for prot in proteins:
                     secondary = prot
-                    DatabaseGraph.link(get_db_id(uniprot_node), get_db_id(secondary), 'is_same')
+                    DatabaseGraph.link(get_db_id(uniprot_node),
+                                       get_db_id(secondary),
+                                       'is_same',
+                                       {'source': 'xref inferred',
+                                        'parse_type': 'identity'})
                     is_same_links_no += 1
 
         insert_uniprot_annotations(swiss_prot_id, data_container)

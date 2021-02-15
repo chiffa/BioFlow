@@ -27,10 +27,12 @@ def insert_cell_locations(cell_locations_dict):
     for Loc, displayName in cell_locations_dict.items():
         memoization_dict[Loc] = DatabaseGraph.create('Location',
                                                      {'legacyId': Loc,
-                                                      'displayName': displayName})
+                                                      'displayName': displayName,
+                                                      'parse_type': 'annotation',
+                                                      'source': 'Reactome'})
 
-
-def insert_minimal_annotations(annotated_node, annot_type_2_annot_list):
+# TRACING: inject source
+def insert_minimal_annotations(annotated_node, annot_type_2_annot_list, source):  # INTEST;
     """
     Inserts a minimal annotation provided the annotated_node Node (it requires the direct,
     local DB ID and thus) needs to be inserted at the same time as the annotated object
@@ -38,10 +40,12 @@ def insert_minimal_annotations(annotated_node, annot_type_2_annot_list):
     :param annotated_node:
     :param annot_type_2_annot_list:
     """
-    DatabaseGraph.attach_all_node_annotations(annotated_node.id, annot_type_2_annot_list)
+    DatabaseGraph.attach_all_node_annotations(annotated_node.id,
+                                              annot_type_2_annot_list,
+                                              source=source)  # TRACING: inject source
 
 
-def insert_meta_objects(neo4j_graph_class, meta_id_2_property_dict):
+def insert_meta_objects(neo4j_graph_class, meta_id_2_property_dict, parse_type):
     """
     Inserst a Meta-Object (I.e. any physical entity or collection thereof) as a member of a
      bulbs class and pumping the bioflow information from the property bioflow
@@ -52,16 +56,22 @@ def insert_meta_objects(neo4j_graph_class, meta_id_2_property_dict):
     size = len(list(meta_id_2_property_dict.keys()))
     log.info('Starting inserting %s with %s elements', neo4j_graph_class, size)
     breakpoints = 300
+
     for i, (meta_name, property_dict) in enumerate(meta_id_2_property_dict.items()):
 
         if i % breakpoints == 0:
+            # TODO: [progress bar]
             log.info('\t %.2f %%' % (float(i) / float(size) * 100.0))
 
         meta_properties = {'legacyId': meta_name,
                            'displayName': property_dict['displayName'],
                            'localization': property_dict['cellularLocation'],
+                           'source': 'Reactome',
+                           'parse_type': parse_type,
                            'main_connex': False}
+
         primary = DatabaseGraph.create(neo4j_graph_class, meta_properties)
+
         log.debug(primary)
         log.debug(dir(primary))
         log.debug("%s\n%s\n%s\n%s\n%s" %
@@ -84,7 +94,9 @@ def insert_meta_objects(neo4j_graph_class, meta_id_2_property_dict):
 
         memoization_dict[meta_name] = primary
 
-        insert_minimal_annotations(primary, property_dict['references'])
+        insert_minimal_annotations(primary,
+                                   property_dict['references'],
+                                   source='Reactome')  # INTEST # TRACING: inject source
 
         if 'cellularLocation' in list(property_dict.keys()):
             secondary = memoization_dict[property_dict['cellularLocation']]
@@ -92,24 +104,33 @@ def insert_meta_objects(neo4j_graph_class, meta_id_2_property_dict):
                                secondary.id,
                                'is_localized',
                                {'custom_from': primary._properties['legacyId'],
-                                'custom_to': secondary._properties['legacyId']})
+                                'custom_to': secondary._properties['legacyId'],
+                                'source': 'Reactome',
+                                'parse_type': 'annotates'})
 
         if 'modification' in list(property_dict.keys()):
+
             for modification in property_dict['modification']:
+
                 if 'location' in list(modification.keys()) and 'modification' in list(modification.keys()):
 
                     located_modification = DatabaseGraph.create('ModificationFeature',
                                                                 {'legacyId': modification['ID'],
                                                                  'type': 'post-translational_Mod',
                                                                  'location': modification['location'],
-                                                                 'displayName': modification['modification']})
+                                                                 'displayName': modification['modification'],
+                                                                 'source': 'Reactome',
+                                                                 'parse_type': 'annotation'})  # INTEST
 
                     DatabaseGraph.link(primary.id,
                                        located_modification.id,
                                        'is_able_to_modify',
                                        {'custom_from': primary._properties['legacyId'],
                                         'custom_to': located_modification._properties['legacyId'],
-                                        'source': 'Reactome_modification'})
+                                        # 'source': 'Reactome_modification',
+                                        'source': 'Reactome',
+                                        'parse_type': 'annotates'}  # INTEST
+                                       )
 
 
 def insert_collections(collections_2_members):
@@ -136,7 +157,10 @@ def insert_collections(collections_2_members):
                                'is_part_of_collection',
                                {'custom_from': collection_node._properties['legacyId'],
                                 'custom_to': member_node._properties['legacyId'],
-                                'source': 'Reactome_collection'})
+                                'source': 'Reactome',
+                                'parse_type': 'annotates',
+                                # 'source': 'Reactome_collection'
+                                })
 
 
 def insert_complex_parts(complex_property_dict):
@@ -161,7 +185,10 @@ def insert_complex_parts(complex_property_dict):
                 DatabaseGraph.link(complex_node.id, part_node.id, 'is_part_of_complex',
                                    {'custom_from': complex_node._properties['legacyId'],
                                     'custom_to': part_node._properties['legacyId'],
-                                    'source': 'Reactome_complex'})
+                                    'source': 'Reactome',
+                                    'parse_type': 'physical_entity_molecular_interaction'
+                                    # 'source': 'Reactome_complex'
+                                    })
 
 
 def insert_reactions(neo4j_graph_class, property_source_dict):
@@ -175,11 +202,14 @@ def insert_reactions(neo4j_graph_class, property_source_dict):
     for reaction, reaction_properties in property_source_dict.items():
         memoization_dict[reaction] = DatabaseGraph.create(neo4j_graph_class,
                                                           {'legacyId': reaction,
-                                                           'displayName': reaction_properties['displayName']})
+                                                           'displayName': reaction_properties['displayName'],
+                                                           'source': 'Reactome',
+                                                           'parse_type': 'physical_entity'})
 
         insert_minimal_annotations(
             memoization_dict[reaction],
-            reaction_properties['references'])
+            reaction_properties['references'],
+            source='Reactome')  # TRACING: [parse type] # TRACING: inject source
 
         for property_name, property_value_list in reaction_properties.items():
             if property_name in ['left', 'right']:
@@ -192,7 +222,9 @@ def insert_reactions(neo4j_graph_class, property_source_dict):
                                        {'side': property_name,
                                         'custom_from': reaction_node._properties['legacyId'],
                                         'custom_to': reaction_node._properties['legacyId'],
-                                        'source': 'Reactome_reaction'})
+                                        # 'source': 'Reactome_reaction',
+                                        'source': 'Reactome',
+                                        'parse_type': 'physical_entity_molecular_interaction'})
 
 
 # TODO: catalysis and modulation are identical in the marked lines
@@ -225,7 +257,10 @@ def insert_catalysis(catalysises_dict):
                         'controlType': catalysis_properties['ControlType'],
                         'custom_from': controller._properties['legacyId'],
                         'custom_to': controlled._properties['legacyId'],
-                        'source': 'Reactome_catalysis'})
+                        'source': 'Reactome',
+                        'parse_type': 'physical_entity_molecular_interaction'
+                        # 'source': 'Reactome_catalysis'
+                     })
 
             else:
                 log.debug("Catalysis targets not memoized: %s : %s, %s, %s", catalysis,
@@ -256,7 +291,9 @@ def insert_modulation(modulations_dict):
             {'legacyID': modulation,
              'controlType': modulation_property_dict['controlType'],
              'custom_from': controller._properties['legacyId'],
-             'custom_to': controlled._properties['legacyId']
+             'custom_to': controlled._properties['legacyId'],
+             'source': 'Reactome',
+             'parse_type': 'physical_entity_molecular_interaction'
              }
         )
 
@@ -281,11 +318,13 @@ def insert_pathways(pathway_steps, pathways):
             log.info('\t %.2f %%' % (float(i) / float(ps_len) * 100))
 
         memoization_dict[pathway_step] = DatabaseGraph.create('PathwayStep',
-                                                              {'legacyId': pathway_step})
+                                                              {'legacyId': pathway_step,
+                                                               'source': 'Reactome',
+                                                               'parse_type': 'annotation'})
 
     log.info('Inserting Pathways with %s elements', len(list(pathways.keys())))
 
-    for pathway_step in list(pathways.keys()):
+    for i, pathway_step in enumerate(list(pathways.keys())):
 
         if i % breakpoints == 0:
             log.info('\t %.2f %%' % (float(i) / float(p_len) * 100))
@@ -293,7 +332,9 @@ def insert_pathways(pathway_steps, pathways):
 
         memoization_dict[pathway_step] = DatabaseGraph.create('Pathway',
                                                               {'legacyId': pathway_step,
-                                                               'displayName': pathways[pathway_step]['displayName']})
+                                                               'displayName': pathways[pathway_step]['displayName'],
+                                                               'source': 'Reactome',
+                                                               'parse_type': 'annotation'})
 
     for i, pathway_step in enumerate(pathway_steps.keys()):
 
@@ -303,7 +344,10 @@ def insert_pathways(pathway_steps, pathways):
                                'is_part_of_pathway',
                                {'custom_from': pathway_step,
                                 'custom_to': component,
-                                'source': 'Reactome_pathway'})
+                                # 'source': 'Reactome_pathway',
+                                'source': 'Reactome',
+                                'parse_type': 'annotation_relationship'
+                                })
 
         for next_step in pathway_steps[pathway_step]['nextStep']:
             DatabaseGraph.link(memoization_dict[pathway_step].id,
@@ -311,7 +355,10 @@ def insert_pathways(pathway_steps, pathways):
                                'is_next_in_pathway',
                                {'custom_from': pathway_step,
                                 'custom_to': next_step,
-                                'source': 'Reactome_pathway'})
+                                # 'source': 'Reactome_pathway',
+                                'source': 'Reactome',
+                                'parse_type': 'annotation_relationship'
+                                })
 
     for pathway_step in list(pathways.keys()):
 
@@ -321,7 +368,10 @@ def insert_pathways(pathway_steps, pathways):
                                'is_part_of_pathway',
                                {'custom_from': pathway_step,
                                 'custom_to': second_pathway_step,
-                                'source': 'Reactome_pathway'})
+                                # 'source': 'Reactome_pathway',
+                                'source': 'Reactome',
+                                'parse_type': 'annotation_relationship'
+                                })
 
         for sub_pathway in pathways[pathway_step]['components']:
             DatabaseGraph.link(memoization_dict[pathway_step].id,
@@ -329,7 +379,10 @@ def insert_pathways(pathway_steps, pathways):
                                'is_part_of_pathway',
                                {'custom_from': pathway_step,
                                 'custom_to': sub_pathway,
-                                'source': 'Reactome_pathway'})
+                                # 'source': 'Reactome_pathway',
+                                'source': 'Reactome',
+                                'parse_type': 'annotation_relationship'
+                                })
 
 
 def get_one_meta_set(neo4j_class):
@@ -363,7 +416,6 @@ def get_all_meta_sets():
         neo4j_names_dict['Physical Entity Collection']
     ]
 
-
     for node_class in list_of_bulbs_classes:
         get_one_meta_set(node_class)
 
@@ -386,37 +438,53 @@ def insert_reactome(skip_import='N'):
 
         insert_cell_locations(reactome_parser.CellularLocations)
 
-        insert_meta_objects(get_db_class_handle('DNA'), reactome_parser.Dnas)
-        insert_meta_objects(get_db_class_handle('DNA Collection'), reactome_parser.Dna_Collections)
-        insert_meta_objects(get_db_class_handle('RNA'), reactome_parser.Rnas)
-        insert_meta_objects(get_db_class_handle('RNA Collection'), reactome_parser.Rna_Collections)
-        insert_meta_objects(get_db_class_handle('Small Molecule'), reactome_parser.SmallMolecules)
-        insert_meta_objects(
-            get_db_class_handle('Small Molecule Collection'),
-            reactome_parser.SmallMolecule_Collections)
-        insert_meta_objects(get_db_class_handle('Protein'), reactome_parser.Proteins)
-        insert_meta_objects(get_db_class_handle('Protein Collection'), reactome_parser.Protein_Collections)
-        insert_meta_objects(get_db_class_handle('Complex'), reactome_parser.Complexes)
-        insert_meta_objects(get_db_class_handle('Complex Collection'), reactome_parser.Complex_Collections)
-        insert_meta_objects(get_db_class_handle('Physical Entity'), reactome_parser.PhysicalEntities)
+        insert_meta_objects(get_db_class_handle('DNA'),
+                            reactome_parser.Dnas, 'physical_entity')
+        insert_meta_objects(get_db_class_handle('DNA Collection'),
+                            reactome_parser.Dna_Collections, 'annotation')
+        insert_meta_objects(get_db_class_handle('RNA'),
+                            reactome_parser.Rnas, 'physical_entity')
+        insert_meta_objects(get_db_class_handle('RNA Collection'),
+                            reactome_parser.Rna_Collections, 'annotation')
+        insert_meta_objects(get_db_class_handle('Small Molecule'),
+                            reactome_parser.SmallMolecules, 'physical_entity')
+        insert_meta_objects(get_db_class_handle('Small Molecule Collection'),
+                            reactome_parser.SmallMolecule_Collections, 'annotation')
+        insert_meta_objects(get_db_class_handle('Protein'),
+                            reactome_parser.Proteins, 'physical_entity')
+        insert_meta_objects(get_db_class_handle('Protein Collection'),
+                            reactome_parser.Protein_Collections, 'annotation')
+        insert_meta_objects(get_db_class_handle('Complex'),
+                            reactome_parser.Complexes, 'physical_entity')
+        insert_meta_objects(get_db_class_handle('Complex Collection'),
+                            reactome_parser.Complex_Collections, 'annotation')
+        insert_meta_objects(get_db_class_handle('Physical Entity'),
+                            reactome_parser.PhysicalEntities, 'physical_entity')
         insert_meta_objects(
             get_db_class_handle('Physical Entity Collection'),
-            reactome_parser.PhysicalEntity_Collections)
+            reactome_parser.PhysicalEntity_Collections, 'annotation')
 
-        log.info('Inserting DNA Collections with %s elements' % len(reactome_parser.Dna_Collections))
+        log.info('Inserting DNA Collections with %s elements'
+                 % len(reactome_parser.Dna_Collections))
         insert_collections(reactome_parser.Dna_Collections)
-        log.info('Inserting RNA Collections with %s elements' % len(reactome_parser.Rna_Collections))
+        log.info('Inserting RNA Collections with %s elements'
+                 % len(reactome_parser.Rna_Collections))
         insert_collections(reactome_parser.Rna_Collections)
-        log.info('Inserting Small Molecule Collections with %s elements' % len(reactome_parser.SmallMolecule_Collections))
+        log.info('Inserting Small Molecule Collections with %s elements'
+                 % len(reactome_parser.SmallMolecule_Collections))
         insert_collections(reactome_parser.SmallMolecule_Collections)
-        log.info('Inserting Protein Collections with %s elements' % len(reactome_parser.Protein_Collections))
+        log.info('Inserting Protein Collections with %s elements'
+                 % len(reactome_parser.Protein_Collections))
         insert_collections(reactome_parser.Protein_Collections)
-        log.info('Inserting Complex Collections with %s elements' % len(reactome_parser.Complex_Collections))
+        log.info('Inserting Complex Collections with %s elements'
+                 % len(reactome_parser.Complex_Collections))
         insert_collections(reactome_parser.Complex_Collections)
-        log.info('Inserting Physical Entity Collections with %s elements' % len(reactome_parser.PhysicalEntity_Collections))
+        log.info('Inserting Physical Entity Collections with %s elements'
+                 % len(reactome_parser.PhysicalEntity_Collections))
         insert_collections(reactome_parser.PhysicalEntity_Collections)
 
-        log.info('Inserting Complexes with %s elements' % (len(reactome_parser.Complexes)))
+        log.info('Inserting Complexes with %s elements'
+                 % (len(reactome_parser.Complexes)))
         insert_complex_parts(reactome_parser.Complexes)
 
         # NOW dump the ForbiddenIDs
@@ -431,16 +499,27 @@ def insert_reactome(skip_import='N'):
     # print memoization_dict.keys()
 
     # Meta insert/retrieval finished
-    log.info('Inserting Template Reactions with %s elements' % len(reactome_parser.Dna_Collections))
-    insert_reactions(get_db_class_handle('TemplateReaction'), reactome_parser.TemplateReactions)
-    log.info('Inserting Degradations with %s elements' % len(reactome_parser.Dna_Collections))
-    insert_reactions(get_db_class_handle('Degradation'), reactome_parser.Degradations)
-    log.info('Inserting Biochemical Reactions with %s elements' % len(reactome_parser.Dna_Collections))
-    insert_reactions(get_db_class_handle('BiochemicalReaction'), reactome_parser.BiochemicalReactions)
+    log.info('Inserting Template Reactions with %s elements'
+             % len(reactome_parser.Dna_Collections))
+    insert_reactions(get_db_class_handle('TemplateReaction'),
+                     reactome_parser.TemplateReactions)
+    log.info('Inserting Degradations with %s elements'
+             % len(reactome_parser.Dna_Collections))
+    insert_reactions(get_db_class_handle('Degradation'),
+                     reactome_parser.Degradations)
+    log.info('Inserting Biochemical Reactions with %s elements'
+             % len(reactome_parser.Dna_Collections))
+    insert_reactions(get_db_class_handle('BiochemicalReaction'),
+                     reactome_parser.BiochemicalReactions)
 
     # Reaction insert finished
-    log.info('Inserting Catalyses with %s elements' % len(reactome_parser.Catalysises))
+    log.info('Inserting Catalyses with %s elements'
+             % len(reactome_parser.Catalysises))
     insert_catalysis(reactome_parser.Catalysises)
-    log.info('Inserting Modulations with %s elements' % len(reactome_parser.Modulations))
+    log.info('Inserting Modulations with %s elements'
+             % len(reactome_parser.Modulations))
     insert_modulation(reactome_parser.Modulations)
-    insert_pathways(reactome_parser.PathwaySteps, reactome_parser.Pathways)
+    insert_pathways(reactome_parser.PathwaySteps,
+                    reactome_parser.Pathways)
+    # TODO: there is no linking from the actual entities to pathways in Reactome?
+    #   There are, but they link to reactions and are currently excluded from a parse

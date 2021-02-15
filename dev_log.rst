@@ -17,6 +17,45 @@ On the table:
         - connect the nodes with the links according to a weighting scheme
         - normalize the weights for the laplacian
 
+ - TODO: [REFACTOR] On writing into the neo4j DB we need to separate the node types and edges:
+    - node: physical entity nodes
+    - edge: physical entity molecular interaction
+    - edge: identity
+    - node: annotation (GO + Reactome pathway + Reactome reaction)
+    - edge: annotates
+    - node: x-ref (currently the 'annotation' node)
+    - edge: reference (currently the 'annotates' edge type)
+    For compatibility with life code, those will initially be referred to as parse_types as a
+        property
+
+ - DONE: [REFACTOR] add universal properties:
+    - N+E: parse_type:
+        - N:
+            - physical_entity
+            - annotation
+            - xref
+        - E:
+            - physical_entity_molecular_interaction
+            - annotates
+            - annotation_relation
+            - identity
+            - reference
+    - N+E: source
+    - N+E: source_<property>
+    - N: legacyID
+    - N: displayName
+
+ - TODO: [REFACTOR] check that the universal properties were added with an exception in
+    - DB.link if `parse_type` not defined or `source` not defined
+    - DB.create if `parse_type` not defined, `source` not defined, `legacyID` not defined or
+        `displayName` not defined
+
+ - TODO: PROBLEM:
+    - 'Collections' are implicated in reactions, not necessarily proteins themselves.
+    - Patch:
+        - Either: link the 'part of collection' to all the 'molecular entity nodes'
+        - Or: create 'abstract_interface'
+        - Or: same
 
 Current rewriting logic would involve:
     - TODO: Upon external insertion, insert as well the properties that might influence the
@@ -164,7 +203,6 @@ Current refactoring:
             between explicitely multi-threaded and implicitely single-threaded
         - DONE: temporary patch and flag it as a known bug
 
-
  - TODO: [FEATURE]: Factor out the structural analysis of the network properties to a module
 
  - TODO: [FEATURE]: Factor out the clustering analysis of the network to a different function in
@@ -216,6 +254,9 @@ Current refactoring:
 
  - TODO: [USABILITY] move the dumps into a mongo database instance to allow swaps between builds
         - wrt backgrounds and the neo4j states
+
+ - TODO: [USABILITY] since 4.0 neo4j allows multi-database support that can be used in order to
+    build organism-specific databases and then switch between them, without a need to rebuild
 
  - TODO: [USABILITY]: allow a fast analysis re-run by storing actual UP groups analysis in a
         mongo database - aka a true memoization.

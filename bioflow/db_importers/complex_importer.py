@@ -14,9 +14,9 @@ import datetime
 log = get_logger(__name__)
 
 
-def insert_into_the_database(up_ids_2_inner_ids,
-                             up_ids_2_properties,
-                             origin):
+def insert_into_the_database(up_ids_2_inner_ids: dict,
+                             up_ids_2_properties: dict,
+                             origin: str):
     """
     Performs the insertion in the database sub-routine
 
@@ -35,9 +35,11 @@ def insert_into_the_database(up_ids_2_inner_ids,
         complex_node = DatabaseGraph.create('COMPLEX',
                                             {'legacyId': node_id,
                                              'displayName': new_node['displayName'],
-                                             'main_connex': False})
+                                             'main_connex': False,
+                                             'parse_type': 'physical_entity'})
 
         if counter % breakpoints == 0 and counter > 1:
+            # TODO: [progress bar]
             compops = float(breakpoints) / (time() - previous_time)
             secs_before_termination = int((total_pairs - counter) / compops)
 
@@ -51,8 +53,11 @@ def insert_into_the_database(up_ids_2_inner_ids,
 
         for node2_up in new_node['components']:
             if node2_up in list(up_ids_2_inner_ids.keys()):
-                DatabaseGraph.link(complex_node.id, up_ids_2_inner_ids[node2_up], 'is_interacting',
-                                   {'source': origin, 'weight': 1.0})
+                DatabaseGraph.link(complex_node.id, up_ids_2_inner_ids[node2_up],
+                                   'is_interacting',
+                                   {'source': origin,
+                                    'weight': 1.0,
+                                    'parse_type': 'physical_entity_molecular_interaction'})
 
 
 def insert_complexes():

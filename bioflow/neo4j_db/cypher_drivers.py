@@ -13,13 +13,14 @@ log = get_logger(__name__)
 # default connection parameters
 uri = neo4j_server_url
 user = 'neo4j'
+# TODO: add `db_org = confs.organism` instruction to connect to the database
 password = os.environ['NEOPASS']
 
 
 # Type hinting support
 db_id = NewType('db_id', int)
 db_n_type = NewType('db_n_type', str)
-# CURRNETPASS: add a db_n_type for annotation node and an umbrella?
+# CURRENTPASS: add a db_a_type for annotation node and db_p_e_type for physical entities?
 db_e_type = NewType('db_e_type', str)
 e_orientation = NewType('e_orientation', str)
 
@@ -99,7 +100,7 @@ class GraphDBPipe(object):
         :param node_type: (optional type of the node to be deleted)
         :return:
         """
-        with self._driver.session() as session:
+        with self._driver.session() as session:  # TODO: organism-specific: session(database=db_org)
             deleted = session.write_transaction(self._delete, node_id, node_type)
             return deleted
 
@@ -361,7 +362,8 @@ class GraphDBPipe(object):
                               node_id: db_id,
                               annotation_tag: str,
                               tag_type: db_n_type = None,
-                              preferential: bool = False) -> Node:
+                              preferential: bool = False,
+                              source: str = 'NA') -> Node:
         """
         For a given node, set a tag with its identifier in a database of a given type.
 
@@ -369,14 +371,17 @@ class GraphDBPipe(object):
         :param annotation_tag: the external identifier with witch the node will be annotated
         :param tag_type: (optional) type of the annotation
         :param preferential: (optional) if this is the preferential external identifier
+        :param: source: (optional) where the link comes from
         :return: new node containing the annotation
         """
         with self._driver.session() as session:
-            annot_tag = session.write_transaction(self._attach_annotation_tag, node_id, annotation_tag, tag_type, preferential)
+            annot_tag = session.write_transaction(self._attach_annotation_tag,
+                                                  node_id, annotation_tag, tag_type,
+                                                  preferential, source)
             return annot_tag
 
     @staticmethod
-    def _attach_annotation_tag(tx, node_id, annotation_tag, tag_type, preferential):
+    def _attach_annotation_tag(tx, node_id, annotation_tag, tag_type, preferential, link_source):
         if tag_type is None:
             tag_type = 'undefined'
 
@@ -386,11 +391,17 @@ class GraphDBPipe(object):
                             "CREATE (b:Annotation) "
                             "SET b.tag = '%s' "
                             "SET b.type = '%s' "
+                            "SET b.parse_type = 'xref' "
+                            "SET b.source = %s "
                             "CREATE (a)<-[r:annotates]-(b) "
                             "SET r.preferential = True "
+                            "SET r.parse_type = 'reference' "  # INTEST
+                            "SET r.source = %s "
                             "RETURN b" % (node_id,
                                           neo4j_sanitize(annotation_tag),
-                                          neo4j_sanitize(tag_type)))
+                                          neo4j_sanitize(tag_type),
+                                          neo4j_sanitize(tag_type),
+                                          neo4j_sanitize(link_source)))
 
         else:
             result = tx.run("MATCH (a) "
@@ -398,11 +409,17 @@ class GraphDBPipe(object):
                             "CREATE (b:Annotation) "
                             "SET b.tag = '%s' "
                             "SET b.type = '%s' "
+                            "SET b.parse_type = 'xref' "
+                            "SET b.source = %s "
                             "CREATE (a)<-[r:annotates]-(b) "
                             "SET r.preferential = False "
+                            "SET r.parse_type = 'reference' "  # INTEST
+                            "SET r.source = %s "
                             "RETURN b" % (node_id,
                                           neo4j_sanitize(annotation_tag),
-                                          neo4j_sanitize(tag_type)))
+                                          neo4j_sanitize(tag_type),
+                                          neo4j_sanitize(tag_type),
+                                          neo4j_sanitize(link_source)))
 
         return result.single()
 
@@ -473,13 +490,17 @@ class GraphDBPipe(object):
     def attach_all_node_annotations(self,
                                     node_id: db_id,
                                     annot_type_2_annot_list: dict,
-                                    preferential: bool = False) -> List[Node]:
+                                    preferential: bool = False,
+                                    source: str = 'NA') -> List[Node]:
+        # CURRENTPASS: preferential is supposed to be a list here and needs to be zipped in
+        # enumerate
         """
         Attaches all the external identifiers of given types to a node based on its ID
 
         :param node_id: internal database id of the node to annotate
         :param annot_type_2_annot_list: {annotation_type: [external identifiers]}
         :param preferential: (optional) if the annotation is preferential
+        :param source: (optional: source of the annotation)
         :return: list of all newly created annotation nodes
         """
         with self._driver.session() as session:
@@ -489,7 +510,8 @@ class GraphDBPipe(object):
                 if isinstance(annot_list, str):
                     annot_list = [annot_list]
                 for annot_tag in annot_list:
-                    annot_node = self._attach_annotation_tag(tx, node_id, annot_tag, annot_type, preferential)
+                    annot_node = self._attach_annotation_tag(tx, node_id, annot_tag,
+                                                             annot_type, preferential, source)
                     annot_nodes.append(annot_node)
             tx.commit()
             return annot_nodes

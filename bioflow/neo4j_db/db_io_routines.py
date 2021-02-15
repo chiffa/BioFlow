@@ -204,7 +204,7 @@ def expand_from_seed(seed_node_id, edge_filter, main_connex_only):  # TRACING: n
     node_neighbors = []
     for edge_type in edge_filter:
         seed_node_is_connex = DatabaseGraph.get(seed_node_id)._properties['main_connex']
-        for linked_node in DatabaseGraph.get_linked(seed_node_id, 'both', edge_type):  # TRACING
+        for linked_node in DatabaseGraph.get_linked(seed_node_id, 'both', edge_type):
             # TRACING: neo4j property
             if linked_node.id not in forbidden_neo4j_ids and (seed_node_is_connex or not main_connex_only):
                 node_neighbors.append(linked_node.id)

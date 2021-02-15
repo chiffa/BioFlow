@@ -44,6 +44,7 @@ def cross_ref_hint():
     for i, (legacyId, linked_legacyIds) in enumerate(relations_dict.items()):
 
         if i % breakpoints:
+            # TODO: [progress bar]
             log.info('\t %.2f %%' % (float(i) / float(size) * 100))
 
         if legacyId in list(uniprot_ref_dict.keys()):
@@ -52,7 +53,9 @@ def cross_ref_hint():
                     actual_cross_links += 1
 
                     DatabaseGraph.link(uniprot_ref_dict[legacyId], uniprot_ref_dict[linked_legacyId],
-                                       'is_interacting', {'source': 'HINT'})
+                                       'is_interacting',
+                                       {'source': 'HINT',
+                                        'parse_type': 'physical_entity_molecular_interaction'})
 
 
     log.info('HINT Cross-links: %s, HINT processed nodes: %s',

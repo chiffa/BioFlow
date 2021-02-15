@@ -13,7 +13,8 @@ import datetime
 log = get_logger(__name__)
 
 
-def insert_into_the_database(_up_ids_2_inner_ids, _up_ids_2_properties):
+def insert_into_the_database(_up_ids_2_inner_ids: dict,
+                             _up_ids_2_properties: dict) -> None:
     """
     performs the insertion into the database subroutine
 
@@ -34,6 +35,7 @@ def insert_into_the_database(_up_ids_2_inner_ids, _up_ids_2_properties):
     for counter, ((node1_id, node2_id), link_parameters) in enumerate(final_dicts.items()):
 
         if counter % breakpoints == 0 and counter > 1:
+            # TODO: [progress bar]
             compops = float(breakpoints)/(time() - previous_time)
             mins_before_termination = int((total_pairs-counter)/compops/60)
 
@@ -48,17 +50,24 @@ def insert_into_the_database(_up_ids_2_inner_ids, _up_ids_2_properties):
             previous_time = time()
 
         if len(link_parameters) > 1:
-            DatabaseGraph.link(node1_id, node2_id, 'is_weakly_interacting',
-                               {'source': 'BioGRID', 'throughput': link_parameters[0],
-                                'confidence': float(link_parameters[1])})
+            DatabaseGraph.link(node1_id, node2_id,
+                               'is_weakly_interacting',
+                               {'source': 'BioGRID',
+                                'throughput': link_parameters[0],
+                                'confidence': float(link_parameters[1]),
+                                'parse_type': 'physical_entity_molecular_interaction'})
         else:
-            DatabaseGraph.link(node1_id, node2_id, 'is_weakly_interacting',
-                               {'source': 'BioGRID', 'throughput': link_parameters[0]})
+            DatabaseGraph.link(node1_id, node2_id,
+                               'is_weakly_interacting',
+                               {'source': 'BioGRID',
+                                'throughput': link_parameters[0],
+                                'parse_type': 'physical_entity_molecular_interaction'})
 
 
-
-def cross_ref_bio_grid():
-    """    performs the total BioGRID parse. """
+def cross_ref_bio_grid() -> None:
+    """
+    Performs the total BioGRID parse.
+    """
     log.info('Starting BioGRID Parsing')
     up_ids_2_properties, up_ids = parse_bio_grid(biogrid_path)
     log.info('BioGrid parsed, starting translation of UP identifiers to internal database ' +

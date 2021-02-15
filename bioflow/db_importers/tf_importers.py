@@ -14,10 +14,10 @@ import datetime
 log = get_logger(__name__)
 
 
-def insert_into_the_database(up_ids_2_inner_ids,
-                             up_ids_2_properties,
-                             strong_interaction_threshold,
-                             origin):
+def insert_into_the_database(up_ids_2_inner_ids: dict,
+                             up_ids_2_properties: dict,
+                             strong_interaction_threshold: float,
+                             origin: str):
     """
     Performs the insertion in the database sub-routine
 
@@ -41,6 +41,7 @@ def insert_into_the_database(up_ids_2_inner_ids,
         # print 'tick'
 
         if counter % breakpoints == 0 and counter > 1:
+            # TODO: [progress bar]
             compops = float(breakpoints) / (time() - previous_time)
             secs_before_termination = int((total_pairs - counter) / compops)
 
@@ -53,13 +54,17 @@ def insert_into_the_database(up_ids_2_inner_ids,
             previous_time = time()
 
         if link_parameter >= strong_interaction_threshold:
-            DatabaseGraph.link(node1_id, node2_id, 'is_interacting',
+            DatabaseGraph.link(node1_id, node2_id,
+                               'is_interacting',
                                {'source': origin,
-                                'weight': float(link_parameter)})
+                                'weight': float(link_parameter),
+                                'parse_type': 'physical_entity_molecular_interaction'})
         else:
-            DatabaseGraph.link(node1_id, node2_id, 'is_weakly_interacting',
+            DatabaseGraph.link(node1_id, node2_id,
+                               'is_weakly_interacting',
                                {'source': origin,
-                                'weight': float(link_parameter)})
+                                'weight': float(link_parameter),
+                                'parse_type': 'physical_entity_molecular_interaction'})
 
 
 def cross_ref_tf_factors(confs='tcm'):

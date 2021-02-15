@@ -36,9 +36,10 @@ def insert_into_the_database(up_ids_2_inner_ids,
     previous_time = time()
 
     for counter, ((node1_id, node2_id), link_parameter) in enumerate(final_dicts.items()):
-        # print 'tick'
 
         if counter % breakpoints == 0 and counter > 1:
+            # TODO: [progress bar]
+
             compops = float(breakpoints) / (time() - previous_time)
             secs_before_termination = int((total_pairs - counter) / compops)
 
@@ -50,10 +51,11 @@ def insert_into_the_database(up_ids_2_inner_ids,
                       datetime.datetime.now() + datetime.timedelta(seconds=secs_before_termination))
             previous_time = time()
 
-
-        DatabaseGraph.link(node1_id, node2_id, 'is_interacting',
+        DatabaseGraph.link(node1_id, node2_id,
+                           'is_interacting',
                            {'source': origin,
-                            'weight': float(np.sum(np.array(link_parameter).astype(np.int)))})
+                            'weight': float(np.sum(np.array(link_parameter).astype(np.int))),
+                            'parse_type': 'physical_entity_molecular_interaction'})
 
 
 def cross_ref_kinases_factors():
@@ -63,7 +65,6 @@ def cross_ref_kinases_factors():
     :return:
     """
     log.info('Starting PhosphoSite Parsing')
-
 
     up_ids_2_properties, up_ids = parse_phosphosite(phosphosite_path, phosphosite_organism)
 

@@ -401,11 +401,13 @@ class ReactomeParser(object):
         """
         Parses Pathway steps
         """
+        # TODO: include the parsing and annotation of the links to reactions
         exclude = [
             'Modulation',
             'Control',
             'TemplateReactionRegulation',
             'Catalysis']
+
         for single_Pathway_step in self._find_in_root('PathwayStep'):
             key = list(single_Pathway_step.attrib.values())[0]
             local_dict = {'components': [], 'nextStep': []}
