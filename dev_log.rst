@@ -50,12 +50,29 @@ On the table:
     - DB.create if `parse_type` not defined, `source` not defined, `legacyID` not defined or
         `displayName` not defined
 
+ - TODO: [REFACTOR]
+    - Either add a routine that performs weight assignment to the nodes
+    - Or crawl the nodes according to the parse_type tags, return a dict of nodes and a dict of
+        relationships of the types:
+            - NodeID > neo4j.Node
+            - NodeID > [(NodeID, OtherNodeID), ] + {(NodeID, OtherNodeID): properties}
+
+
+ - DONE: [DEBUGGING] write a tool that checks the nodes and edges for properties and numbers and
+    then finds patterns
+        - DONE: nodes
+        - DONE: edges
+        - DONE: patterns
+        - DONE: formatting
+
  - TODO: PROBLEM:
     - 'Collections' are implicated in reactions, not necessarily proteins themselves.
     - Patch:
         - Either: link the 'part of collection' to all the 'molecular entity nodes'
         - Or: create 'abstract_interface'
         - Or: same
+    - Due to a number of inclusions (Collection part of Collection, ....), we are going to be
+    using an "parse_type: identity" variable
 
 Current rewriting logic would involve:
     - TODO: Upon external insertion, insert as well the properties that might influence the

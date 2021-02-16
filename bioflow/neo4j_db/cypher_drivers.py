@@ -1,5 +1,7 @@
 import os
 from pprint import pprint
+from collections import defaultdict
+from itertools import combinations_with_replacement
 from neo4j import GraphDatabase
 from neo4j.graph import Node, Relationship, Path
 from typing import List, Tuple, NewType
@@ -758,15 +760,140 @@ class GraphDBPipe(object):
 
         return legal
 
+    def self_diag(self):
+        """
+        Runs and prints diagnostics on its own content
+
+        :return:
+        """
+        with self._driver.session() as session:
+            legal = session.write_transaction(self._self_diag)
+            log.info('checking_permutation')
+            return legal
+
+    @staticmethod
+    def _self_diag(tx):
+        node_types = tx.run("MATCH (N) RETURN DISTINCT LABELS(N)")
+        node_types = [_type for _type in node_types]
+        node_types = [_type["LABELS(N)"][0] for _type in node_types]
+        # TODO: add multi-label support
+        rel_types = tx.run("MATCH ()-[r]-() RETURN DISTINCT TYPE(r)")
+        rel_types = [_type["TYPE(r)"] for _type in rel_types]
+
+        print('\nNodes characterization:')
+
+        for node_type in node_types:
+
+            # TODO: add percentage of total logic
+
+            total = tx.run("MATCH (N:%s) RETURN COUNT(N)" % node_type).single()["COUNT(N)"]
+
+            print("%s: %d" % (node_type, total))
+
+            distinct_keysets = tx.run("MATCH (N:%s) RETURN DISTINCT keys(N)" % node_type)
+            # distinct_keysets = set([frozenset(keyset) in distinct_keysets])
+            distinct_properties_for_type = set()
+            distinct_keysets = [keyset["keys(N)"] for keyset in distinct_keysets]
+            [distinct_properties_for_type.update(keyset) for keyset in distinct_keysets]
+
+            for _property in distinct_properties_for_type:
+
+                property_distinct_values = tx.run(
+                    "MATCH (N:%s) "
+                    "RETURN COUNT(DISTINCT N.%s)"
+                    % (node_type, _property)).single()["COUNT(DISTINCT N.%s)" % _property]
+
+                property_occurences = tx.run(
+                    "MATCH (N:%s) "
+                    "WHERE EXISTS(N.%s) "
+                    "RETURN COUNT(N)" % (node_type, _property)).single()["COUNT(N)"]
+
+                print("\t %s: %d/%.2f %%; %d distinct values"
+                      % (_property, property_occurences,
+                         property_occurences/total*100, property_distinct_values))
+
+                if property_distinct_values < 6:
+
+                    property_distinct_values = tx.run("MATCH (N:%s) RETURN DISTINCT N.%s"
+                                                      % (node_type, _property))
+
+                    for _value in property_distinct_values:
+                        _val = _value[0]
+                        _val_occurences  = tx.run(
+                            "MATCH (N:%s) "
+                            "WHERE N.%s='%s' "
+                            "RETURN COUNT(N)" % (node_type, _property, _val)).single()[0]
+
+
+                        print("\t\t %s: %d/%.2f %%"
+                              % (_val, _val_occurences, _val_occurences/property_occurences*100))
+
+
+        print('\nEdges characterization:')
+
+        for rel_type in rel_types:
+
+            total = tx.run("MATCH ()-[r:%s]-() RETURN COUNT(r)" % rel_type).single()["COUNT(r)"]
+
+            print("%s: %d" % (rel_type, total))
+
+            distinct_keysets = tx.run("MATCH ()-[r:%s]-() RETURN DISTINCT keys(r)" % rel_type)
+            distinct_properties_for_type = set()
+            distinct_keysets = [keyset["keys(r)"] for keyset in distinct_keysets]
+            [distinct_properties_for_type.update(keyset) for keyset in distinct_keysets]
+
+            for _property in distinct_properties_for_type:
+                property_distinct_values = tx.run("MATCH ()-[r:%s]-() "
+                                                  "RETURN COUNT(DISTINCT r.%s)"
+                                                  % (rel_type, _property)).single()[0]
+
+                property_occurences = tx.run("MATCH ()-[r:%s]-() "
+                                             "WHERE EXISTS(r.%s) "
+                                             "RETURN COUNT(r)" % (rel_type, _property)).single()[0]
+
+                print("\t %s: %d/%.2f %%; %d distinct values"
+                      % (_property, property_occurences,
+                         property_occurences/total*100, property_distinct_values))
+
+                if property_distinct_values < 6:
+                    property_distinct_values = tx.run("MATCH ()-[r:%s]-() "
+                                                      "RETURN DISTINCT r.%s"
+                                                      % (rel_type, _property))
+
+                    for _value in property_distinct_values:
+                        _val = _value[0]
+                        _val_occurences = tx.run(
+                            "MATCH ()-[r:%s]-() "
+                            "WHERE r.%s='%s' "
+                            "RETURN COUNT(r)"
+                            % (rel_type, _property, _val)).single()[0]
+
+
+                        print("\t\t %s: %d/%.2f %%"
+                              % (_val, _val_occurences, _val_occurences/property_occurences*100))
+
+        print('Pattern occurences:')
+        for A_type, B_type in combinations_with_replacement(node_types, 2):
+            for r_type in rel_types:
+                occurences = tx.run("MATCH (A:%s)-[r:%s]-(B:%s) "
+                                    "RETURN COUNT(r) "
+                                    "AS occurences"
+                                    % (A_type, r_type, B_type)).single()['occurences']
+
+                if occurences:
+                    print("\t(%s)-%s-(%s) : %d" % (A_type, r_type, B_type, occurences))
+
 
 if __name__ == "__main__":
     neo4j_pipe = GraphDBPipe()
+    neo4j_pipe.self_diag()
+
     # neo4j_pipe.delete_all('Test')
-    neo4j_pipe.delete_all('RNA')
-    neo4j_pipe.delete_all('Annotation')
-    neo4j_pipe.delete_all('Location')
-    neo4j_pipe.delete_all('Protein')
-    print(neo4j_pipe.create('Protein', {"chat": "miau", "dog": "waf"}))
+    # neo4j_pipe.delete_all('RNA')
+    # neo4j_pipe.delete_all('Annotation')
+    # neo4j_pipe.delete_all('Location')
+    # neo4j_pipe.delete_all('Protein')
+    # print(neo4j_pipe.create('Protein', {"chat": "miau", "dog": "waf"}))
     # print neo4j_pipe.create('Complex', {"chat": "miau", "dog": "waf"})
     # neo4j_pipe.link(1, 3, 'test', {"weight": 2, "source": "Andrei"})
     # print neo4j_pipe.get(0)._properties['custom']

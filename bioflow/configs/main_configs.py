@@ -176,7 +176,7 @@ if path.isfile(Dumps.Forbidden_IDs):
 
 # CURRENTPASS: wrap the 'env_' variables it all in an "environment" wrap
 
-pprint(user_settings)
+# pprint(user_settings)
 
 # casting the user definted settings > TODO: wrap them into a class
 smtp_logging = bool(user_settings['smtp_logging'])

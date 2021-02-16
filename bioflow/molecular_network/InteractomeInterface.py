@@ -104,9 +104,9 @@ class InteractomeInterface(object):
         self.ExpSet = []
         self.Highest_Set = []
 
-        self.maps_dumps_location = Dumps.interactome_maps
-        self.adjacency_dumps_location = Dumps.interactome_adjacency_matrix
-        self.laplacian_dumps_location = Dumps.interactome_laplacian_matrix
+        self.maps_dumps_location = confs.Dumps.interactome_maps
+        self.adjacency_dumps_location = confs.Dumps.interactome_adjacency_matrix
+        self.laplacian_dumps_location = confs.Dumps.interactome_laplacian_matrix
 
         char_set = string.ascii_uppercase + string.digits
         self.thread_hex = ''.join(sample(char_set * 6, 6))
