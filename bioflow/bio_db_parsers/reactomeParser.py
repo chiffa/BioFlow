@@ -304,7 +304,6 @@ class ReactomeParser(object):
         # acceptable
         for reaction_object in self._find_in_root(primary_term):
             key_ = list(reaction_object.attrib.values())[0]
-            log.info('parsing %s' % key_ )
             base_dict = {'right': [],
                          'left': [],
                          'references': {

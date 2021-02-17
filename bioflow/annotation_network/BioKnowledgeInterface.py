@@ -342,13 +342,13 @@ class GeneOntologyInterface(object):
             uniprot_specific_gos = []
 
             up_node = DatabaseGraph.get(uniprot_neo4j_id)
-            self.UP_Names[uniprot_neo4j_id] = [up_node._properties['legacyID'],
-                                               up_node._properties['displayName']]
+            self.UP_Names[uniprot_neo4j_id] = [up_node['legacyID'],
+                                               up_node['displayName']]
             attached_go_nodes = DatabaseGraph.get_linked(uniprot_neo4j_id,
                                                          link_type='is_go_annotation')
 
             for go_node in attached_go_nodes:
-                if go_node._properties['Namespace'] in self.go_namespace_filter:
+                if go_node['Namespace'] in self.go_namespace_filter:
                     go_node_neo4j_id = get_db_id(go_node)
                     uniprot_specific_gos.append(go_node_neo4j_id)
                     self.GO2UP[go_node_neo4j_id].append(uniprot_neo4j_id)
@@ -386,9 +386,9 @@ class GeneOntologyInterface(object):
             local_up_regulation_list = []
             local_down_regulation_list = []
             gene_ontology_node = DatabaseGraph.get(node_id, 'GOTerm')
-            self.GO_Names[node_id] = str(gene_ontology_node._properties['displayName'])
-            self.GO_Legacy_IDs[node_id] = str(gene_ontology_node._properties['legacyID'])
-            self.rev_GO_IDs[gene_ontology_node._properties['legacyID']] = node_id
+            self.GO_Names[node_id] = str(gene_ontology_node['displayName'])
+            self.GO_Legacy_IDs[node_id] = str(gene_ontology_node['legacyID'])
+            self.rev_GO_IDs[gene_ontology_node['legacyID']] = node_id
 
             for relation_type in chain(self._GOUpTypes, self._GORegTypes):
                 related_go_nodes = DatabaseGraph.get_linked(node_id, 'out', relation_type)
@@ -397,7 +397,7 @@ class GeneOntologyInterface(object):
                     continue  # skip in case GO Node has no outgoing relations to other GO nodes
 
                 for go_node in related_go_nodes:
-                    if go_node._properties['Namespace'] not in self.go_namespace_filter:
+                    if go_node['Namespace'] not in self.go_namespace_filter:
                         continue
                     node_bulbs_id = get_db_id(go_node)
                     if node_bulbs_id not in visited_set:
@@ -412,7 +412,7 @@ class GeneOntologyInterface(object):
                 if not rev_generator:
                     continue
                 for go_node in rev_generator:
-                    if go_node._properties['Namespace'] not in self.go_namespace_filter:
+                    if go_node['Namespace'] not in self.go_namespace_filter:
                         continue
                     node_bulbs_id = get_db_id(go_node)
                     if relation_type in self._GOUpTypes:
@@ -632,7 +632,7 @@ class GeneOntologyInterface(object):
         uniprot_dict = {}
         for elt in self.interactome_interface_instance.reached_uniprots_neo4j_id_list:
             node = DatabaseGraph.get(elt, 'UNIPROT')
-            alt_id = node._properties['legacyID']
+            alt_id = node['legacyID']
             uniprot_dict[alt_id] = (
                 elt, self.interactome_interface_instance.neo4j_id_2_display_name[elt])
             uniprot_dict[elt] = alt_id

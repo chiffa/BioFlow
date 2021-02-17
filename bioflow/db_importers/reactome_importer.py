@@ -392,7 +392,7 @@ def get_one_meta_set(neo4j_class):
     :param neo4j_class:
     """
     for node in DatabaseGraph.get_all(neo4j_class):
-        memoization_dict[node._properties['legacyID']] = node
+        memoization_dict[node['legacyID']] = node
 
 
 def get_all_meta_sets():

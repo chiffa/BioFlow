@@ -80,8 +80,8 @@ def import_gene_ontology(go_terms, go_terms_structure):
                                    {'source': 'Gene Ontology',
                                     'parse_type': 'annotation_relationship',
                                     'source_controlType': 'ACTIVATES',
-                                    # 'ID': str('GO' + go_term_1._properties['legacyID'] +
-                                    #           go_term_2._properties['legacyID'])
+                                    # 'ID': str('GO' + go_term_1['legacyID'] +
+                                    #           go_term_2['legacyID'])
                                     })
 
             if go_relation_type == 'negatively_regulates':
@@ -91,8 +91,8 @@ def import_gene_ontology(go_terms, go_terms_structure):
                                    {'source': 'Gene Ontology',
                                     'parse_type': 'annotation_relationship',
                                     'source_controlType': 'INHIBITS',
-                                    # 'ID': str('GO' + go_term_1._properties['legacyID'] +
-                                    #           go_term_2._properties['legacyID'])
+                                    # 'ID': str('GO' + go_term_1['legacyID'] +
+                                    #           go_term_2['legacyID'])
                                     })
 
             else:
@@ -102,8 +102,8 @@ def import_gene_ontology(go_terms, go_terms_structure):
                                    {'source': 'Gene Ontology',
                                     'parse_type': 'annotation_relationship',
                                     'source_controlType': 'UNKNOWN',
-                                    # 'ID': str('GO' + go_term_1._properties['legacyID'] +
-                                    #           go_term_2._properties['legacyID'])
+                                    # 'ID': str('GO' + go_term_1['legacyID'] +
+                                    #           go_term_2['legacyID'])
                                     })
 
 
@@ -132,7 +132,7 @@ def pull_up_acc_nums_from_reactome():
         if i % breakpoints:
             log.info("\t cross-linking %.2f %% complete" % (float(i)/float(total_nodes)*100.))
 
-        tag = annotation_node._properties['tag']
+        tag = annotation_node['tag']
         node = DatabaseGraph.get_from_annotation_tag(tag, 'UniProt')
         reactome_proteins[tag] = node
 
@@ -316,7 +316,7 @@ def memoize_go_terms():
     loads go terms from the
     """
     for node in DatabaseGraph.get_all(neo4j_names_dict['GO Term']):
-        GO_term_memoization_dict[node._properties['legacyID']] = node
+        GO_term_memoization_dict[node['legacyID']] = node
 
 
 def memoize_uniprots():
@@ -324,7 +324,7 @@ def memoize_uniprots():
     Pre-loads uniprots
     """
     for node in DatabaseGraph.get_all(neo4j_names_dict['UNIPROT']):
-        Uniprot_memoization_dict[node._properties['legacyID']] = node
+        Uniprot_memoization_dict[node['legacyID']] = node
 
 
 if __name__ == "__main__":

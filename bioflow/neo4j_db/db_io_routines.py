@@ -87,9 +87,9 @@ def deprecated_look_up_annotation_node(p_load, p_type=''):
     retlist = []
     for node in nodes:
         node_bulbs_id = get_db_id(node)
-        node_legacy_id = node._properties['legacyID']
+        node_legacy_id = node['legacyID']
         node_type = list(node.labels)[0]
-        node_display_name = node._properties['displayName']
+        node_display_name = node['displayName']
         retlist.append((node_type, node_display_name, node_bulbs_id, node_legacy_id))
     return retlist
 
@@ -114,9 +114,9 @@ def look_up_annotation_set(p_load_list, p_type=''):
         retlist = []
         for node in neo4j_native_nodes:
             node_bulbs_id = get_db_id(node)
-            node_legacy_id = node._properties['legacyID']
+            node_legacy_id = node['legacyID']
             node_type = list(node.labels)[0]
-            node_display_name = node._properties['displayName']
+            node_display_name = node['displayName']
             payload = (node_type, node_display_name, node_bulbs_id, node_legacy_id)
             if node_type == 'UNIPROT':
                 retlist.insert(0, payload)
@@ -181,7 +181,7 @@ def node_extend_once(edge_type_filter, main_connex_only, core_node):
         for node in DatabaseGraph.get_linked(get_db_id(core_node),
                                              link_type=edge_type):  # TRACING: link type.
             # TRACING: can be switched to a property filter.
-            node_is_connex = node._properties['main_connex']
+            node_is_connex = node['main_connex']
             if (main_connex_only and node_is_connex) or not main_connex_only:
                 node_neo4j_id = get_db_id(node)
                 if node_neo4j_id not in forbidden_neo4j_ids:
@@ -206,7 +206,7 @@ def expand_from_seed(seed_node_id, edge_filter, main_connex_only):  # TRACING: n
     """
     node_neighbors = []
     for edge_type in edge_filter:
-        seed_node_is_connex = DatabaseGraph.get(seed_node_id)._properties['main_connex']
+        seed_node_is_connex = DatabaseGraph.get(seed_node_id)['main_connex']
         for linked_node in DatabaseGraph.get_linked(seed_node_id, 'both', edge_type):
             # TRACING: neo4j property
             if linked_node.id not in forbidden_neo4j_ids and (seed_node_is_connex or not main_connex_only):
@@ -417,8 +417,8 @@ def pull_up_inf_density():
                                     reverse=True)):
         print("%4.d \t %.2f \t %s \t %s" % (i+1,
                                             node._properties.get('total_information', 0),
-                                            node._properties['legacyID'],
-                                            name_maps.get(node._properties['legacyID'], None)))
+                                            node['legacyID'],
+                                            name_maps.get(node['legacyID'], None)))
 
 
 # TODO: find a more safe and permanent way to do it
