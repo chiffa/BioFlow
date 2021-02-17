@@ -23,6 +23,7 @@ from scipy.sparse import lil_matrix, triu
 from scipy.sparse.csgraph import shortest_path
 
 from bioflow.algorithms_bank import conduction_routines as cr
+from bioflow.configs import main_configs as confs
 from bioflow.configs.main_configs import Dumps, NewOutputs
 from bioflow.sample_storage.mongodb import insert_annotome_rand_samp
 from bioflow.molecular_network.InteractomeInterface import InteractomeInterface
@@ -341,7 +342,7 @@ class GeneOntologyInterface(object):
             uniprot_specific_gos = []
 
             up_node = DatabaseGraph.get(uniprot_neo4j_id)
-            self.UP_Names[uniprot_neo4j_id] = [up_node._properties['legacyId'],
+            self.UP_Names[uniprot_neo4j_id] = [up_node._properties['legacyID'],
                                                up_node._properties['displayName']]
             attached_go_nodes = DatabaseGraph.get_linked(uniprot_neo4j_id,
                                                          link_type='is_go_annotation')
@@ -386,8 +387,8 @@ class GeneOntologyInterface(object):
             local_down_regulation_list = []
             gene_ontology_node = DatabaseGraph.get(node_id, 'GOTerm')
             self.GO_Names[node_id] = str(gene_ontology_node._properties['displayName'])
-            self.GO_Legacy_IDs[node_id] = str(gene_ontology_node._properties['legacyId'])
-            self.rev_GO_IDs[gene_ontology_node._properties['legacyId']] = node_id
+            self.GO_Legacy_IDs[node_id] = str(gene_ontology_node._properties['legacyID'])
+            self.rev_GO_IDs[gene_ontology_node._properties['legacyID']] = node_id
 
             for relation_type in chain(self._GOUpTypes, self._GORegTypes):
                 related_go_nodes = DatabaseGraph.get_linked(node_id, 'out', relation_type)
@@ -631,7 +632,7 @@ class GeneOntologyInterface(object):
         uniprot_dict = {}
         for elt in self.interactome_interface_instance.reached_uniprots_neo4j_id_list:
             node = DatabaseGraph.get(elt, 'UNIPROT')
-            alt_id = node._properties['legacyId']
+            alt_id = node._properties['legacyID']
             uniprot_dict[alt_id] = (
                 elt, self.interactome_interface_instance.neo4j_id_2_display_name[elt])
             uniprot_dict[elt] = alt_id

@@ -25,14 +25,14 @@ if __name__ == "__main__":
     # interactome_rand_samp_db.drop()
 
     # # pulling the online databases
-    pull_online_dbs()
+    # pull_online_dbs()
 
     ##########################################
     # After you've changed folders/sources above, you need to re-start python to force
     # main_configs update
     ##########################################
 
-    # # clearing the database, if required
+    # # # clearing the database, if required
     # destroy_db()
 
     # # building the neo4j database

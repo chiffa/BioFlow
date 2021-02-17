@@ -18,7 +18,7 @@ def get_uniprots_for_hint():
     """
     initial_dict = {}
     for node in DatabaseGraph.get_all('UNIPROT'):
-        initial_dict[node._properties['legacyId']] = node.id
+        initial_dict[node._properties['legacyID']] = node.id
 
     for key in list(initial_dict.keys()):
         initial_dict[key.split('_')[0]] = initial_dict.pop(key)

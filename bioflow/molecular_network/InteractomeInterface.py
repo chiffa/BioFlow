@@ -480,7 +480,7 @@ class InteractomeInterface(object):
             if location in list(_location_buffer_dict.keys()):
                 return _location_buffer_dict[location]
             else:
-                for location_node in DatabaseGraph.find({'legacyId': location}, 'Location'):
+                for location_node in DatabaseGraph.find({'legacyID': location}, 'Location'):
                     _location_buffer_dict[location] = location_node._properties['displayName']
                     return location_node._properties['displayName']
 
@@ -502,7 +502,7 @@ class InteractomeInterface(object):
             # record node type, display Name and the legacy ID
             self.neo4j_id_2_display_name[neo4j_node_id] = node._properties['displayName']
             self.neo4j_id_2_node_type[neo4j_node_id] = list(node.labels)[0]
-            self.neo4j_id_2_legacy_id[neo4j_node_id] = node._properties['legacyId']
+            self.neo4j_id_2_legacy_id[neo4j_node_id] = node._properties['legacyID']
 
             # since UNIPROT is our main entry point due to the external reference indexing,
             # we maintain two special lists for them
@@ -532,7 +532,7 @@ class InteractomeInterface(object):
                 self.all_uniprots_neo4j_id_list.append(neo4j_node_id)
                 self.neo4j_id_2_display_name[neo4j_node_id] = up_node._properties['displayName']
                 self.neo4j_id_2_node_type[neo4j_node_id] = list(up_node.labels)[0]
-                self.neo4j_id_2_legacy_id[neo4j_node_id] = up_node._properties['legacyId']
+                self.neo4j_id_2_legacy_id[neo4j_node_id] = up_node._properties['legacyID']
 
         self.all_uniprots_neo4j_id_list = list(set(self.all_uniprots_neo4j_id_list))
         log.info("All uniprots in the neo4j database: %d", len(self.all_uniprots_neo4j_id_list))
@@ -1227,7 +1227,7 @@ class InteractomeInterface(object):
         unfold_dict = {}
         # for node_id in chain(first_but_not_second, second_but_not_first):
         #     print node_id
-        #     node = DatabaseGraph.find({'legacyId': node_id})[0]
+        #     node = DatabaseGraph.find({'legacyID': node_id})[0]
         #     unfold_dict[node_id] = (node_id, node._properties['displayName'],
         #     node._properties.get('forbidden'))
         #
@@ -1257,13 +1257,13 @@ class InteractomeInterface(object):
             if len(cons_f_n_s):
 
                 if not legacy_id in list(unfold_dict.keys()):
-                    node = DatabaseGraph.find({'legacyId': legacy_id})[0]
+                    node = DatabaseGraph.find({'legacyID': legacy_id})[0]
                     unfold_dict[legacy_id] = (
                         legacy_id, node._properties['displayName'], node._properties.get('forbidden', False))
 
                 for node_id in chain(cons_f_n_s):
                     if not node_id in list(unfold_dict.keys()):
-                        node = DatabaseGraph.find({'legacyId': node_id})[0]
+                        node = DatabaseGraph.find({'legacyID': node_id})[0]
                         unfold_dict[node_id] = (
                         node_id, node._properties['displayName'], node._properties.get('forbidden', False))
 

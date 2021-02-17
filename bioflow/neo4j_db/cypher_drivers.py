@@ -12,10 +12,13 @@ from bioflow.configs.main_configs import neo4j_server_url
 log = get_logger(__name__)
 
 
+# CURRENTPASS: check what neo4j returns and make sure on iteration we are picking the results
+
+
 # default connection parameters
 uri = neo4j_server_url
 user = 'neo4j'
-# TODO: add `db_org = confs.organism` instruction to connect to the database
+# TODO: add `db_org = confs.organism` instruction to enable parallel databases
 password = os.environ['NEOPASS']
 
 
@@ -26,6 +29,47 @@ db_n_type = NewType('db_n_type', str)
 db_e_type = NewType('db_e_type', str)
 e_orientation = NewType('e_orientation', str)
 
+
+# This hard-coded, because those are essential to the logic of the application and traversal of
+# the neo4j graph when parsing to laplace conversion
+allowed_node_parse_types = ['physical_entity', 'annotation', 'xref']
+allowed_edge_parse_types = ['physical_entity_molecular_interaction', 'identity', 'refines',
+                            'annotates', 'annotation_relationship', 'xref']
+
+required_node_params = {'parse_type', 'source', 'legacyID', 'displayName'}
+required_edge_params = {'parse_type', 'source'}
+# annotation tag does not get checked, because it is inserted by a separate function than the
+# ones that does node/edge creation
+
+
+def check_node_params(param_dict: dict) -> bool:
+    if param_dict is None:
+        raise Exception('param_dict supplied is empty')
+
+    if required_node_params.issubset(param_dict.keys()):
+        if param_dict['parse_type'] in allowed_node_parse_types:
+            return True
+        else:
+            raise Exception('param_dict has a non-allowed parse_type: %s. Allowed: %s'
+                            % (param_dict['parse_type'], allowed_node_parse_types))
+    else:
+        raise Exception('Required parameter(s) missing : %s'
+                        % (required_node_params - param_dict.keys()))
+
+
+def check_edge_params(param_dict: dict) -> bool:
+    if param_dict is None:
+        raise Exception('param_dict supplied is empty')
+
+    if required_edge_params.issubset(param_dict.keys()):
+        if param_dict['parse_type'] in allowed_edge_parse_types:
+            return True
+        else:
+            raise Exception('param_dict has a non-allowed parse_type: %s. Allowed: %s'
+                            % (param_dict['parse_type'], allowed_edge_parse_types))
+    else:
+        raise Exception('required parameter(s) missing : %s'
+                        % (required_edge_params - param_dict.keys()))
 
 
 def neo4j_sanitize(string):
@@ -79,6 +123,8 @@ class GraphDBPipe(object):
 
     @staticmethod
     def _create(tx, node_type, param_dict):
+        check_node_params(param_dict)
+
         instruction_puck = ["CREATE (n:%s)" % node_type]
         set_puck = []
 
@@ -261,6 +307,7 @@ class GraphDBPipe(object):
 
     @staticmethod
     def _link_create(tx, node_from, node_to, link_type, params):
+        check_edge_params(params)
 
         if link_type is None:
             link_type = 'default'
@@ -394,15 +441,15 @@ class GraphDBPipe(object):
                             "SET b.tag = '%s' "
                             "SET b.type = '%s' "
                             "SET b.parse_type = 'xref' "
-                            "SET b.source = %s "
+                            "SET b.source = '%s' "
                             "CREATE (a)<-[r:annotates]-(b) "
                             "SET r.preferential = True "
-                            "SET r.parse_type = 'reference' "  # INTEST
-                            "SET r.source = %s "
+                            "SET r.parse_type = 'xref' "  # INTEST
+                            "SET r.source = '%s' "
                             "RETURN b" % (node_id,
                                           neo4j_sanitize(annotation_tag),
                                           neo4j_sanitize(tag_type),
-                                          neo4j_sanitize(tag_type),
+                                          neo4j_sanitize(link_source),
                                           neo4j_sanitize(link_source)))
 
         else:
@@ -412,15 +459,15 @@ class GraphDBPipe(object):
                             "SET b.tag = '%s' "
                             "SET b.type = '%s' "
                             "SET b.parse_type = 'xref' "
-                            "SET b.source = %s "
+                            "SET b.source = '%s' "
                             "CREATE (a)<-[r:annotates]-(b) "
                             "SET r.preferential = False "
-                            "SET r.parse_type = 'reference' "  # INTEST
-                            "SET r.source = %s "
+                            "SET r.parse_type = 'xref' "  # INTEST
+                            "SET r.source = '%s' "
                             "RETURN b" % (node_id,
                                           neo4j_sanitize(annotation_tag),
                                           neo4j_sanitize(tag_type),
-                                          neo4j_sanitize(tag_type),
+                                          neo4j_sanitize(link_source),
                                           neo4j_sanitize(link_source)))
 
         return result.single()
@@ -450,7 +497,8 @@ class GraphDBPipe(object):
         else:
             result = tx.run("MATCH (annotnode:Annotation)-[r:annotates]->(target) "
                             "WHERE annotnode.tag = '%s' AND annotnode.type = '%s' "
-                            "RETURN target" % (neo4j_sanitize(annotation_tag), neo4j_sanitize(tag_type)))
+                            "RETURN target" % (neo4j_sanitize(annotation_tag),
+                                               neo4j_sanitize(tag_type)))
 
         pre_return_puck = list(set([node['target'] for node in result]))
 
@@ -545,7 +593,7 @@ class GraphDBPipe(object):
                    id_pairs_list: List[Tuple[db_id, db_id]],
                    type_list: List[db_e_type],
                    param_dicts_list: List[dict],
-                   batch_size: int = 1000) -> List[Relationship]:
+                   batch_size: int = 1000) -> List[List[Relationship]]:
         """
         Performs a batch link of nodes in the list by the links fo type in the list and assign
         them parameters from the dict
@@ -560,7 +608,7 @@ class GraphDBPipe(object):
             tx = session.begin_transaction()
             new_links = []
             for i, (_from, _to), n_type, n_params in enumerate(zip(id_pairs_list, type_list, param_dicts_list)):
-                new_links += self._link_create(tx, _from, _to, n_type, n_params)
+                new_links.append(self._link_create(tx, _from, _to, n_type, n_params))
                 if i % batch_size == 0:
                     tx.commit()
                     tx = session.begin_transaction()
@@ -590,33 +638,36 @@ class GraphDBPipe(object):
             tx.commit()
             return edited_nodes
 
+    # due to multiple matching of the annotations (aka x-refs, we need to return lists of lists)
     def batch_retrieve_from_annotation_tags(self,
                                             annotation_tags_list: List[str],
                                             annotations_types: List[db_n_type],
-                                            batch_size=1000) -> List[Node]:
+                                            batch_size=1000) -> List[List[Node]]:
         """
-        Batch retrieve all the nodes annotated by a given list of tags.
+        Batch retrieve all the nodes annotated by a given list of tags. Returns the list if the
 
         :param annotation_tags_list: list of external db identifiers
         :param annotations_types: list of types of external db identifiers
         :param batch_size: (optional) nodes to find per batch
-        :return: list of found physical entity nodes
+        :return: list of lists of found physical entity nodes
         """
         log.info('Batch retrieval started with %s elements' % len(annotation_tags_list))
         with self._driver.session() as session:
             tx = session.begin_transaction()
             annotated_nodes = []
+
             if annotations_types is None or isinstance(annotations_types, str):
                 for i, annotation_tag in enumerate(annotation_tags_list):
-                    annotated_nodes += self._get_from_annotation_tag(tx, annotation_tag,
-                                                                  annotations_types)
+                    annotated_nodes.append(self._get_from_annotation_tag(tx, annotation_tag,
+                                                                  annotations_types))
                     if i % batch_size == 0:
                         log.info('\t %.2f %%' % (float(i) / float(len(annotation_tags_list))*100))
                         tx.commit()
                         tx = session.begin_transaction()
+
             else:  # we assume it's a list
                 for i, (annot_tag, annot_type) in enumerate(annotation_tags_list, annotations_types):
-                    annotated_nodes += self._get_from_annotation_tag(tx, annot_tag, annot_type)
+                    annotated_nodes.append(self._get_from_annotation_tag(tx, annot_tag, annot_type))
                     if i % batch_size == 0:
                         log.info('\t %.2f %%' % (float(i) / float(len(annotation_tags_list)) * 100))
                         tx.commit()
@@ -638,12 +689,12 @@ class GraphDBPipe(object):
     @staticmethod
     def _build_indexes(tx):
         # Because neo4j breaks retro compatibility more often than I rebuild the database
-        tx.run("CREATE INDEX IF NOT EXISTS FOR (n:UNIPROT) ON (n.legacyId)")
+        tx.run("CREATE INDEX IF NOT EXISTS FOR (n:UNIPROT) ON (n.legacyID)")
         tx.run("CREATE INDEX IF NOT EXISTS FOR (n:Annotation) ON (n.tag)")
         tx.run("CREATE INDEX IF NOT EXISTS FOR (n:Annotation) ON (n.tag, n.type)")
 
-    def cross_link_on_annotations(self,
-                                  annotation_type: List[db_n_type]) -> List[Node]:
+    def cross_link_on_xrefs(self,
+                            annotation_type: List[db_n_type]) -> List[Node]:
         """
         Connects the nodes that have the same identifiers of the type `annotation_type` with an
         `is_likely_same` bidirectional edge.
@@ -652,18 +703,20 @@ class GraphDBPipe(object):
         :return: nodes that has been cross-linked
         """
         with self._driver.session() as session:
-            dirty_nodes = session.write_transaction(self._cross_link_on_annotations, annotation_type)
+            dirty_nodes = session.write_transaction(self._cross_link_on_xrefs, annotation_type)
             return dirty_nodes
 
     @staticmethod
-    def _cross_link_on_annotations(tx, annotation_type):
+    def _cross_link_on_xrefs(tx, annotation_type):
         result = tx.run("MATCH (a:Annotation)--(n:UNIPROT) "
                         "MATCH (b:Annotation)--(m:UNIPROT) "
-                        "WHERE a.tag = b.tag AND a.type = '%s' and m.legacyId <> n.legacyId "
+                        "WHERE a.tag = b.tag AND a.type = '%s' and m.legacyID <> n.legacyID "
                         "CREATE (m)-[r:is_likely_same]->(n) "
                         "CREATE (m)<-[k:is_likely_same]-(n) "
                         "SET r.linked_on = '%s' "
-                        "SET k.linked_on = '%s' " % (annotation_type, annotation_type, annotation_type))
+                        "SET k.linked_on = '%s' " % (annotation_type,
+                                                     annotation_type,
+                                                     annotation_type))
         return [node for node in result]
 
     def count_go_annotation_cover(self) -> None:
@@ -721,7 +774,7 @@ class GraphDBPipe(object):
                            "WHERE r.preferential = True AND a.type = 'UNIPROT_GeneName' "
                            "RETURN n, a")
 
-        name_maps = dict((res['n']._properties['legacyId'], res['a']._properties['tag'])
+        name_maps = dict((res['n']._properties['legacyID'], res['a']._properties['tag'])
                          for res in name_maps)
 
         return name_maps
@@ -745,16 +798,16 @@ class GraphDBPipe(object):
     @staticmethod
     def _check_connection_permutation(tx, legacy_id_1, legacy_id_2):
         name_maps_1 = tx.run("MATCH (n:UNIPROT)--(k:UNIPROT)-[:is_likely_same]-(b) "
-                            "WHERE (n.legacyId = '%s' AND b.legacyId = '%s') "
-                            "OR (n.legacyId = '%s' AND b.legacyId = '%s') "
+                            "WHERE (n.legacyID = '%s' AND b.legacyID = '%s') "
+                            "OR (n.legacyID = '%s' AND b.legacyID = '%s') "
                             "RETURN n, k, b" % (legacy_id_1, legacy_id_2, legacy_id_2, legacy_id_1))
 
         legal = len([result for result in name_maps_1])
 
         if not legal:
             name_maps_2 = tx.run("MATCH (n:UNIPROT)-[:is_likely_same]-(u:UNIPROT)--(k:UNIPROT)-[:is_likely_same]-(b) "
-                                "WHERE (n.legacyId = '%s' AND b.legacyId = '%s') "
-                                "OR (n.legacyId = '%s' AND b.legacyId = '%s') "
+                                "WHERE (n.legacyID = '%s' AND b.legacyID = '%s') "
+                                "OR (n.legacyID = '%s' AND b.legacyID = '%s') "
                                 "RETURN n, u, k, b" % (legacy_id_1, legacy_id_2, legacy_id_2, legacy_id_1))
             legal = len([result for result in name_maps_2])
 
@@ -919,7 +972,7 @@ if __name__ == "__main__":
     # neo4j_pipe.batch_link([(25, 26), (25, 1)], [None, 'reaction'], [None, {"weight": 3, "source": "test"}])
     # print neo4j_pipe.batch_set_attributes([0, 1, 2, 44, 45], [{'custom': 'Main_connex'}]*5)
 
-    # print neo4j_pipe.cross_link_on_annotations()
+    # print neo4j_pipe.cross_link_on_xrefs()
 
     # print neo4j_pipe.count_go_annotation_cover()
 

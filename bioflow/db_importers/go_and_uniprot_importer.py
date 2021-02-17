@@ -36,7 +36,7 @@ def import_gene_ontology(go_terms, go_terms_structure):
             log.info('GO terms import: %s %%',
                      "{0:.2f}".format(float(i) / float(go_terms_number) * 100))
         GO_term_memoization_dict[GO_Term] = DatabaseGraph.create(neo4j_names_dict['GO Term'],
-                             {'legacyId': term['id'],
+                             {'legacyID': term['id'],
                               'Name': term['name'],
                               'displayName': term['name'],
                               'Namespace': term['namespace'],
@@ -80,8 +80,8 @@ def import_gene_ontology(go_terms, go_terms_structure):
                                    {'source': 'Gene Ontology',
                                     'parse_type': 'annotation_relationship',
                                     'source_controlType': 'ACTIVATES',
-                                    # 'ID': str('GO' + go_term_1._properties['legacyId'] +
-                                    #           go_term_2._properties['legacyId'])
+                                    # 'ID': str('GO' + go_term_1._properties['legacyID'] +
+                                    #           go_term_2._properties['legacyID'])
                                     })
 
             if go_relation_type == 'negatively_regulates':
@@ -91,8 +91,8 @@ def import_gene_ontology(go_terms, go_terms_structure):
                                    {'source': 'Gene Ontology',
                                     'parse_type': 'annotation_relationship',
                                     'source_controlType': 'INHIBITS',
-                                    # 'ID': str('GO' + go_term_1._properties['legacyId'] +
-                                    #           go_term_2._properties['legacyId'])
+                                    # 'ID': str('GO' + go_term_1._properties['legacyID'] +
+                                    #           go_term_2._properties['legacyID'])
                                     })
 
             else:
@@ -102,8 +102,8 @@ def import_gene_ontology(go_terms, go_terms_structure):
                                    {'source': 'Gene Ontology',
                                     'parse_type': 'annotation_relationship',
                                     'source_controlType': 'UNKNOWN',
-                                    # 'ID': str('GO' + go_term_1._properties['legacyId'] +
-                                    #           go_term_2._properties['legacyId'])
+                                    # 'ID': str('GO' + go_term_1._properties['legacyID'] +
+                                    #           go_term_2._properties['legacyID'])
                                     })
 
 
@@ -247,14 +247,17 @@ def import_uniprots(uniprot, reactome_acnum_bindings):
     log.info('Starting to import %s uniprot nodes' % up_no)
 
     for sp_id_num, (swiss_prot_id, data_container) in enumerate(uniprot.items()):
+        # TODO: [loading bars]
 
         set1 = set(data_container['Acnum'])
         set2 = set(reactome_acnum_bindings.keys())
         # Create uniprot terms
 
+        # TODO: [optimization] perform bulk insertion instead
+
         uniprot_node = DatabaseGraph.create(
             neo4j_names_dict['UNIPROT'],
-            {'legacyId': swiss_prot_id,
+            {'legacyID': swiss_prot_id,
              'displayName': data_container['Names']['Full'],
              'source': 'UNIPROT',
              'parse_type': 'physical_entity',
@@ -273,12 +276,13 @@ def import_uniprots(uniprot, reactome_acnum_bindings):
             cross_links / acc_nums_no, sp_id_num / up_no * 100)
 
         if sp_id_num*20 % up_no < 20:
-            log.info('Uniprots nodes load: %s %%', sp_id_num / up_no * 100)
+            log.info('Uniprots nodes load: %.2f %%', sp_id_num / up_no * 100)
 
         # Add the newly created uniprot to the buffer
         Uniprot_memoization_dict[swiss_prot_id] = uniprot_node
 
         # Insert references to GOs
+        # TODO: [optimization]: perform bulk insertion
         for GO_Term in data_container['GO']:
             if GO_Term in list(GO_term_memoization_dict.keys()):
                 linked_go_term = GO_term_memoization_dict[GO_Term]
@@ -288,6 +292,10 @@ def import_uniprots(uniprot, reactome_acnum_bindings):
                                    {'source': 'UNIPROT',
                                     'parse_type': 'annotates'})
 
+        # TODO: [optimization] perform in-database cross-linking, basically an:
+        #  (a:AnnotNode)-[:annotates]-(N:Uniprot),
+        #  (b:AnnotNode)-[:annotates]-(M:Protein) WHERE a.tag = b.tag AND a.type=b.type
+        #  Return DISTINCT (a, b)
         for acnum in data_container['Acnum']:
             proteins = manage_acc_nums(acnum, reactome_acnum_bindings)
             if proteins is not []:
@@ -296,7 +304,7 @@ def import_uniprots(uniprot, reactome_acnum_bindings):
                     DatabaseGraph.link(get_db_id(uniprot_node),
                                        get_db_id(secondary),
                                        'is_same',
-                                       {'source': 'xref inferred',
+                                       {'source': 'inferred xref UNIPROT_Accnum',
                                         'parse_type': 'identity'})
                     is_same_links_no += 1
 
@@ -308,7 +316,7 @@ def memoize_go_terms():
     loads go terms from the
     """
     for node in DatabaseGraph.get_all(neo4j_names_dict['GO Term']):
-        GO_term_memoization_dict[node._properties['legacyId']] = node
+        GO_term_memoization_dict[node._properties['legacyID']] = node
 
 
 def memoize_uniprots():
@@ -316,7 +324,7 @@ def memoize_uniprots():
     Pre-loads uniprots
     """
     for node in DatabaseGraph.get_all(neo4j_names_dict['UNIPROT']):
-        Uniprot_memoization_dict[node._properties['legacyId']] = node
+        Uniprot_memoization_dict[node._properties['legacyID']] = node
 
 
 if __name__ == "__main__":

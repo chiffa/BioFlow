@@ -17,7 +17,9 @@ On the table:
         - connect the nodes with the links according to a weighting scheme
         - normalize the weights for the laplacian
 
- - TODO: [REFACTOR] On writing into the neo4j DB we need to separate the node types and edges:
+ - TODO: [REFACTOR] inline the neo4j classes deletion(the same way as )
+
+ - DONE: [REFACTOR] On writing into the neo4j DB we need to separate the node types and edges:
     - node: physical entity nodes
     - edge: physical entity molecular interaction
     - edge: identity
@@ -40,20 +42,21 @@ On the table:
             - annotation_relation
             - identity
             - reference
+            - refines
     - N+E: source
-    - N+E: source_<property>
+    - N+E: source_<property> (optional)
     - N: legacyID
     - N: displayName
 
- - TODO: [REFACTOR] check that the universal properties were added with an exception in
+ - DONE: [REFACTOR] check that the universal properties were added with an exception in
     - DB.link if `parse_type` not defined or `source` not defined
     - DB.create if `parse_type` not defined, `source` not defined, `legacyID` not defined or
         `displayName` not defined
 
  - TODO: [REFACTOR]
-    - Either add a routine that performs weight assignment to the nodes
-    - Or crawl the nodes according to the parse_type tags, return a dict of nodes and a dict of
-        relationships of the types:
+    - NOPE: Either add a routine that performs weight assignment to the nodes
+    - TODO: Or crawl the nodes according to the parse_type tags, return a dict of nodes and a
+        dict of relationships of the types:
             - NodeID > neo4j.Node
             - NodeID > [(NodeID, OtherNodeID), ] + {(NodeID, OtherNodeID): properties}
 
@@ -71,8 +74,8 @@ On the table:
         - Either: link the 'part of collection' to all the 'molecular entity nodes'
         - Or: create 'abstract_interface'
         - Or: same
-    - Due to a number of inclusions (Collection part of Collection, ....), we are going to be
-    using an "parse_type: identity" variable
+    - Due to a number of inclusions (Collection part of Collection, ....), we are going to
+        introduce a "parse_type: refines"
 
 Current rewriting logic would involve:
     - TODO: Upon external insertion, insert as well the properties that might influence the
@@ -239,9 +242,11 @@ Current refactoring:
     - TODO: rename `cypher_drivers` to `_neo4j_backend`
     - TODO: import the `mongodb.py` as an alias with `samples_storage`
     - TODO: fold the laplacians .dump object storage in dumps as `auxilary_data_storage`
-    - TODO: put a straight-jacket
+    - TODO: put a type straight-jacket
     - TODO: move the `internet_io` to the `data_stores` package
 
+ - TODO: [FEATURE]:
+    - In reactome, parse the "Evidence" and "Source" tags in order to refine the laplacian weighting
 
 <Environment registration>
 
@@ -598,6 +603,9 @@ either be a persistent dump that is loaded every time the user is spooling up th
 
 Bigger refactors
 ****************
+
+ - TODO: [OPTIMIZATION]:
+    - bulk-group the insertions and cross-linkings for the Reactomse
 
  - TODO: [USABILITY] pull inlined updates printing from evoGANs project.
     => Currently the percentages are managed by log.info(calls)

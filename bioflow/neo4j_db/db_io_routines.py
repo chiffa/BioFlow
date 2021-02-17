@@ -87,7 +87,7 @@ def deprecated_look_up_annotation_node(p_load, p_type=''):
     retlist = []
     for node in nodes:
         node_bulbs_id = get_db_id(node)
-        node_legacy_id = node._properties['legacyId']
+        node_legacy_id = node._properties['legacyID']
         node_type = list(node.labels)[0]
         node_display_name = node._properties['displayName']
         retlist.append((node_type, node_display_name, node_bulbs_id, node_legacy_id))
@@ -101,7 +101,8 @@ def look_up_annotation_set(p_load_list, p_type=''):
 
     :param p_load_list: list of payloads
     :param p_type: expected type of payloads
-    :return:
+    :return: list of tags for which nodes were not found, list of tags to node property yalues,
+    tags to db ids of the first match (preferntially uniprots)
     """
     def db_id_mapping_helper(mapped_db_id_list):
         if mapped_db_id_list:
@@ -109,11 +110,11 @@ def look_up_annotation_set(p_load_list, p_type=''):
         else:
             return ''
 
-    def transform_annotation_node(neo4j_native_nodes):
+    def transform_annotation_nodes(neo4j_native_nodes):
         retlist = []
         for node in neo4j_native_nodes:
             node_bulbs_id = get_db_id(node)
-            node_legacy_id = node._properties['legacyId']
+            node_legacy_id = node._properties['legacyID']
             node_type = list(node.labels)[0]
             node_display_name = node._properties['displayName']
             payload = (node_type, node_display_name, node_bulbs_id, node_legacy_id)
@@ -123,11 +124,13 @@ def look_up_annotation_set(p_load_list, p_type=''):
                 retlist.append(payload)
         return retlist
 
-    load_2_name_list = [(p_load, transform_annotation_node(p_nodes)) for (p_load, p_nodes) in
-                        zip(p_load_list, DatabaseGraph.batch_retrieve_from_annotation_tags(p_load_list, p_type))]
+    load_2_name_list = [(p_load, transform_annotation_nodes(p_nodes))
+                        for (p_load, p_nodes) in
+                        zip(p_load_list,
+                                DatabaseGraph.batch_retrieve_from_annotation_tags(p_load_list,
+                                                                                  p_type))]
 
     db_id_list = [db_id_mapping_helper(value) for key, value in load_2_name_list]
-
     not_found_list = [key for key, value in load_2_name_list if value == []]
     log.debug('%s IDs out of %s have not been found', len(not_found_list), len(p_load_list))
     log.debug('IDs of missing proteins: %s', not_found_list)
@@ -340,7 +343,7 @@ def run_diagnostics(instructions_list):
 
 def convert_to_internal_ids(base):
     """"
-    Converts ids attached to proteins and physical entities to internal db ids,preferentially
+    Converts ids attached to proteins and physical entities to internal db ids, preferentially
     matching to UNIPROTS.
 
     :param base:
@@ -379,11 +382,11 @@ def cross_link_identifiers():
     :return:
     """
     log.info('Cross-linking the identifiers: Uniprot Acnums')
-    DatabaseGraph.cross_link_on_annotations('UNIPROT_Accnum')
+    DatabaseGraph.cross_link_on_xrefs('UNIPROT_Accnum')
     log.info('Cross-linking the identifiers: Uniprot Names')
-    DatabaseGraph.cross_link_on_annotations('UNIPROT_Name')
+    DatabaseGraph.cross_link_on_xrefs('UNIPROT_Name')
     log.info('Cross-linking the identifiers: Uniprot Gene Names')
-    DatabaseGraph.cross_link_on_annotations('UNIPROT_GeneName')
+    DatabaseGraph.cross_link_on_xrefs('UNIPROT_GeneName')
 
 
 def compute_annotation_informativity():
@@ -414,8 +417,8 @@ def pull_up_inf_density():
                                     reverse=True)):
         print("%4.d \t %.2f \t %s \t %s" % (i+1,
                                             node._properties.get('total_information', 0),
-                                            node._properties['legacyId'],
-                                            name_maps.get(node._properties['legacyId'], None)))
+                                            node._properties['legacyID'],
+                                            name_maps.get(node._properties['legacyID'], None)))
 
 
 # TODO: find a more safe and permanent way to do it

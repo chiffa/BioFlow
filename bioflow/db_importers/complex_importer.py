@@ -33,8 +33,9 @@ def insert_into_the_database(up_ids_2_inner_ids: dict,
     for counter, (node_id, new_node) in enumerate(up_ids_2_properties.items()):
 
         complex_node = DatabaseGraph.create('COMPLEX',
-                                            {'legacyId': node_id,
+                                            {'legacyID': node_id,
                                              'displayName': new_node['displayName'],
+                                             'source': origin,
                                              'main_connex': False,
                                              'parse_type': 'physical_entity'})
 

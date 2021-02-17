@@ -304,6 +304,7 @@ class ReactomeParser(object):
         # acceptable
         for reaction_object in self._find_in_root(primary_term):
             key_ = list(reaction_object.attrib.values())[0]
+            log.info('parsing %s' % key_ )
             base_dict = {'right': [],
                          'left': [],
                          'references': {
@@ -387,9 +388,9 @@ class ReactomeParser(object):
                     local_dict['displayName'] = pathway_property.text
                 if '}name' in pathway_property.tag:
                     local_dict['references']['name'].append(pathway_property.text)
-                if '}pathwayComponent' in pathway_property.tag \
-                        and 'Pathway' in list(pathway_property.attrib.values())[
-                        0]:
+                if '}pathwayComponent' in pathway_property.tag:
+                        # and 'Pathway' in list(pathway_property.attrib.values())[0]:
+                        # only will parse things that has "Pathway in them => disabled
                     local_dict['components'].append(
                         list(pathway_property.attrib.values())[0][1:])
                 if '}pathwayOrder' in pathway_property.tag:
@@ -401,11 +402,11 @@ class ReactomeParser(object):
         """
         Parses Pathway steps
         """
-        # TODO: include the parsing and annotation of the links to reactions
+        # TODO: why the exclusion? => direct links. They will be resolvable after the refactor
         exclude = [
-            'Modulation',
+            'Modulation',  # does not exist anymore
             'Control',
-            'TemplateReactionRegulation',
+            'TemplateReactionRegulation',  # does not exist anymore
             'Catalysis']
 
         for single_Pathway_step in self._find_in_root('PathwayStep'):
@@ -456,10 +457,11 @@ class ReactomeParser(object):
         self._parse_reaction('BiochemicalReaction', self.BiochemicalReactions, ['left', 'right'])
 
         self._parse_a_catalysis('Catalysis', self.Catalysises)
-        self._parse_a_catalysis('TemplateReactionRegulation', self.Catalysises)
+        # self._parse_a_catalysis('TemplateReactionRegulation', self.Catalysises)  # Does not exist
+        # # anymore
         self._parse_a_catalysis('Control', self.Catalysises)
 
-        self._parse_modulations()
+        # self._parse_modulations()  # ceased to exist
         self._parse_pathways()
         self._parse_pathway_steps()
 
