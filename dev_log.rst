@@ -6,7 +6,7 @@ On the table:
 
 <node weights/context forwarding>
 
- - TODO: [REFACTOR] The policy for the building of a laplacian relies on neo4j crawl (2 steps)
+ - DONE: [REFACTOR] The policy for the building of a laplacian relies on neo4j crawl (2 steps)
     and the matrix build:
     - neo4j crawl
         - A rule/routine to retrieve the seeds of the expansion
@@ -17,7 +17,28 @@ On the table:
         - connect the nodes with the links according to a weighting scheme
         - normalize the weights for the laplacian
 
- - TODO: [REFACTOR] inline the neo4j classes deletion(the same way as )
+ - DONE: STAGE 2/3:
+    - DONE: parse the entire physical entity graph
+    - DONE: convert the graph into a laplacian and an adjacency matrix
+    - DONE: check for the giant component
+    - DONE: write the giant component
+    - DONE: re-parse the giant component only
+    - DONE: re-convert the graph into a laplacian
+
+ - TODO: deal with the parse_type inconsistencies:
+    - TODO: (physical_entity)-refines-(annotation)
+    - TODO: (annotation)-refines-(annotation)
+    - TODO: (annotation)-annotates-(annotation)
+    - TODO: is_next_in_pathway still has custom_from and custom_to
+
+ - TODO: ax the deprecated code and class variables in InteractomeInterface
+
+ - TODO: ax the deprecated variables in the internal_configs
+
+ - TODO: rename the 'meta_objects' to 'Reactome_base_object' in reactome_inserter.py
+
+
+ - DONE: [REFACTOR] inline the neo4j classes deletion(the same way as self_diag)
 
  - DONE: [REFACTOR] On writing into the neo4j DB we need to separate the node types and edges:
     - node: physical entity nodes
@@ -53,9 +74,9 @@ On the table:
     - DB.create if `parse_type` not defined, `source` not defined, `legacyID` not defined or
         `displayName` not defined
 
- - TODO: [REFACTOR]
+ - DONE: [REFACTOR]
     - NOPE: Either add a routine that performs weight assignment to the nodes
-    - TODO: Or crawl the nodes according to the parse_type tags, return a dict of nodes and a
+    - DONE: Or crawl the nodes according to the parse_type tags, return a dict of nodes and a
         dict of relationships of the types:
             - NodeID > neo4j.Node
             - NodeID > [(NodeID, OtherNodeID), ] + {(NodeID, OtherNodeID): properties}
@@ -68,21 +89,21 @@ On the table:
         - DONE: patterns
         - DONE: formatting
 
- - TODO: PROBLEM:
+ - DONE: PROBLEM:
     - 'Collections' are implicated in reactions, not necessarily proteins themselves.
     - Patch:
         - Either: link the 'part of collection' to all the 'molecular entity nodes'
         - Or: create 'abstract_interface'
         - Or: same
-    - Due to a number of inclusions (Collection part of Collection, ....), we are going to
+    - DONE: Due to a number of inclusions (Collection part of Collection, ....), we are going to
         introduce a "parse_type: refines"
 
 Current rewriting logic would involve:
-    - TODO: Upon external insertion, insert as well the properties that might influence the
+    - DONE: Upon external insertion, insert as well the properties that might influence the
     weight computation for the laplacian construction
         - cross-link the Reactome nodes linked with a "reaction" so that it's a direct linking in
         the database
-    - TODO: Changing neo4j crawl so that it uses the edges properties rather than node types
+    - DONE: Changing neo4j crawl so that it uses the edges properties rather than node types
         - For now we will be proceeding with the "class" node properties as a filter
         - Crawl allowed to pass through edges with a set of qualitative properties
         - Crawl allowed to pass through nodes with a set of qualitative properties
@@ -91,39 +112,41 @@ Current rewriting logic would involve:
         - Let the crawl run along the edges until:
             - either the allowed number of steps to crawl is exhausted
             - there is no more nodes to use as a seed
-    - TODO: change the weight calculation that will be using the link properties that were recorded
+    - DONE: change the weight calculation that will be using the link properties that were recorded
         - use the properties of the link and the node pair to calculate the weights for both
         matrices
 
 
 
- - TODO: [FEATURE] [USABILITY] upon organism insertion and retrieval, use the 'orgnism' flag on the
+ - NOPE: [FEATURE] [USABILITY] upon organism insertion and retrieval, use the 'orgnism' flag on the
         proteins and relationships to allow for simultaneous loading of several organisms.
+        - Superseeded by the better way of doing it through multiple databases in a single neo4j
+        instance
 
- - TODO: record the origin of the nodes and relationships:
+ - DONE: record the origin of the nodes and relationships:
     - Reactome
     - UNIPROT
 
- - TODO: define trust into the names of different databases and make use it as mask when pulling
+ - DONE: define trust into the names of different databases and make use it as mask when pulling
     relationships
 
- - TODO: rename the 'meta_objects' to 'Reactome_base_object'
+ - NOPE: [REFACTOR] remove the GraphDeclarator.py and re-point it directly into the cypher_drivers
+    - It's already an abstract interface that can be easily re-implemented
 
- - TODO: [REFACTOR] remove the GraphDeclarator.py and re-point it directly into the cypher_drivers
+ - NOPE: [REFACTOR] wrap the cypher_drivers into the db_io_routines class
+    - Nope, it's already an abstract interface
 
- - TODO: [REFACTOR] wrap the cypher_drivers into the db_io_routines class
-
-
- - TODO: [FUTUREPROOFING] [CODESMELL] get away from using `_properties` of the neo4j database
+ - DONE: [FUTUREPROOFING] [CODESMELL] get away from using `_properties` of the neo4j database
         objects.
         => Basically, now this uses a Node[`property_name`] convention
 
- - TODO: [PLANNED] implement the neo4j edge weight transfer into the Laplacian
-    - TODO: trace the weights injection
-    - TODO: define the weighting rules for neo4j
+ - DONE: [PLANNED] implement the neo4j edge weight transfer into the Laplacian
+    - DONE: trace the weights injection
+    - DONE: define the weighting rules for neo4j
     - DONE: enable neo4j remote debugging on the remote lpdpc
     - DONE: change the neo4j password on remote lpdpc
-    - TODO: add the meta-information for loading (eg organ, context, ...)
+    - DONE: add the meta-information for loading (eg organ, context, ...)
+        - doable through a policy function injection
 
 The other next step will be to register the context in the neo4j network in order to be able to
 perform loads of networks conditioned on things such as the protein abundance in an organ or the

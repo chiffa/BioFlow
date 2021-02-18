@@ -17,7 +17,7 @@ from bioflow.db_importers.go_and_uniprot_importer import memoize_go_terms, impor
     import_uniprots, pull_up_acc_nums_from_reactome
 from bioflow.neo4j_db.db_io_routines import excluded_nodes_ids_from_names_list, clear_all, run_diagnostics,\
     cross_link_identifiers, compute_annotation_informativity
-from bioflow.configs.internal_configs import forbidden_verification_list, full_list
+from bioflow.configs.internal_configs import full_list
 
 
 def build_db():
@@ -38,13 +38,13 @@ def build_db():
         cross_ref_tf_factors('t')
         insert_complexes()
 
-    run_diagnostics(full_list)
+    run_diagnostics()
 
     cross_link_identifiers()
 
     compute_annotation_informativity()
 
-    excluded_nodes_ids_from_names_list(forbidden_verification_list)
+    excluded_nodes_ids_from_names_list()
 
 
 def destroy_db():
@@ -54,9 +54,9 @@ def destroy_db():
 if __name__ == "__main__":
     # pass
     clear_all(full_list)
-    run_diagnostics(full_list)
+    run_diagnostics()
     insert_reactome()
-    run_diagnostics(full_list)
+    run_diagnostics()
 
     clear_all(['GO Term'])
 
@@ -79,10 +79,10 @@ if __name__ == "__main__":
     cross_ref_kinases_factors()
     insert_complexes()
 
-    run_diagnostics(full_list)
+    run_diagnostics()
 
     cross_link_identifiers()
 
     compute_annotation_informativity()
 
-    excluded_nodes_ids_from_names_list(forbidden_verification_list)
+    excluded_nodes_ids_from_names_list()

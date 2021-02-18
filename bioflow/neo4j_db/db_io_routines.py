@@ -9,8 +9,9 @@ from collections import defaultdict
 from csv import reader, writer
 from pprint import PrettyPrinter, pprint
 from bioflow.configs.main_configs import forbidden_neo4j_ids, Dumps
-from bioflow.configs.internal_configs import edge_type_filters, Leg_ID_Filter, deprecated_annotation_nodes_ptypes, \
-    neo4j_names_dict, forbidden_verification_list, full_list
+from bioflow.configs.internal_configs import edge_type_filters, reactome_forbidden_nodes,\
+    deprecated_annotation_nodes_ptypes, \
+    neo4j_names_dict, full_list, uniprot_forbidden_nodes
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from bioflow.utils.log_behavior import get_logger
 from bioflow.utils.io_routines import write_to_csv, memoize, time_exection
@@ -281,7 +282,7 @@ def deprecated_neo4j_memoize_type(node_type, dict_to_load_into=None):
     return dict_to_load_into
 
 
-def excluded_nodes_ids_from_names_list(forbidden_entities_list):
+def excluded_nodes_ids_from_names_list():
     """
     Recomputes the list of nodes that contain overloaded terms.
 
@@ -292,20 +293,24 @@ def excluded_nodes_ids_from_names_list(forbidden_entities_list):
     :param forbidden_entities_list: Dictionary mapping the names of entities to
     their corresponding bulbs classes
     """
-    forbidden_ids_list = set()
-    for name in forbidden_entities_list:
-        for forbidden_legacy_id in Leg_ID_Filter: # TRACING: switch to parameters
-            # CURRENTPASS: factor into the arguments of the function
-            bulbs_class = neo4j_names_dict[name]
-            generator = DatabaseGraph.find({"displayName": forbidden_legacy_id}, bulbs_class)
+    # forbidden_ids_list = set()
+    # for name in forbidden_entities_list:
+    #     for forbidden_legacy_id in reactome_forbidden_nodes:  # TRACING: switch to parameters
+    #         # CURRENTPASS: factor into the arguments of the function
+    #         bulbs_class = neo4j_names_dict[name]
+    #         generator = DatabaseGraph.find({"displayName": forbidden_legacy_id}, bulbs_class)
+    #
+    #         associated_node_ids = node_generator_2_db_ids(generator)  # TRACING: list comprehension
+    #         forbidden_ids_list.update(associated_node_ids)
+    #
+    # log.info('recomputed %s forbidden IDs.' % len(forbidden_ids_list))
+    #
+    # for f_id in forbidden_ids_list:
+    #     DatabaseGraph.set_attributes(f_id, {'forbidden': True})
 
-            associated_node_ids = node_generator_2_db_ids(generator)  # TRACING: list comprehension
-            forbidden_ids_list.update(associated_node_ids)
-
-    log.info('recomputed %s forbidden IDs.' % len(forbidden_ids_list))
-
-    for f_id in forbidden_ids_list:
-        DatabaseGraph.set_attributes(f_id, {'forbidden': True})
+    combined_forbidden_set = reactome_forbidden_nodes+uniprot_forbidden_nodes
+    forbidden_nodes = DatabaseGraph.mark_forbidden_nodes(combined_forbidden_set)
+    forbidden_ids_list = [node.id for node in forbidden_nodes]
 
     pickle.dump(forbidden_ids_list, open(Dumps.Forbidden_IDs, 'wb'))
 
@@ -324,21 +329,30 @@ def clear_all(instruction_list):
         log.info('class %s deleted', neo4j_class)
 
 
-def run_diagnostics(instructions_list):
+def run_diagnostics() -> None:
     """
-    Computes the number of nodes of each type.
 
     :param instructions_list:
+    :return:
     """
-    super_counter = 0
-    str_list = ['Database Diagnostics:']
-    for name in instructions_list:
-        bulbs_class = neo4j_names_dict[name]
-        counter = DatabaseGraph.count(bulbs_class)
-        str_list.append('\t %s : %s' % (name, counter))
-        super_counter += counter
-    str_list.append('Total : %s' % super_counter)
-    log.info('\n'.join(str_list))
+    DatabaseGraph.node_stats()
+
+
+# def run_diagnostics(instructions_list) -> None:  # deprecated
+#     """
+#     Computes the number of nodes of each type.
+#
+#     :param instructions_list:
+#     """
+#     super_counter = 0
+#     str_list = ['Database Diagnostics:']
+#     for name in instructions_list:
+#         bulbs_class = neo4j_names_dict[name]
+#         counter = DatabaseGraph.count(bulbs_class)
+#         str_list.append('\t %s : %s' % (name, counter))
+#         super_counter += counter
+#     str_list.append('Total : %s' % super_counter)
+#     log.info('\n'.join(str_list))
 
 
 def convert_to_internal_ids(base):

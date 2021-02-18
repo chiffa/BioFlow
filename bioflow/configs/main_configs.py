@@ -6,12 +6,13 @@ import pickle
 import yaml
 from os import path, makedirs
 from pprint import pprint
+from collections import defaultdict
 
 from bioflow.configs.configs_manager import compute_full_paths
 from bioflow.configs.bioflow_home import output_location, log_location, dump_location, \
     sources_location, confs_location
-from bioflow.configs.internal_configs import edge_type_filters, Leg_ID_Filter, \
-    forbidden_verification_list, adjacency_matrix_weights, laplacian_matrix_weights, \
+from bioflow.configs.internal_configs import edge_type_filters, reactome_forbidden_nodes, \
+    adjacency_matrix_weights, laplacian_matrix_weights, \
     neo4j_names_dict, full_list, reactome_reactions_types_list
 from bioflow.utils.general_utils import high_level_os_io as hl_os_io
 from bioflow.utils.log_behavior import get_logger
@@ -162,6 +163,39 @@ class NewOutputs(object):
 
         self.interactome_network_scatterplot = path.join(root_path, 'interactome.png')
         self.knowledge_network_scatterplot = path.join(root_path, 'knowledge.png')
+
+
+# CURRENTPASS: move this to configs.yaml
+laplacian_default_type_edge_weighting = {
+    "is_part_of_collection": 0.5,
+    "is_same": 100,
+    "is_catalysant": 1,
+    "is_reaction_participant": 1,
+    "is_part_of_complex": 1,
+    "is_regulant": 1,
+    "is_interacting": 1,
+    "is_weakly_interacting": 0.5,
+    "is_likely_same": 1,
+}
+
+laplacian_default_source_edge_weighting = defaultdict(lambda: 1)
+# we don't care about sources by default
+
+
+adjacency_default_type_edge_weighting = {
+    "is_part_of_collection": 0.5,
+    "is_same": 1,
+    "is_catalysant": 0.33,
+    "is_reaction_participant": 0.33,
+    "is_part_of_complex": 0.33,
+    "is_regulant": 0.33,
+    "is_interacting": 0.33,
+    "is_weakly_interacting": 0.15,
+    "is_likely_same": 0.1,
+}
+
+adjacecency_default_source_edge_weighting = defaultdict(lambda: 1)
+# we don't care about sources by default
 
 
 #  Declares overloaded IDs, pickles from the dumps of already computed

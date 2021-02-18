@@ -950,7 +950,7 @@ class GeneOntologyInterface(object):
 
         # if chromosome_specific:
         #     self.connected_uniprots = list(set(self.connected_uniprots).intersection(
-        #         set(self.interactome_interface_instance.chromosomes_2_uniprot[str(
+        #         set(self.interactome_interface_instance.deprecated_chromosomes_2_uniprot[str(
         #             chromosome_specific)])))
 
         for sample_size, iterations in zip(samples_size, samples_each_size):

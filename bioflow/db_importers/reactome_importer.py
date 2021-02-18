@@ -5,7 +5,7 @@ Created on Jun 15, 2013
 import pickle
 from bioflow.utils.log_behavior import get_logger
 from bioflow.configs.main_configs import Dumps, reactome_biopax_path
-from bioflow.configs.internal_configs import Leg_ID_Filter, neo4j_names_dict
+from bioflow.configs.internal_configs import reactome_forbidden_nodes, neo4j_names_dict
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from bioflow.neo4j_db.db_io_routines import get_db_id
 from bioflow.bio_db_parsers.reactomeParser import ReactomeParser
@@ -90,7 +90,7 @@ def insert_meta_objects(neo4j_graph_class, meta_id_2_property_dict, parse_type):
         #       primary.keys(), '\n',
         #       primary.items())
 
-        if meta_name in Leg_ID_Filter:
+        if meta_name in reactome_forbidden_nodes:
             ForbiddenIDs.append(get_db_id(primary))
 
         memoization_dict[meta_name] = primary

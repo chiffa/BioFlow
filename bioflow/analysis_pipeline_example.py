@@ -33,10 +33,10 @@ if __name__ == "__main__":
     ##########################################
 
     # # # clearing the database, if required
-    destroy_db()
+    # destroy_db()
 
     # # building the neo4j database
-    build_db()
+    # build_db()
 
     background_bulbs_ids = []
 
@@ -90,7 +90,7 @@ if __name__ == "__main__":
     chromosomes_directory = "//localhome//kucharav//Projects//BioFlow paper//yeast_chr_genes"
     background_file = os.path.join(chromosomes_directory, "all_genes.tab")
 
-    # rebuild_the_laplacians(all_detectable_genes=background_bulbs_ids)
+    rebuild_the_laplacians(all_detectable_genes=background_bulbs_ids)
 
     # perform the interactome analysis
 
@@ -115,34 +115,34 @@ if __name__ == "__main__":
     # raise Exception('debugging')
 
 
-    # background_set = False
-    # for filename in os.listdir(chromosomes_directory):
-    #     if filename != "all_genes.tab":
-    #         target_file = os.path.join(chromosomes_directory, filename)
-    #         hits_ids, background_bulbs_ids = map_and_save_gene_ids(target_file, background_file)
-    #         paramset_with_background = tuple([_filter, background_bulbs_ids, (1, 1), True, 3])
-    #
-    #         # if not background_set:
-    #         #     rebuild_the_laplacians(all_detectable_genes=background_bulbs_ids)
-    #         #     background_set = True
-    #
-    #         # # perform the interactome analysis
-    #         interactome_analysis([hits_ids[:20]],
-    #                              ['chr_%s' % filename[:-4]],
-    #                              desired_depth=1,
-    #                              processors=1,
-    #                              background_list=background_bulbs_ids,
-    #                              skip_sampling=False
-    #                              )
-    #
-    #         # # perform the knowledge analysis
-    #         knowledge_analysis([hits_ids[:20]],
-    #                            ['chr_%s' % filename[:-4]],
-    #                            desired_depth=1,
-    #                            processors=1,
-    #                            param_set=paramset_with_background,
-    #                            skip_sampling=False,
-    #                            )
-    #
-    #         raise Exception('debug')
+    background_set = False
+    for filename in os.listdir(chromosomes_directory):
+        if filename != "all_genes.tab":
+            target_file = os.path.join(chromosomes_directory, filename)
+            hits_ids, background_bulbs_ids = map_and_save_gene_ids(target_file, background_file)
+            paramset_with_background = tuple([_filter, background_bulbs_ids, (1, 1), True, 3])
+
+            # if not background_set:
+            #     rebuild_the_laplacians(all_detectable_genes=background_bulbs_ids)
+            #     background_set = True
+
+            # # perform the interactome analysis
+            interactome_analysis([hits_ids[:20]],
+                                 ['chr_%s' % filename[:-4]],
+                                 desired_depth=1,
+                                 processors=1,
+                                 background_list=background_bulbs_ids,
+                                 skip_sampling=False
+                                 )
+
+            # # perform the knowledge analysis
+            knowledge_analysis([hits_ids[:20]],
+                               ['chr_%s' % filename[:-4]],
+                               desired_depth=1,
+                               processors=1,
+                               param_set=paramset_with_background,
+                               skip_sampling=False,
+                               )
+
+            raise Exception('debug')
 

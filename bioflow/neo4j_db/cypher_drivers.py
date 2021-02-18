@@ -4,7 +4,7 @@ from collections import defaultdict
 from itertools import combinations_with_replacement
 from neo4j import GraphDatabase
 from neo4j.graph import Node, Relationship, Path
-from typing import List, Tuple, NewType
+from typing import List, Tuple, NewType, Dict
 from bioflow.utils.log_behavior import get_logger
 from bioflow.configs.main_configs import neo4j_server_url
 
@@ -183,6 +183,23 @@ class GraphDBPipe(object):
                         "OPTIONAL MATCH (n)<-[r:annotates]-(a) "
                         "DETACH DELETE a, n " % nodetype)
         return result
+
+    def clear_database(self) -> None:
+        with self._driver.session() as session:
+            session.write_transaction(self._clear_database)
+
+    @staticmethod
+    def _clear_database(tx):
+        node_types = tx.run("MATCH (N) RETURN DISTINCT LABELS(N)")
+        node_types = [_type for _type in node_types]
+        node_types = [_type["LABELS(N)"][0] for _type in node_types]
+
+        log.info('Clearing the database')
+        for node_type in node_types:
+            tx.run("MATCH (n:%s) "
+                   "OPTIONAL MATCH (n)<-[r:annotates]-(a) "
+                   "DETACH DELETE a, n " % node_type)
+            log.info('deleted %s' % node_type)
 
     def get(self,
             node_id: db_id,
@@ -666,7 +683,8 @@ class GraphDBPipe(object):
                         tx = session.begin_transaction()
 
             else:  # we assume it's a list
-                for i, (annot_tag, annot_type) in enumerate(annotation_tags_list, annotations_types):
+                for i, (annot_tag, annot_type) in enumerate(zip(annotation_tags_list,
+                                                                annotations_types)):
                     annotated_nodes.append(self._get_from_annotation_tag(tx, annot_tag, annot_type))
                     if i % batch_size == 0:
                         log.info('\t %.2f %%' % (float(i) / float(len(annotation_tags_list)) * 100))
@@ -813,16 +831,135 @@ class GraphDBPipe(object):
 
         return legal
 
-    def self_diag(self):
+    def node_stats(self) -> None:
+        with self._driver.session() as session:
+            session.write_transaction(self._node_stats)
+
+    @staticmethod
+    def _node_stats(tx):
+        node_types = tx.run("MATCH (N) RETURN DISTINCT LABELS(N)")
+        node_types = [_type for _type in node_types]
+        node_types = [_type["LABELS(N)"][0] for _type in node_types]
+
+        for node_type in node_types:
+            total = tx.run("MATCH (N:%s) RETURN COUNT(N)" % node_type).single()["COUNT(N)"]
+            log.info("%s : %d" % (node_type, total))
+
+    def mark_forbidden_nodes(self, excluded_names_or_leg_ids) -> List[Node]:
+        with self._driver.session() as session:
+            nodes_list = session.write_transaction(self._mark_forbidden_nodes,
+                                                   excluded_names_or_leg_ids)
+        return nodes_list
+
+    @staticmethod
+    def _mark_forbidden_nodes(tx, excluded_names_or_leg_ids):
+        all_nodes = []
+        for tag in excluded_names_or_leg_ids:
+            nodes = tx.run("MATCH (N) "
+                           "WHERE (N.displayName='%s' OR N.legacyID='%s') "
+                           "AND N.parse_type='physical_entity' "
+                           "SET N.forbidden='True' "
+                           "RETURN N" % (tag, tag))
+            nodes = [_node['N'] for _node in nodes]
+            all_nodes += nodes
+
+        return all_nodes
+
+    def parse_physical_entity_net(self, main_connex_only: bool = False) -> (Dict[int, Node],
+                                                            Dict[Tuple[int, int], Relationship]):
+        """
+        Runs and prints diagnostics on its own content
+
+        :return:
+        """
+        log.info('Massive pull from the database, this might take a while, please wait')
+        with self._driver.session() as session:
+            nodes_dict, rels_dict = session.write_transaction(self._parse_physical_entity_net,
+                                                              main_connex_only)
+        log.info('Pull suceeded')
+        return nodes_dict, rels_dict
+
+    @staticmethod
+    def _parse_physical_entity_net(tx, main_connex_only):
+
+        if main_connex_only:
+            nodes = tx.run(
+                "MATCH (N)-[r]-(M) "
+                "WHERE (N.parse_type='physical_entity' AND M.parse_type='physical_entity') "
+                "AND N.main_connex='True' "
+                "AND NOT (EXISTS(N.forbidden) OR EXISTS(M.forbidden)) "
+                "AND (r.parse_type='physical_entity_molecular_interaction' "
+                "OR r.parse_type='identity' OR r.parse_type='refines')"
+                "RETURN DISTINCT(N)")
+
+            nodes_dict = {_node['N'].id: _node['N'] for _node in nodes}
+
+            rels = tx.run(
+                "MATCH (N)-[r]-(M) "
+                "WHERE (N.parse_type='physical_entity' AND M.parse_type='physical_entity') "
+                "AND N.main_connex='True' "
+                "AND NOT (EXISTS(N.forbidden) OR EXISTS(M.forbidden)) "
+                "AND (r.parse_type='physical_entity_molecular_interaction' "
+                "OR r.parse_type='identity' OR r.parse_type='refines')"
+                "RETURN DISTINCT(r)")
+
+            rels_dict = {(_rel['r'].start_node.id, _rel['r'].end_node.id): _rel['r']
+                         for _rel in rels}
+
+            return nodes_dict, rels_dict
+
+        else:
+            nodes = tx.run(
+                "MATCH (N)-[r]-(M) "
+                "WHERE (N.parse_type='physical_entity' AND M.parse_type='physical_entity') "
+                "AND NOT (EXISTS(N.forbidden) OR EXISTS(M.forbidden)) "
+                "AND (r.parse_type='physical_entity_molecular_interaction' "
+                "OR r.parse_type='identity' OR r.parse_type='refines')"
+                "RETURN DISTINCT(N)")
+
+            nodes_dict = {_node['N'].id: _node['N'] for _node in nodes}
+
+            rels = tx.run(
+                "MATCH (N)-[r]-(M) "
+                "WHERE (N.parse_type='physical_entity' AND M.parse_type='physical_entity') " 
+                "AND NOT (EXISTS(N.forbidden) OR EXISTS(M.forbidden)) "
+                "AND (r.parse_type='physical_entity_molecular_interaction' "
+                "OR r.parse_type='identity' OR r.parse_type='refines')"
+                "RETURN DISTINCT(r)")
+
+            rels_dict = {(_rel['r'].start_node.id, _rel['r'].end_node.id): _rel['r']
+                         for _rel in rels}
+
+            return nodes_dict, rels_dict
+
+    def erase_node_properties(self, properties_list):
+        """
+
+        :param properties_list:
+        :return:
+        """
+        with self._driver.session() as session:
+            session.write_transaction(self._erase_node_properties, properties_list)
+
+    @staticmethod
+    def _erase_node_properties(tx, properties_list):
+        for _property in properties_list:
+            if _property in required_node_params:
+                raise Exception('Trying to clear a required node parameter %s' % _property)
+            resets = tx.run("MATCH (N) "
+                            "WHERE EXISTS(N.%s) "
+                            "REMOVE N.%s "
+                            "RETURN COUNT(N)" % (_property, _property)).single()['COUNT(N)']
+            log.info("Cleared property %s in %d nodes" % (_property, resets))
+
+    def self_diag(self) -> None:
         """
         Runs and prints diagnostics on its own content
 
         :return:
         """
         with self._driver.session() as session:
-            legal = session.write_transaction(self._self_diag)
-            log.info('checking_permutation')
-            return legal
+            session.write_transaction(self._self_diag)
 
     @staticmethod
     def _self_diag(tx):
@@ -836,8 +973,6 @@ class GraphDBPipe(object):
         print('\nNodes characterization:')
 
         for node_type in node_types:
-
-            # TODO: add percentage of total logic
 
             total = tx.run("MATCH (N:%s) RETURN COUNT(N)" % node_type).single()["COUNT(N)"]
 
@@ -925,7 +1060,7 @@ class GraphDBPipe(object):
                         print("\t\t %s: %d/%.2f %%"
                               % (_val, _val_occurences, _val_occurences/property_occurences*100))
 
-        print('Pattern occurences:')
+        print('\nPattern occurences:')
         for A_type, B_type in combinations_with_replacement(node_types, 2):
             for r_type in rel_types:
                 occurences = tx.run("MATCH (A:%s)-[r:%s]-(B:%s) "
@@ -936,9 +1071,40 @@ class GraphDBPipe(object):
                 if occurences:
                     print("\t(%s)-%s-(%s) : %d" % (A_type, r_type, B_type, occurences))
 
+        print('\nParse_type pattern occurences:')
+        for A_parse_type, B_parse_type in combinations_with_replacement(allowed_node_parse_types, 2):
+            for r_parse_type in allowed_edge_parse_types:
+                occurences = tx.run(
+                    "MATCH (A {parse_type:'%s'})-[r {parse_type:'%s'}]-(B {parse_type:'%s'}) "
+                    "RETURN COUNT(r) "
+                    "AS occurences"
+                    % (A_parse_type, r_parse_type, B_parse_type)).single()['occurences']
+
+                if occurences:
+                    print("\t(%s)-%s-(%s) : %d"
+                          % (A_parse_type, r_parse_type, B_parse_type, occurences))
+
+
+        print('\nHighest degree nodes:')
+        node_2_degree_map = tx.run("MATCH (N {parse_type: 'physical_entity'})-"
+                                   "-(M {parse_type: 'physical_entity'})"
+                                   "RETURN N,COUNT(M)")
+
+        node_2_degree_map = [(_match['N'], int(_match['COUNT(M)'])) for _match in node_2_degree_map]
+        node_2_degree_map = sorted(node_2_degree_map, key=lambda x: x[1])[100:]
+        node_2_degree_map = ['%s, %s: %d' % (node['legacyID'], node.id, count)
+                             for node, count in node_2_degree_map]
+
+        for entry in node_2_degree_map:
+            print(entry)
+
+
 
 if __name__ == "__main__":
     neo4j_pipe = GraphDBPipe()
+    # nodes_dict, edges_dict = neo4j_pipe.parse_physical_entity_net()
+    # print(len(nodes_dict.keys()), len(edges_dict.keys()))
+    # print(next(iter(nodes_dict.items())), next(iter(edges_dict.items())))
     neo4j_pipe.self_diag()
 
     # neo4j_pipe.delete_all('Test')

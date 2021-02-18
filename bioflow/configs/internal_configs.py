@@ -8,9 +8,8 @@ the API_doc, just code comments for the maintainers
 #  Configures the mappings between concrete edge types and meta-types used for confidence
 # calculation
 
-## TODO: remove the edge_type_filter - it looks pretty deprecated by now.
+# CURRENTPASS: Deprecate this
 # => replace the
-
 edge_type_filters = {
     "Group": ["is_part_of_collection"],
     # Group relation group
@@ -30,10 +29,16 @@ edge_type_filters = {
 
 
 # CURRENTPASS: move to the configs .yaml
-#  Set an alternative method of computing (eg edge number)
 # Defines what nodes are to be masked to avoid conduction overload of non-informative nodes
-Leg_ID_Filter = ['H+', 'ATP', 'GTP', 'Pi', 'H2O', 'ADP', 'PPi', 'GDP', 'O2', 'CO2', 'NTP',
-                 'Ubiquitin', 'cAMP', 'Actin']
+# Their edges are not very hight necessarily, but they are highly central in the Reactome
+# physical entities network
+reactome_forbidden_nodes = ['H+', 'ATP', 'GTP', 'Pi', 'H2O', 'ADP', 'PPi', 'GDP', 'O2', 'CO2',
+                            'NTP', 'Ubiquitin', 'cAMP', 'Actin']
+
+# Yeast uniprots that are excluded from calculation due to too high of edge values : 1300 - 3800
+# Basically, members of protein degradation pathways
+# TODO: add human nodes to the neo4j parse
+uniprot_forbidden_nodes = ['UBI4P_YEAST', 'NAB2_YEAST', 'SSB2_YEAST', 'HSP82_YEAST', 'SMT3_YEAST']
 
 
 forbidden_verification_list = ['Small Molecule',
@@ -110,7 +115,7 @@ neo4j_names_dict = {
     'TemplateReaction': "Template_Reaction",
     'Degradation': "Degradation",
     'BiochemicalReaction': "BiochemicalReaction",
-    'Pathway Step': "Pathway_Step",
+    'Pathway Step': "PathwayStep",
     'Pathway': "Pathway",
     'Cell Locations': "Location",
     'Annotations': "AnnotNode",
@@ -122,4 +127,5 @@ neo4j_names_dict = {
 
 full_list = list(neo4j_names_dict.keys())
 
+# CURRENTPASS: deprecate them
 reactome_reactions_types_list = ['TemplateReaction', 'Degradation', 'BiochemicalReaction']

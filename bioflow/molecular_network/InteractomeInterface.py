@@ -32,6 +32,7 @@ from bioflow.configs.bioflow_home import internal_storage
 from bioflow.configs.internal_configs import edge_type_filters, adjacency_matrix_weights, \
     laplacian_matrix_weights, reactome_reactions_types_list
 from bioflow.algorithms_bank import conduction_routines as cr
+from bioflow.algorithms_bank import weigting_policies as wp
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from bioflow.neo4j_db.db_io_routines import expand_from_seed, erase_custom_fields, node_extend_once,\
     get_db_id
@@ -80,8 +81,8 @@ class InteractomeInterface(object):
         self.neo4j_id_2_localization = {}
         self.reached_uniprots_neo4j_id_list = []
         self.all_uniprots_neo4j_id_list = []
-        self.Uniprot_attachments = {}  # currently maintained for legacy reasons
-        self.uniprot_matrix_index_list = []
+        self.deprecated_uniprot_attachments = {}  # currently maintained for legacy reasons
+        self.deprecated_uniprot_matrix_index_list = []
 
         # the properties below are used for iterative expansion of the dictionary
         self.ReactLinks = []
@@ -119,7 +120,7 @@ class InteractomeInterface(object):
 
         # CURRENTPASS: remove in the disk items rebuild
         self.deprecated_UP2Chrom = {}
-        self.chromosomes_2_uniprot = defaultdict(list)
+        self.deprecated_chromosomes_2_uniprot = defaultdict(list)
 
         self.incomplete_compute = False  # used in case of sparse sampling
         self.background = []
@@ -212,11 +213,11 @@ class InteractomeInterface(object):
              self.neo4j_id_2_localization,
              self.reached_uniprots_neo4j_id_list,
              self.all_uniprots_neo4j_id_list,
-             self.Uniprot_attachments,
+             self.deprecated_uniprot_attachments,
              self.deprecated_UP2Chrom,
-             self.chromosomes_2_uniprot,
-             self.uniprot_matrix_index_list,
-             self.entry_point_uniprots_neo4j_ids))  # TODO: delete here and below entry point u_b_i
+             self.deprecated_chromosomes_2_uniprot,
+             self.deprecated_uniprot_matrix_index_list,
+             self.entry_point_uniprots_neo4j_ids))
 
     def undump_maps(self):
         """
@@ -227,8 +228,8 @@ class InteractomeInterface(object):
         self.neo4j_id_2_matrix_index, self.matrix_index_2_neo4j_id, \
         self.neo4j_id_2_display_name, self.neo4j_id_2_legacy_id, self.neo4j_id_2_node_type, \
         self.neo4j_id_2_localization, self.reached_uniprots_neo4j_id_list, \
-        self.all_uniprots_neo4j_id_list, self.Uniprot_attachments, self.deprecated_UP2Chrom, \
-        self.chromosomes_2_uniprot, self.uniprot_matrix_index_list, \
+        self.all_uniprots_neo4j_id_list, self.deprecated_uniprot_attachments, self.deprecated_UP2Chrom, \
+        self.deprecated_chromosomes_2_uniprot, self.deprecated_uniprot_matrix_index_list, \
         self.entry_point_uniprots_neo4j_ids = \
             undump_object(confs.Dumps.interactome_maps)
         log.debug("post-undump e_p_u_b_i length: %s", len(self.entry_point_uniprots_neo4j_ids))
@@ -508,7 +509,7 @@ class InteractomeInterface(object):
             # we maintain two special lists for them
             if list(node.labels)[0] == "UNIPROT":
                 self.reached_uniprots_neo4j_id_list.append(neo4j_node_id)
-                self.uniprot_matrix_index_list.append(counter)
+                self.deprecated_uniprot_matrix_index_list.append(counter)
 
             # maps the ID of the localization to the name of the localization
             if 'localization' in node and node['localization'] is not None:
@@ -538,7 +539,7 @@ class InteractomeInterface(object):
         log.info("All uniprots in the neo4j database: %d", len(self.all_uniprots_neo4j_id_list))
 
 
-    def fast_row_insert(self, element, index_type):
+    def fast_row_insert(self, element, index_type):  # TRACING: matrix insertion routine
         """
         Performs an correct insertion of an edge - indicative weight to the matrix.
 
@@ -553,7 +554,7 @@ class InteractomeInterface(object):
                 1)
 
         self.adjacency_Matrix[element[1], element[0]] = \
-            min(self.adjacency_Matrix[element[1], element[0]] +
+            min(self.adjacency_Matrix[element[1], element[0]] +  # why min though?
                 adjacency_matrix_weights[index_type],
                 1)
 
@@ -565,6 +566,7 @@ class InteractomeInterface(object):
             laplacian_matrix_weights[index_type]
         self.laplacian_matrix[element[0], element[0]] += \
             laplacian_matrix_weights[index_type]
+
 
     def normalize_laplacian(self):
         """
@@ -580,6 +582,128 @@ class InteractomeInterface(object):
         D.setdiag(mD)
         D = D.tocsc()
         self.laplacian_matrix = (D.dot(self.laplacian_matrix)).dot(D)
+
+
+    def new_create_val_matrix(self, node_dict, edge_dict,
+                              adj_weight_policy_function=wp.default_adj_source_x_type_policy,
+                              lapl_weight_policy_function=wp.default_lapl_source_x_type_policy):
+        """
+
+        :param node_dict:
+        :param edge_dict:
+        :param adj_weight_policy_function:
+        :param lapl_weight_policy_function:
+        :return:
+        """
+
+        adjacency_matrix = lil_matrix((len(node_dict), len(node_dict)), np.float)
+        laplacian_matrix = lil_matrix((len(node_dict), len(node_dict)), np.float)
+
+        node_id_2_mat_idx = {_id: _i for _i, _id in enumerate(node_dict.keys())}
+        mat_idx_2_note_id = {_i: _id for _id, _i in node_id_2_mat_idx.items()}
+
+        for (from_id, to_id), rel_obj in edge_dict.itervalues():
+            from_node = node_dict[from_id]
+            to_node = node_dict[to_id]
+
+            lapl_weight = lapl_weight_policy_function(from_node, to_node, rel_obj)
+            adj_weight = adj_weight_policy_function(from_node, to_node, rel_obj)
+
+            from_idx = node_id_2_mat_idx[from_id]
+            to_idx = node_id_2_mat_idx[to_id]
+
+            adjacency_matrix[from_idx, to_idx] += adj_weight
+            adjacency_matrix[to_idx, from_idx] += adj_weight
+
+            laplacian_matrix[from_idx, to_idx] -= lapl_weight
+            laplacian_matrix[to_idx, from_idx] -= lapl_weight
+            laplacian_matrix[from_idx, from_idx] += lapl_weight
+            laplacian_matrix[to_idx, to_idx] += lapl_weight
+
+        return node_id_2_mat_idx, mat_idx_2_note_id, adjacency_matrix, laplacian_matrix
+
+
+    def new_idxs_in_the_giant_component(self, adjacency_matrix):
+        """
+
+        :param adjacency_matrix:
+        :return:
+        """
+        component_ids, node_2_id = connected_components(adjacency_matrix, directed=False)
+
+        counters = np.zeros((component_ids,))
+
+        for id in range(0, component_ids):
+            counters[id] = np.sum((node_2_id == id).astype(int))
+
+        biggest_component_id = np.argmax(counters)
+
+        idx_in_g_component = np.arange(adjacency_matrix.shape[0])[node_2_id == biggest_component_id]
+        
+        return idx_in_g_component.tolist()
+    
+
+    def new_rebuild(self):
+        """
+
+        :return:
+        """
+        # giant component recomputation and writing
+        DatabaseGraph.erase_node_properties(['main_connex'])
+
+        nodes_dict, edges_dict = DatabaseGraph.parse_physical_entity_net(main_connex_only=False)
+
+        all_nodes_dict, mat_idx_2_note_id, adjacency_matrix, _ = \
+            self.new_create_val_matrix(nodes_dict, edges_dict, wp.flat_policy, wp.flat_policy)
+
+        giant_component_mat_indexes = self.new_idxs_in_the_giant_component(adjacency_matrix)
+
+        giant_component_db_ids = [mat_idx_2_note_id[_idx] for _idx in giant_component_mat_indexes]
+
+        DatabaseGraph.batch_set_attributes(giant_component_db_ids,
+                                           [{'main_connex': 'True'}]*len(giant_component_db_ids))
+
+        # only giant component parsing
+        nodes_dict, edges_dict = DatabaseGraph.parse_physical_entity_net(main_connex_only=True)
+
+        node_id_2_mat_idx, mat_idx_2_note_id, adjacency_matrix, laplacian_matrix = \
+            self.new_create_val_matrix(nodes_dict, edges_dict)
+
+        self.adjacency_Matrix = adjacency_matrix  # TODO: capitalization
+        self.laplacian_matrix = laplacian_matrix
+
+        self.get_eigen_spectrum(100)
+
+        self.neo4j_id_2_matrix_index = node_id_2_mat_idx
+        self.matrix_index_2_neo4j_id = mat_idx_2_note_id
+
+        # currentpass: see if we are using all_nodes_dict or nodes_dict => looks like nodes_dict
+        #  only
+        self.neo4j_id_2_display_name = {_id: _node['displayName']
+                                        for (_id, _node) in nodes_dict.items()}
+        self.neo4j_id_2_legacy_id = {_id: _node['legacyID']
+                                     for (_id, _node) in nodes_dict.items()}
+        self.neo4j_id_2_node_type = {_id: _node.labels[0]
+                                     for (_id, _node) in nodes_dict.items()}
+        self.neo4j_id_2_localization = {_id: _node.get('localization', 'NA')
+                                        for (_id, _node) in nodes_dict.items()}
+        self.reached_uniprots_neo4j_id_list = [_id
+                                               for (_id, _node) in nodes_dict.items()
+                                               if _node.labels[0] == 'UNIPROT']
+        self.all_uniprots_neo4j_id_list = [_id
+                                           for (_id, _node) in all_nodes_dict.items()
+                                           if _node.labels[0] == 'UNIPROT']
+        self.deprecated_uniprot_attachments = {}
+        self.deprecated_UP2Chrom = {}
+        self.deprecated_chromosomes_2_uniprot = {}
+        self.deprecated_uniprot_matrix_index_list = [node_id_2_mat_idx[_id]
+                                                     for _id in self.reached_uniprots_neo4j_id_list]
+        self.entry_point_uniprots_neo4j_ids = []  #REFACTOR: this needs not to be dumped
+
+        self.dump_maps() # DONE
+        self.dump_matrices() # DONE
+        self.dump_eigen() # DONE
+
 
     def create_val_matrix(self):
         """
@@ -727,15 +851,19 @@ class InteractomeInterface(object):
         Performs the initial loading routines that set up in place the system of dump files
         to allow fast loading in the future
         """
+
+        self.new_rebuild()
+        return None
+
         connexity_aware = self.connexity_aware
         self.connexity_aware = False
 
         self.create_val_matrix()
 
-        erase_custom_fields()
+        erase_custom_fields()  # TRACING: single usage: nix it
         self.write_connexity_infos()
 
-        self.compute_uniprot_attachments()
+        self.deprecated_compute_uniprot_attachments()
         self.connexity_aware = connexity_aware
 
         self.create_val_matrix()
@@ -778,7 +906,7 @@ class InteractomeInterface(object):
             return (self.neo4j_id_2_node_type[self.matrix_index_2_neo4j_id[index]],
                     self.neo4j_id_2_display_name[self.matrix_index_2_neo4j_id[index]])
 
-    def compute_uniprot_attachments(self):
+    def deprecated_compute_uniprot_attachments(self):
         """
         Computes the dictionary of attachments between the reached_uniprots_neo4j_id_list and
         Reactome proteins
@@ -791,14 +919,14 @@ class InteractomeInterface(object):
 
             reactome_nodes = DatabaseGraph.get_linked(uniprot_neo4j_id, link_type='is_same')
             if reactome_nodes != []:
-                self.Uniprot_attachments[uniprot_neo4j_id] = []
+                self.deprecated_uniprot_attachments[uniprot_neo4j_id] = []
                 for node in reactome_nodes:
-                    self.Uniprot_attachments[uniprot_neo4j_id].append(get_db_id(node))
+                    self.deprecated_uniprot_attachments[uniprot_neo4j_id].append(get_db_id(node))
                 uniprot_attachments_counter += 1
-                reactome_attachments_counter += len(self.Uniprot_attachments[uniprot_neo4j_id])
+                reactome_attachments_counter += len(self.deprecated_uniprot_attachments[uniprot_neo4j_id])
                 log.debug('attached %s Reactome proteins to the node %s',
-                                  len(self.Uniprot_attachments[uniprot_neo4j_id]),
-                                  uniprot_neo4j_id)
+                          len(self.deprecated_uniprot_attachments[uniprot_neo4j_id]),
+                          uniprot_neo4j_id)
             else:
                 log.debug('No attachment for the node %s', uniprot_neo4j_id)
 
@@ -809,16 +937,16 @@ class InteractomeInterface(object):
     def deprecated_hacky_corr(self):
         """
         Hacky method that should remain unused but by the devs.
-        Generate the uniprot_matrix_index_list from the loaded Uniprot List.
+        Generate the deprecated_uniprot_matrix_index_list from the loaded Uniprot List.
         Prevents a 90-minute full database reload to compute something quickly.
         """
         self.undump_maps()
-        self.uniprot_matrix_index_list = []
+        self.deprecated_uniprot_matrix_index_list = []
         for swissprot_neo4j_id in self.reached_uniprots_neo4j_id_list:
             if DatabaseGraph.get(swissprot_neo4j_id, 'UNIPROT')['main_connex']:
-                self.uniprot_matrix_index_list.append(self.neo4j_id_2_matrix_index[swissprot_neo4j_id])
+                self.deprecated_uniprot_matrix_index_list.append(self.neo4j_id_2_matrix_index[swissprot_neo4j_id])
 
-        log.info('number of indexed uniprots: %s', len(self.uniprot_matrix_index_list))
+        log.info('number of indexed uniprots: %s', len(self.deprecated_uniprot_matrix_index_list))
         self.dump_maps()
 
     def md5_hash(self):
