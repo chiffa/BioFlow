@@ -9,9 +9,9 @@ from collections import defaultdict
 from csv import reader, writer
 from pprint import PrettyPrinter, pprint
 from bioflow.configs.main_configs import forbidden_neo4j_ids, Dumps
-from bioflow.configs.internal_configs import edge_type_filters, reactome_forbidden_nodes,\
+from bioflow.configs.internal_configs import deprecated_edge_type_filters, reactome_forbidden_nodes,\
     deprecated_annotation_nodes_ptypes, \
-    neo4j_names_dict, full_list, uniprot_forbidden_nodes
+    to_deprecate_neo4j_names_dict, full_list, uniprot_forbidden_nodes
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from bioflow.utils.log_behavior import get_logger
 from bioflow.utils.io_routines import write_to_csv, memoize, time_exection
@@ -297,7 +297,7 @@ def excluded_nodes_ids_from_names_list():
     # for name in forbidden_entities_list:
     #     for forbidden_legacy_id in reactome_forbidden_nodes:  # TRACING: switch to parameters
     #         # CURRENTPASS: factor into the arguments of the function
-    #         bulbs_class = neo4j_names_dict[name]
+    #         bulbs_class = to_deprecate_neo4j_names_dict[name]
     #         generator = DatabaseGraph.find({"displayName": forbidden_legacy_id}, bulbs_class)
     #
     #         associated_node_ids = node_generator_2_db_ids(generator)  # TRACING: list comprehension
@@ -315,7 +315,7 @@ def excluded_nodes_ids_from_names_list():
     pickle.dump(forbidden_ids_list, open(Dumps.Forbidden_IDs, 'wb'))
 
 
-def clear_all(instruction_list):
+def to_deprecate_clear_all(instruction_list):
     """
     Clears all the nodes from the database
 
@@ -323,7 +323,7 @@ def clear_all(instruction_list):
     """
 
     for name in instruction_list:
-        neo4j_class = neo4j_names_dict[name]
+        neo4j_class = to_deprecate_neo4j_names_dict[name]
         log.info('deleting class from neo4j: %s', neo4j_class)
         DatabaseGraph.delete_all(neo4j_class)
         log.info('class %s deleted', neo4j_class)
@@ -347,7 +347,7 @@ def run_diagnostics() -> None:
 #     super_counter = 0
 #     str_list = ['Database Diagnostics:']
 #     for name in instructions_list:
-#         bulbs_class = neo4j_names_dict[name]
+#         bulbs_class = to_deprecate_neo4j_names_dict[name]
 #         counter = DatabaseGraph.count(bulbs_class)
 #         str_list.append('\t %s : %s' % (name, counter))
 #         super_counter += counter
@@ -466,7 +466,7 @@ if __name__ == "__main__":
     # pull_up_inf_density()
 
     # run_diagnostics(full_list)
-    # memoize_bulbs_type(neo4j_names_dict['UNIPROT'][0])
+    # memoize_bulbs_type(to_deprecate_neo4j_names_dict['UNIPROT'][0])
     # cast_analysis_set_to_bulbs_ids()
     # cast_background_set_to_bulbs_id(background_set_csv_location=None)
     # Akshay_p53_go_set = ["0030330", "0000019", "0000002", "0006977"]

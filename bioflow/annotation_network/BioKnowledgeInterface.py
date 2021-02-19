@@ -301,10 +301,10 @@ class GeneOntologyInterface(object):
             raise Exception(
                 "Wrong Filtering attempted to be recovered from storage")
         if set(self.InitSet) != set(initial_set):
-            log.critical("Found self.InitSet of length: %s" % len(self.InitSet))
-            log.critical("Found initial_set of length: %s" % len(initial_set))
-            log.critical("self.InitSet - initial_set: %s" % (set(self.InitSet) - set(initial_set)))
-            log.critical("initial_set - self.InitSet: %s" % (set(initial_set) - set(self.InitSet)))
+            log.critical("Initialized self.InitSet of length: %s" % len(self.InitSet))
+            log.critical("Tried to load from storage self.InitSet of length: %s" % len(initial_set))
+            log.critical("Initialized - loaded: %s" % (set(self.InitSet) - set(initial_set)))
+            log.critical("loaded - initialized: %s" % (set(initial_set) - set(self.InitSet)))
             log.critical(traceback.print_stack())
             log.critical("Wrong initial_set attempted to be recovered from storage")
             raise Exception(

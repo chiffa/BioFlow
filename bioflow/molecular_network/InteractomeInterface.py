@@ -29,8 +29,8 @@ from bioflow.utils.log_behavior import get_logger
 #     env_skip_biogrid, use_normalized_laplacian, fraction_edges_dropped_in_laplacian
 from bioflow.sample_storage.mongodb import insert_interactome_rand_samp
 from bioflow.configs.bioflow_home import internal_storage
-from bioflow.configs.internal_configs import edge_type_filters, adjacency_matrix_weights, \
-    laplacian_matrix_weights, reactome_reactions_types_list
+from bioflow.configs.internal_configs import deprecated_edge_type_filters, deprecated_adjacency_matrix_weights, \
+    deprecated_laplacian_matrix_weights, deprecated_reactome_reactions_types_list
 from bioflow.algorithms_bank import conduction_routines as cr
 from bioflow.algorithms_bank import weigting_policies as wp
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
@@ -325,13 +325,13 @@ class InteractomeInterface(object):
             seeds = set()
             total_reaction_participants = 0
 
-            for ReactionType in reactome_reactions_types_list:  # TRACING [lapl build] self.react_types
+            for ReactionType in deprecated_reactome_reactions_types_list:  # TRACING [lapl build] self.react_types
                 for Reaction in DatabaseGraph.get_all(ReactionType):
                     reaction_participants, reaction_participants_no = node_extend_once(
-                        edge_type_filters["Reaction"],  # TRACING: neo4j typing > can be a property
+                        deprecated_edge_type_filters["Reaction"],  # TRACING: neo4j typing > can be a property
                         self.connexity_aware,
                         Reaction)
-                    # TRACING [lapl build] edge_type_filters, Reaction
+                    # TRACING [lapl build] deprecated_edge_type_filters, Reaction
                     total_reaction_participants += reaction_participants_no
 
                     if len(reaction_participants) > 1:
@@ -365,7 +365,7 @@ class InteractomeInterface(object):
             total_expansion_participants = 0
 
             for element in sub_seed:
-                # TODO: refactor below: edge_type_filter -> edge_type_filters[edge_type]
+                # TODO: refactor below: edge_type_filter -> deprecated_edge_type_filters[edge_type]
                 local_list, count_increase = expand_from_seed(
                     element,
                     edge_type_filter,  # TRACING: neo4j edge types
@@ -411,7 +411,7 @@ class InteractomeInterface(object):
                 round_name = '%s %s' % (char_name, _i+1)
                 tmp_links, tmp_group, _count = get_expansion(
                     tmp_group,
-                    edge_type_filters[edge_type])  # TRACING: neo4j edge types
+                    deprecated_edge_type_filters[edge_type])  # TRACING: neo4j edge types
                 if expansions_n > 1:
                     print_characteristics(round_name, tmp_links, tmp_group, _count)
                 else:
@@ -545,27 +545,27 @@ class InteractomeInterface(object):
 
         :param element: tuple of indexes designating elements we are willing to link
         :param index_type: type of the insert, so that the matrix coefficient can be
-        looked up in the adjacency_matrix_weights or Conductance_Martix_Dict from the configs file
+        looked up in the deprecated_adjacency_matrix_weights or Conductance_Martix_Dict from the configs file
         """
         # TODO: here is one of the locations where a filter on the edges can be inserted
         self.adjacency_Matrix[element[0], element[1]] =\
             min(self.adjacency_Matrix[element[0], element[1]] +
-                adjacency_matrix_weights[index_type],
+                deprecated_adjacency_matrix_weights[index_type],
                 1)
 
         self.adjacency_Matrix[element[1], element[0]] = \
             min(self.adjacency_Matrix[element[1], element[0]] +  # why min though?
-                adjacency_matrix_weights[index_type],
+                deprecated_adjacency_matrix_weights[index_type],
                 1)
 
         self.laplacian_matrix[element[0], element[1]] -= \
-            laplacian_matrix_weights[index_type]
+            deprecated_laplacian_matrix_weights[index_type]
         self.laplacian_matrix[element[1], element[0]] -= \
-            laplacian_matrix_weights[index_type]
+            deprecated_laplacian_matrix_weights[index_type]
         self.laplacian_matrix[element[1], element[1]] += \
-            laplacian_matrix_weights[index_type]
+            deprecated_laplacian_matrix_weights[index_type]
         self.laplacian_matrix[element[0], element[0]] += \
-            laplacian_matrix_weights[index_type]
+            deprecated_laplacian_matrix_weights[index_type]
 
 
     def normalize_laplacian(self):
@@ -674,6 +674,8 @@ class InteractomeInterface(object):
         node_id_2_mat_idx, mat_idx_2_note_id, adjacency_matrix, laplacian_matrix = \
             self.new_create_val_matrix(nodes_dict, edges_list)
 
+        all_uniprot_nodes = DatabaseGraph.get_all('UNIPROT')
+
         self.adjacency_Matrix = adjacency_matrix  # TODO: capitalization
         self.laplacian_matrix = laplacian_matrix
 
@@ -682,8 +684,6 @@ class InteractomeInterface(object):
         self.neo4j_id_2_matrix_index = node_id_2_mat_idx
         self.matrix_index_2_neo4j_id = mat_idx_2_note_id
 
-        # currentpass: see if we are using all_nodes_dict or nodes_dict => looks like nodes_dict
-        #  only
         self.neo4j_id_2_display_name = {_id: _node['displayName']
                                         for (_id, _node) in nodes_dict.items()}
         self.neo4j_id_2_legacy_id = {_id: _node['legacyID']
@@ -695,9 +695,7 @@ class InteractomeInterface(object):
         self.reached_uniprots_neo4j_id_list = [_id
                                                for (_id, _node) in nodes_dict.items()
                                                if 'UNIPROT' in _node.labels]
-        self.all_uniprots_neo4j_id_list = [_id
-                                           for (_id, _node) in all_nodes_dict.items()
-                                           if 'UNIPROT' in _node.labels]
+        self.all_uniprots_neo4j_id_list = [_id for _id in all_uniprot_nodes]
         self.deprecated_uniprot_attachments = {}
         self.deprecated_UP2Chrom = {}
         self.deprecated_chromosomes_2_uniprot = {}

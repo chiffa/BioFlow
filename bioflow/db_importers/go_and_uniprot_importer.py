@@ -7,7 +7,7 @@ from bioflow.bio_db_parsers.geneOntologyParser import GOTermsParser
 from bioflow.bio_db_parsers.uniprotParser import UniProtParser
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from bioflow.neo4j_db.db_io_routines import get_db_id
-from bioflow.configs.internal_configs import neo4j_names_dict
+from bioflow.configs.internal_configs import to_deprecate_neo4j_names_dict
 
 log = get_logger(__name__)
 
@@ -35,8 +35,8 @@ def import_gene_ontology(go_terms, go_terms_structure):
         if i*20 % go_terms_number < 20:
             log.info('GO terms import: %s %%',
                      "{0:.2f}".format(float(i) / float(go_terms_number) * 100))
-        GO_term_memoization_dict[GO_Term] = DatabaseGraph.create(neo4j_names_dict['GO Term'],
-                             {'legacyID': term['id'],
+        GO_term_memoization_dict[GO_Term] = DatabaseGraph.create(to_deprecate_neo4j_names_dict['GO Term'],
+                                                                 {'legacyID': term['id'],
                               'Name': term['name'],
                               'displayName': term['name'],
                               'Namespace': term['namespace'],
@@ -256,7 +256,7 @@ def import_uniprots(uniprot, reactome_acnum_bindings):
         # TODO: [optimization] perform bulk insertion instead
 
         uniprot_node = DatabaseGraph.create(
-            neo4j_names_dict['UNIPROT'],
+            to_deprecate_neo4j_names_dict['UNIPROT'],
             {'legacyID': swiss_prot_id,
              'displayName': data_container['Names']['Full'],
              'source': 'UNIPROT',
@@ -315,7 +315,7 @@ def memoize_go_terms():
     """
     loads go terms from the
     """
-    for node in DatabaseGraph.get_all(neo4j_names_dict['GO Term']):
+    for node in DatabaseGraph.get_all(to_deprecate_neo4j_names_dict['GO Term']):
         GO_term_memoization_dict[node['legacyID']] = node
 
 
@@ -323,7 +323,7 @@ def memoize_uniprots():
     """
     Pre-loads uniprots
     """
-    for node in DatabaseGraph.get_all(neo4j_names_dict['UNIPROT']):
+    for node in DatabaseGraph.get_all(to_deprecate_neo4j_names_dict['UNIPROT']):
         Uniprot_memoization_dict[node['legacyID']] = node
 
 

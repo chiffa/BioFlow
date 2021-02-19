@@ -5,7 +5,7 @@ Created on Jun 15, 2013
 import pickle
 from bioflow.utils.log_behavior import get_logger
 from bioflow.configs.main_configs import Dumps, reactome_biopax_path
-from bioflow.configs.internal_configs import reactome_forbidden_nodes, neo4j_names_dict
+from bioflow.configs.internal_configs import reactome_forbidden_nodes, to_deprecate_neo4j_names_dict
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from bioflow.neo4j_db.db_io_routines import get_db_id
 from bioflow.bio_db_parsers.reactomeParser import ReactomeParser
@@ -401,18 +401,18 @@ def get_all_meta_sets():
     further annotation insertion
     """
     list_of_bulbs_classes = [
-        neo4j_names_dict['DNA'],
-        neo4j_names_dict['DNA Collection'],
-        neo4j_names_dict['RNA'],
-        neo4j_names_dict['RNA Collection'],
-        neo4j_names_dict['Small Molecule'],
-        neo4j_names_dict['Small Molecule Collection'],
-        neo4j_names_dict['Protein'],
-        neo4j_names_dict['Protein Collection'],
-        neo4j_names_dict['Complex'],
-        neo4j_names_dict['Complex Collection'],
-        neo4j_names_dict['Physical Entity'],
-        neo4j_names_dict['Physical Entity Collection']
+        to_deprecate_neo4j_names_dict['DNA'],
+        to_deprecate_neo4j_names_dict['DNA Collection'],
+        to_deprecate_neo4j_names_dict['RNA'],
+        to_deprecate_neo4j_names_dict['RNA Collection'],
+        to_deprecate_neo4j_names_dict['Small Molecule'],
+        to_deprecate_neo4j_names_dict['Small Molecule Collection'],
+        to_deprecate_neo4j_names_dict['Protein'],
+        to_deprecate_neo4j_names_dict['Protein Collection'],
+        to_deprecate_neo4j_names_dict['Complex'],
+        to_deprecate_neo4j_names_dict['Complex Collection'],
+        to_deprecate_neo4j_names_dict['Physical Entity'],
+        to_deprecate_neo4j_names_dict['Physical Entity Collection']
     ]
 
     for node_class in list_of_bulbs_classes:
@@ -428,7 +428,7 @@ def insert_reactome(skip_import='N'):
                      import.
     """
     def get_db_class_handle(shortname):
-        return neo4j_names_dict[shortname]
+        return to_deprecate_neo4j_names_dict[shortname]
 
     reactome_parser = ReactomeParser(reactome_biopax_path)
     reactome_parser.parse_all()

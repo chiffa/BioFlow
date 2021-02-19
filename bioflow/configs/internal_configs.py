@@ -10,7 +10,7 @@ the API_doc, just code comments for the maintainers
 
 # CURRENTPASS: Deprecate this
 # => replace the
-edge_type_filters = {
+deprecated_edge_type_filters = {
     "Group": ["is_part_of_collection"],
     # Group relation group
     "Same": ["is_same"],
@@ -41,20 +41,8 @@ reactome_forbidden_nodes = ['H+', 'ATP', 'GTP', 'Pi', 'H2O', 'ADP', 'PPi', 'GDP'
 uniprot_forbidden_nodes = ['UBI4P_YEAST', 'NAB2_YEAST', 'SSB2_YEAST', 'HSP82_YEAST', 'SMT3_YEAST']
 
 
-forbidden_verification_list = ['Small Molecule',
-                               'Small Molecule Collection',
-                               'Physical Entity',
-                               'Physical Entity Collection',
-                               'Protein',
-                               'Protein Collection',
-                               'UNIPROT'
-                               ]
-
-
-# TODO: Those need to be used to a module that is user-modifiable
-
 # Coefficients values for the value_Matrix
-adjacency_matrix_weights = {
+deprecated_adjacency_matrix_weights = {
     "Group": 0.5,
     "Same": 1,
     "Reaction": 0.33,
@@ -64,7 +52,7 @@ adjacency_matrix_weights = {
     "skipped": 0}
 
 # Coefficients values for the conductance_Matrix
-laplacian_matrix_weights = {
+deprecated_laplacian_matrix_weights = {
     "Group": 0.5,
     "Same": 100,
     "Reaction": 1,
@@ -99,7 +87,7 @@ deprecated_annotation_nodes_ptypes = [
 #  Eithere a dynamic registration (in which case Reactome importing is unskippable)
 #  > Or a recovery from the neo4j as "source:Reactome"
 #  Or user configuration file of what to import
-neo4j_names_dict = {
+to_deprecate_neo4j_names_dict = {
     'DNA': "DNA",
     'DNA Collection': "DNA_Collection",
     'RNA': "RNA",
@@ -125,7 +113,7 @@ neo4j_names_dict = {
     'COMPLEX': "COMPLEX",
 }
 
-full_list = list(neo4j_names_dict.keys())
+full_list = list(to_deprecate_neo4j_names_dict.keys())
 
 # CURRENTPASS: deprecate them
-reactome_reactions_types_list = ['TemplateReaction', 'Degradation', 'BiochemicalReaction']
+deprecated_reactome_reactions_types_list = ['TemplateReaction', 'Degradation', 'BiochemicalReaction']
