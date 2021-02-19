@@ -866,7 +866,7 @@ class GraphDBPipe(object):
         return all_nodes
 
     def parse_physical_entity_net(self, main_connex_only: bool = False) -> (Dict[int, Node],
-                                                            Dict[Tuple[int, int], Relationship]):
+                                                            List[Relationship]):
         """
         Runs and prints diagnostics on its own content
 
@@ -874,10 +874,10 @@ class GraphDBPipe(object):
         """
         log.info('Massive pull from the database, this might take a while, please wait')
         with self._driver.session() as session:
-            nodes_dict, rels_dict = session.write_transaction(self._parse_physical_entity_net,
+            nodes_dict, rels_list = session.write_transaction(self._parse_physical_entity_net,
                                                               main_connex_only)
         log.info('Pull suceeded')
-        return nodes_dict, rels_dict
+        return nodes_dict, rels_list
 
     @staticmethod
     def _parse_physical_entity_net(tx, main_connex_only):
@@ -903,10 +903,9 @@ class GraphDBPipe(object):
                 "OR r.parse_type='identity' OR r.parse_type='refines')"
                 "RETURN DISTINCT(r)")
 
-            rels_dict = {(_rel['r'].start_node.id, _rel['r'].end_node.id): _rel['r']
-                         for _rel in rels}
+            rels_list = [_rel['r']for _rel in rels]
 
-            return nodes_dict, rels_dict
+            return nodes_dict, rels_list
 
         else:
             nodes = tx.run(
@@ -927,10 +926,9 @@ class GraphDBPipe(object):
                 "OR r.parse_type='identity' OR r.parse_type='refines')"
                 "RETURN DISTINCT(r)")
 
-            rels_dict = {(_rel['r'].start_node.id, _rel['r'].end_node.id): _rel['r']
-                         for _rel in rels}
+            rels_list = [_rel['r']for _rel in rels]
 
-            return nodes_dict, rels_dict
+            return nodes_dict, rels_list
 
     def erase_node_properties(self, properties_list):
         """

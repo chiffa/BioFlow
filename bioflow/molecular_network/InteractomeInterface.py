@@ -179,9 +179,9 @@ class InteractomeInterface(object):
         """
         dumps self.adj_eigenvals and self.laplacian_matrix and writes them to csv
         """
-        write_to_csv(confs.eigen_VaMat, self.adj_eigenvals)
+        write_to_csv(confs.Dumps.eigen_VaMat, self.adj_eigenvals)
         write_to_csv(confs.Dumps.eigen_ConMat, self.cond_eigenvals)
-        dump_object(confs.val_eigen, (self.adj_eigenvals, self.adj_eigenvects))
+        dump_object(confs.Dumps.val_eigen, (self.adj_eigenvals, self.adj_eigenvects))
         dump_object(
             confs.Dumps.cond_eigen,
             (self.cond_eigenvals,
@@ -584,25 +584,30 @@ class InteractomeInterface(object):
         self.laplacian_matrix = (D.dot(self.laplacian_matrix)).dot(D)
 
 
-    def new_create_val_matrix(self, node_dict, edge_dict,
+    def new_create_val_matrix(self,
+                              node_dict: dict, edge_list: list,
                               adj_weight_policy_function=wp.default_adj_source_x_type_policy,
                               lapl_weight_policy_function=wp.default_lapl_source_x_type_policy):
         """
 
         :param node_dict:
-        :param edge_dict:
+        :param edge_list:
         :param adj_weight_policy_function:
         :param lapl_weight_policy_function:
         :return:
         """
-
-        adjacency_matrix = lil_matrix((len(node_dict), len(node_dict)), np.float)
-        laplacian_matrix = lil_matrix((len(node_dict), len(node_dict)), np.float)
+        log.info('debug: %dx%d' % (len(node_dict), len(node_dict)))
+        adjacency_matrix = lil_matrix((len(node_dict), len(node_dict)), dtype=np.float)
+        laplacian_matrix = lil_matrix((len(node_dict), len(node_dict)), dtype=np.float)
 
         node_id_2_mat_idx = {_id: _i for _i, _id in enumerate(node_dict.keys())}
         mat_idx_2_note_id = {_i: _id for _id, _i in node_id_2_mat_idx.items()}
 
-        for (from_id, to_id), rel_obj in edge_dict.itervalues():
+        for rel_obj in edge_list:
+            # we need to use ids because the node objects stored by the node are property-free
+            from_id = rel_obj.start_node.id
+            to_id = rel_obj.end_node.id
+
             from_node = node_dict[from_id]
             to_node = node_dict[to_id]
 
@@ -651,10 +656,10 @@ class InteractomeInterface(object):
         # giant component recomputation and writing
         DatabaseGraph.erase_node_properties(['main_connex'])
 
-        nodes_dict, edges_dict = DatabaseGraph.parse_physical_entity_net(main_connex_only=False)
+        all_nodes_dict, edges_list = DatabaseGraph.parse_physical_entity_net(main_connex_only=False)
 
-        all_nodes_dict, mat_idx_2_note_id, adjacency_matrix, _ = \
-            self.new_create_val_matrix(nodes_dict, edges_dict, wp.flat_policy, wp.flat_policy)
+        _, mat_idx_2_note_id, adjacency_matrix, _ = \
+            self.new_create_val_matrix(all_nodes_dict, edges_list, wp.flat_policy, wp.flat_policy)
 
         giant_component_mat_indexes = self.new_idxs_in_the_giant_component(adjacency_matrix)
 
@@ -664,10 +669,10 @@ class InteractomeInterface(object):
                                            [{'main_connex': 'True'}]*len(giant_component_db_ids))
 
         # only giant component parsing
-        nodes_dict, edges_dict = DatabaseGraph.parse_physical_entity_net(main_connex_only=True)
+        nodes_dict, edges_list = DatabaseGraph.parse_physical_entity_net(main_connex_only=True)
 
         node_id_2_mat_idx, mat_idx_2_note_id, adjacency_matrix, laplacian_matrix = \
-            self.new_create_val_matrix(nodes_dict, edges_dict)
+            self.new_create_val_matrix(nodes_dict, edges_list)
 
         self.adjacency_Matrix = adjacency_matrix  # TODO: capitalization
         self.laplacian_matrix = laplacian_matrix
@@ -683,16 +688,16 @@ class InteractomeInterface(object):
                                         for (_id, _node) in nodes_dict.items()}
         self.neo4j_id_2_legacy_id = {_id: _node['legacyID']
                                      for (_id, _node) in nodes_dict.items()}
-        self.neo4j_id_2_node_type = {_id: _node.labels[0]
+        self.neo4j_id_2_node_type = {_id: list(_node.labels)[0]
                                      for (_id, _node) in nodes_dict.items()}
         self.neo4j_id_2_localization = {_id: _node.get('localization', 'NA')
                                         for (_id, _node) in nodes_dict.items()}
         self.reached_uniprots_neo4j_id_list = [_id
                                                for (_id, _node) in nodes_dict.items()
-                                               if _node.labels[0] == 'UNIPROT']
+                                               if 'UNIPROT' in _node.labels]
         self.all_uniprots_neo4j_id_list = [_id
                                            for (_id, _node) in all_nodes_dict.items()
-                                           if _node.labels[0] == 'UNIPROT']
+                                           if 'UNIPROT' in _node.labels]
         self.deprecated_uniprot_attachments = {}
         self.deprecated_UP2Chrom = {}
         self.deprecated_chromosomes_2_uniprot = {}
@@ -700,9 +705,9 @@ class InteractomeInterface(object):
                                                      for _id in self.reached_uniprots_neo4j_id_list]
         self.entry_point_uniprots_neo4j_ids = []  #REFACTOR: this needs not to be dumped
 
-        self.dump_maps() # DONE
-        self.dump_matrices() # DONE
-        self.dump_eigen() # DONE
+        self.dump_maps()  # DONE
+        self.dump_matrices()  # DONE
+        self.dump_eigen()  # DONE
 
 
     def create_val_matrix(self):

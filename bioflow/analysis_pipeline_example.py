@@ -90,7 +90,7 @@ if __name__ == "__main__":
     chromosomes_directory = "//localhome//kucharav//Projects//BioFlow paper//yeast_chr_genes"
     background_file = os.path.join(chromosomes_directory, "all_genes.tab")
 
-    rebuild_the_laplacians(all_detectable_genes=background_bulbs_ids)
+    # rebuild_the_laplacians(all_detectable_genes=background_bulbs_ids)
 
     # perform the interactome analysis
 

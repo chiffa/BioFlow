@@ -105,33 +105,33 @@ class Dumps(object):
         makedirs(prefix)
 
     ###################################
-    matrix_LS = os.path.join(prefix, 'dump5', postfix)
-    interactome_maps = os.path.join(prefix, 'dump2', postfix)
+    matrix_LS = os.path.join(prefix, 'dump5.dump')
+    interactome_maps = os.path.join(prefix, 'dump2.dump')
     eigen_VaMat = os.path.join(prefix, 'eigen_valmat.csv')
     eigen_ConMat = os.path.join(prefix, 'eigen_conmat.csv')
-    val_eigen = os.path.join(prefix, 'pickleDump', postfix)
-    cond_eigen = os.path.join(prefix, 'pickleDump_0_5', postfix)
-    interactome_adjacency_matrix = os.path.join(prefix, 'pickleDump3', postfix)
-    interactome_laplacian_matrix = os.path.join(prefix, 'pickleDump4', postfix)
-    UniP_att = os.path.join(prefix, 'UP_Attach', postfix)
-    Main_Connex_group = os.path.join(prefix, 'Connex_group', postfix)
-    Forbidden_IDs = os.path.join(prefix, 'ForbiddenIDs', postfix)
+    val_eigen = os.path.join(prefix, 'pickleDump.dump')
+    cond_eigen = os.path.join(prefix, 'pickleDump_0_5.dump')
+    interactome_adjacency_matrix = os.path.join(prefix, 'pickleDump3.dump')
+    interactome_laplacian_matrix = os.path.join(prefix, 'pickleDump4.dump')
+    UniP_att = os.path.join(prefix, 'UP_Attach.dump')
+    Main_Connex_group = os.path.join(prefix, 'Connex_group.dump')
+    Forbidden_IDs = os.path.join(prefix, 'ForbiddenIDs.dump')
     Adj_degree = os.path.join(prefix, 'Adjacency_degree.csv')
-    Silverality = os.path.join(prefix, 'Silverality', postfix)
-    InfoArray = os.path.join(prefix, 'sample_array', postfix)
-    Interactome_Analysis_memoized = os.path.join(prefix, 'Interactome_memoization', postfix)
+    Silverality = os.path.join(prefix, 'Silverality.dump')
+    InfoArray = os.path.join(prefix, 'sample_array.dump')
+    Interactome_Analysis_memoized = os.path.join(prefix, 'Interactome_memoization.dump')
 
-    Up_dict_dump = os.path.join(prefix, 'Uniprot_dict', postfix)
-    GO_dump = os.path.join(prefix, 'GO', postfix)
-    GO_builder_stat = os.path.join(prefix, 'GO_builder_stats', postfix)
-    GO_Mats = os.path.join(prefix, 'GO_mats', postfix)
-    GO_Infos = os.path.join(prefix, 'GO_Infos', postfix)
+    Up_dict_dump = os.path.join(prefix, 'Uniprot_dict.dump')
+    GO_dump = os.path.join(prefix, 'GO.dump')
+    GO_builder_stat = os.path.join(prefix, 'GO_builder_stats.dump')
+    GO_Mats = os.path.join(prefix, 'GO_mats.dump')
+    GO_Infos = os.path.join(prefix, 'GO_Infos.dump')
     GDF_debug = os.path.join(prefix, 'GDF_debug.gdf')
-    GO_Inflated = os.path.join(prefix, 'GO_inflated', postfix)
-    GO_Analysis_memoized = os.path.join(prefix, 'GO_memoization', postfix)
-    GO_Indep_Linset = os.path.join(prefix, 'GO_Indep_linset', postfix)
+    GO_Inflated = os.path.join(prefix, 'GO_inflated.dump')
+    GO_Analysis_memoized = os.path.join(prefix, 'GO_memoization.dump')
+    GO_Indep_Linset = os.path.join(prefix, 'GO_Indep_linset.dump')
 
-    RNA_seq_counts_compare = os.path.join(prefix, 'RNA_seq_compare', postfix)
+    RNA_seq_counts_compare = os.path.join(prefix, 'RNA_seq_compare.dump')
 
     # those are temporary storage of cast sets of IDs and backgrounds
     analysis_set_display_names = prefix + '/current_analysis_set_name_maps.txt'
@@ -176,6 +176,7 @@ laplacian_default_type_edge_weighting = {
     "is_interacting": 1,
     "is_weakly_interacting": 0.5,
     "is_likely_same": 1,
+    "is_able_to_modify": 1,
 }
 
 laplacian_default_source_edge_weighting = defaultdict(lambda: 1)
@@ -192,6 +193,7 @@ adjacency_default_type_edge_weighting = {
     "is_interacting": 0.33,
     "is_weakly_interacting": 0.15,
     "is_likely_same": 0.1,
+    "is_able_to_modify": 0.1,
 }
 
 adjacecency_default_source_edge_weighting = defaultdict(lambda: 1)
