@@ -892,6 +892,7 @@ class InteractomeInterface(object):
         else:
             self.connected_uniprots = set(self.all_uniprots_neo4j_id_list)
 
+        # CURRENTPASS: this is stupid, we can just do an intersection with reached_uniprots
         self.connected_uniprots = list(self.connected_uniprots.intersection(self.neo4j_id_2_matrix_index.keys()))
 
 
@@ -1012,7 +1013,7 @@ class InteractomeInterface(object):
                      (set(uniprots) - set(self.neo4j_id_2_matrix_index.keys())))
 
         self.entry_point_uniprots_neo4j_ids = \
-            [uniprot for uniprot in uniprots if uniprot in list(self.neo4j_id_2_matrix_index.keys())]
+            [uniprot for uniprot in uniprots if uniprot in self.neo4j_id_2_matrix_index.keys()]
 
     # TODO: extract as the element performing a computation of the network
     # critical control parameters:

@@ -434,6 +434,8 @@ def auto_analyze(source_list: List[List[int]],
         log.debug(" e_p_u_b_i length after UP_source was set: %s",
                   len(interactome_interface.entry_point_uniprots_neo4j_ids))
 
+        # REFACTOR: this is the reason we were passing the interactome interface as argument
+        #  to sampler spawner
         if background_list:
             interactome_interface.background = background_list
             interactome_interface.connected_uniprots = list(
@@ -458,7 +460,8 @@ def auto_analyze(source_list: List[List[int]],
                     processors,
                     [len(interactome_interface.entry_point_uniprots_neo4j_ids)],
                     [desired_depth],
-                    interactome_interface_instance=None)
+                    interactome_interface_instance=interactome_interface)
+                    # TRACING: passing background set information through interactome_interface
 
             interactome_interface.compute_current_and_potentials()
 
@@ -488,7 +491,8 @@ def auto_analyze(source_list: List[List[int]],
                                    [len(interactome_interface.entry_point_uniprots_neo4j_ids)],
                                    [desired_depth],
                                    sparse_rounds=sampling_depth,
-                                   interactome_interface_instance=None)
+                                   interactome_interface_instance=interactome_interface)
+                                   # TRACING: passing background set information through int.interf.
 
             log.info('real run characteristics: sys_hash: %s, size: %s, sparse_rounds: %s' % (interactome_interface.md5_hash(),
                                                                                               len(interactome_interface.entry_point_uniprots_neo4j_ids), sampling_depth))

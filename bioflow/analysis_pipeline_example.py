@@ -127,18 +127,18 @@ if __name__ == "__main__":
             #     background_set = True
 
             # # perform the interactome analysis
-            interactome_analysis([hits_ids[:20]],
+            interactome_analysis([hits_ids[:40]],
                                  ['chr_%s' % filename[:-4]],
-                                 desired_depth=1,
+                                 desired_depth=20,
                                  processors=1,
                                  background_list=background_bulbs_ids,
                                  skip_sampling=False
                                  )
 
             # # perform the knowledge analysis
-            knowledge_analysis([hits_ids[:20]],
+            knowledge_analysis([hits_ids[:40]],
                                ['chr_%s' % filename[:-4]],
-                               desired_depth=1,
+                               desired_depth=20,
                                processors=1,
                                param_set=paramset_with_background,
                                skip_sampling=False,
