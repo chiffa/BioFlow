@@ -695,7 +695,7 @@ class InteractomeInterface(object):
         self.reached_uniprots_neo4j_id_list = [_id
                                                for (_id, _node) in nodes_dict.items()
                                                if 'UNIPROT' in _node.labels]
-        self.all_uniprots_neo4j_id_list = [_id for _id in all_uniprot_nodes]
+        self.all_uniprots_neo4j_id_list = [_node.id for _node in all_uniprot_nodes]
         self.deprecated_uniprot_attachments = {}
         self.deprecated_UP2Chrom = {}
         self.deprecated_chromosomes_2_uniprot = {}

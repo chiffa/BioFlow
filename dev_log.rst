@@ -118,6 +118,17 @@ Current rewriting logic would involve:
 
 
 
+ - TODO: perform the modification of the background selection and registration logic.
+        TODO: First, it doesn't have to be integrated between the AnnotationAccess interface and
+            ReactomeInterface
+        TODO: Second, we can project the background into what can be sampled instead of
+            re-defining the root of the sampling altogether.
+        TODO: Background is no more a parameter supplied upon constructions, but only for the
+            sampling, where it still gets saved with the sampling code.
+        TODO: the transformation within the sampling is done
+
+
+
  - NOPE: [FEATURE] [USABILITY] upon organism insertion and retrieval, use the 'orgnism' flag on the
         proteins and relationships to allow for simultaneous loading of several organisms.
         - Superseeded by the better way of doing it through multiple databases in a single neo4j
@@ -270,6 +281,11 @@ Current refactoring:
 
  - TODO: [FEATURE]:
     - In reactome, parse the "Evidence" and "Source" tags in order to refine the laplacian weighting
+
+
+<Weighting of the nodes>:
+    TODO: Define pairs in the sampling with a "charge" parameter if the parameters supplied by the
+
 
 <Environment registration>
 
