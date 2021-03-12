@@ -4,7 +4,35 @@ TODOs for the project in the future:
 On the table:
 -------------
 
+ - TODO: [SHOW-STOPPER]: debug why GO terms load as the same term
+
 <node weights/context forwarding>
+
+ - TODO: change the way the connections between GOs and UPs are loaded into the KnowledgeInterface
+
+ - TODO: eliminate InitSet saving in KnowledgeInterface and Interactome interface
+    - TODO: they become _background
+    - TODO: _background can be set on init and is intersected with accessible nodes (that are saved)
+        - on _init
+        - on _set_sampling_background
+
+ - TODO: perform the modification of the background selection and registration logic.
+        TODO: First, it doesn't have to be integrated between the AnnotationAccess interface and
+            ReactomeInterface
+        TODO: Second, we can project the background into what can be sampled instead of
+            re-defining the root of the sampling altogether.
+        TODO: Background is no more a parameter supplied upon constructions, but only for the
+            sampling, where it still gets saved with the sampling code.
+        TODO: the transformation within the sampling is done
+
+ - TODO: deal with the parse_type inconsistencies (likely remainders of the previous insertions
+that was off)
+    - TODO: (physical_entity)-refines-(annotation)
+    - TODO: (annotation)-refines-(annotation)
+    - TODO: (annotation)-annotates-(annotation)
+    - TODO: is_next_in_pathway still has custom_from and custom_to
+
+
 
  - DONE: [REFACTOR] The policy for the building of a laplacian relies on neo4j crawl (2 steps)
     and the matrix build:
@@ -24,12 +52,6 @@ On the table:
     - DONE: write the giant component
     - DONE: re-parse the giant component only
     - DONE: re-convert the graph into a laplacian
-
- - TODO: deal with the parse_type inconsistencies:
-    - TODO: (physical_entity)-refines-(annotation)
-    - TODO: (annotation)-refines-(annotation)
-    - TODO: (annotation)-annotates-(annotation)
-    - TODO: is_next_in_pathway still has custom_from and custom_to
 
  - TODO: ax the deprecated code and class variables in InteractomeInterface
 
@@ -115,18 +137,6 @@ Current rewriting logic would involve:
     - DONE: change the weight calculation that will be using the link properties that were recorded
         - use the properties of the link and the node pair to calculate the weights for both
         matrices
-
-
-
- - TODO: perform the modification of the background selection and registration logic.
-        TODO: First, it doesn't have to be integrated between the AnnotationAccess interface and
-            ReactomeInterface
-        TODO: Second, we can project the background into what can be sampled instead of
-            re-defining the root of the sampling altogether.
-        TODO: Background is no more a parameter supplied upon constructions, but only for the
-            sampling, where it still gets saved with the sampling code.
-        TODO: the transformation within the sampling is done
-
 
 
  - NOPE: [FEATURE] [USABILITY] upon organism insertion and retrieval, use the 'orgnism' flag on the

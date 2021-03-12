@@ -87,7 +87,7 @@ class GeneOntologyInterface(object):
         self.partial_time = time()
 
         self.UPs_without_GO = set()
-        self.UP2GO_Dict = {}
+        self.UP2GO_Dict = defaultdict(list)
         self.GO2UP = defaultdict(list)
         self.SeedSet = set()
         self.All_GOs = []
@@ -272,8 +272,10 @@ class GeneOntologyInterface(object):
         self.Indep_Lapl = undump_object(confs.Dumps.GO_Indep_Linset)
 
     def full_rebuild(self):
-        self.get_gene_ontology_access()
-        self.get_gene_ontology_structure()
+        #TODO: switch to new
+        self.old_get_gene_ontology_access()
+        self.old_get_gene_ontology_structure()
+
         self.get_go_adjacency_and_laplacian()
         self.get_go_reach()
         if self.ultraspec_cleaned:
@@ -330,7 +332,96 @@ class GeneOntologyInterface(object):
 
         self.connected_uniprots = list(set(self.InitSet) - set(self.UPs_without_GO))
 
-    def get_gene_ontology_access(self):
+    def new_annotome_access_and_structure(self, ontology_source=('Gene Ontology')):
+        """
+        Loads the relationship betweenm the UNIPROTS and annotome as one giant dictionary,
+        then between the GO terms themselves
+
+        :param ontology_source:
+        :return:
+        """
+        # self.InitSet here is irrelevant
+        # self.SeedSet becomes deprecated as well
+        # self._GOUpTypes dissapear
+        # self._GO_Reg_Types disappear as we;;
+
+        all_nodes_dict, edges_list = DatabaseGraph.parse_knowledge_entity_net()
+        term_counter = 0
+
+        self.Reachable_nodes_dict = defaultdict(lambda: ([], [], [], []))
+        # basically (pure up, out reg, pure down, in_reg)
+
+
+        for node_id, node_obj in all_nodes_dict.items():
+            # uniprot parse
+            if list(node_obj.labels)[0] == 'UNIPROT':
+                self.UP_Names[uniprot_neo4j_id] = [up_node['legacyID'],
+                                                   up_node['displayName']]
+            # ontology parse
+            else:
+                if ontology_source \
+                        and node_obj['source'] not in ontology_source:
+                    continue
+                if self.go_namespace_filter \
+                        and node_obj['Namespace'] not in self.go_namespace_filter:
+                    continue
+
+                self.GO_Names[node_id] = node_obj['displayName']
+                self.GO_Legacy_IDs[node_id] = node_obj['legacyID']
+                self.rev_GO_IDs[node_obj['legacyID']] = node_id
+
+                self.All_GOs.append(node_id)
+                self.Num2GO[term_counter] = node_id
+                self.GO2Num[node_id] = term_counter
+
+                term_counter += 1
+
+        for rel_obj in edges_list:
+            # link uniprots with GO annotations
+            if ontology_source and rel_obj['source'] not in ontology_source:
+                continue
+
+            start_id = rel_obj.start_node.id
+            end_id = rel_obj.end_node.id
+
+            # Uniprot will always be first.
+            if self.go_namespace_filter and \
+                all_nodes_dict[end_id]['Namespace'] not in self.go_namespace_filter:
+                continue
+
+            # however, both annotations need to be of correct namespace.
+            if self.go_namespace_filter and all_nodes_dict[start_id]['parse_type'] == 'annotation'\
+                and all_nodes_dict[start_id]['Namespace'] not in self.go_namespace_filter:
+                continue
+
+            if rel_obj['parse_type'] == 'annotates':
+                self.GO2UP[end_id].append(start_id)  # because uniprots are first
+                self.UP2GO_Dict[start_id].append(end_id)
+
+            # link annotations between them:
+            else:  # el_obj['parse_type'] == 'annotation_relationship':
+                # for that we actually will need to build a more complicated
+
+                if rel_obj.type in self._GOUpTypes:
+                    self.Reachable_nodes_dict[start_id][0].add(end_id)
+                    self.Reachable_nodes_dict[end_id][2].add(start_id)
+                elif rel_obj.type in self._GORegTypes:
+                    self.Reachable_nodes_dict[start_id][1].add(end_id)
+                    self.Reachable_nodes_dict[end_id][3].add(start_id)
+
+                pass
+
+        for key in self.Reachable_nodes_dict.keys():
+            payload = self.Reachable_nodes_dict[key]
+            self.Reachable_nodes_dict[key] = (list(payload[0]),
+                                              list(payload[1]),
+                                              list(payload[2]),
+                                              list(payload[3]))
+            # Current pass: reachable_node_dict : perform set transformation into lists and to dict.
+
+            pass
+
+    def old_get_gene_ontology_access(self, ontology_source='Gene Ontology'):
         """
         Loads all of the relations between the UNIPROTs and GOs as one giant dictionary
 
@@ -344,6 +435,7 @@ class GeneOntologyInterface(object):
             up_node = DatabaseGraph.get(uniprot_neo4j_id)
             self.UP_Names[uniprot_neo4j_id] = [up_node['legacyID'],
                                                up_node['displayName']]
+
             attached_go_nodes = DatabaseGraph.get_linked(uniprot_neo4j_id,
                                                          link_type='is_go_annotation')
 
@@ -358,7 +450,7 @@ class GeneOntologyInterface(object):
                 uniprots_without_gene_ontology_terms += 1
                 log.debug("UP without GO was found. UP bulbs_id: %s, \t name: %s",
                           uniprot_neo4j_id, self.UP_Names[uniprot_neo4j_id])
-                self.UPs_without_GO.add(uniprot_neo4j_id)
+                self.UPs_without_GO.add(uniprot_neo4j_id) # CURRENTPASS: eliminate
 
             else:
                 self.UP2GO_Dict[uniprot_neo4j_id] = copy(uniprot_specific_gos)
@@ -367,7 +459,7 @@ class GeneOntologyInterface(object):
                  uniprots_without_gene_ontology_terms, len(self.InitSet))
 
     # TODO: REFACTORING. Method is excessively complex.
-    def get_gene_ontology_structure(self):
+    def old_get_gene_ontology_structure(self):
         """
         Loads all of the relations between the GOs that are generalisation of the seedList
          GOs and that are withing the types specified in go_namespace_filter
@@ -386,9 +478,9 @@ class GeneOntologyInterface(object):
             local_up_regulation_list = []
             local_down_regulation_list = []
             gene_ontology_node = DatabaseGraph.get(node_id, 'GOTerm')
-            self.GO_Names[node_id] = str(gene_ontology_node['displayName'])
-            self.GO_Legacy_IDs[node_id] = str(gene_ontology_node['legacyID'])
-            self.rev_GO_IDs[gene_ontology_node['legacyID']] = node_id
+            self.GO_Names[node_id] = str(gene_ontology_node['displayName'])  #TRACING: DONE
+            self.GO_Legacy_IDs[node_id] = str(gene_ontology_node['legacyID'])  #TRACING: DONE
+            self.rev_GO_IDs[gene_ontology_node['legacyID']] = node_id  #TRACING: DONE
 
             for relation_type in chain(self._GOUpTypes, self._GORegTypes):
                 related_go_nodes = DatabaseGraph.get_linked(node_id, 'out', relation_type)
@@ -403,9 +495,9 @@ class GeneOntologyInterface(object):
                     if node_bulbs_id not in visited_set:
                         seeds_list.append(node_bulbs_id)
                     if relation_type in self._GOUpTypes:
-                        local_uniprot_list.append(node_bulbs_id)
+                        local_uniprot_list.append(node_bulbs_id)  # TRACING: 0
                     else:
-                        local_regulation_list.append(node_bulbs_id)
+                        local_regulation_list.append(node_bulbs_id)  # TRACING: 1
 
                 rev_generator = DatabaseGraph.get_linked(node_id, 'in', relation_type)
 
@@ -416,19 +508,19 @@ class GeneOntologyInterface(object):
                         continue
                     node_bulbs_id = get_db_id(go_node)
                     if relation_type in self._GOUpTypes:
-                        local_down_regulation_list.append(node_bulbs_id)
+                        local_down_regulation_list.append(node_bulbs_id)  # TRACING: 2
                     else:
-                        local_up_regulation_list.append(node_bulbs_id)
+                        local_up_regulation_list.append(node_bulbs_id)  # TRACING: 3
 
-            self.Reachable_nodes_dict[node_id] = (
-                list(set(local_uniprot_list)),
-                list(set(local_regulation_list)),
-                list(set(local_down_regulation_list)),
-                list(set(local_up_regulation_list)))
+            self.Reachable_nodes_dict[node_id] = (  # TRACING: DONE
+                list(set(local_uniprot_list)),  # this is not uniprots, just the more general GOs
+                list(set(local_regulation_list)), # this is not local, its GOs term regulates out
+                list(set(local_down_regulation_list)), # this is not down, it's GO term
+                list(set(local_up_regulation_list))) # this is not up, it's GO term regulates in
 
-        self.All_GOs = list(visited_set)
-        self.Num2GO = dict((i, val) for i, val in enumerate(self.All_GOs))
-        self.GO2Num = dict((val, i) for i, val in enumerate(self.All_GOs))
+        self.All_GOs = list(visited_set)  #TRACING: DONE
+        self.Num2GO = dict((i, val) for i, val in enumerate(self.All_GOs))  #TRACING: DONE
+        self.GO2Num = dict((val, i) for i, val in enumerate(self.All_GOs))  #TRACING: DONE
 
     def get_go_adjacency_and_laplacian(self, include_reg=True):
         """

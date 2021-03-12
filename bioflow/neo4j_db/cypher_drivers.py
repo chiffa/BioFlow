@@ -930,6 +930,42 @@ class GraphDBPipe(object):
 
             return nodes_dict, rels_list
 
+    def parse_knowledge_entity_net(self) -> (Dict[int, Node], List[Relationship]):
+        """
+        Runs and prints diagnostics on its own content
+
+        :return:
+        """
+        log.info('Massive pull from the database, this might take a while, please wait')
+        with self._driver.session() as session:
+            nodes_dict, rels_list = session.write_transaction(self._parse_knowledge_entity_net)
+        log.info('Pull suceeded')
+        return nodes_dict, rels_list
+
+    @staticmethod
+    def _parse_knowledge_entity_net(tx):
+
+
+        # This is directional. If matched, uniprot or physical entity will always be first.
+        nodes = tx.run(
+            "MATCH (N)-[r]-(M) "
+            "WHERE ((N.parse_type='physical_entity' OR N.parse_type='annotation') "
+            "AND M.parse_type='annotation') "
+            "RETURN DISTINCT(N)")
+
+        nodes_dict = {_node['N'].id: _node['N'] for _node in nodes}
+
+        rels = tx.run(
+            "MATCH (N)-[r]->(M) "
+            "WHERE ((N.parse_type='physical_entity' OR N.parse_type='annotation') "
+            "AND M.parse_type='annotation') "
+            "RETURN DISTINCT(r)")
+
+        rels_list = [_rel['r']for _rel in rels]
+
+        return nodes_dict, rels_list
+
+
     def erase_node_properties(self, properties_list):
         """
 
