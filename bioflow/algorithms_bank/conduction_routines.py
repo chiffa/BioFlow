@@ -360,7 +360,7 @@ def master_edge_current(conductivity_laplacian, index_list,
 
     if share_solver and not switch_to_splu:
         importlib.reload(chmd)
-        log.info('Chmd reloaded')  # Correction tentative did not work.
+        log.debug('Chmd reloaded')  # Correction tentative did not work.
         shared_solver = chmd.cholesky(conductivity_laplacian, line_loss)
     else:
         shared_solver = None

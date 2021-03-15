@@ -35,14 +35,17 @@ def import_gene_ontology(go_terms, go_terms_structure):
         if i*20 % go_terms_number < 20:
             log.info('GO terms import: %s %%',
                      "{0:.2f}".format(float(i) / float(go_terms_number) * 100))
-        GO_term_memoization_dict[GO_Term] = DatabaseGraph.create(to_deprecate_neo4j_names_dict['GO Term'],
-                                                                 {'legacyID': term['id'],
-                              'Name': term['name'],
-                              'displayName': term['name'],
-                              'Namespace': term['namespace'],
-                              'Definition': term['def'],
-                              'source': 'Gene Ontology',
-                              'parse_type': 'annotation'})
+
+        GO_term_memoization_dict[GO_Term] = DatabaseGraph.create(
+            to_deprecate_neo4j_names_dict['GO Term'],
+            {'legacyID': term['id'],
+             'Name': term['name'],
+             'displayName': term['name'],
+             'Namespace': term['namespace'],
+             'Definition': term['def'],
+             'source': 'Gene Ontology',
+             'parse_type': 'annotation'}
+        )
 
     # Create the structure between them:
     go_links_number = len(go_terms_structure)
@@ -54,56 +57,58 @@ def import_gene_ontology(go_terms, go_terms_structure):
         if i*20 % go_links_number < 20:
             log.info('GO terms linking: %s %%',
                      "{0:.2f}".format(float(i) / float(go_links_number) * 100))
-        go_term_1 = GO_term_memoization_dict[relation[0]]
-        go_term_2 = GO_term_memoization_dict[relation[2]]
+
+        go_term_obj_1 = GO_term_memoization_dict[relation[0]]
+        go_term_obj_2 = GO_term_memoization_dict[relation[2]]
+
         go_relation_type = relation[1]
 
         if go_relation_type == 'is_a':
-            DatabaseGraph.link(get_db_id(go_term_1),
-                               get_db_id(go_term_2),
+            DatabaseGraph.link(get_db_id(go_term_obj_1),
+                               get_db_id(go_term_obj_2),
                                'is_a_go',
                                {'source': 'Gene Ontology',
                                 'parse_type': 'annotation_relationship'})
 
         if go_relation_type == 'part_of':
-            DatabaseGraph.link(get_db_id(go_term_1),
-                               get_db_id(go_term_2),
+            DatabaseGraph.link(get_db_id(go_term_obj_1),
+                               get_db_id(go_term_obj_2),
                                'is_part_of_go',
                                {'source': 'Gene Ontology',
                                 'parse_type': 'annotation_relationship'})
 
         if 'regul' in go_relation_type:
             if go_relation_type == 'positively_regulates':
-                DatabaseGraph.link(get_db_id(go_term_1),
-                                   get_db_id(go_term_2),
+                DatabaseGraph.link(get_db_id(go_term_obj_1),
+                                   get_db_id(go_term_obj_2),
                                    'is_regulant',
                                    {'source': 'Gene Ontology',
                                     'parse_type': 'annotation_relationship',
                                     'source_controlType': 'ACTIVATES',
-                                    # 'ID': str('GO' + go_term_1['legacyID'] +
-                                    #           go_term_2['legacyID'])
+                                    # 'ID': str('GO' + go_term_obj_1['legacyID'] +
+                                    #           go_term_obj_2['legacyID'])
                                     })
 
             if go_relation_type == 'negatively_regulates':
-                DatabaseGraph.link(get_db_id(go_term_1),
-                                   get_db_id(go_term_2),
+                DatabaseGraph.link(get_db_id(go_term_obj_1),
+                                   get_db_id(go_term_obj_2),
                                    'is_regulant',
                                    {'source': 'Gene Ontology',
                                     'parse_type': 'annotation_relationship',
                                     'source_controlType': 'INHIBITS',
-                                    # 'ID': str('GO' + go_term_1['legacyID'] +
-                                    #           go_term_2['legacyID'])
+                                    # 'ID': str('GO' + go_term_obj_1['legacyID'] +
+                                    #           go_term_obj_2['legacyID'])
                                     })
 
             else:
-                DatabaseGraph.link(get_db_id(go_term_1),
-                                   get_db_id(go_term_2),
+                DatabaseGraph.link(get_db_id(go_term_obj_1),
+                                   get_db_id(go_term_obj_2),
                                    'is_regulant',
                                    {'source': 'Gene Ontology',
                                     'parse_type': 'annotation_relationship',
                                     'source_controlType': 'UNKNOWN',
-                                    # 'ID': str('GO' + go_term_1['legacyID'] +
-                                    #           go_term_2['legacyID'])
+                                    # 'ID': str('GO' + go_term_obj_1['legacyID'] +
+                                    #           go_term_obj_2['legacyID'])
                                     })
 
 

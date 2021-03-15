@@ -596,7 +596,7 @@ class InteractomeInterface(object):
         :param lapl_weight_policy_function:
         :return:
         """
-        log.info('debug: %dx%d' % (len(node_dict), len(node_dict)))
+        log.debug('new val matrix: %dx%d' % (len(node_dict), len(node_dict)))
         adjacency_matrix = lil_matrix((len(node_dict), len(node_dict)), dtype=np.float)
         laplacian_matrix = lil_matrix((len(node_dict), len(node_dict)), dtype=np.float)
 
