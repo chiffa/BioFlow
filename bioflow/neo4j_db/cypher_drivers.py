@@ -890,9 +890,11 @@ class GraphDBPipe(object):
                 "AND NOT (EXISTS(N.forbidden) OR EXISTS(M.forbidden)) "
                 "AND (r.parse_type='physical_entity_molecular_interaction' "
                 "OR r.parse_type='identity' OR r.parse_type='refines')"
-                "RETURN DISTINCT(N)")
+                "WITH [N, M] as tl "
+                "UNWIND tl as n "
+                "RETURN DISTINCT(n)")
 
-            nodes_dict = {_node['N'].id: _node['N'] for _node in nodes}
+            nodes_dict = {_node['n'].id: _node['n'] for _node in nodes}
 
             rels = tx.run(
                 "MATCH (N)-[r]-(M) "
@@ -914,9 +916,11 @@ class GraphDBPipe(object):
                 "AND NOT (EXISTS(N.forbidden) OR EXISTS(M.forbidden)) "
                 "AND (r.parse_type='physical_entity_molecular_interaction' "
                 "OR r.parse_type='identity' OR r.parse_type='refines')"
-                "RETURN DISTINCT(N)")
+                "WITH [N, M] as tl "
+                "UNWIND tl as n "
+                "RETURN DISTINCT(n)")
 
-            nodes_dict = {_node['N'].id: _node['N'] for _node in nodes}
+            nodes_dict = {_node['n'].id: _node['n'] for _node in nodes}
 
             rels = tx.run(
                 "MATCH (N)-[r]-(M) "
@@ -945,15 +949,16 @@ class GraphDBPipe(object):
     @staticmethod
     def _parse_knowledge_entity_net(tx):
 
-
         # This is directional. If matched, uniprot or physical entity will always be first.
         nodes = tx.run(
             "MATCH (N)-[r]-(M) "
             "WHERE ((N.parse_type='physical_entity' OR N.parse_type='annotation') "
             "AND M.parse_type='annotation') "
-            "RETURN DISTINCT(N)")
+            "WITH [N, M] as tl "
+            "UNWIND tl as n "
+            "RETURN DISTINCT(n)")
 
-        nodes_dict = {_node['N'].id: _node['N'] for _node in nodes}
+        nodes_dict = {_node['n'].id: _node['n'] for _node in nodes}
 
         rels = tx.run(
             "MATCH (N)-[r]->(M) "
