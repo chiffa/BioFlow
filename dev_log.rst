@@ -3,12 +3,7 @@ TODOs for the project in the future:
 
 On the table:
 -------------
-
- - TODO: [SHOW-STOPPER]: debug why GO terms load as the same term
-
 <node weights/context forwarding>
-
- - TODO: change the way the connections between GOs and UPs are loaded into the KnowledgeInterface
 
  - TODO: eliminate InitSet saving in KnowledgeInterface and Interactome interface
     - TODO: they become _background
@@ -17,11 +12,11 @@ On the table:
         - on _set_sampling_background
 
  - TODO: perform the modification of the background selection and registration logic.
-        TODO: First, it doesn't have to be integrated between the AnnotationAccess interface and
+        DONE: First, it doesn't have to be integrated between the AnnotationAccess interface and
             ReactomeInterface
         TODO: Second, we can project the background into what can be sampled instead of
             re-defining the root of the sampling altogether.
-        TODO: Background is no more a parameter supplied upon constructions, but only for the
+        DONE: Background is no more a parameter supplied upon constructions, but only for the
             sampling, where it still gets saved with the sampling code.
         TODO: the transformation within the sampling is done
 
@@ -33,6 +28,7 @@ that was off)
     - TODO: is_next_in_pathway still has custom_from and custom_to
 
 
+ - DONE: change the way the connections between GOs and UPs are loaded into the KnowledgeInterface
 
  - DONE: [REFACTOR] The policy for the building of a laplacian relies on neo4j crawl (2 steps)
     and the matrix build:
@@ -196,20 +192,6 @@ trust we have in the existence of a link.
         - REQUIRE: the current weighting strategy will be encoded as a function using node types
             (or rather sources).
 
-<pretty progress>
-
- - TODO: [USABILITY] Improve the progress reporting
-        Move the INFO to a progress bar. The problem is that we are working with multiple threads in
-        async environment. This can be mitigated by using the `aptbar` library
-    - TODO: single sample loop to aptbar progress monitoring
-    - TODO: outer loop (X samples) to aptbar progress monitoring
-    - TODO: move parameters that are currently being printed in the main loop in INFO channel to
-        DEBUG channel
-    - TODO: provide progress bar binding for the importers as well
-
- - TODO: [USABILITY]: fold the current verbose state into a `-v/--vebose` argument
-
-
 <Documentation>
 
  - TODO: [DOC] Document the proper boot cycle of the application
@@ -289,12 +271,29 @@ Current refactoring:
     - TODO: put a type straight-jacket
     - TODO: move the `internet_io` to the `data_stores` package
 
- - TODO: [FEATURE]:
-    - In reactome, parse the "Evidence" and "Source" tags in order to refine the laplacian weighting
+ - DONE: [FEATURE]: (done by defining a function that can be plugged to process any tags in neo4j)
+    - In Reactome, parse the "Evidence" and "Source" tags in order to refine the laplacian weighting
 
+
+<Sanify BioKnowledge>
+
+ - TODO: Develop a pluggable Informativity weighting function for the matrix assembly
+
+ - TODO: Allow for a score for a physical entity term attachment to the ontology system
+    - eg. GO attachment comes from UNIPROT
+    - reactome comes from reactome and can be assigned a linkage score.
+
+ - TODO: inline the reach computation to remove excessively complex function
 
 <Weighting of the nodes>:
-    TODO: Define pairs in the sampling with a "charge" parameter if the parameters supplied by the
+ - TODO: Define pairs in the sampling with a "charge" parameter if the parameters supplied by the
+    - The problem is that there is no good rule for performing a weight sampling, given that there
+        are now two distribution in the interplay
+    - We however cannot ignore the problem, because we discretize a continuous distribution -
+        something that is a VERY BAD PRACTICE (TM)
+    - Basically, the problem is how to perform statistical tests to make sure not to make
+        overconfident calls.
+        => degree vs weight - based sampling?
 
 
 <Environment registration>
@@ -335,6 +334,19 @@ Current refactoring:
 
  - ????: [USABILITY] add the Laplacian nonzero elements to the shape one (????)
 
+
+<pretty progress>
+
+ - TODO: [USABILITY] Improve the progress reporting
+        Move the INFO to a progress bar. The problem is that we are working with multiple threads in
+        async environment. This can be mitigated by using the `aptbar` library
+    - TODO: single sample loop to aptbar progress monitoring
+    - TODO: outer loop (X samples) to aptbar progress monitoring
+    - TODO: move parameters that are currently being printed in the main loop in INFO channel to
+        DEBUG channel
+    - TODO: provide progress bar binding for the importers as well
+
+ - TODO: [USABILITY]: fold the current verbose state into a `-v/--vebose` argument
 
 
 <DONE: CONFIGS sanity>
@@ -487,6 +499,9 @@ either be a persistent dump that is loaded every time the user is spooling up th
     align the Annotation analysis on the molecular analysis.
         - DONE: run git blame on the Molecular network interface, copy new modifications
         - DONE: run git blame on molecular network analysis, copy the new modifications
+
+ - DONE: [SHOW-STOPPER]: debug why GO terms load as the same term
+    - Not an issue - just similar GO terms of different types (eg entities)
 
 
  - TODO: [SANITY]: Feed the location of the output folders for logs with the main parameters

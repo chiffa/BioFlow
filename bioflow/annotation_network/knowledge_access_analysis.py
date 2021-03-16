@@ -39,6 +39,8 @@ def get_go_interface_instance(param_set=ref_param_set) -> GeneOntologyInterface:
     :return: a GO_interface object
     """
     go_interface_instance = GeneOntologyInterface(*param_set)
+    log.info('Annotation interface created with params %s, %d, %s, %s, %d' %
+             (param_set[0], len(param_set[1]), param_set[2], param_set[3], param_set[4]))
     go_interface_instance.fast_load()
     log.info(go_interface_instance.pretty_time())
     return go_interface_instance
@@ -105,6 +107,7 @@ def spawn_sampler_pool(
 
     global implicitely_threaded
 
+    log.info('Spawning sampler for %s %s' % (payload[0][0], payload[0][1]))
     if not implicitely_threaded:  # TODO: this can be extracted as a shared routine to utils module
         with Pool(processes=pool_size) as pool:  # This is the object we are using to spawn a thread pool
             try:
@@ -344,7 +347,8 @@ def compare_to_blank(
              go_interface_instance.GO_Names[GO_id]] +
             dict_system[GO_id] +
             r_nodes[go_node_ids == float(GO_id)].tolist() +
-            [[go_interface_instance.interactome_interface_instance.neo4j_id_2_display_name[up_bulbs_id]
+            # TRACING: interactome
+            [[go_interface_instance.UP_Names[up_bulbs_id][1]
               for up_bulbs_id in list(set(go_interface_instance.GO2UP_Reachable_nodes[GO_id]).
                                       intersection(set(go_interface_instance.annotated_uniprots)))]]
             for GO_id in not_random_nodes]
