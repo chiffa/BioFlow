@@ -461,7 +461,7 @@ def insert_reactome(skip_import='N'):
                             reactome_parser.PhysicalEntities, 'physical_entity')
         insert_meta_objects(
             get_db_class_handle('Physical Entity Collection'),
-            reactome_parser.PhysicalEntity_Collections, 'annotation')
+            reactome_parser.PhysicalEntity_Collections, 'physical_entity')
 
         log.info('Inserting DNA Collections with %s elements'
                  % len(reactome_parser.Dna_Collections))

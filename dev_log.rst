@@ -194,6 +194,8 @@ trust we have in the existence of a link.
 
 <Documentation>
 
+ - TODO: [SANITY] remove all old dangling variables and code (deprecated X)
+
  - TODO: [DOC] Document the proper boot cycle of the application
     - $BIOFLOWHOME check, use the default location (~/bioflow)
     - in case the user configs .yaml is not found, copy it from its own registry to $BIOFLOWHOME
@@ -206,20 +208,10 @@ trust we have in the existence of a link.
 
  - TODO: [DOC] put an explanation of overall workflow of the library
 
- - TODO: [MAINTENABILITY] put a straightjacket of the types of the tuples passed around and
-        function type signatures
-
- - TODO: [SANITY] convert the dicts to Type Aliases / NewType and perform proper type hinting
-
- - TODO: [SANITY]: define appropriate types:
-    - neo4j IDs
-    - laplacian Matrix
-    - current
-    - potential
-
  - TODO: check that all the functions and modules are properly documented
 
- - TODO: [SANITY] move the additional from the "annotation_network" to somewhere saner
+ - TODO: [SANITY] move the additional from the "annotation_network" to somewhere saner =>
+        Separate application importing BioFlow as a library
 
  - TODO: [SANITY]: put all the imports  under the umbrella making clear where they come from
 
@@ -294,6 +286,20 @@ Current refactoring:
     - Basically, the problem is how to perform statistical tests to make sure not to make
         overconfident calls.
         => degree vs weight - based sampling?
+
+
+<Type hinting and typing>
+ - TODO: [MAINTENABILITY] put a straightjacket of the types of the tuples passed around and
+        function type signatures => Partially done, long-term project
+
+ - TODO: [SANITY] convert the dicts to Type Aliases / NewType and perform proper type hinting
+        => Partially done, long-term project
+
+ - TODO: [SANITY]: define appropriate types: => Partially done, long-term project
+    - neo4j IDs
+    - laplacian Matrix
+    - current
+    - potential
 
 
 <Environment registration>

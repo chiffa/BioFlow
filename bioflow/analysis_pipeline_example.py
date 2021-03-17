@@ -90,7 +90,7 @@ if __name__ == "__main__":
     chromosomes_directory = "//localhome//kucharav//Projects//BioFlow paper//yeast_chr_genes"
     background_file = os.path.join(chromosomes_directory, "all_genes.tab")
 
-    # rebuild_the_laplacians(all_detectable_genes=background_bulbs_ids)
+    rebuild_the_laplacians(all_detectable_genes=background_bulbs_ids)
 
     # perform the interactome analysis
 
@@ -126,17 +126,17 @@ if __name__ == "__main__":
             #     rebuild_the_laplacians(all_detectable_genes=background_bulbs_ids)
             #     background_set = True
 
-            # # # perform the interactome analysis
-            # interactome_analysis([hits_ids[:40]],
-            #                      ['chr_%s' % filename[:-4]],
-            #                      desired_depth=20,
-            #                      processors=1,
-            #                      background_list=background_bulbs_ids,
-            #                      skip_sampling=False
-            #                      )
+            # # perform the interactome analysis
+            interactome_analysis([hits_ids],
+                                 ['chr_%s' % filename[:-4]],
+                                 desired_depth=20,
+                                 processors=1,
+                                 background_list=background_bulbs_ids,
+                                 skip_sampling=False
+                                 )
 
             # # perform the knowledge analysis
-            knowledge_analysis([hits_ids[:40]],
+            knowledge_analysis([hits_ids],
                                ['chr_%s' % filename[:-4]],
                                desired_depth=20,
                                processors=1,
@@ -144,5 +144,5 @@ if __name__ == "__main__":
                                skip_sampling=False,
                                )
 
-            raise Exception('debug')
+            # raise Exception('debug')
 

@@ -533,6 +533,5 @@ def auto_analyze(source_list,
         print(tabulate(nr_nodes, headers, tablefmt='simple', floatfmt=".3g"))
 
 
-
 if __name__ == "__main__":
     auto_analyze([get_source_bulbs_ids()], processors=3, desired_depth=6, param_set=ref_param_set)
