@@ -120,6 +120,7 @@ if __name__ == "__main__":
         if filename != "all_genes.tab":
             target_file = os.path.join(chromosomes_directory, filename)
             hits_ids, background_bulbs_ids = map_and_save_gene_ids(target_file, background_file)
+
             paramset_with_background = tuple([_filter, background_bulbs_ids, (1, 1), True, 3])
 
             # if not background_set:
@@ -127,18 +128,18 @@ if __name__ == "__main__":
             #     background_set = True
 
             # # perform the interactome analysis
-            interactome_analysis([hits_ids],
+            interactome_analysis([hits_ids][:20],
                                  ['chr_%s' % filename[:-4]],
-                                 desired_depth=20,
+                                 desired_depth=5,
                                  processors=1,
                                  background_list=background_bulbs_ids,
                                  skip_sampling=False
                                  )
 
             # # perform the knowledge analysis
-            knowledge_analysis([hits_ids],
+            knowledge_analysis([hits_ids][:20],
                                ['chr_%s' % filename[:-4]],
-                               desired_depth=20,
+                               desired_depth=5,
                                processors=1,
                                param_set=paramset_with_background,
                                skip_sampling=False,

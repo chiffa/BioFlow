@@ -89,8 +89,8 @@ def spawn_sampler_pool(
     :param sample_size_list: size of the sample list
     :param iterations_list_per_pool: number of iterations performing the pooling of the samples
      in each list
-    :param sparse_rounds:
-    :param go_interface_instance:
+    :param sparse_rounds: how many sparse sampling rounds to perform, if any (unless it's False)
+    :param go_interface_instance: passed go_interface instance
     :param param_set: set of parameters configuring the knowledge interface object
     """
 

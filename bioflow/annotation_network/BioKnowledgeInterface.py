@@ -314,7 +314,7 @@ class GeneOntologyInterface(object):
 
         log.info("_background: %d, UP2GO_Dict %s" % (len(self._background), len(self.UP2GO_Dict)))
 
-        if self._background:
+        if not self._background:
             self._background = list(self.UP2GO_Dict.keys())
         else:
             self._background = list(set(self._background).intersection(set(self.UP2GO_Dict.keys())))
