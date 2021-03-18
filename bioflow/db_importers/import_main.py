@@ -15,9 +15,9 @@ from bioflow.db_importers.phosphosite_importer import cross_ref_kinases_factors
 from bioflow.db_importers.complex_importer import insert_complexes
 from bioflow.db_importers.go_and_uniprot_importer import memoize_go_terms, import_gene_ontology, \
     import_uniprots, pull_up_acc_nums_from_reactome
-from bioflow.neo4j_db.db_io_routines import excluded_nodes_ids_from_names_list, to_deprecate_clear_all, run_diagnostics,\
+from bioflow.neo4j_db.db_io_routines import excluded_nodes_ids_from_names_list, run_diagnostics,\
     cross_link_identifiers, compute_annotation_informativity
-from bioflow.configs.internal_configs import full_list
+from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 
 
 def build_db():
@@ -48,24 +48,24 @@ def build_db():
 
 
 def destroy_db():
-    to_deprecate_clear_all(full_list)
+    DatabaseGraph.clear_database()
 
 
 if __name__ == "__main__":
     # pass
-    to_deprecate_clear_all(full_list)
+    DatabaseGraph.clear_database()
     run_diagnostics()
     insert_reactome()
     run_diagnostics()
 
-    to_deprecate_clear_all(['GO Term'])
+    DatabaseGraph.delete_all('GOTerm')
 
     go_terms, go_terms_structure = GOTermsParser().parse_go_terms(main_configs.gene_ontology_path)
     import_gene_ontology(go_terms, go_terms_structure)
 
     memoize_go_terms()
 
-    to_deprecate_clear_all(['UNIPROT'])
+    DatabaseGraph.delete_all('UNIPROT')
 
     uniprot = UniProtParser(main_configs.up_tax_ids).parse_uniprot(main_configs.uniprot_path)
 

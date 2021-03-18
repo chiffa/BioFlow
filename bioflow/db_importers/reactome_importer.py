@@ -5,7 +5,8 @@ Created on Jun 15, 2013
 import pickle
 from bioflow.utils.log_behavior import get_logger
 from bioflow.configs.main_configs import Dumps, reactome_biopax_path
-from bioflow.configs.internal_configs import reactome_forbidden_nodes, to_deprecate_neo4j_names_dict
+from bioflow.configs.internal_configs import reactome_forbidden_nodes, \
+    to_deprecate_neo4j_names_dict  # TRACING: [deprecation]
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from bioflow.neo4j_db.db_io_routines import get_db_id
 from bioflow.bio_db_parsers.reactomeParser import ReactomeParser
@@ -400,6 +401,7 @@ def get_all_meta_sets():
     In case the MetaObjects were already inserted, reloads them all to the local dictionary for
     further annotation insertion
     """
+    # TRACING: [deprecation]
     list_of_bulbs_classes = [
         to_deprecate_neo4j_names_dict['DNA'],
         to_deprecate_neo4j_names_dict['DNA Collection'],
@@ -428,7 +430,7 @@ def insert_reactome(skip_import='N'):
                      import.
     """
     def get_db_class_handle(shortname):
-        return to_deprecate_neo4j_names_dict[shortname]
+        return to_deprecate_neo4j_names_dict[shortname]  # TRACING: [deprecation]
 
     reactome_parser = ReactomeParser(reactome_biopax_path)
     reactome_parser.parse_all()

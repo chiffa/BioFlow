@@ -197,11 +197,10 @@ def samples_scatter_and_hist(background_curr_deg_conf, true_sample_bi_corr_array
 
 
 def compare_to_blank(
-        blank_model_size,
+        blank_model_size: int,
+        go_interface_instance: GeneOntologyInterface,
         p_value_cutoff: float = 0.05,
-        sparse_rounds=False,
-        go_interface_instance=None,
-        param_set=ref_param_set,
+        sparse_rounds: bool = False,
         output_destination: NewOutputs = None):
     """
     Recovers the statistics on the circulation nodes and shows the visual of a circulation system
@@ -231,8 +230,8 @@ def compare_to_blank(
         m_arr = np.array(max_array)
         return m_arr.T
 
-    if go_interface_instance is None:
-        go_interface_instance = get_go_interface_instance(param_set)
+    if go_interface_instance is None or go_interface_instance.node_current == {}:
+        raise Exception("tried to compare to blanc an empty interface instance")
 
     md5_hash = go_interface_instance.md5_hash()
 
@@ -256,7 +255,6 @@ def compare_to_blank(
     for i, sample in enumerate(background_sample):
 
         _, node_currents = pickle.loads(sample['currents'])
-        tensions = pickle.loads(sample['voltages'])
 
         dict_system = go_interface_instance.format_node_props(node_currents)
         background_sub_array = list(dict_system.values())
@@ -292,7 +290,6 @@ def compare_to_blank(
     curr_inf_conf_tot = np.array([[int(key)] + list(val) for key, val in dict_system.items()]).T
 
     go_node_ids, query_array = (curr_inf_conf_tot[0, :], curr_inf_conf_tot[(1, 2, 3), :])
-    # fails here when no significant terms to print
 
     # new p-values computation
     background_density = kde_compute(background_array[(1, 0), :], 50, count)
@@ -347,10 +344,9 @@ def compare_to_blank(
              go_interface_instance.GO_Names[GO_id]] +
             dict_system[GO_id] +
             r_nodes[go_node_ids == float(GO_id)].tolist() +
-            # TRACING: interactome
             [[go_interface_instance.UP_Names[up_bulbs_id][1]
               for up_bulbs_id in list(set(go_interface_instance.GO2UP_Reachable_nodes[GO_id]).
-                                      intersection(set(go_interface_instance.annotated_uniprots)))]]
+                                      intersection(set(go_interface_instance.active_up_sample)))]]
             for GO_id in not_random_nodes]
 
     nodes_dict = np.hstack((go_node_ids[:, np.newaxis],
@@ -449,20 +445,20 @@ def auto_analyze(source_list,
 
         if not skip_sampling:
             log.info("spawning a sampler for %s proteins @ %s compops/sec",
-                     len(go_interface_instance.annotated_uniprots), estimated_comp_ops)
+                     len(go_interface_instance.active_up_sample), estimated_comp_ops)
 
-        if len(go_interface_instance.annotated_uniprots) < sparse_analysis_threshold:
+        if len(go_interface_instance.active_up_sample) < sparse_analysis_threshold:
 
             if not skip_sampling:
 
                 log.info('length: %s \t sampling depth: %s \t, estimated round time: %s min',
-                         len(go_interface_instance.annotated_uniprots),
+                         len(go_interface_instance.active_up_sample),
                          'full',
-                         len(go_interface_instance.annotated_uniprots) ** 2 / estimated_comp_ops /
+                         len(go_interface_instance.active_up_sample) ** 2 / estimated_comp_ops /
                          60)
 
                 spawn_sampler_pool(processors,
-                                   [len(go_interface_instance.annotated_uniprots)],
+                                   [len(go_interface_instance.active_up_sample)],
                                    [desired_depth],
                                    go_interface_instance=None,
                                    param_set=param_set)
@@ -470,27 +466,26 @@ def auto_analyze(source_list,
             go_interface_instance.compute_current_and_potentials()
 
             nr_nodes, p_val_dict = compare_to_blank(
-                len(go_interface_instance.annotated_uniprots),
+                len(go_interface_instance.active_up_sample),
+                go_interface_instance,
                 p_value_cutoff=p_value_cutoff,
-                go_interface_instance=go_interface_instance,
-                param_set=param_set,
                 output_destination=outputs_subdirs)
 
         # sparse analysis
         else:
-            ceiling = min(205, len(go_interface_instance.annotated_uniprots))
-            sampling_depth = max((ceiling - 5) ** 2 // len(go_interface_instance.annotated_uniprots), 5)
+            ceiling = min(205, len(go_interface_instance.active_up_sample))
+            sampling_depth = max((ceiling - 5) ** 2 // len(go_interface_instance.active_up_sample), 5)
 
             if not skip_sampling:
 
                 log.info('length: %s \t sampling depth: %s \t, estimated round time: %s min',
-                         len(go_interface_instance.annotated_uniprots),
+                         len(go_interface_instance.active_up_sample),
                          sampling_depth,
-                         len(go_interface_instance.annotated_uniprots) *
+                         len(go_interface_instance.active_up_sample) *
                          sampling_depth / 2 / 60 / estimated_comp_ops)
 
                 spawn_sampler_pool(processors,
-                                   [len(go_interface_instance.annotated_uniprots)],
+                                   [len(go_interface_instance.active_up_sample)],
                                    [desired_depth],
                                    sparse_rounds=sampling_depth,
                                    go_interface_instance=None,
@@ -500,11 +495,10 @@ def auto_analyze(source_list,
 
             # go_interface_instance.export_conduction_system()
             nr_nodes, p_val_dict = compare_to_blank(
-                len(go_interface_instance.annotated_uniprots),
+                len(go_interface_instance.active_up_sample),
+                go_interface_instance,
                 p_value_cutoff=p_value_cutoff,
                 sparse_rounds=sampling_depth,
-                go_interface_instance=go_interface_instance,
-                param_set=param_set,
                 output_destination=outputs_subdirs)
 
         go_interface_instance.export_conduction_system(p_val_dict,

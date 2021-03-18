@@ -11,10 +11,6 @@ from bioflow.configs.main_configs import neo4j_server_url
 
 log = get_logger(__name__)
 
-
-# CURRENTPASS: check what neo4j returns and make sure on iteration we are picking the results
-
-
 # default connection parameters
 uri = neo4j_server_url
 user = 'neo4j'
@@ -25,7 +21,7 @@ password = os.environ['NEOPASS']
 # Type hinting support
 db_id = NewType('db_id', int)
 db_n_type = NewType('db_n_type', str)
-# CURRENTPASS: add a db_a_type for annotation node and db_p_e_type for physical entities?
+# TODO add a db_a_type for annotation node and db_p_e_type for physical entities?
 db_e_type = NewType('db_e_type', str)
 e_orientation = NewType('e_orientation', str)
 
@@ -93,7 +89,7 @@ class GraphDBPipe(object):
     methods that actually implement what functions XXX() expose.
     """
 
-    def __init__(self):  # CURRENTPASS: add an option to supply uri, user and pwd not from configs
+    def __init__(self):  # REAFACTOR: add an option to supply uri, user and pwd not from configs
         self._driver = GraphDatabase.driver(uri, auth=(user, password))
 
     def close(self):
@@ -560,7 +556,7 @@ class GraphDBPipe(object):
                                     preferential: bool = False,
                                     source: str = 'NA') -> List[Node]:
         # CURRENTPASS: preferential is supposed to be a list here and needs to be zipped in
-        # enumerate
+        #  enumerate
         """
         Attaches all the external identifiers of given types to a node based on its ID
 

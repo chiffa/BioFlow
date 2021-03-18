@@ -17,7 +17,6 @@ from matplotlib import pyplot as plt
 from scipy.stats import gumbel_r
 from tabulate import tabulate
 
-from bioflow.algorithms_bank.conduction_routines import deprecated_perform_clustering
 from bioflow.configs.main_configs import Dumps, estimated_comp_ops, NewOutputs, \
     sparse_analysis_threshold, implicitely_threaded, p_val_cutoff, min_nodes_for_p_val
 from bioflow.sample_storage.mongodb import find_interactome_rand_samp, count_interactome_rand_samp
@@ -34,17 +33,16 @@ log = get_logger(__name__)
 
 
 # TODO: factor that into the "retrieve" routine of the laplacian wrapper
-def get_interactome_interface() -> InteractomeInterface:
+def get_interactome_interface(background_up_ids=()) -> InteractomeInterface:
     """
     Retrieves an "InteractomeInterface" object
 
     :return:
     """
-    interactome_interface_instance = InteractomeInterface(main_connex_only=True,
-                                                          full_impact=False)
+    interactome_interface_instance = InteractomeInterface(background_up_ids=background_up_ids)
     interactome_interface_instance.fast_load()
     log.debug("get_interactome state e_p_u_b_i length: %s",
-              len(interactome_interface_instance.entry_point_uniprots_neo4j_ids))
+              len(interactome_interface_instance.active_up_sample))
     log.info("interactome interface loaded in %s" % interactome_interface_instance.pretty_time())
     # is the case now
     return interactome_interface_instance
@@ -60,12 +58,8 @@ def spawn_sampler(args_puck):
     """
     # log.info('Pool process %d started' % args_puck[-1])
 
-    interactome_interface_instance_arg = args_puck[3]
-
-    if interactome_interface_instance_arg is None:
-        interactome_interface_instance = get_interactome_interface()
-    else:
-        interactome_interface_instance = interactome_interface_instance_arg
+    background_set_arg = args_puck[3]
+    interactome_interface_instance = get_interactome_interface(background_set_arg)
 
     sample_size_list = args_puck[0]
     iteration_list = args_puck[1]
@@ -88,7 +82,7 @@ def spawn_sampler_pool(
         pool_size,
         sample_size_list,
         interaction_list_per_pool,
-        interactome_interface_instance,  # actually unused
+        background_set,
         sparse_rounds=False):
     """
     Spawns a pool of samplers of the information flow within the GO system
@@ -98,13 +92,14 @@ def spawn_sampler_pool(
     :param interaction_list_per_pool: number of iterations performing the pooling of the samples
      in each list
     :param sparse_rounds:
-    :param interactome_interface_instance:
+    :param background_set:
     """
     payload = [
             (sample_size_list,
              interaction_list_per_pool,
              sparse_rounds,
-             interactome_interface_instance)]
+             background_set)]
+    # TRACING: passing background set information through int.interf.
     payload_list = payload * pool_size
     payload_list = [list(item)+[i] for i, item in enumerate(payload_list)]  # prepare the payload
 
@@ -219,9 +214,9 @@ def samples_scatter_and_hist(background_curr_deg_conf, true_sample_bi_corr_array
 
 
 def compare_to_blank(blank_model_size: int,
+                     interactome_interface_instance: InteractomeInterface,
                      p_val: float = 0.05,
                      sparse_rounds: bool = False,
-                     interactome_interface_instance: InteractomeInterface = None,
                      output_destination: NewOutputs = None) -> Tuple[list, dict]:
     """
     Recovers the statistics on the circulation nodes and shows the visual of a circulation system.
@@ -248,9 +243,8 @@ def compare_to_blank(blank_model_size: int,
         m_arr = np.array(max_array)
         return m_arr.T
 
-    if interactome_interface_instance is None:
-        interactome_interface_instance = InteractomeInterface(True, True)
-        interactome_interface_instance.fast_load()
+    if interactome_interface_instance is None or interactome_interface_instance.node_current == {}:
+        raise Exception("tried to compare to blanc an empty interface instance")
 
     md5_hash = interactome_interface_instance.md5_hash()
 
@@ -274,8 +268,6 @@ def compare_to_blank(blank_model_size: int,
     for i, sample in enumerate(background_sample):
 
         _, node_currents = pickle.loads(sample['currents'])
-        tensions = pickle.loads(sample['voltages'])  # might explode here. actually didn't
-        # TODO: restore clustering in case non-sparse calculation has been performed
 
         dict_system = interactome_interface_instance.format_node_props(node_currents, limit=0)
         background_sub_array = list(dict_system.values())
@@ -426,84 +418,73 @@ def auto_analyze(source_list: List[List[int]],
 
         outputs_subdirs = NewOutputs(output_destination)
 
-        interactome_interface = get_interactome_interface()
-        log.debug("retrieved interactome_interface instance e_p_u_b_i length: %s",
-                  len(interactome_interface.entry_point_uniprots_neo4j_ids))
+        interactome_interface = get_interactome_interface(background_up_ids=background_list)
 
         interactome_interface.set_uniprot_source(list(hits_list))
         log.debug(" e_p_u_b_i length after UP_source was set: %s",
-                  len(interactome_interface.entry_point_uniprots_neo4j_ids))
-
-        # REFACTOR: this is the reason we were passing the interactome interface as argument
-        #  to sampler spawner
-        if background_list:
-            interactome_interface.background = background_list
-            interactome_interface.connected_uniprots = list(
-                set(interactome_interface.connected_uniprots
-                    ).intersection(set(interactome_interface.background)))
+                  len(interactome_interface.active_up_sample))
 
         if not skip_sampling:
             log.info("spawning a sampler for %s proteins @ %s compops/sec",
-                     len(interactome_interface.entry_point_uniprots_neo4j_ids), estimated_comp_ops)
+                     len(interactome_interface.active_up_sample), estimated_comp_ops)
 
         # dense analysis
-        if len(interactome_interface.entry_point_uniprots_neo4j_ids) < sparse_analysis_threshold:
+        if len(interactome_interface.active_up_sample) < sparse_analysis_threshold:
 
             if not skip_sampling:
                 log.info('length: %s \t sampling depth: %s \t, estimated round time: %s min',
-                         len(interactome_interface.entry_point_uniprots_neo4j_ids),
+                         len(interactome_interface.active_up_sample),
                          'full',
-                         len(interactome_interface.entry_point_uniprots_neo4j_ids) ** 2 /
+                         len(interactome_interface.active_up_sample) ** 2 /
                          estimated_comp_ops / 60)
 
                 spawn_sampler_pool(
                     processors,
-                    [len(interactome_interface.entry_point_uniprots_neo4j_ids)],
+                    [len(interactome_interface.active_up_sample)],
                     [desired_depth],
-                    interactome_interface_instance=interactome_interface)
-                    # TRACING: passing background set information through interactome_interface
+                    background_set=background_list)
 
             interactome_interface.compute_current_and_potentials()
 
             nr_nodes, p_val_dict = compare_to_blank(
-                len(interactome_interface.entry_point_uniprots_neo4j_ids),
+                len(interactome_interface.active_up_sample),
+                interactome_interface,
                 p_val=p_value_cutoff,
-                interactome_interface_instance=interactome_interface,
                 output_destination=outputs_subdirs
             )
 
         # sparse analysis
         else:
-            ceiling = min(205, len(interactome_interface.entry_point_uniprots_neo4j_ids))
+            ceiling = min(205, len(interactome_interface.active_up_sample))
             sampling_depth = max((ceiling - 5) ** 2 //
-                                 len(interactome_interface.entry_point_uniprots_neo4j_ids),
+                                 len(interactome_interface.active_up_sample),
                                  5)
 
             if not skip_sampling:
 
                 log.info('length: %s \t sampling depth: %s \t, estimated round time: %s min',
-                         len(interactome_interface.entry_point_uniprots_neo4j_ids),
+                         len(interactome_interface.active_up_sample),
                          sampling_depth,
-                         len(interactome_interface.entry_point_uniprots_neo4j_ids) *
+                         len(interactome_interface.active_up_sample) *
                          sampling_depth / 2 / 60 / estimated_comp_ops)
 
                 spawn_sampler_pool(processors,
-                                   [len(interactome_interface.entry_point_uniprots_neo4j_ids)],
+                                   [len(interactome_interface.active_up_sample)],
                                    [desired_depth],
                                    sparse_rounds=sampling_depth,
-                                   interactome_interface_instance=interactome_interface)
-                                   # TRACING: passing background set information through int.interf.
+                                   background_set=background_list)
 
-            log.info('real run characteristics: sys_hash: %s, size: %s, sparse_rounds: %s' % (interactome_interface.md5_hash(),
-                                                                                              len(interactome_interface.entry_point_uniprots_neo4j_ids), sampling_depth))
+            log.info('real run characteristics: sys_hash: %s, size: %s, sparse_rounds: %s' %
+                     (interactome_interface.md5_hash(),
+                      len(interactome_interface.active_up_sample), sampling_depth))
 
             interactome_interface.compute_current_and_potentials(sparse_samples=sampling_depth)
 
             nr_nodes, p_val_dict = compare_to_blank(
-                len(interactome_interface.entry_point_uniprots_neo4j_ids),
+                len(interactome_interface.active_up_sample),
+                interactome_interface,
                 p_val=p_value_cutoff,
                 sparse_rounds=sampling_depth,
-                interactome_interface_instance=interactome_interface,
                 output_destination=outputs_subdirs
             )
 
@@ -533,8 +514,8 @@ def auto_analyze(source_list: List[List[int]],
 if __name__ == "__main__":
 
     # pprinter = PrettyPrinter(indent=4)
-    # interactome_interface_instance = MatrixGetter(True, False)
-    # interactome_interface_instance.fast_load()
+    # background_set = MatrixGetter(True, False)
+    # background_set.fast_load()
 
     # dumplist = undump_object(Dumps.RNA_seq_counts_compare)
 
@@ -551,9 +532,9 @@ if __name__ == "__main__":
     # auto_analyze([source], desired_depth=5, processors=6,
     #              background_list=background_list, skip_sampling=True)
 
-    local_matrix = InteractomeInterface(main_connex_only=True, full_impact=True)
+    local_matrix = InteractomeInterface()
     local_matrix.fast_load()
-    # spawn_sampler_pool(3, [50], [3], interactome_interface_instance=None)
+    # spawn_sampler_pool(3, [50], [3], background_set=None)
     spawn_sampler(([50], [3], False, None, 0))
 
     # local_matrix.randomly_sample([195], [10], sparse_rounds=195)

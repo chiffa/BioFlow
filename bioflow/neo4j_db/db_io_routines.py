@@ -9,9 +9,7 @@ from collections import defaultdict
 from csv import reader, writer
 from pprint import PrettyPrinter, pprint
 from bioflow.configs.main_configs import forbidden_neo4j_ids, Dumps
-from bioflow.configs.internal_configs import deprecated_edge_type_filters, reactome_forbidden_nodes,\
-    deprecated_annotation_nodes_ptypes, \
-    to_deprecate_neo4j_names_dict, full_list, uniprot_forbidden_nodes
+from bioflow.configs.internal_configs import reactome_forbidden_nodes, uniprot_forbidden_nodes
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from bioflow.utils.log_behavior import get_logger
 from bioflow.utils.io_routines import write_to_csv, memoize, time_exection
@@ -28,71 +26,6 @@ def get_db_id(neo4j_node):
     :return:
     """
     return neo4j_node.id
-
-
-# TODO: WILL NOT IMPLEMENT: offload annotations to ElasticSearch engine
-def deprecated_get_attached_annotations(neo4j_node_id):
-    """
-    Recovers ids of annotation nodes attached the the node with a given bulbs id
-
-    :param neo4j_node_id:
-    :return:
-    """
-    list_of_annotations = []
-    annotation_node_generator = DatabaseGraph.get_linked(neo4j_node_id, link_type="is_annotated")
-    if not annotation_node_generator:
-        log.debug("node %s has no annotations attached to it", neo4j_node_id)
-        return []
-    else:
-        for rel_node in annotation_node_generator:
-            list_of_annotations.append(get_db_id(rel_node))
-        return list_of_annotations
-
-
-# CURRENTPASS: a single call to this function, is it really needed?
-def node_generator_2_db_ids(node_generator):  # TRACING: switch to list comprenension
-    """
-    Get bulb ids of nodes in the generator
-
-    :param node_generator: iterator over annot_nodes
-    :return: the bubls ids of nodes in generator
-    """
-    if not node_generator:
-        return []
-
-    node_set = []
-    for node in node_generator:
-        node_set.append(get_db_id(node))
-        # print 'forbidding ', node.ID, node.displayName
-
-    return node_set
-
-
-# CURRENTPASS: no calls to that function
-def deprecated_look_up_annotation_node(p_load, p_type=''):
-    """
-    Looks up nodes accessible via the annotation nodes with a given annotation and given
-    annotation  type.
-    The lookup strict match, but case-insensitive.
-
-    :param p_load: payload
-    :param p_type: payload type. servers to restrict search to a specific ID subset
-    :return: (node type, node's displayName, node's db_ID, node's legacy ID)
-    :raise Exception: "p_type unsupported", in case a p_type is not on the supported list
-    specified  in the neo4j_db.neo4j_typeDec
-    """
-
-    payload = p_load.upper()  # make payload case-agnostic
-
-    nodes = DatabaseGraph.get_from_annotation_tag(payload, p_type)
-    retlist = []
-    for node in nodes:
-        node_bulbs_id = get_db_id(node)
-        node_legacy_id = node['legacyID']
-        node_type = list(node.labels)[0]
-        node_display_name = node['displayName']
-        retlist.append((node_type, node_display_name, node_bulbs_id, node_legacy_id))
-    return retlist
 
 
 def look_up_annotation_set(p_load_list, p_type=''):
@@ -136,85 +69,6 @@ def look_up_annotation_set(p_load_list, p_type=''):
     log.debug('%s IDs out of %s have not been found', len(not_found_list), len(p_load_list))
     log.debug('IDs of missing proteins: %s', not_found_list)
     return not_found_list, load_2_name_list, db_id_list
-
-
-def erase_custom_fields():
-    """
-    Resets the custom and main_connex fields of all the Nodes on which we have iterated here.
-
-    Required to be run after node set or node connectivity were modified.
-    Unlike the method in the Matrix_retrieval cluster, this method is very time-consuming,
-    since it iterates on all the elements of all the classes susceptible to have the custom field.
-    """
-    def reset_routine(_node):
-        _node.custom = ''
-        _node.main_connex = False
-        _node.save()
-
-    # TODO: redundant implementation - remove one of them
-    # TODO: could be accelerated by batching
-
-    node_gen = DatabaseGraph.find({"custom": "Main_Connex"})
-    if len(node_gen) > 0:
-        for node in node_gen:
-            DatabaseGraph.set_attributes(node.id, {'custom': '', 'main_connex': False})
-
-    node_gen = DatabaseGraph.find({"main_connex": True})
-    if len(node_gen) > 0:
-        for node in node_gen:
-            DatabaseGraph.set_attributes(node.id, {'custom': '', 'main_connex': False})
-
-
-# CURRENTPASS: used once elsewhere - consider folding it there
-# TRACING: first argument is a filter on the edge type
-def node_extend_once(edge_type_filter, main_connex_only, core_node):
-    """
-
-    :param edge_type_filter:
-    :param main_connex_only:
-    :param core_node:
-    :return:
-    """
-    node_neighbors = []
-    node_neighbor_no = 0
-    for edge_type in edge_type_filter:
-
-        for node in DatabaseGraph.get_linked(get_db_id(core_node),
-                                             link_type=edge_type):  # TRACING: link type.
-            # TRACING: can be switched to a property filter.
-            node_is_connex = node['main_connex']
-            if (main_connex_only and node_is_connex) or not main_connex_only:
-                node_neo4j_id = get_db_id(node)
-                if node_neo4j_id not in forbidden_neo4j_ids:
-                    node_neighbors.append(node_neo4j_id)
-                    node_neighbor_no += 1
-
-    return node_neighbors, node_neighbor_no
-
-
-# CURRENTPASS: used once elsewhere - consider folding it there
-def expand_from_seed(seed_node_id, edge_filter, main_connex_only):  # TRACING: neo4j property
-    """
-    Recovers all the nodes accessible in one jump from a seed_node with a given database ID by
-    jumping only via the relations of types specified in the edge_filter
-
-    :param seed_node_id: the database ID of the initial node from which we are observing
-     accessibility
-    :param edge_filter: the list of relation types for which the jumps are authorised
-    :param main_connex_only: of true, will expand from seed onto the elements of the main connex
-    only
-    :return: List of found nodes database ID, number of found nodes
-    """
-    node_neighbors = []
-    for edge_type in edge_filter:
-        seed_node_is_connex = DatabaseGraph.get(seed_node_id)['main_connex']
-        for linked_node in DatabaseGraph.get_linked(seed_node_id, 'both', edge_type):
-            # TRACING: neo4j property
-            if linked_node.id not in forbidden_neo4j_ids and (seed_node_is_connex or not main_connex_only):
-                node_neighbors.append(linked_node.id)
-
-    return node_neighbors, len(node_neighbors)
-
 
 
 def _auxilary_annotation_ids_from_csv(source_csv):
@@ -267,21 +121,6 @@ def cast_background_set_to_bulbs_id(background_set_csv_location,
     source = look_up_annotation_set(background_bulbs_ids)
     writer(open(Dumps.background_set_bulbs_ids, 'wt'), delimiter='\n').writerow(source[2])
 
-
-# CURRENTPASS: no more used
-def deprecated_neo4j_memoize_type(node_type, dict_to_load_into=None):
-
-    if dict_to_load_into is None:
-        dict_to_load_into = {}
-    log.info('starting %s memoization load', node_type)
-    all_nodes_of_type = DatabaseGraph.get_all(node_type)
-    for node in all_nodes_of_type:
-        dict_to_load_into[node.id] = node
-    log.info('%s Loaded, contains %s elements', node_type, len(dict_to_load_into))
-
-    return dict_to_load_into
-
-
 def excluded_nodes_ids_from_names_list():
     """
     Recomputes the list of nodes that contain overloaded terms.
@@ -293,40 +132,11 @@ def excluded_nodes_ids_from_names_list():
     :param forbidden_entities_list: Dictionary mapping the names of entities to
     their corresponding bulbs classes
     """
-    # forbidden_ids_list = set()
-    # for name in forbidden_entities_list:
-    #     for forbidden_legacy_id in reactome_forbidden_nodes:  # TRACING: switch to parameters
-    #         # CURRENTPASS: factor into the arguments of the function
-    #         bulbs_class = to_deprecate_neo4j_names_dict[name]
-    #         generator = DatabaseGraph.find({"displayName": forbidden_legacy_id}, bulbs_class)
-    #
-    #         associated_node_ids = node_generator_2_db_ids(generator)  # TRACING: list comprehension
-    #         forbidden_ids_list.update(associated_node_ids)
-    #
-    # log.info('recomputed %s forbidden IDs.' % len(forbidden_ids_list))
-    #
-    # for f_id in forbidden_ids_list:
-    #     DatabaseGraph.set_attributes(f_id, {'forbidden': True})
-
     combined_forbidden_set = reactome_forbidden_nodes+uniprot_forbidden_nodes
     forbidden_nodes = DatabaseGraph.mark_forbidden_nodes(combined_forbidden_set)
     forbidden_ids_list = [node.id for node in forbidden_nodes]
 
     pickle.dump(forbidden_ids_list, open(Dumps.Forbidden_IDs, 'wb'))
-
-
-def to_deprecate_clear_all(instruction_list):
-    """
-    Clears all the nodes from the database
-
-    :param instruction_list: types of nodes to be cleared
-    """
-
-    for name in instruction_list:
-        neo4j_class = to_deprecate_neo4j_names_dict[name]
-        log.info('deleting class from neo4j: %s', neo4j_class)
-        DatabaseGraph.delete_all(neo4j_class)
-        log.info('class %s deleted', neo4j_class)
 
 
 def run_diagnostics() -> None:
@@ -336,23 +146,6 @@ def run_diagnostics() -> None:
     :return:
     """
     DatabaseGraph.node_stats()
-
-
-# def run_diagnostics(instructions_list) -> None:  # deprecated
-#     """
-#     Computes the number of nodes of each type.
-#
-#     :param instructions_list:
-#     """
-#     super_counter = 0
-#     str_list = ['Database Diagnostics:']
-#     for name in instructions_list:
-#         bulbs_class = to_deprecate_neo4j_names_dict[name]
-#         counter = DatabaseGraph.count(bulbs_class)
-#         str_list.append('\t %s : %s' % (name, counter))
-#         super_counter += counter
-#     str_list.append('Total : %s' % super_counter)
-#     log.info('\n'.join(str_list))
 
 
 def convert_to_internal_ids(base):
@@ -386,7 +179,7 @@ def convert_to_internal_ids(base):
     return return_dict
 
 
-# CURRENTPASS: this has to be parametrized and moved to the configs .yaml file for the user to
+# REFACTOR: this has to be parametrized and moved to the configs .yaml file for the user to
 #  modify the identifiers on which the cross-linking is done.
 def cross_link_identifiers():
     """
@@ -465,7 +258,7 @@ if __name__ == "__main__":
     # compute_annotation_informativity()
     # pull_up_inf_density()
 
-    # run_diagnostics(full_list)
+    # run_diagnostics(to_deprecate_full_list)
     # memoize_bulbs_type(to_deprecate_neo4j_names_dict['UNIPROT'][0])
     # cast_analysis_set_to_bulbs_ids()
     # cast_background_set_to_bulbs_id(background_set_csv_location=None)

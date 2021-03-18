@@ -5,28 +5,27 @@ On the table:
 -------------
 <node weights/context forwarding>
 
- - TODO: eliminate InitSet saving in KnowledgeInterface and Interactome interface
-    - TODO: they become _background
-    - TODO: _background can be set on init and is intersected with accessible nodes (that are saved)
+ - DONE: eliminate InitSet saving in KnowledgeInterface and Interactome interface
+    - DONE: they become _background
+    - DONE: _background can be set on init and is intersected with accessible nodes (that are saved)
         - on _init
         - on _set_sampling_background
 
- - TODO: perform the modification of the background selection and registration logic.
+ - DONE: perform the modification of the background selection and registration logic.
         DONE: First, it doesn't have to be integrated between the AnnotationAccess interface and
             ReactomeInterface
-        TODO: Second, we can project the background into what can be sampled instead of
+        DONE: Second, we can project the background into what can be sampled instead of
             re-defining the root of the sampling altogether.
         DONE: Background is no more a parameter supplied upon constructions, but only for the
             sampling, where it still gets saved with the sampling code.
-        TODO: the transformation within the sampling is done
+        DONE: the transformation within the sampling is done
 
- - TODO: deal with the parse_type inconsistencies (likely remainders of the previous insertions
+ - DONE: deal with the parse_type inconsistencies (likely remainders of the previous insertions
 that was off)
-    - TODO: (physical_entity)-refines-(annotation)
-    - TODO: (annotation)-refines-(annotation)
-    - TODO: (annotation)-annotates-(annotation)
-    - TODO: is_next_in_pathway still has custom_from and custom_to
-
+    - DONE: (physical_entity)-refines-(annotation)
+    - DONE: (annotation)-refines-(annotation)
+    - DONE: (annotation)-annotates-(annotation)
+    - DONE: is_next_in_pathway still has custom_from and custom_to
 
  - DONE: change the way the connections between GOs and UPs are loaded into the KnowledgeInterface
 
@@ -263,9 +262,6 @@ Current refactoring:
     - TODO: put a type straight-jacket
     - TODO: move the `internet_io` to the `data_stores` package
 
- - DONE: [FEATURE]: (done by defining a function that can be plugged to process any tags in neo4j)
-    - In Reactome, parse the "Evidence" and "Source" tags in order to refine the laplacian weighting
-
 
 <Sanify BioKnowledge>
 
@@ -278,6 +274,7 @@ Current refactoring:
  - TODO: inline the reach computation to remove excessively complex function
 
 <Weighting of the nodes>:
+
  - TODO: Define pairs in the sampling with a "charge" parameter if the parameters supplied by the
     - The problem is that there is no good rule for performing a weight sampling, given that there
         are now two distribution in the interplay
@@ -286,6 +283,24 @@ Current refactoring:
     - Basically, the problem is how to perform statistical tests to make sure not to make
         overconfident calls.
         => degree vs weight - based sampling?
+
+ - TODO: allow for weighted sets and biparty sets to be computed:
+    - TODO: modify the flow computation functions to allow for a current to be set
+    - TODO: allow the current computation to happen on biparty sets and weighted sets
+    - TODO: perform automated switch between current computation policies based on what is
+        supplied to the method
+
+ - TODO: allow for different background sampling processes
+    - TODO: add two additional parameters to the mongoDB:
+        - TODO: parameter of the sampling type (set, weighted set, biparty, weighted biparty)
+        - TODO: parameter specific to the set type: (set size, set size + weight distribution,
+                                                    pairs, pairs + weights)
+    - TODO: add a sampling policy transformer that takes in the arguments and returns a proper
+        policy:
+        - DONE: set sampling
+        - TODO: weighted set sampling
+        - TODO: bipary sampling (~ set sampling)
+        - TODO: weighted biparty sampling (~ weighted set sampling)
 
 
 <Type hinting and typing>
@@ -670,6 +685,10 @@ either be a persistent dump that is loaded every time the user is spooling up th
  - DONE: [SHOW-STOPPER]: ReactomeParser does not work anymore likely a node.
         The issue was with a automated renaming during a refactoring to extract some additional
         data
+
+ - DONE: [FEATURE]: (done by defining a function that can be plugged to process any tags in neo4j)
+    - In Reactome, parse the "Evidence" and "Source" tags in order to refine the laplacian weighting
+
 
 Bigger refactors
 ****************

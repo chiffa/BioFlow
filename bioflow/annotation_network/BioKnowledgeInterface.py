@@ -51,7 +51,7 @@ class GeneOntologyInterface(object):
      them for further use.
 
     :param Filter:
-    :param Uniprot_Node_IDs: A list of hte reached_uniprots_neo4j_id_list that will be used
+    :param Uniprot_Node_IDs: A list of hte deprecated_reached_uniprots_neo4j_id_list that will be used
      for the GO reach and informativity computation. Beyond database and formalism issues,
      this allows to adapt method when limited list of UP is of interest
     :param correction_factor:
@@ -66,34 +66,24 @@ class GeneOntologyInterface(object):
 
     def __init__(self,
                  namespace_filter=('biological_process',),
-                 reduced_set_uniprot_node_ids=None,
+                 background_up_ids=(),
                  correction_factor=(1, 1),
                  ultraspec_clean=True,
                  ultraspec_lvl=3):
 
-        # # TRACING: interactome
-        # self.interactome_interface_instance = InteractomeInterface(True, True)
-        # self.interactome_interface_instance.fast_load()
-        #
-        # # CURRENTPASS: deprecate
-        # # TRACING: interactome
-        # init_set = list(self.UP_Names.keys()) # will be undefined
-        # if reduced_set_uniprot_node_ids is not None and len(reduced_set_uniprot_node_ids) > 0:
-        #     init_set = list(set(init_set).intersection(set(reduced_set_uniprot_node_ids)))
-
         self.go_namespace_filter = list(namespace_filter)
-        self.InitSet = reduced_set_uniprot_node_ids
-        log.info('InitSet set to %d' % len(reduced_set_uniprot_node_ids))
+        self._background = background_up_ids
+        log.debug('_background set to %d' % len(background_up_ids))
         self.correction_factor = correction_factor
         self.ultraspec_cleaned = ultraspec_clean
         self.ultraspec_lvl = ultraspec_lvl
         self.init_time = time()
         self.partial_time = time()
 
-        self.UPs_without_GO = set()
+        self.deprecated_UPs_without_GO = set()
         self.UP2GO_Dict = defaultdict(list)
         self.GO2UP = defaultdict(list)
-        self.SeedSet = set()
+        self.deprecated_SeedSet = set()
         self.All_GOs = []
         self.GO2Num = {}
         self.Num2GO = {}
@@ -105,7 +95,6 @@ class GeneOntologyInterface(object):
         self.GO2UP_Reachable_nodes = {}
         self.UP2GO_step_Reachable_nodes = {}
         self.GO2UP_step_Reachable_nodes = {}
-        self.GO2_Pure_Inf = {}
         self.GO2_Weighted_Ent = {}
 
         self.GO_Names = {}
@@ -117,43 +106,28 @@ class GeneOntologyInterface(object):
         self.adjacency_matrix = np.zeros((2, 2))
         self.dir_adj_matrix = np.zeros((2, 2))
         self.laplacian_matrix = np.zeros((2, 2))
-        self.weighted_laplacian_matrix = np.zeros((2, 2))
-
-        self.Sign_retaining_matrix = np.zeros((2, 2))
-
-        self.TimesReached = {}
-        self.accelerationDict = {}
-        self.Reverse_Dict = {}
-        self.GO_Node_ID2Reach = {}
-
-        # everytghing below should not be dumped, but exported to the
-        # mongoDB
 
         self.inflated_Laplacian = np.zeros((2, 2))
         self.inflated_idx2lbl = {}
         self.inflated_lbl2idx = {}
         self.binding_intensity = 0
 
-        self.annotated_uniprots = []
+         # Refactor: [stateless]: this needs to be passed as an argument, not a persistent variable
+        self.active_up_sample = []
         self.UP2UP_voltages = {}
-        self.uniprots_2_voltage_and_circulation = {}  # can be safely renamed
+        self.to_deprecate_uniprots_2_voltage_and_circulation = {}  # can be safely renamed
 
         self.current_accumulator = np.zeros((2, 2))
         self.node_current = {}
-        self.call_coutner = 0
 
         char_set = string.ascii_uppercase + string.digits
         self.thread_hex = ''.join(random.sample(char_set * 6, 6))
 
         self.Indep_Lapl = np.zeros((2, 2))
-        self.uncomplete_compute = False
-        self.background = self.InitSet  # TODO [environment] to be used for environment compare
-        self.connected_uniprots = []
+        self.sparsely_sampled = False
 
-        self.main_set = self.InitSet
-
-        log.info('Setting up GO Interface with namespaces %s and %s root UPs',
-                 self.go_namespace_filter, len(self.InitSet))
+        log.info('Setting up GO Interface with namespaces %s and %s background UPs',
+                 self.go_namespace_filter, len(self._background))
 
     def pretty_time(self):
         """
@@ -178,8 +152,8 @@ class GeneOntologyInterface(object):
         dump_object(
             confs.Dumps.GO_builder_stat,
             (self.go_namespace_filter,
-             self.InitSet,          # it does dump the InitSet from which it will attempt to
-                                    # rebuild itself.
+             self._background,
+             # it does dump the _background from which it will attempt to rebuild itself.
              self.correction_factor,
              self.ultraspec_cleaned,
              self.ultraspec_lvl))
@@ -191,7 +165,7 @@ class GeneOntologyInterface(object):
     def dump_core(self):
         # print(type(self.UP2GO_Dict))
         # print(type(self.GO2UP))
-        # print(type(self.SeedSet))
+        # print(type(self.deprecated_SeedSet))
         # print(type(self.Reachable_nodes_dict))
         # print(type(self.GO_Names))
         # print(type(self.GO_Legacy_IDs))
@@ -200,13 +174,13 @@ class GeneOntologyInterface(object):
         # print(type(self.GO2Num))
         # print(type(self.Num2GO))
         # print(type(self.UP_Names))
-        # print(type(self.UPs_without_GO))
+        # print(type(self.deprecated_UPs_without_GO))
 
         dump_object(
             confs.Dumps.GO_dump,
             (self.UP2GO_Dict,
              self.GO2UP,
-             self.SeedSet,
+             self.deprecated_SeedSet,
              self.Reachable_nodes_dict,
              self.GO_Names,
              self.GO_Legacy_IDs,
@@ -215,12 +189,12 @@ class GeneOntologyInterface(object):
              self.GO2Num,
              self.Num2GO,
              self.UP_Names,
-             self.UPs_without_GO))
+             self.deprecated_UPs_without_GO))
 
     def undump_core(self):
-        self.UP2GO_Dict, self.GO2UP, self.SeedSet, self.Reachable_nodes_dict,\
-            self.GO_Names, self.GO_Legacy_IDs, self.rev_GO_IDs, self.All_GOs,\
-            self.GO2Num, self.Num2GO, self.UP_Names, self.UPs_without_GO =\
+        self.UP2GO_Dict, self.GO2UP, self.deprecated_SeedSet, self.Reachable_nodes_dict, \
+        self.GO_Names, self.GO_Legacy_IDs, self.rev_GO_IDs, self.All_GOs, \
+        self.GO2Num, self.Num2GO, self.UP_Names, self.deprecated_UPs_without_GO =\
             undump_object(confs.Dumps.GO_dump)
 
     def dump_matrices(self):
@@ -264,15 +238,15 @@ class GeneOntologyInterface(object):
 
     def dump_memoized(self):
         md5 = hashlib.md5(
-            json.dumps(sorted(self.annotated_uniprots), sort_keys=True).encode('utf-8')).hexdigest()
+            json.dumps(sorted(self.active_up_sample), sort_keys=True).encode('utf-8')).hexdigest()
 
         payload = {
             'UP_hash': md5,
             'sys_hash': self.md5_hash(),
-            'size': len(self.annotated_uniprots),
-            'UPs': pickle.dumps(self.annotated_uniprots),
+            'size': len(self.active_up_sample),
+            'UPs': pickle.dumps(self.active_up_sample),
             'currents': pickle.dumps((self.current_accumulator, self.node_current)),
-            'voltages': pickle.dumps(self.uniprots_2_voltage_and_circulation)}
+            'voltages': pickle.dumps(self.to_deprecate_uniprots_2_voltage_and_circulation)}
         dump_object(confs.Dumps.GO_Analysis_memoized, payload)
 
     @staticmethod
@@ -289,13 +263,7 @@ class GeneOntologyInterface(object):
         self.Indep_Lapl = undump_object(confs.Dumps.GO_Indep_Linset)
 
     def full_rebuild(self):
-        # TRACING: switched to new
-
         self.new_annotome_access_and_structure()
-
-        # self.old_get_gene_ontology_access()
-        # self.old_get_gene_ontology_structure()
-
         self.get_go_adjacency_and_laplacian()
         self.get_go_reach()
         if self.ultraspec_cleaned:
@@ -336,30 +304,19 @@ class GeneOntologyInterface(object):
                 "Ultraspecific terms leveling cut-off is not the same in the database as requested")
             raise Exception(
                 "Ultraspecific terms leveling cut-off is not the same in the database as requested")
+
         self.undump_core()
-                # currentpass: this is no more relevant, given that InitSet will be replaced by the
-        #  Background set from now on.
-        # TRACING: current rapid hack: later change to the annotated_UPS.interesection(background)
-        log.info("InitSet: %d, UP2GO_Dict %s" % (len(self.InitSet), len(self.UP2GO_Dict)))
-        self.InitSet = list(set(self.InitSet).intersection(set(self.UP2GO_Dict.keys())))
-        # if set(self.InitSet) != set(initial_set):
-        #     log.critical("Initialized self.InitSet of length: %s" % len(self.InitSet))
-        #     log.critical("Tried to load from storage self.InitSet of length: %s" % len(initial_set))
-        #     log.critical("Initialized - loaded: %s" % (set(self.InitSet) - set(initial_set)))
-        #     log.critical("loaded - initialized: %s" % (set(initial_set) - set(self.InitSet)))
-        #     log.critical(traceback.print_stack())
-        #     log.critical("Wrong initial_set attempted to be recovered from storage")
-            # raise Exception(
-            #     "Wrong initial_set attempted to be recovered from storage")
+
+        log.info("_background: %d, UP2GO_Dict %s" % (len(self._background), len(self.UP2GO_Dict)))
+
+        if self._background:
+            self._background = self.UP2GO_Dict.keys()
+        else:
+            self._background = list(set(self._background).intersection(set(self.UP2GO_Dict.keys())))
+
         self.undump_matrices()
         self.undump_informativities()
         self.undump_inflated_elements()
-
-        log.info('InitSet: %d, UP2GO_Dict.keys: %d' % (len(self.InitSet),
-                                                       len(self.UP2GO_Dict.keys())))
-
-        self.connected_uniprots = list(set(self.InitSet).intersection(set(self.UP2GO_Dict.keys())))
-        log.info('Connected_UPs: %d' % len(self.connected_uniprots))
 
 
     def new_annotome_access_and_structure(self, ontology_source=('Gene Ontology')):
@@ -370,8 +327,8 @@ class GeneOntologyInterface(object):
         :param ontology_source:
         :return:
         """
-        # self.InitSet here is irrelevant
-        # self.SeedSet becomes deprecated as well
+        # self._background here is irrelevant
+        # self.deprecated_SeedSet becomes deprecated as well
         # self._GOUpTypes dissapear
         # self._GO_Reg_Types disappear as we;;
 
@@ -404,7 +361,6 @@ class GeneOntologyInterface(object):
                 self.GO2Num[node_id] = term_counter
 
                 term_counter += 1
-
 
         for rel_obj in edges_list:
 
@@ -471,111 +427,7 @@ class GeneOntologyInterface(object):
         self.GO2UP = dict(self.GO2UP)
         self.UP2GO_Dict = dict(self.UP2GO_Dict)
 
-        # CURRENTPASS: this logic will have to change:
-        self.InitSet = list(self.UP2GO_Dict.keys())
-
-    def old_get_gene_ontology_access(self, ontology_source='Gene Ontology'):
-        """
-        Loads all of the relations between the UNIPROTs and GOs as one giant dictionary
-
-        """
-        uniprots_without_gene_ontology_terms = 0
-        log.info('Starting GO matrix mapping starting from %s uniprots', len(self.InitSet))
-
-        for uniprot_neo4j_id in self.InitSet:
-            uniprot_specific_gos = []
-
-            up_node = DatabaseGraph.get(uniprot_neo4j_id)
-            self.UP_Names[uniprot_neo4j_id] = [up_node['legacyID'],
-                                               up_node['displayName']]
-
-            attached_go_nodes = DatabaseGraph.get_linked(uniprot_neo4j_id,
-                                                         link_type='is_go_annotation')
-
-            for go_node in attached_go_nodes:
-                if go_node['Namespace'] in self.go_namespace_filter:
-                    go_node_neo4j_id = get_db_id(go_node)
-                    uniprot_specific_gos.append(go_node_neo4j_id)
-                    self.GO2UP[go_node_neo4j_id].append(uniprot_neo4j_id)
-                    self.SeedSet.add(go_node_neo4j_id)
-
-            if not uniprot_specific_gos:
-                uniprots_without_gene_ontology_terms += 1
-                log.debug("UP without GO was found. UP bulbs_id: %s, \t name: %s",
-                          uniprot_neo4j_id, self.UP_Names[uniprot_neo4j_id])
-                self.UPs_without_GO.add(uniprot_neo4j_id)  # CURRENTPASS: eliminate
-
-            else:
-                self.UP2GO_Dict[uniprot_neo4j_id] = copy(uniprot_specific_gos)
-
-        log.info('total number of UPs without a go_node annotation: %s out of %s',
-                 uniprots_without_gene_ontology_terms, len(self.InitSet))
-
-    # TODO: REFACTORING. Method is excessively complex.
-    def old_get_gene_ontology_structure(self):
-        """
-        Loads all of the relations between the GOs that are generalisation of the seedList
-         GOs and that are withing the types specified in go_namespace_filter
-
-        """
-        visited_set = set()
-        seeds_list = copy(list(self.SeedSet))
-        log.info('Starting gene ontology structure retrieval from the set of %s seeds',
-                 len(self.SeedSet))
-
-        while seeds_list:
-            node_id = seeds_list.pop()
-            visited_set.add(node_id)
-            local_uniprot_list = []
-            local_regulation_list = []
-            local_up_regulation_list = []
-            local_down_regulation_list = []
-            gene_ontology_node = DatabaseGraph.get(node_id, 'GOTerm')
-            self.GO_Names[node_id] = str(gene_ontology_node['displayName'])  #TRACING: DONE
-            self.GO_Legacy_IDs[node_id] = str(gene_ontology_node['legacyID'])  #TRACING: DONE
-            self.rev_GO_IDs[gene_ontology_node['legacyID']] = node_id  #TRACING: DONE
-
-            for relation_type in chain(self._GOUpTypes, self._GORegTypes):
-                related_go_nodes = DatabaseGraph.get_linked(node_id, 'out', relation_type)
-
-                if not related_go_nodes:
-                    continue  # skip in case GO Node has no outgoing relations to other GO nodes
-
-                for go_node in related_go_nodes:
-                    if go_node['Namespace'] not in self.go_namespace_filter:
-                        continue
-                    node_bulbs_id = get_db_id(go_node)
-                    if node_bulbs_id not in visited_set:
-                        seeds_list.append(node_bulbs_id)
-                        # TRACING: that's where our problems start, previous method was pulling
-                        #  only GOs that were reachable from our terms set. Now we pull all.
-                    if relation_type in self._GOUpTypes:
-                        local_uniprot_list.append(node_bulbs_id)  # TRACING: 0
-                    else:
-                        local_regulation_list.append(node_bulbs_id)  # TRACING: 1
-
-                rev_generator = DatabaseGraph.get_linked(node_id, 'in', relation_type)
-
-                if not rev_generator:
-                    continue
-                for go_node in rev_generator:
-                    if go_node['Namespace'] not in self.go_namespace_filter:
-                        continue
-                    node_bulbs_id = get_db_id(go_node)
-                    if relation_type in self._GOUpTypes:
-                        local_down_regulation_list.append(node_bulbs_id)  # TRACING: 2
-                    else:
-                        local_up_regulation_list.append(node_bulbs_id)  # TRACING: 3
-
-            self.Reachable_nodes_dict[node_id] = (  # TRACING: DONE
-                list(set(local_uniprot_list)),  # this is not uniprots, just the more general GOs
-                list(set(local_regulation_list)), # this is not local, its GOs term regulates out
-                list(set(local_down_regulation_list)), # this is not down, it's GO term
-                list(set(local_up_regulation_list))) # this is not up, it's GO term regulates in
-
-        self.All_GOs = list(visited_set)  #TRACING: DONE
-        self.Num2GO = dict((i, val) for i, val in enumerate(self.All_GOs))  #TRACING: DONE
-        self.GO2Num = dict((val, i) for i, val in enumerate(self.All_GOs))  #TRACING: DONE
+        self._background = list(self.UP2GO_Dict.keys())
 
     def get_go_adjacency_and_laplacian(self, include_reg=True):
         """
@@ -689,7 +541,7 @@ class GeneOntologyInterface(object):
             return summer
 
         dir_reg_path = shortest_path(self.dir_adj_matrix, directed=True, method='D')
-        dir_reg_path[np.isinf(dir_reg_path)] = 0.0
+        dir_reg_path[np.isinf(dir_reg_path)] = 0.0   # potential problem from pycharm
         dir_reg_path = lil_matrix(dir_reg_path)
 
         # Load all the GOs that can potentially be reached
@@ -748,7 +600,6 @@ class GeneOntologyInterface(object):
 
         # and finally we compute the pure and weighted informativity for each
         # term
-        # TODO: add an "if" condition"
         self.GO2_Pure_Inf = dict((key, self.calculate_informativity(len(val), key))
                                  for key, val in self.GO2UP_Reachable_nodes.items())
         self.GO2_Weighted_Ent = dict((key, self.calculate_informativity(special_sum(val_dict)))
@@ -769,7 +620,8 @@ class GeneOntologyInterface(object):
         nz_list = copy(
             list(zip(list(base_matrix.nonzero()[0]), list(base_matrix.nonzero()[1]))))
 
-        # TODO: change that to a version using a function to calculate the weights
+        # CURRENTPASS [weight policy] : change that to a version using a function to calculate the
+        #  weights
         for idx1, idx2 in nz_list:
             min_inf = min(
                 self.GO2_Pure_Inf[self.Num2GO[idx1]],
@@ -788,16 +640,15 @@ class GeneOntologyInterface(object):
         :return:
         """
         uniprot_dict = {}
-        # TRACING: interactome
+
         for elt in self.UP_Names.keys():
             node = DatabaseGraph.get(elt, 'UNIPROT')
             alt_id = node['legacyID']
-            # TRACING: interactome
             uniprot_dict[alt_id] = (
                 elt, self.UP_Names[elt][1])
             uniprot_dict[elt] = alt_id
         pickle.dump(uniprot_dict, open(confs.Dumps.Up_dict_dump, 'wb'))
-        # CURRENTPASS: rebuild
+
         return uniprot_dict
 
     def filter_out_too_specific(self):
@@ -820,7 +671,8 @@ class GeneOntologyInterface(object):
         Return the MD hash of self to ensure that all the defining properties have been
         correctly defined before dump/retrieval
         """
-        sorted_initset = sorted(self.InitSet)
+        sorted_initset = sorted(self._background)
+
         data = [
             self.go_namespace_filter,
             sorted_initset,
@@ -841,19 +693,19 @@ class GeneOntologyInterface(object):
         # system, unless too specific, in which case ~ specific level
         self.binding_intensity = 10 * self.calculate_informativity(self.ultraspec_lvl)
         fixed_index = self.laplacian_matrix.shape[0]
-        self.connected_uniprots = list(set(self.InitSet).intersection(set(self.UP2GO_Dict.keys())))
+
         up2idxs = dict((UP, fixed_index + Idx)
-                       for Idx, UP in enumerate(self.connected_uniprots))
+                       for Idx, UP in enumerate(self.UP2GO_Dict.keys()))
         idx2ups = dict((Idx, UP) for UP, Idx in up2idxs.items())
 
         self.inflated_Laplacian = lil_matrix(
-            (self.laplacian_matrix.shape[0] + len(self.connected_uniprots),
-             self.laplacian_matrix.shape[1] + len(self.connected_uniprots)))
+            (self.laplacian_matrix.shape[0] + len(set(self.UP2GO_Dict.keys())),
+             self.laplacian_matrix.shape[1] + len(set(self.UP2GO_Dict.keys()))))
 
         self.inflated_Laplacian[:self.laplacian_matrix.shape[0], :self.laplacian_matrix.shape[1]] =\
             self.laplacian_matrix
 
-        for uniprot in self.connected_uniprots:
+        for uniprot in self.UP2GO_Dict.keys():
             for go_term in self.UP2GO_Dict.get(uniprot, []):  # should never hit the [] though
                 self.inflated_Laplacian[
                     up2idxs[uniprot], up2idxs[uniprot]] += self.binding_intensity
@@ -871,7 +723,7 @@ class GeneOntologyInterface(object):
 
     def set_uniprot_source(self, uniprots):
         """
-        Sets the reached_uniprots_neo4j_id_list on which the circulation computation routines
+        Sets the deprecated_reached_uniprots_neo4j_id_list on which the circulation computation routines
         will be performed by the otehr methods.Avoids passing as argument large lists of parameters.
 
         :param uniprots: List of node IDs of the uniprots on which we would like to perform
@@ -885,11 +737,11 @@ class GeneOntologyInterface(object):
                         'or have no GO terms attached to them.', len(na_set), len(set(uniprots)))
             log.debug('full list of uniprots that cannot be analyzed: \n%s', na_set)
 
-        self.annotated_uniprots = [
+        self.active_up_sample = [
             uniprot for uniprot in uniprots if uniprot in list(self.UP2GO_Dict.keys())]
 
         log.info("tried to set up list %d, intersected with %d UP2GO_dict.keys(), ended up with %d"
-                 % (len(uniprots), len(self.UP2GO_Dict.keys()), len(self.annotated_uniprots)))
+                 % (len(uniprots), len(self.UP2GO_Dict.keys()), len(self.active_up_sample)))
 
     def compute_current_and_potentials(
             self,
@@ -907,7 +759,7 @@ class GeneOntologyInterface(object):
          the matrix and dumped at the end computation (required for submatrix re-computation)
         :param sourced: if true, all the relations will be looked up and not computed. Useful
         for the retrieval of sub-circulation group, but requires the
-        uniprots_2_voltage_and_circulation to be pre-filled
+        to_deprecate_uniprots_2_voltage_and_circulation to be pre-filled
         :param incremental: if True, all the circulation computation will be added to the
         existing ones. Useful for the computation of particularly big systems with
         intermediate dumps
@@ -923,17 +775,17 @@ class GeneOntologyInterface(object):
             self.current_accumulator = lil_matrix(self.inflated_Laplacian.shape)
             self.UP2UP_voltages = {}
             if not sourced:
-                self.uniprots_2_voltage_and_circulation = {}
+                self.to_deprecate_uniprots_2_voltage_and_circulation = {}
 
         iterator = []
         if sparse_samples:
             for _ in range(0, sparse_samples):
-                _sample = copy(self.annotated_uniprots)
+                _sample = copy(self.active_up_sample)
                 random.shuffle(_sample)
                 iterator += list(zip(_sample[:len(_sample) // 2], _sample[len(_sample) // 2:]))
-                self.uncomplete_compute = True
+                self.sparsely_sampled = True
         else:
-            iterator = combinations(self.annotated_uniprots, 2)
+            iterator = combinations(self.active_up_sample, 2)
 
         iterator = [item for item in iterator]
 
@@ -945,7 +797,7 @@ class GeneOntologyInterface(object):
 
             if sourced:
                 self.current_accumulator = self.current_accumulator + \
-                    cr.sparse_abs(self.uniprots_2_voltage_and_circulation[
+                    cr.sparse_abs(self.to_deprecate_uniprots_2_voltage_and_circulation[
                                   tuple(sorted((UP1, UP2)))][1])
                 continue
 
@@ -980,8 +832,7 @@ class GeneOntologyInterface(object):
         self.current_accumulator = triu(self.current_accumulator)
 
         if cancellation:
-            # print(len(self.annotated_uniprots)) # CURRENTPASS: currently undefined
-            ln = len(self.annotated_uniprots)
+            ln = len(self.active_up_sample)
             self.current_accumulator /= (ln * (ln - 1) / 2)
 
         if memoized:
@@ -997,11 +848,13 @@ class GeneOntologyInterface(object):
 
         :param node_current: Current through the GO nodes
         :param limit: hard limit to go_namespace_filter out the GO terms with too little current
-         (compensates the minor currents in the gird)
+         (compensates the minor currents in the gird)s
         :return: {GO:[node current, pure GO informativity, Number of reachable nodes]}
         """
         characterization_dict = {}
         limiting_current = max(node_current.values()) * limit
+        log.debug('formatting node props with %.2f limiting current' % limiting_current)
+
         for go_term in self.GO2Num.keys():
 
             if node_current[go_term] > limiting_current:
@@ -1009,6 +862,10 @@ class GeneOntologyInterface(object):
                     node_current[go_term],
                     self.GO2_Pure_Inf[go_term],
                     len(self.GO2UP_Reachable_nodes[go_term])]
+
+        # should never occur, unless single node is a massive outlier
+        if len(characterization_dict) < 2:
+            characterization_dict = self.format_node_props(node_current, limit/100)
 
         return characterization_dict
 
@@ -1049,7 +906,7 @@ class GeneOntologyInterface(object):
 
         char_dict = {}
 
-        if self.uncomplete_compute:
+        if self.sparsely_sampled:
             log.warning('Links between the elements should not be trusted: the computations was '
                         'sampling and was not complete')
 
@@ -1062,7 +919,7 @@ class GeneOntologyInterface(object):
                              str(p_value_dict[int(GO)][0]),
                              str(nan_neg_log10(p_value_dict[int(GO)][0]))]
 
-        for UP in self.annotated_uniprots:
+        for UP in self.active_up_sample:
             char_dict[UP] = [str(self.node_current[UP]),
                              'UP', self.UP_Names[UP][0],
                              str(self.UP_Names[UP][1]).replace(',', '-'),
@@ -1094,7 +951,7 @@ class GeneOntologyInterface(object):
             no_add=False,
             pool_no=None):
         """
-        Randomly samples the set of reached_uniprots_neo4j_id_list used to create the model.
+        Randomly samples the set of deprecated_reached_uniprots_neo4j_id_list used to create the model.
 
          This is the null model creation routine
 
@@ -1114,17 +971,17 @@ class GeneOntologyInterface(object):
             raise Exception('Not the same list sizes!')
 
         # if chromosome_specific:
-        #     self.connected_uniprots = list(set(self.connected_uniprots).intersection(
-        #         set(self.interactome_interface_instance.deprecated_chromosomes_2_uniprot[str(
+        #     self.to_deprecate_connected_uniprots = list(set(self.to_deprecate_connected_uniprots).intersection(
+        #         set(self.background_set.deprecated_chromosomes_2_uniprot[str(
         #             chromosome_specific)])))
 
         for sample_size, iterations in zip(samples_size, samples_each_size):
-            print(sample_size)
-            sample_size = min(sample_size, len(self.connected_uniprots))  # CURRENTPASS: undefined
+
+            sample_size = min(sample_size, len(self._background))
             for i in range(0, iterations):
-                log.info("selecting %d from %d ups" % (sample_size, len(self.connected_uniprots)))
-                shuffle(self.connected_uniprots)  # CURRENTPASS: undefined
-                analytics_up_list = self.connected_uniprots[:sample_size]
+                log.info("selecting %d from %d ups" % (sample_size, len(self._background)))
+                shuffle(self._background)
+                analytics_up_list = self._background[:sample_size]
 
                 self.set_uniprot_source(analytics_up_list)
 
@@ -1186,7 +1043,7 @@ class GeneOntologyInterface(object):
     def get_independent_linear_groups(self):
         """
         Recovers independent linear groups of the GO terms. Independent linear groups are
-        those that share a significant amount of reached_uniprots_neo4j_id_list in common
+        those that share a significant amount of deprecated_reached_uniprots_neo4j_id_list in common
         """
         self.Indep_Lapl = lil_matrix((len(self.All_GOs), len(self.All_GOs)))
         for GO_list in self.UP2GO_Reachable_nodes.values():
@@ -1202,7 +1059,7 @@ if __name__ == '__main__':
     # Creates an instance of MatrixGetter and loads pre-computed values
 
     go_interface_instance = GeneOntologyInterface(
-        reduced_set_uniprot_node_ids=get_background_bulbs_ids())
+        background_up_ids=get_background_bulbs_ids())
     go_interface_instance.full_rebuild()
 
     # loading takes 1-6 seconds.

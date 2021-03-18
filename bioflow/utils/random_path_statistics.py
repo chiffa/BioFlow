@@ -31,7 +31,7 @@ md5_hash = interactome_interface_instance.md5_hash()
 interactome_interface_instance.randomly_sample(samples_size=[2],
                                                samples_each_size=[1000])
 
-# interactome_interface_instance.export_conduction_system()
+# background_set.export_conduction_system()
 
 # raise Exception('debug')
 
@@ -80,10 +80,10 @@ for i, sample in enumerate(find_interactome_rand_samp({'size': 2,
         continue  # we are hitting near a very tight cluster, so the pathway will be wide and short
 
     # # Debug section
-    # interactome_interface_instance.current_accumulator = current_acc
-    # interactome_interface_instance.node_current = nodes_current_dict
-    # interactome_interface_instance.UP2UP_voltages = tensions
-    # interactome_interface_instance.export_conduction_system()
+    # background_set.current_accumulator = current_acc
+    # background_set.node_current = nodes_current_dict
+    # background_set.UP2UP_voltages = tensions
+    # background_set.export_conduction_system()
 
     # Collects 100 nodes routing most information and cuts the source/sink nodes
     nodes_current = np.sort(
