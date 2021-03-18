@@ -3,7 +3,7 @@ Top-Level scripts, examples of analysis pipelines.
 """
 from bioflow.utils.log_behavior import clear_logs
 from bioflow.utils.source_dbs_download import pull_online_dbs
-from bioflow.configs.bioflow_home import sources_location
+from bioflow.configs.main_configs import sources_location
 from bioflow.db_importers.import_main import destroy_db, build_db
 from bioflow.annotation_network.knowledge_access_analysis import auto_analyze as \
     knowledge_analysis, ref_param_set, _filter

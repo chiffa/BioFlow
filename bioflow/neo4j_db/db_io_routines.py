@@ -9,23 +9,12 @@ from collections import defaultdict
 from csv import reader, writer
 from pprint import PrettyPrinter, pprint
 from bioflow.configs.main_configs import forbidden_neo4j_ids, Dumps
-from bioflow.configs.internal_configs import reactome_forbidden_nodes, uniprot_forbidden_nodes
+from bioflow.configs.main_configs import reactome_forbidden_nodes, uniprot_forbidden_nodes
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from bioflow.utils.log_behavior import get_logger
 from bioflow.utils.io_routines import write_to_csv, memoize, time_exection
 
 log = get_logger(__name__)
-
-
-# CURRENTPASS: it is no more a hidden attribute
-def get_db_id(neo4j_node):
-    """
-    gets bulbs_id for a node, since it's a hidden attribute
-
-    :param neo4j_node:
-    :return:
-    """
-    return neo4j_node.id
 
 
 def look_up_annotation_set(p_load_list, p_type=''):
@@ -47,7 +36,7 @@ def look_up_annotation_set(p_load_list, p_type=''):
     def transform_annotation_nodes(neo4j_native_nodes):
         retlist = []
         for node in neo4j_native_nodes:
-            node_bulbs_id = get_db_id(node)
+            node_bulbs_id = node.id
             node_legacy_id = node['legacyID']
             node_type = list(node.labels)[0]
             node_display_name = node['displayName']
@@ -97,8 +86,8 @@ def cast_analysis_set_to_bulbs_ids(analysis_set_csv_location):
     analysis_bulbs_ids = _auxilary_annotation_ids_from_csv(analysis_set_csv_location)
     analysis_bulbs_ids = [ret for ret in analysis_bulbs_ids]
     source = look_up_annotation_set(analysis_bulbs_ids)
-    #CURRENTPASS: this is not exactly needed and is a more of a log/debug step
-    PrettyPrinter(indent=4, stream=open(Dumps.analysis_set_display_names, 'wt')).pprint(source[1])
+    # # This is not exactly needed and is a more of a log/debug step
+    # PrettyPrinter(indent=4, stream=open(Dumps.analysis_set_display_names, 'wt')).pprint(source[1])
     writer(open(Dumps.analysis_set_bulbs_ids, 'wt'), delimiter='\n').writerow(source[2])
 
 
@@ -208,7 +197,7 @@ def compute_annotation_informativity():
     DatabaseGraph.count_go_annotation_cover()
 
 
-# CURRENTPASS: move to structural diagnostics
+# REFACTOR: [structural diagnostics]: move to structural diagnostics
 #   use tabulate for printing the list
 #   return the compiled list itself
 def pull_up_inf_density():

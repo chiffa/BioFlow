@@ -163,7 +163,7 @@ class NewOutputs(object):
         self.knowledge_network_scatterplot = path.join(root_path, 'knowledge.png')
 
 
-# CURRENTPASS: move this to configs.yaml
+# REFACTOR: [better confs]: move this to configs.yaml
 laplacian_default_type_edge_weighting = {
     "is_part_of_collection": 0.5,
     "is_same": 100,
@@ -208,7 +208,7 @@ if path.isfile(Dumps.Forbidden_IDs):
         raise e
 
 
-# CURRENTPASS: wrap the 'env_' variables it all in an "environment" wrap
+# REFACTOR: [better confs]: wrap the 'env_' variables it all in an "environment" wrap
 
 # pprint(user_settings)
 
@@ -220,10 +220,9 @@ env_skip_reactome = bool(user_settings['environment']['skip_reactome'])
 env_skip_hint = bool(user_settings['environment']['skip_hint'])
 env_skip_biogrid = bool(user_settings['environment']['skip_biogrid'])
 
-# CURRENTPASS: [BKI normalization] Make sure those are injected into the BioKnowledgeInterface
+# REFACTOR: [better confs]: Make sure those are injected into the BioKnowledgeInterface
 #  properly
 env_use_background = bool(user_settings['environment']['use_background'])
-# CURRENTPASS: if background is "True", perform a background resurrection
 env_bki_filter = [user_settings['environment']['bki_filter']]
 env_bki_correlation_factors = tuple(user_settings['environment']['bki_correlation_factors'])
 env_bki_ultraspec_clean = bool(user_settings['environment']['bki_ultraspec_clean'])

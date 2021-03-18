@@ -20,7 +20,7 @@ from tabulate import tabulate
 from bioflow.configs.main_configs import Dumps, estimated_comp_ops, NewOutputs, \
     sparse_analysis_threshold, implicitely_threaded, p_val_cutoff, min_nodes_for_p_val
 from bioflow.sample_storage.mongodb import find_interactome_rand_samp, count_interactome_rand_samp
-from bioflow.configs.bioflow_home import output_location
+from bioflow.configs.main_configs import output_location
 from bioflow.molecular_network.InteractomeInterface import InteractomeInterface
 from bioflow.utils.dataviz import kde_compute
 from bioflow.utils.log_behavior import get_logger
@@ -64,7 +64,7 @@ def spawn_sampler(args_puck):
     sample_size_list = args_puck[0]
     iteration_list = args_puck[1]
     sparse_rounds = args_puck[2]
-    pool_no = args_puck[-1]   # CURRENTPASS: switch over to PID here
+    pool_no = args_puck[-1]   # TODO: switch over to PID here
 
     interactome_interface_instance.reset_thread_hex()
     interactome_interface_instance.randomly_sample(
@@ -99,7 +99,7 @@ def spawn_sampler_pool(
              interaction_list_per_pool,
              sparse_rounds,
              background_set)]
-    # TRACING: passing background set information through int.interf.
+
     payload_list = payload * pool_size
     payload_list = [list(item)+[i] for i, item in enumerate(payload_list)]  # prepare the payload
 

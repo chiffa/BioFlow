@@ -3,7 +3,7 @@ Contains internal configurations that the user might want to act upon. For now, 
 the API_doc, just code comments for the maintainers
 """
 
-# CURRENTPASS: move to the configs .yaml
+# REFACTOR: [better confs]: move to the configs .yaml
 # Defines what nodes are to be masked to avoid conduction overload of non-informative nodes
 # Their edges are not very hight necessarily, but they are highly central in the Reactome
 # physical entities network

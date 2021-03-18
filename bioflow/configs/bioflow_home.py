@@ -5,9 +5,6 @@ Non-logged, so the configuration is minimal
 import os
 from datetime import datetime
 
-# CURRENTPASS: make sure that all the variables are imported into the main configs and are then
-#  re-imported from there.
-
 # figure where to read configs from and store the logs
 bioflow_home_directory = os.path.join(os.environ['HOME'], 'bioflow')
 

@@ -555,8 +555,8 @@ class GraphDBPipe(object):
                                     annot_type_2_annot_list: dict,
                                     preferential: bool = False,
                                     source: str = 'NA') -> List[Node]:
-        # CURRENTPASS: preferential is supposed to be a list here and needs to be zipped in
-        #  enumerate
+        # TODO: preferential is supposed to be a list here and needs to be zipped in
+        #  enumerate [unused for now]
         """
         Attaches all the external identifiers of given types to a node based on its ID
 

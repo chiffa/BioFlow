@@ -5,9 +5,8 @@ Created on Jun 15, 2013
 import pickle
 from bioflow.utils.log_behavior import get_logger
 from bioflow.configs.main_configs import Dumps, reactome_biopax_path
-from bioflow.configs.internal_configs import reactome_forbidden_nodes
+from bioflow.configs.main_configs import reactome_forbidden_nodes
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
-from bioflow.neo4j_db.db_io_routines import get_db_id
 from bioflow.bio_db_parsers.reactomeParser import ReactomeParser
 
 log = get_logger(__name__)
@@ -91,7 +90,7 @@ def insert_reactome_class(neo4j_graph_class, reactome_obj_id_2_property_dict, pa
         #       primary.items())
 
         if reactome_id in reactome_forbidden_nodes:
-            ForbiddenIDs.append(get_db_id(primary))
+            ForbiddenIDs.append(primary.id)
 
         memoization_dict[reactome_id] = primary
 

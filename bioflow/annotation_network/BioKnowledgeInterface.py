@@ -28,7 +28,6 @@ from bioflow.configs.main_configs import Dumps, NewOutputs
 from bioflow.sample_storage.mongodb import insert_annotome_rand_samp
 from bioflow.molecular_network.InteractomeInterface import InteractomeInterface
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
-from bioflow.neo4j_db.db_io_routines import get_db_id
 from bioflow.utils.gdfExportInterface import GdfExportInterface
 from bioflow.utils.io_routines import dump_object, undump_object, get_background_bulbs_ids
 from bioflow.utils.log_behavior import get_logger
@@ -616,7 +615,7 @@ class GeneOntologyInterface(object):
         nz_list = copy(
             list(zip(list(base_matrix.nonzero()[0]), list(base_matrix.nonzero()[1]))))
 
-        # CURRENTPASS [weight policy] : change that to a version using a function to calculate the
+        # TODO: [weight policy]: change that to a version using a function to calculate the
         #  weights
         for idx1, idx2 in nz_list:
             min_inf = min(

@@ -6,7 +6,6 @@ from bioflow.utils.log_behavior import get_logger
 from bioflow.bio_db_parsers.geneOntologyParser import GOTermsParser
 from bioflow.bio_db_parsers.uniprotParser import UniProtParser
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
-from bioflow.neo4j_db.db_io_routines import get_db_id
 
 log = get_logger(__name__)
 
@@ -63,23 +62,23 @@ def import_gene_ontology(go_terms, go_terms_structure):
         go_relation_type = relation[1]
 
         if go_relation_type == 'is_a':
-            DatabaseGraph.link(get_db_id(go_term_obj_1),
-                               get_db_id(go_term_obj_2),
+            DatabaseGraph.link(go_term_obj_1.id,
+                               go_term_obj_2.id,
                                'is_a_go',
                                {'source': 'Gene Ontology',
                                 'parse_type': 'annotation_relationship'})
 
         if go_relation_type == 'part_of':
-            DatabaseGraph.link(get_db_id(go_term_obj_1),
-                               get_db_id(go_term_obj_2),
+            DatabaseGraph.link(go_term_obj_1.id,
+                               go_term_obj_2.id,
                                'is_part_of_go',
                                {'source': 'Gene Ontology',
                                 'parse_type': 'annotation_relationship'})
 
         if 'regul' in go_relation_type:
             if go_relation_type == 'positively_regulates':
-                DatabaseGraph.link(get_db_id(go_term_obj_1),
-                                   get_db_id(go_term_obj_2),
+                DatabaseGraph.link(go_term_obj_1.id,
+                                   go_term_obj_2.id,
                                    'is_regulant',
                                    {'source': 'Gene Ontology',
                                     'parse_type': 'annotation_relationship',
@@ -89,8 +88,8 @@ def import_gene_ontology(go_terms, go_terms_structure):
                                     })
 
             if go_relation_type == 'negatively_regulates':
-                DatabaseGraph.link(get_db_id(go_term_obj_1),
-                                   get_db_id(go_term_obj_2),
+                DatabaseGraph.link(go_term_obj_1.id,
+                                   go_term_obj_2.id,
                                    'is_regulant',
                                    {'source': 'Gene Ontology',
                                     'parse_type': 'annotation_relationship',
@@ -100,8 +99,8 @@ def import_gene_ontology(go_terms, go_terms_structure):
                                     })
 
             else:
-                DatabaseGraph.link(get_db_id(go_term_obj_1),
-                                   get_db_id(go_term_obj_2),
+                DatabaseGraph.link(go_term_obj_1.id,
+                                   go_term_obj_2.id,
                                    'is_regulant',
                                    {'source': 'Gene Ontology',
                                     'parse_type': 'annotation_relationship',
@@ -288,8 +287,8 @@ def import_uniprots(uniprot, reactome_acnum_bindings):
         for GO_Term in data_container['GO']:
             if GO_Term in list(GO_term_memoization_dict.keys()):
                 linked_go_term = GO_term_memoization_dict[GO_Term]
-                DatabaseGraph.link(get_db_id(uniprot_node),
-                                   get_db_id(linked_go_term),
+                DatabaseGraph.link(uniprot_node.id,
+                                   linked_go_term.id,
                                    'is_go_annotation',
                                    {'source': 'UNIPROT',
                                     'parse_type': 'annotates'})
@@ -303,8 +302,8 @@ def import_uniprots(uniprot, reactome_acnum_bindings):
             if proteins is not []:
                 for prot in proteins:
                     secondary = prot
-                    DatabaseGraph.link(get_db_id(uniprot_node),
-                                       get_db_id(secondary),
+                    DatabaseGraph.link(uniprot_node.id,
+                                       secondary.id,
                                        'is_same',
                                        {'source': 'inferred xref UNIPROT_Accnum',
                                         'parse_type': 'identity'})

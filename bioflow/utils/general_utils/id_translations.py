@@ -1,5 +1,4 @@
 from bioflow.neo4j_db.db_io_routines import look_up_annotation_set
-from bioflow.configs.bioflow_home import internal_storage
 from csv import reader as csv_reader
 from csv import writer as csv_writer
 import os

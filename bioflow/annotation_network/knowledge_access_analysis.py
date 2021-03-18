@@ -25,7 +25,7 @@ from bioflow.algorithms_bank.flow_significance_evaluation import get_neighboring
 log = get_logger(__name__)
 
 
-# CURRENTPASS: [BKI normalization] Those need to go into the user_configs environment
+# REFACTOR: [BKI normalization] Those need to go into the user_configs environment
 _filter = ['biological_process']
 _correlation_factors = (1, 1)
 ref_param_set = tuple([_filter, [], (1, 1), True, 3])

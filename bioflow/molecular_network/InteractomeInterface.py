@@ -27,11 +27,10 @@ from bioflow.utils.io_routines import write_to_csv, dump_object, undump_object
 from bioflow.utils.log_behavior import get_logger
 
 from bioflow.sample_storage.mongodb import insert_interactome_rand_samp
-from bioflow.configs.bioflow_home import internal_storage
+from bioflow.configs.main_configs import internal_storage
 from bioflow.algorithms_bank import conduction_routines as cr
 from bioflow.algorithms_bank import weigting_policies as wp
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
-from bioflow.neo4j_db.db_io_routines import get_db_id
 
 
 log = get_logger(__name__)
