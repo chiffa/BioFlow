@@ -203,13 +203,13 @@ class ReactomeParser(object):
                     self.ModificationFeatures[key]['modification'] = self.SeqModVoc[
                         list(modification_property.attrib.values())[0][1:]]
 
-    def _meta_parse_tag(self, local_dict, local_property, meta_refs, is_collection):
+    def _reactome_obj_parse_tag(self, local_dict, local_property, reactome_xrefs, is_collection):
         """
         Parses a meta-physical entity tag.
 
         :param local_dict: local dictionary where the parser needs to be returned
         :param local_property: property we are currently processing
-        :param meta_refs: dictionary of x-references, for reference tag parsing
+        :param reactome_xrefs: dictionary of x-references, for reference tag parsing
         :param is_collection: Fall-through tag indicating if we are parsing a collection
         """
         if '}cellularLocation' in local_property.tag:
@@ -228,12 +228,12 @@ class ReactomeParser(object):
             if not "EntityReference" in list(local_property.attrib.values())[0][1:]:
                 # pass
                 # print local_property.attrib.values()[0][1:]
-                # for ref in meta_refs.keys():
+                # for ref in reactome_xrefs.keys():
                 #     print ref
-                # meta_ref_types = set(''.join([i for i in ref if not i.isdigit()]) for ref in meta_refs.keys())
+                # meta_ref_types = set(''.join([i for i in ref if not i.isdigit()]) for ref in reactome_xrefs.keys())
                 # print meta_ref_types
                 local_dict['references'] = \
-                        zip_dicts(meta_refs[list(local_property.attrib.values())[0][1:]],
+                        zip_dicts(reactome_xrefs[list(local_property.attrib.values())[0][1:]],
                                   local_dict['references'])
         if '}feature' in local_property.tag \
                 and 'ModificationFeature' in list(local_property.attrib.values())[0]:
@@ -245,21 +245,22 @@ class ReactomeParser(object):
                         list(local_property.attrib.values())[0][1:])
         return is_collection
 
-    def _meta_parse(self, primary_term, meta_dict, meta_collection_dict, meta_refs,
-                    sup_mods=False, sup_parts=False):
+    def _reactome_obj_parse(self, primary_term, reactome_obj_dict,
+                            reactome_obj_collection_dict, reactome_obj_xrefs,
+                            sup_mods=False, sup_parts=False):
         """
         A common parse round for all the meta-physical entity
 
         :param primary_term: term name within Reactome file
-        :param meta_dict: dictionary of meta-object parses where we are inserting it
-        :param meta_collection_dict: dictionary of collections of meta-objects
-        :param meta_refs: dictionary containing the x-refs for the meta-object
+        :param reactome_obj_dict: dictionary of meta-object parses where we are inserting it
+        :param reactome_obj_collection_dict: dictionary of collections of meta-objects
+        :param reactome_obj_xrefs: dictionary containing the x-refs for the meta-object
         :param sup_mods: if true, modulation will be suppressed
         :param sup_parts: if true, parts tag will be suppressed
         """
-        for meta_object in self._find_in_root(primary_term):
+        for reactome_object in self._find_in_root(primary_term):
 
-            key_ = list(meta_object.attrib.values())[0]
+            key_ = list(reactome_object.attrib.values())[0]
             base_dict = {'collectionMembers': [],
                          'modification': [],
                          'parts': [],
@@ -268,9 +269,9 @@ class ReactomeParser(object):
                          }
             is_collection = False
 
-            for meta_property in meta_object:
-                is_collection = self._meta_parse_tag(base_dict, meta_property,
-                                                     meta_refs, is_collection)
+            for reactome_object_property in reactome_object:
+                is_collection = self._reactome_obj_parse_tag(base_dict, reactome_object_property,
+                                                             reactome_obj_xrefs, is_collection)
 
             base_dict['references']['name'] = list(set(base_dict['references']['name']))
             base_dict['modification'] = [dict(t)
@@ -280,7 +281,7 @@ class ReactomeParser(object):
             if is_collection:
                 del base_dict['modification']
                 del base_dict['parts']
-                meta_collection_dict[key_] = base_dict
+                reactome_obj_collection_dict[key_] = base_dict
 
             else:
                 del base_dict['collectionMembers']
@@ -288,7 +289,7 @@ class ReactomeParser(object):
                     del base_dict['modification']
                 if not base_dict['parts'] or sup_parts:
                     del base_dict['parts']
-                meta_dict[key_] = base_dict
+                reactome_obj_dict[key_] = base_dict
 
     def _parse_reaction(self, primary_term, target_dict, tags_to_parse=()):
         """
@@ -438,18 +439,18 @@ class ReactomeParser(object):
 
         self._parse_modification_features()
 
-        self._meta_parse('Dna', self.Dnas, self.Dna_Collections, self.DnaRefs,
-                         sup_mods=True, sup_parts=True)
-        self._meta_parse('Rna', self.Rnas, self.Rna_Collections, self.RnaRefs,
-                         sup_mods=True, sup_parts=True)
-        self._meta_parse('SmallMolecule', self.SmallMolecules, self.SmallMolecule_Collections,
-                         self.SmallMoleculeRefs, sup_mods=True, sup_parts=True)
-        self._meta_parse('Protein', self.Proteins, self.Protein_Collections,
-                         self.ProteinRefs, sup_mods=False, sup_parts=True)
-        self._meta_parse('PhysicalEntity', self.PhysicalEntities, self.PhysicalEntity_Collections,
-                         defaultdict(None), sup_mods=True, sup_parts=True)
-        self._meta_parse('Complex', self.Complexes, self.Complex_Collections,
-                         defaultdict(None), sup_mods=True, sup_parts=False)
+        self._reactome_obj_parse('Dna', self.Dnas, self.Dna_Collections, self.DnaRefs,
+                                 sup_mods=True, sup_parts=True)
+        self._reactome_obj_parse('Rna', self.Rnas, self.Rna_Collections, self.RnaRefs,
+                                 sup_mods=True, sup_parts=True)
+        self._reactome_obj_parse('SmallMolecule', self.SmallMolecules, self.SmallMolecule_Collections,
+                                 self.SmallMoleculeRefs, sup_mods=True, sup_parts=True)
+        self._reactome_obj_parse('Protein', self.Proteins, self.Protein_Collections,
+                                 self.ProteinRefs, sup_mods=False, sup_parts=True)
+        self._reactome_obj_parse('PhysicalEntity', self.PhysicalEntities, self.PhysicalEntity_Collections,
+                                 defaultdict(None), sup_mods=True, sup_parts=True)
+        self._reactome_obj_parse('Complex', self.Complexes, self.Complex_Collections,
+                                 defaultdict(None), sup_mods=True, sup_parts=False)
 
         self._parse_reaction('TemplateReaction', self.TemplateReactions, ['product'])
         self._parse_reaction('Degradation', self.Degradations, ['left'])

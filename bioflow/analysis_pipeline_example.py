@@ -32,11 +32,11 @@ if __name__ == "__main__":
     # main_configs update
     ##########################################
 
-    # clearing the database, if required
-    destroy_db()
-
-    # building the neo4j database
-    build_db()
+    # # clearing the database, if required
+    # destroy_db()
+    #
+    # # building the neo4j database
+    # build_db()
 
     background_bulbs_ids = []
 

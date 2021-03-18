@@ -5,8 +5,7 @@ Created on Jun 15, 2013
 import pickle
 from bioflow.utils.log_behavior import get_logger
 from bioflow.configs.main_configs import Dumps, reactome_biopax_path
-from bioflow.configs.internal_configs import reactome_forbidden_nodes, \
-    to_deprecate_neo4j_names_dict  # TRACING: [deprecation]
+from bioflow.configs.internal_configs import reactome_forbidden_nodes
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from bioflow.neo4j_db.db_io_routines import get_db_id
 from bioflow.bio_db_parsers.reactomeParser import ReactomeParser
@@ -46,33 +45,33 @@ def insert_minimal_annotations(annotated_node, annot_type_2_annot_list, source):
                                               source=source)
 
 
-def insert_meta_objects(neo4j_graph_class, meta_id_2_property_dict, parse_type):
+def insert_reactome_class(neo4j_graph_class, reactome_obj_id_2_property_dict, parse_type):
     """
     Inserst a Meta-Object (I.e. any physical entity or collection thereof) as a member of a
      bulbs class and pumping the bioflow information from the property bioflow
 
     :param neo4j_graph_class:
-    :param meta_id_2_property_dict:
+    :param reactome_obj_id_2_property_dict:
     """
-    size = len(list(meta_id_2_property_dict.keys()))
+    size = len(list(reactome_obj_id_2_property_dict.keys()))
     log.info('Starting inserting %s with %s elements', neo4j_graph_class, size)
     breakpoints = 300
 
-    for i, (meta_name, property_dict) in enumerate(meta_id_2_property_dict.items()):
+    for i, (reactome_id, property_dict) in enumerate(reactome_obj_id_2_property_dict.items()):
 
         if i % breakpoints == 0:
             # TODO: [progress bar]
             log.info('\t %.2f %%' % (float(i) / float(size) * 100.0))
 
-        meta_properties = {'legacyID': meta_name,
-                           'displayName': property_dict['displayName'],
-                           'localization':
-                               memoization_dict[property_dict['cellularLocation']]['displayName'],
-                           'source': 'Reactome',
-                           'parse_type': parse_type,
-                           'main_connex': False}
+        reactome_obj_properties = {'legacyID': reactome_id,
+                                   'displayName': property_dict['displayName'],
+                                   'localization':
+                                       memoization_dict[property_dict['cellularLocation']]['displayName'],
+                                   'source': 'Reactome',
+                                   'parse_type': parse_type,
+                                   'main_connex': False}
 
-        primary = DatabaseGraph.create(neo4j_graph_class, meta_properties)
+        primary = DatabaseGraph.create(neo4j_graph_class, reactome_obj_properties)
 
         log.debug(primary)
         log.debug(dir(primary))
@@ -91,10 +90,10 @@ def insert_meta_objects(neo4j_graph_class, meta_id_2_property_dict, parse_type):
         #       primary.keys(), '\n',
         #       primary.items())
 
-        if meta_name in reactome_forbidden_nodes:
+        if reactome_id in reactome_forbidden_nodes:
             ForbiddenIDs.append(get_db_id(primary))
 
-        memoization_dict[meta_name] = primary
+        memoization_dict[reactome_id] = primary
 
         insert_minimal_annotations(primary,
                                    property_dict['references'],
@@ -385,40 +384,14 @@ def insert_pathways(pathway_steps, pathways):
                                 })
 
 
-def get_one_meta_set(neo4j_class):
-    """
-    In case a MetaObject was already inserted, reloads it to the local dictionary for further
-    annotation insertion
-
-    :param neo4j_class:
-    """
-    for node in DatabaseGraph.get_all(neo4j_class):
-        memoization_dict[node['legacyID']] = node
-
-
-def get_all_meta_sets():
+def re_memoize_reactome_nodes():
     """
     In case the MetaObjects were already inserted, reloads them all to the local dictionary for
     further annotation insertion
     """
-    # TRACING: [deprecation]
-    list_of_bulbs_classes = [
-        to_deprecate_neo4j_names_dict['DNA'],
-        to_deprecate_neo4j_names_dict['DNA Collection'],
-        to_deprecate_neo4j_names_dict['RNA'],
-        to_deprecate_neo4j_names_dict['RNA Collection'],
-        to_deprecate_neo4j_names_dict['Small Molecule'],
-        to_deprecate_neo4j_names_dict['Small Molecule Collection'],
-        to_deprecate_neo4j_names_dict['Protein'],
-        to_deprecate_neo4j_names_dict['Protein Collection'],
-        to_deprecate_neo4j_names_dict['Complex'],
-        to_deprecate_neo4j_names_dict['Complex Collection'],
-        to_deprecate_neo4j_names_dict['Physical Entity'],
-        to_deprecate_neo4j_names_dict['Physical Entity Collection']
-    ]
 
-    for node_class in list_of_bulbs_classes:
-        get_one_meta_set(node_class)
+    reactome_nodes = DatabaseGraph.find(filter_dict={'source': 'Reactome'})
+    memoization_dict.update({node['legacyID']: node for node in reactome_nodes})
 
 
 def insert_reactome(skip_import='N'):
@@ -429,9 +402,6 @@ def insert_reactome(skip_import='N'):
                      * M => skips meta import, recovers the metas and resumes from the Reactions
                      import.
     """
-    def get_db_class_handle(shortname):
-        return to_deprecate_neo4j_names_dict[shortname]  # TRACING: [deprecation]
-
     reactome_parser = ReactomeParser(reactome_biopax_path)
     reactome_parser.parse_all()
 
@@ -439,31 +409,30 @@ def insert_reactome(skip_import='N'):
 
         insert_cell_locations(reactome_parser.CellularLocations)
 
-        insert_meta_objects(get_db_class_handle('DNA'),
-                            reactome_parser.Dnas, 'physical_entity')
-        insert_meta_objects(get_db_class_handle('DNA Collection'),
-                            reactome_parser.Dna_Collections, 'physical_entity')
-        insert_meta_objects(get_db_class_handle('RNA'),
-                            reactome_parser.Rnas, 'physical_entity')
-        insert_meta_objects(get_db_class_handle('RNA Collection'),
-                            reactome_parser.Rna_Collections, 'physical_entity')
-        insert_meta_objects(get_db_class_handle('Small Molecule'),
-                            reactome_parser.SmallMolecules, 'physical_entity')
-        insert_meta_objects(get_db_class_handle('Small Molecule Collection'),
-                            reactome_parser.SmallMolecule_Collections, 'physical_entity')
-        insert_meta_objects(get_db_class_handle('Protein'),
-                            reactome_parser.Proteins, 'physical_entity')
-        insert_meta_objects(get_db_class_handle('Protein Collection'),
-                            reactome_parser.Protein_Collections, 'physical_entity')
-        insert_meta_objects(get_db_class_handle('Complex'),
-                            reactome_parser.Complexes, 'physical_entity')
-        insert_meta_objects(get_db_class_handle('Complex Collection'),
-                            reactome_parser.Complex_Collections, 'physical_entity')
-        insert_meta_objects(get_db_class_handle('Physical Entity'),
-                            reactome_parser.PhysicalEntities, 'physical_entity')
-        insert_meta_objects(
-            get_db_class_handle('Physical Entity Collection'),
-            reactome_parser.PhysicalEntity_Collections, 'physical_entity')
+        insert_reactome_class('DNA',
+                              reactome_parser.Dnas, 'physical_entity')
+        insert_reactome_class("DNA_Collection",
+                              reactome_parser.Dna_Collections, 'physical_entity')
+        insert_reactome_class("RNA",
+                              reactome_parser.Rnas, 'physical_entity')
+        insert_reactome_class("RNA_Collection",
+                              reactome_parser.Rna_Collections, 'physical_entity')
+        insert_reactome_class("SmallMolecule",
+                              reactome_parser.SmallMolecules, 'physical_entity')
+        insert_reactome_class("SmallMolecule_Collection",
+                              reactome_parser.SmallMolecule_Collections, 'physical_entity')
+        insert_reactome_class("Protein",
+                              reactome_parser.Proteins, 'physical_entity')
+        insert_reactome_class("Protein_Collection",
+                              reactome_parser.Protein_Collections, 'physical_entity')
+        insert_reactome_class("Complex",
+                              reactome_parser.Complexes, 'physical_entity')
+        insert_reactome_class("Complex_Collection",
+                              reactome_parser.Complex_Collections, 'physical_entity')
+        insert_reactome_class("PhysicalEntity",
+                              reactome_parser.PhysicalEntities, 'physical_entity')
+        insert_reactome_class("PhysicalEntity_Collection",
+                              reactome_parser.PhysicalEntity_Collections, 'physical_entity')
 
         log.info('Inserting DNA Collections with %s elements'
                  % len(reactome_parser.Dna_Collections))
@@ -495,22 +464,22 @@ def insert_reactome(skip_import='N'):
 
 
     if skip_import == 'M':
-        get_all_meta_sets()
+        re_memoize_reactome_nodes()
 
     # print memoization_dict.keys()
 
     # Meta insert/retrieval finished
     log.info('Inserting Template Reactions with %s elements'
              % len(reactome_parser.TemplateReactions))
-    insert_reactions(get_db_class_handle('TemplateReaction'),
+    insert_reactions("Template_Reaction",
                      reactome_parser.TemplateReactions)
     log.info('Inserting Degradations with %s elements'
              % len(reactome_parser.Degradations))
-    insert_reactions(get_db_class_handle('Degradation'),
+    insert_reactions("Degradation",
                      reactome_parser.Degradations)
     log.info('Inserting Biochemical Reactions with %s elements'
              % len(reactome_parser.BiochemicalReactions))
-    insert_reactions(get_db_class_handle('BiochemicalReaction'),
+    insert_reactions("BiochemicalReaction",
                      reactome_parser.BiochemicalReactions)
 
     # Reaction insert finished

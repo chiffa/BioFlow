@@ -1,10 +1,15 @@
+from typing import Tuple
+
 import numpy as np
 from matplotlib import pyplot as plt
+from scipy import sparse as spmat
 
 from bioflow.annotation_network.knowledge_access_analysis import ref_param_set, \
     get_go_interface_instance
 from bioflow.configs.main_configs import NewOutputs
-from bioflow.utils.dataviz import kde_compute
+from bioflow.utils.dataviz import kde_compute, render_2d_matrix
+from bioflow.utils.linalg_routines import cluster_nodes, normalize_laplacian, \
+    average_off_diag_in_sub_matrix, average_interset_linkage
 
 
 def local_indexed_select(tri_array, array_column, selection_span):
@@ -246,3 +251,74 @@ def deprectated_show_correlations(
 
     # pull the groups corresponding to non-random associations.
     return current_info_rel, cluster_props
+
+
+def deprecated_perform_clustering(inter_node_tension: spmat.csc_matrix,
+                                  cluster_number: int,
+                                  show: str = 'undefined clustering') -> Tuple[np.array, np.float64,
+                                                                    np.array, np.array]:
+    """
+    Performs a clustering on the voltages of the nodes,
+
+    :param inter_node_tension:
+    :param cluster_number:
+    :param show:
+    """
+    index_group = list(set([item
+                            for key in inter_node_tension.keys()
+                            for item in key]))
+    local_index = dict((UP, i) for i, UP in enumerate(index_group))
+    rev_idx = dict((i, UP) for i, UP in enumerate(index_group))
+    relations_matrix = spmat.lil_matrix((len(index_group), len(index_group)))
+
+    for (UP1, UP2), tension in inter_node_tension.items():
+        # TODO: change the metric used to cluster the nodes.
+        relations_matrix[local_index[UP1], local_index[UP2]] = -1.0 / tension
+        relations_matrix[local_index[UP2], local_index[UP1]] = -1.0 / tension
+        relations_matrix[local_index[UP2], local_index[UP2]] += 1.0 / tension
+        relations_matrix[local_index[UP1], local_index[UP1]] += 1.0 / tension
+
+    # underlying method is spectral clustering: do we really lie in a good zone for that?
+    # NOPE - we need a dynamic clusters number
+    # TODO: change clustering method to a different one
+    groups = cluster_nodes(relations_matrix, cluster_number)
+
+    relations_matrix = normalize_laplacian(relations_matrix)
+
+    if relations_matrix.shape[0] < 5:
+        eigenvals, _ = spmat.linalg.eigsh(relations_matrix, k=2)
+    elif relations_matrix.shape[0] < 10:
+        eigenvals, _ = spmat.linalg.eigsh(relations_matrix, k=4)
+    else:
+        eigenvals, _ = spmat.linalg.eigsh(relations_matrix)
+
+    relations_matrix = - relations_matrix
+    relations_matrix.setdiag(1)
+
+    group_sets = []
+    group_2_mean_off_diag = []
+    for i in range(0, cluster_number):
+        group_selector = groups == i
+        group_indexes = group_selector.nonzero()[0].tolist()
+        group_2_mean_off_diag.append(
+            (tuple(rev_idx[idx] for idx in group_indexes),
+                len(group_indexes),
+                average_off_diag_in_sub_matrix(relations_matrix, group_indexes)))
+        group_sets.append(group_indexes)
+
+    remainder = average_interset_linkage(relations_matrix, group_sets)
+
+    clustidx = np.array([item for itemset in group_sets for item in itemset])
+    relations_matrix = relations_matrix[:, clustidx]
+    relations_matrix = relations_matrix[clustidx, :]
+
+    mean_corr_array = np.array([[items, mean_corr]
+                                for _, items, mean_corr in group_2_mean_off_diag])
+
+    if show:
+        render_2d_matrix(relations_matrix.toarray(), name=show, destination='')
+
+    return np.array(group_2_mean_off_diag), \
+        remainder, \
+        mean_corr_array, \
+        eigenvals

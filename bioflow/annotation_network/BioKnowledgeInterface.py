@@ -80,10 +80,8 @@ class GeneOntologyInterface(object):
         self.init_time = time()
         self.partial_time = time()
 
-        self.deprecated_UPs_without_GO = set()
         self.UP2GO_Dict = defaultdict(list)
         self.GO2UP = defaultdict(list)
-        self.deprecated_SeedSet = set()
         self.All_GOs = []
         self.GO2Num = {}
         self.Num2GO = {}
@@ -115,7 +113,7 @@ class GeneOntologyInterface(object):
          # Refactor: [stateless]: this needs to be passed as an argument, not a persistent variable
         self.active_up_sample = []
         self.UP2UP_voltages = {}
-        self.to_deprecate_uniprots_2_voltage_and_circulation = {}  # can be safely renamed
+        self.uniprots_2_voltage = {}
 
         self.current_accumulator = np.zeros((2, 2))
         self.node_current = {}
@@ -180,7 +178,6 @@ class GeneOntologyInterface(object):
             confs.Dumps.GO_dump,
             (self.UP2GO_Dict,
              self.GO2UP,
-             self.deprecated_SeedSet,
              self.Reachable_nodes_dict,
              self.GO_Names,
              self.GO_Legacy_IDs,
@@ -188,13 +185,12 @@ class GeneOntologyInterface(object):
              self.All_GOs,
              self.GO2Num,
              self.Num2GO,
-             self.UP_Names,
-             self.deprecated_UPs_without_GO))
+             self.UP_Names))
 
     def undump_core(self):
-        self.UP2GO_Dict, self.GO2UP, self.deprecated_SeedSet, self.Reachable_nodes_dict, \
+        self.UP2GO_Dict, self.GO2UP, self.Reachable_nodes_dict, \
         self.GO_Names, self.GO_Legacy_IDs, self.rev_GO_IDs, self.All_GOs, \
-        self.GO2Num, self.Num2GO, self.UP_Names, self.deprecated_UPs_without_GO =\
+        self.GO2Num, self.Num2GO, self.UP_Names =\
             undump_object(confs.Dumps.GO_dump)
 
     def dump_matrices(self):
@@ -246,7 +242,7 @@ class GeneOntologyInterface(object):
             'size': len(self.active_up_sample),
             'UPs': pickle.dumps(self.active_up_sample),
             'currents': pickle.dumps((self.current_accumulator, self.node_current)),
-            'voltages': pickle.dumps(self.to_deprecate_uniprots_2_voltage_and_circulation)}
+            'voltages': pickle.dumps(self.uniprots_2_voltage)}
         dump_object(confs.Dumps.GO_Analysis_memoized, payload)
 
     @staticmethod
@@ -759,7 +755,7 @@ class GeneOntologyInterface(object):
          the matrix and dumped at the end computation (required for submatrix re-computation)
         :param sourced: if true, all the relations will be looked up and not computed. Useful
         for the retrieval of sub-circulation group, but requires the
-        to_deprecate_uniprots_2_voltage_and_circulation to be pre-filled
+        uniprots_2_voltage to be pre-filled
         :param incremental: if True, all the circulation computation will be added to the
         existing ones. Useful for the computation of particularly big systems with
         intermediate dumps
@@ -775,7 +771,7 @@ class GeneOntologyInterface(object):
             self.current_accumulator = lil_matrix(self.inflated_Laplacian.shape)
             self.UP2UP_voltages = {}
             if not sourced:
-                self.to_deprecate_uniprots_2_voltage_and_circulation = {}
+                self.uniprots_2_voltage = {}
 
         iterator = []
         if sparse_samples:
@@ -797,7 +793,7 @@ class GeneOntologyInterface(object):
 
             if sourced:
                 self.current_accumulator = self.current_accumulator + \
-                    cr.sparse_abs(self.to_deprecate_uniprots_2_voltage_and_circulation[
+                    cr.sparse_abs(self.uniprots_2_voltage[
                                   tuple(sorted((UP1, UP2)))][1])
                 continue
 

@@ -223,7 +223,7 @@ class InteractomeInterface(object):
             'size': len(self.active_up_sample),
             'UPs': pickle.dumps(self.active_up_sample),
             'currents': pickle.dumps((self.current_accumulator, self.node_current)),
-            'voltages': pickle.dumps(self.to_deprecate_uniprots_2_voltage_and_circulation)}
+            'voltages': pickle.dumps(self.uniprots_2_voltage)}
 
         :return:
         """
@@ -353,7 +353,7 @@ class InteractomeInterface(object):
         self.neo4j_id_2_localization = {_id: _node.get('localization', 'NA')
                                         for (_id, _node) in nodes_dict.items()}
 
-        self.known_uniprots_neo4j_ids = [_node.id for _node
+        self.known_uniprots_neo4j_ids = [_node_id for _node_id
                                          in self.neo4j_id_2_matrix_index.keys()]
 
         self.active_up_sample = []  # REFACTOR [stateless]: decouple into argument
@@ -392,41 +392,6 @@ class InteractomeInterface(object):
         log.debug("all laplacian eigenvalues above%s", np.all(eigsh(self.laplacian_matrix)[0] > 0))
         log.info("Finished eigenvalues computation, starting the dump %s", self.pretty_time())
 
-    def deprecated_write_connexity_infos(self):
-        """
-            Writes the infos about connexity of different components of a graph into the database
-            for the future use. This execution is the main reason for the existance of the
-            Adjacency Matrix.
-
-            :warning: This process has to ber re-run each time the underlying database
-            is changed in a way that migh affect the main connex graph
-        """
-        adjacency_graph_connected_components = connected_components(self.adjacency_Matrix,
-                                                                    directed=False)
-
-        counters = np.zeros((adjacency_graph_connected_components[0], 1))
-
-        for elt in range(0, len(adjacency_graph_connected_components[1])):
-            counters[adjacency_graph_connected_components[1][elt], 0] += 1
-
-        giant_connex_component_index = np.argmax(counters)
-        markings_to_do = len(adjacency_graph_connected_components[1]) / 10.
-
-        for i, connex_component_index in enumerate(adjacency_graph_connected_components[1]):
-
-            if i % int(markings_to_do) == 0:
-                log.info('Marking graph main connex elements: %s done',
-                         str("{0:.2f}".format(i / markings_to_do * 10.)))
-
-            if connex_component_index == giant_connex_component_index:
-                DatabaseGraph.set_attributes(self.matrix_index_2_neo4j_id[i],
-                                             {'custom': 'Main_connex',
-                                              'main_connex': True})
-
-        log.info("Marking of %s nodes for connexity was done in %s",
-                 str(markings_to_do), str(self.pretty_time()))
-
-
     def fast_load(self):
         """
         Pre-loads mappings, matrices and eigenvalues
@@ -436,11 +401,11 @@ class InteractomeInterface(object):
         self.undump_eigen()
 
         if self._background:
-            self._background = set(self.known_uniprots_neo4j_ids).intersection(
-                set(self._background))
+            self._background = list(set(self.known_uniprots_neo4j_ids).intersection(
+                set(self._background)))
 
         else:
-            self._background = set(self.known_uniprots_neo4j_ids)
+            self._background = list(set(self.known_uniprots_neo4j_ids))
 
 
     def get_descriptor_for_index(self, index):
@@ -537,7 +502,7 @@ class InteractomeInterface(object):
             remembered - required for clustering. Incompatible with `sparse_sample=True`
         :param bool sourced: if true, all the relations will be looked up and not computed.
             Useful for the retrieval of sub-circulation group, but requires the
-            `to_deprecate_uniprots_2_voltage_and_circulation` to be pre-filled
+            `uniprots_2_voltage` to be pre-filled
         :param bool incremental: if True, all the circulation computation will be added to the
             existing ones. Useful for the computation of particularly big systems with
             intermediate dumps
