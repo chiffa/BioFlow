@@ -26,6 +26,7 @@ def url_to_local_path(url, path, rename=None):
     Performs file-to-folder converstion
     :param url:
     :param path:
+    :raise Exception: something is wrong with the uri
     :return:
     """
     if isdir(path) and '.zip' not in url and '.tar' not in url:
@@ -67,6 +68,8 @@ def url_to_local_p_zip(url, path):
     Copies a file from an http url to a local folder provided  in path
     :param url:
     :param path:
+    :raise Exception: something is wrong with the path
+    :raise Exception: something is wrong with the uri
     :return:
     """
     if not isdir(path):
@@ -89,6 +92,7 @@ def url_to_local_p_gz(url, path):
     Copies a file from an http or ftp url to a local destination provided in path
     :param url:
     :param path:
+    :raise Exception: something is wrong with the uri
     :return:
     """
     if url[:3] == 'ftp':
@@ -117,6 +121,7 @@ def url_to_local(url, path, rename=None):
 
     :param url:
     :param path:
+    :raise Exception: renaming for gunzip and zipped files is not supported
     :return:
     """
     if url[-2:] == 'gz':

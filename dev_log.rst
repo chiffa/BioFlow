@@ -3,14 +3,12 @@ TODOs for the project in the future:
 
 On the table:
 -------------
-
-- TODO: perform the explicit background pass for BioKnowledge as for the Interactome
-
 <Documentation>
 
  - DONE: [DOC] pass and APIdoc all the functions and modules
 
- - TODO: [DOC] document all the possible exceptions that can be raised
+ - DONE: [DOC] document all the possible exceptions that can be raised
+    - what will raise an exception
 
  - DONE: [SANITY] remove all old dangling variables and code (deprecated X)
 
@@ -26,12 +24,10 @@ On the table:
 
  - TODO: [DOC] put an explanation of overall workflow of the library
 
- - TODO: check that all the functions and modules are properly documented
+ - DONE: [DOC] check that all the functions and modules are properly documented
 
- - TODO: [SANITY] move the additional from the "annotation_network" to somewhere saner =>
+ - DONE: [SANITY] move the additional from the "annotation_network" to somewhere saner =>
         Separate application importing BioFlow as a library
-
- - TODO: [SANITY]: put all the imports  under the umbrella making clear where they come from
 
  - TODO: [DOC] document where the user-mapped folders live from Docker
 
@@ -70,7 +66,7 @@ Current refactoring:
  - TODO: [USABILITY]: adjust the sampling spin-up according to how many "good" samples are
         already in the mongodb
 
- - TODO: [SANITY] [REFACTOR]: sanify the database management
+ - TODO: [SANITY] [REFACTOR]: sanify the databases management
     - TODO: create the `data_stores` package and move everything relating to mongoDB and neo4j there
     - TODO: remove the `GraphDeclarator.py`, fold the logic directly into the `cypher_drivers`
     - TODO: rename `db_io_routines` to `bionet_routines`
@@ -81,6 +77,7 @@ Current refactoring:
     - TODO: put a type straight-jacket
     - TODO: move the `internet_io` to the `data_stores` package
 
+ - TODO: [SANITY]: put all the imports  under the umbrella making clear where they come from
 
 <Sanify BioKnowledge>
 
@@ -189,7 +186,7 @@ Current refactoring:
  - TODO: [USABILITY]: fold the current verbose state into a `-v/--vebose` argument
 
 
-
+ - DONE: perform the explicit background pass for BioKnowledge as for the Interactome
 
  - DONE: rename the 'meta_objects' to 'Reactome_base_object' in reactome_inserter.py
 

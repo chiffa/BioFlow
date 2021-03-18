@@ -128,7 +128,7 @@ if __name__ == "__main__":
             #     background_set = True
 
             # # perform the interactome analysis
-            interactome_analysis([hits_ids][:20],
+            interactome_analysis([hits_ids],
                                  ['chr_%s' % filename[:-4]],
                                  desired_depth=5,
                                  processors=1,
@@ -137,7 +137,7 @@ if __name__ == "__main__":
                                  )
 
             # # perform the knowledge analysis
-            knowledge_analysis([hits_ids][:20],
+            knowledge_analysis([hits_ids],
                                ['chr_%s' % filename[:-4]],
                                desired_depth=5,
                                processors=1,

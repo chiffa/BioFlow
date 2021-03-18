@@ -66,6 +66,8 @@ def insert_complexes():
     Performs the full kinase-substrate parsing and insertion.
 
     :return:
+    :raise Exception: in case a non-human load
+
     """
 
     if organism != 'Human':

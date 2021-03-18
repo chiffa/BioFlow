@@ -11,7 +11,7 @@ import traceback
 import warnings
 import threading
 
-from bioflow.configs.main_configs import output_location, log_location
+from bioflow.configs.bioflow_home import output_location, log_location
 
 on_unittest = os.environ.get('UNITTESTING') == 'True'  # if we are unittesting
 on_remote_unittest = os.environ.get('REMOTE_UNITTEST') == 'True'  # if we are testing on CI tools

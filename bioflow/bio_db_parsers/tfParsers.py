@@ -55,6 +55,7 @@ def parse_marbach(marbach_prefix, parse_mode='mean'):
 
     :param marbach_prefix:
     :param parse_mode: ['mean', 'one', 'all']
+    :raise Exception: unsupported parse mode
     :return:
     """
 

@@ -71,6 +71,8 @@ def cross_ref_tf_factors(confs='tcm'):
     """
     Performs the full transcription factors parsing and insertion routine.
 
+    :raise Exception: in case a non-human organism is attempted to be loaded with transcription
+    factors database
     :return:
     """
     if organism != 'Human':

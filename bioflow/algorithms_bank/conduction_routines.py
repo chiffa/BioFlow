@@ -202,6 +202,7 @@ def get_current_through_nodes(triu_current_matrix: spmat.csc_matrix) -> List[np.
     :return : current through the individual nodes based on the current matrix as defined in
      the get_current_matrix module
     :rtype: numpy.array
+    :raise Exception: if the incoming vs outcoming current flow is different
     """
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", "Changing the sparsity structure")

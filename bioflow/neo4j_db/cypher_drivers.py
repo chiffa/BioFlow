@@ -53,7 +53,7 @@ def _check_node_params(param_dict: dict) -> bool:
 
     :param param_dict:
     :return: True if all is good
-    :raises: exception in case either of the preconditions fail.
+    :raise Exception: exception in case either of the preconditions fail
     """
     if param_dict is None:
         raise Exception('param_dict supplied is empty')
@@ -78,7 +78,7 @@ def _check_edge_params(param_dict: dict) -> bool:
 
     :param param_dict:
     :return: True if all is good
-    :raises: exception in case either of the preconditions fail.
+    :raise Exception: exception in case either of the preconditions fail
     """
     if param_dict is None:
         raise Exception('param_dict supplied is empty')
@@ -1016,6 +1016,7 @@ class GraphDBPipe(object):
         Removes all proprties whose name is in the list from all the nodes who have it.
 
         :param properties_list: list of properties to be removed
+        :raise Exception: if a parameter that is required is cleared
         :return:
         """
         with self._driver.session() as session:

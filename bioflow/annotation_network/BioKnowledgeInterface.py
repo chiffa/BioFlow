@@ -288,6 +288,11 @@ class GeneOntologyInterface(object):
         parameters were mismatched., Trims the background provided upon construction down to what
         actually be sampled (self._background)
 
+        :raise Exception:  wrong filtering namespace parameter
+        :raise Exception:  wrong correction factor parameter
+        :raise Exception:  wrong ultraspec cleaned parameter
+        :raise Exception:  wrong ultraspec level parameter
+
         """
         namespace_filter, initial_set, correction_factor, ultraspec_cleaned, ultraspec_lvl = \
             self._undump_statics()
@@ -514,6 +519,9 @@ class GeneOntologyInterface(object):
         """
         Recovers by how many different uniprots each GO term is reached, both in
         distance-agnostic and distance-specific terms.
+
+        :raise Exception: if the reaches are not equivalent
+        :raise Exception: if null section in a non-nul patch
         """
 
         def verify_equivalence_of_reaches(step_reach, reach):
@@ -521,7 +529,7 @@ class GeneOntologyInterface(object):
 
             :param step_reach:
             :param reach:
-            :raise Exception:
+            :raise Exception: if the reaches are not equivalent
             """
             dict_len = {key: [len(val), len(list(step_reach[key].keys()))]
                         for key, val in reach.items()}
