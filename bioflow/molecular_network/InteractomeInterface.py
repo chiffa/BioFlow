@@ -1,6 +1,6 @@
 """
-This module contains all the routines that are respojnsible for pulling
-the matrixes out of the neo4j graph and processing them.
+This module contains all the routines that are responsible for pulling
+the matrices out of the knowledge time and routines on them
 """
 # from pympler import muppy, summary, tracker
 
@@ -38,16 +38,11 @@ log = get_logger(__name__)
 
 class InteractomeInterface(object):
     """
-    Interface between interactome in the database and the interactome graph laplacian
+    Interface between interactome in the knowledge database and the interactome graph laplacian
 
-    :param main_connex_only: if True, loads only the elements of the main connex
-    :param full_impact: if True, will compare the names of entities and link the
-    entities that has the name with the "Possibily the same" relation
+    :param background_up_ids: (optional) background that will be used for sampling of random
+    nodes to build a comparison interface for the
     """
-
-    # List of all the reaction types present in the DatabaseGraph that will be
-    # used as roots to build the interaction network (not all nodes are necessary
-    # within the connex part of the graph)
 
     def __init__(self, background_up_ids=()):
         self.init_time = time()
@@ -120,14 +115,14 @@ class InteractomeInterface(object):
 
     # REFACTOR: [better environment]:  potential improvement for all dump/undump methods
     #  is to use mongo storage and index from environment not to re-compute them every time
-    def dump_matrices(self):
+    def _dump_matrices(self):
         """
         dumps self.adjacency_matrix and self.laplacian_matrix
         """
         dump_object(confs.Dumps.interactome_adjacency_matrix, self.adjacency_matrix)
         dump_object(confs.Dumps.interactome_laplacian_matrix, self.laplacian_matrix)
 
-    def undump_matrices(self):
+    def _undump_matrices(self):
         """
         undumps self.adjacency_matrix and self.laplacian_matrix
         """
@@ -135,7 +130,7 @@ class InteractomeInterface(object):
         self.laplacian_matrix = undump_object(confs.Dumps.interactome_laplacian_matrix)
         self.non_norm_laplacian_matrix = self.laplacian_matrix.copy()
 
-    def dump_eigen(self):
+    def _dump_eigen(self):
         """
         dumps self.adj_eigenvals and self.laplacian_matrix and writes them to csv
         """
@@ -147,7 +142,7 @@ class InteractomeInterface(object):
             (self.cond_eigenvals,
              self.cond_eigenvects))
 
-    def undump_eigen(self):
+    def _undump_eigen(self):
         """
         undumps self.adj_eigenvals and self.laplacian_matrix
         """
@@ -156,7 +151,7 @@ class InteractomeInterface(object):
         self.cond_eigenvals, self.cond_eigenvects = undump_object(
             confs.Dumps.cond_eigen)
 
-    def dump_maps(self):
+    def _dump_maps(self):
         """
         dumps all the elements required for the mapping between the types and ids
          of database entries and matrix columns
@@ -174,7 +169,7 @@ class InteractomeInterface(object):
              self.known_uniprots_neo4j_ids,
              self.active_up_sample))
 
-    def undump_maps(self):
+    def _undump_maps(self):
         """
         undumps all the elements required for the mapping between the types and ids of
         database entries and matrix columns
@@ -187,7 +182,7 @@ class InteractomeInterface(object):
             undump_object(confs.Dumps.interactome_maps)
         log.debug("post-undump e_p_u_b_i length: %s", len(self.active_up_sample))
 
-    def dump_memoized(self):
+    def _dump_memoized(self):
         """
         In a JSON, stores a dump of the following properties:
         {
@@ -213,7 +208,7 @@ class InteractomeInterface(object):
         dump_object(confs.Dumps.Interactome_Analysis_memoized, payload)
 
     @staticmethod
-    def undump_memoized() -> dict:
+    def _undump_memoized() -> dict:
         """
         Retrieves a JSON dump of the following properties:
         {
@@ -227,7 +222,6 @@ class InteractomeInterface(object):
         :return:
         """
         return undump_object(confs.Dumps.Interactome_Analysis_memoized)
-
 
     def normalize_laplacian(self):
         """
@@ -244,17 +238,20 @@ class InteractomeInterface(object):
         D = D.tocsc()
         self.laplacian_matrix = (D.dot(self.laplacian_matrix)).dot(D)
 
-    def new_create_val_matrix(self,
-                              node_dict: dict, edge_list: list,
-                              adj_weight_policy_function=wp.default_adj_source_x_type_policy,
-                              lapl_weight_policy_function=wp.default_lapl_source_x_type_policy):
+    def create_val_matrix(self,
+                          node_dict: dict, edge_list: list,
+                          adj_weight_policy_function=wp.default_adj_source_x_type_policy,
+                          lapl_weight_policy_function=wp.default_lapl_source_x_type_policy):
         """
+        Creates the ajacency/laplacian matrix pair for the given set of nodes and edges and the
+        weighting policy functions
 
-        :param node_dict:
-        :param edge_list:
-        :param adj_weight_policy_function:
-        :param lapl_weight_policy_function:
-        :return:
+        :param node_dict: dictionary mapping node id to node objects
+        :param edge_list: list of edges that exist in the database
+        :param adj_weight_policy_function: adjacency matrix weight policy function
+        :param lapl_weight_policy_function: laplacian matrix weight policy function
+        :return: node_id to matrix idx map, matrix_idx to node_id map, adjacency matrix,
+        laplacian matrix
         """
         log.debug('new val matrix: %dx%d' % (len(node_dict), len(node_dict)))
         adjacency_matrix = lil_matrix((len(node_dict), len(node_dict)), dtype=np.float)
@@ -287,11 +284,12 @@ class InteractomeInterface(object):
 
         return node_id_2_mat_idx, mat_idx_2_note_id, adjacency_matrix, laplacian_matrix
 
-
-    def new_idxs_in_the_giant_component(self, adjacency_matrix):
+    def giant_component_node_idxs(self, adjacency_matrix):
         """
+        Finds the indexes of the lines and columns in the adjacency matrix that are in the giant
+        component
 
-        :param adjacency_matrix:
+        :param adjacency_matrix: the adjacency matrix where to find the giant component
         :return:
         """
         component_ids, node_2_id = connected_components(adjacency_matrix, directed=False)
@@ -309,8 +307,11 @@ class InteractomeInterface(object):
 
     def full_rebuild(self):
         """
+        Performs a complete rebuild of the InterfaceClass Instance based on parameters provided
+        upon construction based on the data in the knowledge database. Upon rebuild saves a copy
+        that can be rapidly resurrected with the fast_load() method
 
-        :return:
+        :return: None
         """
         # giant component recomputation and writing
         DatabaseGraph.erase_node_properties(['main_connex'])
@@ -318,9 +319,9 @@ class InteractomeInterface(object):
         all_nodes_dict, edges_list = DatabaseGraph.parse_physical_entity_net(main_connex_only=False)
 
         _, mat_idx_2_note_id, adjacency_matrix, _ = \
-            self.new_create_val_matrix(all_nodes_dict, edges_list, wp.flat_policy, wp.flat_policy)
+            self.create_val_matrix(all_nodes_dict, edges_list, wp.flat_policy, wp.flat_policy)
 
-        giant_component_mat_indexes = self.new_idxs_in_the_giant_component(adjacency_matrix)
+        giant_component_mat_indexes = self.giant_component_node_idxs(adjacency_matrix)
 
         giant_component_db_ids = [mat_idx_2_note_id[_idx] for _idx in giant_component_mat_indexes]
 
@@ -331,7 +332,7 @@ class InteractomeInterface(object):
         nodes_dict, edges_list = DatabaseGraph.parse_physical_entity_net(main_connex_only=True)
 
         node_id_2_mat_idx, mat_idx_2_note_id, adjacency_matrix, laplacian_matrix = \
-            self.new_create_val_matrix(nodes_dict, edges_list)
+            self.create_val_matrix(nodes_dict, edges_list)
 
         all_uniprot_nodes = DatabaseGraph.get_all('UNIPROT')
 
@@ -357,9 +358,9 @@ class InteractomeInterface(object):
 
         self.active_up_sample = []  # REFACTOR [stateless]: decouple into argument
 
-        self.dump_maps()  # DONE
-        self.dump_matrices()  # DONE
-        self.dump_eigen()  # DONE
+        self._dump_maps()  # DONE
+        self._dump_matrices()  # DONE
+        self._dump_eigen()  # DONE
 
     def get_eigen_spectrum(self, biggest_eigvals_to_get):
         """
@@ -393,11 +394,15 @@ class InteractomeInterface(object):
 
     def fast_load(self):
         """
-        Pre-loads mappings, matrices and eigenvalues
+        Rapidly resurrects the InterfaceClass Instance based on parameters provided
+        upon construction. If parameters are mismatched, raises exceptions signalling what
+        parameters were mismatched. Trims the background provided upon construction down to what
+        actually be sampled (self._background)
+
         """
-        self.undump_maps()
-        self.undump_matrices()
-        self.undump_eigen()
+        self._undump_maps()
+        self._undump_matrices()
+        self._undump_eigen()
 
         if self._background:
             self._background = list(set(self.known_uniprots_neo4j_ids).intersection(
@@ -406,12 +411,13 @@ class InteractomeInterface(object):
         else:
             self._background = list(set(self.known_uniprots_neo4j_ids))
 
-
     def get_descriptor_for_index(self, index):
         """
+        Unused.
+
         Recovers a descriptor set for a given index in the current matrix mapping
 
-        :param index: idenx for which return a descirptor
+        :param index: idenx for which return a desciptor
         :return: Type, displayName and if a localization is given, returns display name too.
         :rtype: tuple
         """
@@ -481,27 +487,26 @@ class InteractomeInterface(object):
     # REFACTOR: extract as the element performing a computation of the network
     def compute_current_and_potentials(
             self,
-            memoized=True,  # is required to enable the fast loading.
-            incremental=False,  # This is always false and was used in order to resume the sampling
-            cancellation=True,
+            memoized: bool = True,  # is required to enable the fast loading.
+            incremental: bool = False,  # This is always false and was used in order to resume the
+            # sampling
+            cancellation: bool = True,
             sparse_samples=False,
-            fast_load=False):  # REFACTOR: this should not be implemented this way.
+            fast_load: bool = False):  # REFACTOR: this should not be implemented this way.
         """
         Builds a conduction matrix that integrates uniprots, in order to allow an easier
         knowledge flow analysis
 
-        :param bool memoized: if the tensions between individual nodes and voltages will be
+        :param memoized: if the tensions between individual nodes and voltages will be
             remembered - required for clustering. Incompatible with `sparse_sample=True`
-        :param bool sourced: if true, all the relations will be looked up and not computed.
-            Useful for the retrieval of sub-circulation group, but requires the
-            `uniprots_2_voltage` to be pre-filled
-        :param bool incremental: if True, all the circulation computation will be added to the
+        :param incremental: if True, all the circulation computation will be added to the
             existing ones. Useful for the computation of particularly big systems with
             intermediate dumps
-        :param bool cancellation: divides the final current by number of bioflow-sink pairs
-        :param int sparse_samples: if set to an integer the sampling will be sparse and not dense,
+        :param cancellation: divides the final current by number of bioflow-sink pairs
+        :param sparse_samples: if set to an integer the sampling will be sparse and not dense,
             i.e. instead of computation for each node pair, only an estimation will be made, equal to
             computing sparse_samples association with other randomly chosen nodes
+        :param fast_load: if True, will try to lad a pre-saved instance
         :return: adjusted conduction system
         """
 
@@ -509,7 +514,7 @@ class InteractomeInterface(object):
             self.normalize_laplacian()
 
         if fast_load:
-            payload = self.undump_memoized()
+            payload = self._undump_memoized()
             UP_hash = hashlib.md5(
                 json.dumps(
                     sorted(self.active_up_sample),
@@ -566,7 +571,7 @@ class InteractomeInterface(object):
             dict((self.matrix_index_2_neo4j_id[idx], val) for idx, val in enumerate(index_current)))
 
         if memoized:
-            self.dump_memoized()
+            self._dump_memoized()
 
     def format_node_props(self, node_current, limit=0.01):
         """
@@ -676,7 +681,6 @@ class InteractomeInterface(object):
             # TODO: [Better stats]: twister compared to random sample?
         gdf_exporter.write()
 
-
     def randomly_sample(
             self,
             samples_size,
@@ -686,7 +690,7 @@ class InteractomeInterface(object):
             pool_no=None):
         """
         Randomly samples the set of deprecated_reached_uniprots_neo4j_id_list used to create the model.
-         This is the null model creation routine
+        This is the null model creation routine
 
 3
         :param samples_size: list of numbers of uniprots we would like to create the model for
@@ -695,6 +699,7 @@ class InteractomeInterface(object):
         large uniprot sets), we would use this option
         :param no_add: if set to True, the result of sampling will not be added to the
         database of samples. Useful if re-running tests with similar parameters several times.
+        :param pool_no: explicit sampling pool number (used for reporting/debugging)
         :raise Exception: if the number of items in the samples size ann samples_each size
         are different
         """
@@ -759,6 +764,13 @@ class InteractomeInterface(object):
 
     @staticmethod
     def compare_dumps(dumps_folder_1, dumps_folder_2):
+        """
+        Compares the dumps between two folders (debug function for methods upgrade)
+
+        :param dumps_folder_1: old dumps
+        :param dumps_folder_2: new dumps
+        :return:
+        """
         neo4j_id_2_matrix_index_1,\
         matrix_index_2_neo4j_id_1, _,\
         neo4j_id_2_legacy_id_1, _, _,\

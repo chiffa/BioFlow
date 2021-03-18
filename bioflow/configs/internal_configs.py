@@ -1,6 +1,5 @@
 """
-Contains internal configurations that the user might want to act upon. For now, not documented in
-the API_doc, just code comments for the maintainers
+Contains internal configurations that the user might want to act upon.
 """
 
 # REFACTOR: [better confs]: move to the configs .yaml

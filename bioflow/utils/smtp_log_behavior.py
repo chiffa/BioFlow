@@ -1,3 +1,6 @@
+"""
+This modules carries the smtp logging logic
+"""
 import logging
 from smtplib import SMTP
 from datetime import datetime
@@ -18,6 +21,7 @@ mime_message['To'] = smtp_logging_parameters['reporting_target_mail']
 def get_smtp_logger(logger_name):
     """
     Returns a properly configured logger object
+
     :param logger_name: name of the logger object
     """
     _logger = logging.getLogger(logger_name)
@@ -38,6 +42,13 @@ def get_smtp_logger(logger_name):
 
 
 def successfully_completed(start_date, start_device):
+    """
+    Reports the successful complition of a run
+
+    :param start_date: timestamp of the run start date
+    :param start_device: timestamp of the run completion date
+    :return: None
+    """
 
     with SMTP(host=smtp_logging_parameters['local_host']) as smtp_server:
         mime_message['Subject'] = 'Run started on %s and %s has completed' % (start_date.isoformat(), start_device)
@@ -48,6 +59,11 @@ def successfully_completed(start_date, start_device):
 
 
 def smtp_error_bail_out():
+    """
+    Reports an error of the SMTPHandler when the handler itself fails.
+
+    :return:
+    """
 
     with SMTP(host=smtp_logging_parameters['local_host']) as smtp_server:
         mime_message['Subject'] = 'SMTPHandler error bail-out'

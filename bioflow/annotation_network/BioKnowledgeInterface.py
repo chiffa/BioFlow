@@ -46,19 +46,19 @@ def _characterise_mat(matrix):
 
 class GeneOntologyInterface(object):
     """
-    General class to recover all the information associated with GO from database and buffer
-     them for further use.
+    Interface between annotome in the knowledge database and the annotome graph laplacian. It is
+    heavily skewed towards the Gene Ontology, although can be adapted to be more general than that.
 
-    :param Filter:
-    :param Uniprot_Node_IDs: A list of hte deprecated_reached_uniprots_neo4j_id_list that will be used
-     for the GO reach and informativity computation. Beyond database and formalism issues,
-     this allows to adapt method when limited list of UP is of interest
-    :param correction_factor:
-    :param Ultraspec_clean:
-    :param Ultraspec_lvl: parameter how much uniprots have to point to a GO term for it not
-     to be considered ultra-specific anymore
+    :param namespace_filter: which namespaces will be used from the annotome (by default the
+        "biological process" of the Gene Ontology)
+    :param background_up_ids: (optional) background that will be used for sampling of random
+        nodes to build a comparison interface for the
+    :param correction_factor:informativity of the node computation correction factors
+        (information entropy-wise). (Multiplicative correction factor, additive correction factor)
+    :param ultraspec_clean: if the terms considred too specific are excluded
+    :param ultraspec_lvl: how many uniprots have to be annotated by a term (directly or
+        indirectly) for it not to be considered too specific
     """
-
     # REFACTOR: [BKI normalization]: move to configs
     _GOUpTypes = ["is_a_go", "is_part_of_go"]
     _GORegTypes = ["is_Regulant"]
@@ -145,7 +145,7 @@ class GeneOntologyInterface(object):
         pt = time() - self.partial_time
         return pt
 
-    def dump_statics(self):
+    def _dump_statics(self):
         dump_object(
             confs.Dumps.GO_builder_stat,
             (self.go_namespace_filter,
@@ -156,7 +156,7 @@ class GeneOntologyInterface(object):
              self.ultraspec_lvl))
 
     @staticmethod
-    def undump_statics():
+    def _undump_statics():
         return undump_object(confs.Dumps.GO_builder_stat)
 
     def dump_core(self):
@@ -186,24 +186,24 @@ class GeneOntologyInterface(object):
              self.Num2GO,
              self.UP_names))
 
-    def undump_core(self):
+    def _undump_core(self):
         self.UP2GO_Dict, self.GO2UP, self.reachable_nodes_dict, \
         self.GO_names, self.GO_legacy_ids, self.rev_GO_ids, self.All_GOs, \
         self.GO2Num, self.Num2GO, self.UP_names =\
             undump_object(confs.Dumps.GO_dump)
 
-    def dump_matrices(self):
+    def _dump_matrices(self):
         dump_object(
             confs.Dumps.GO_Mats,
             (self.adjacency_matrix,
              self.dir_adj_matrix,
              self.laplacian_matrix))
 
-    def undump_matrices(self):
+    def _undump_matrices(self):
         self.adjacency_matrix, self.dir_adj_matrix, self.laplacian_matrix = undump_object(
             confs.Dumps.GO_Mats)
 
-    def dump_informativities(self):
+    def _dump_informativities(self):
         dump_object(
             confs.Dumps.GO_Infos,
             (self.UP2GO_Reachable_nodes,
@@ -213,12 +213,12 @@ class GeneOntologyInterface(object):
              self.GO2_Pure_Inf,
              self.GO2_Weighted_Ent))
 
-    def undump_informativities(self):
+    def _undump_informativities(self):
         self.UP2GO_Reachable_nodes, self.GO2UP_Reachable_nodes, self.UP2GO_step_Reachable_nodes, \
             self.GO2UP_step_Reachable_nodes, self.GO2_Pure_Inf, self.GO2_Weighted_Ent = \
             undump_object(confs.Dumps.GO_Infos)
 
-    def dump_inflated_elements(self):
+    def _dump_inflated_elements(self):
         dump_object(
             confs.Dumps.GO_Inflated,
             (self.inflated_Laplacian,
@@ -226,12 +226,12 @@ class GeneOntologyInterface(object):
              self.inflated_lbl2idx,
              self.binding_intensity))
 
-    def undump_inflated_elements(self):
+    def _undump_inflated_elements(self):
         self.inflated_Laplacian, self.inflated_idx2lbl, \
             self.inflated_lbl2idx, self.binding_intensity = \
             undump_object(confs.Dumps.GO_Inflated)
 
-    def dump_memoized(self):
+    def _dump_memoized(self):
         md5 = hashlib.md5(
             json.dumps(sorted(self.active_up_sample), sort_keys=True).encode('utf-8')).hexdigest()
 
@@ -245,20 +245,27 @@ class GeneOntologyInterface(object):
         dump_object(confs.Dumps.GO_Analysis_memoized, payload)
 
     @staticmethod
-    def undump_memoized():
+    def _undump_memoized():
         """
         :return: undumped memoized analysis
         """
         return undump_object(confs.Dumps.GO_Analysis_memoized)
 
-    def dump_independent_linear_sets(self):
+    def _dump_independent_linear_sets(self):
         dump_object(confs.Dumps.GO_Indep_Linset, self.indep_lapl)
 
-    def undump_independent_linear_sets(self):
+    def _undump_independent_linear_sets(self):
         self.indep_lapl = undump_object(confs.Dumps.GO_Indep_Linset)
 
     def full_rebuild(self):
-        self.new_annotome_access_and_structure()
+        """
+        Performs a complete rebuild of the InterfaceClass Instance based on parameters provided
+        upon construction based on the data in the knowledge database. Upon rebuild saves a copy
+        that can be rapidly resurrected with the fast_load() method
+
+        :return: None
+        """
+        self.annotome_access_and_structure()
         self.get_go_adjacency_and_laplacian()
         self.get_go_reach()
         if self.ultraspec_cleaned:
@@ -266,21 +273,24 @@ class GeneOntologyInterface(object):
         self.get_laplacians()
         self.inflate_matrix_and_indexes()
 
-        self.dump_statics()
+        self._dump_statics()
         self.dump_core()
-        self.dump_matrices()
-        self.dump_informativities()
-        self.dump_inflated_elements()
+        self._dump_matrices()
+        self._dump_informativities()
+        self._dump_inflated_elements()
 
         log.info('Finished rebuilding the GO Interface object %s', self.pretty_time())
 
     def fast_load(self):
         """
-        loads itself from the saved dumps, in case the Filtering system is the same
+        Rapidly resurrects the InterfaceClass Instance based on parameters provided
+        upon construction. If parameters are mismatched, raises exceptions signalling what
+        parameters were mismatched., Trims the background provided upon construction down to what
+        actually be sampled (self._background)
 
         """
         namespace_filter, initial_set, correction_factor, ultraspec_cleaned, ultraspec_lvl = \
-            self.undump_statics()
+            self._undump_statics()
         if self.go_namespace_filter != namespace_filter:
             log.critical("Wrong Filtering attempted to be recovered from storage")
             raise Exception(
@@ -300,21 +310,21 @@ class GeneOntologyInterface(object):
             raise Exception(
                 "Ultraspecific terms leveling cut-off is not the same in the database as requested")
 
-        self.undump_core()
+        self._undump_core()
 
         log.info("_background: %d, UP2GO_Dict %s" % (len(self._background), len(self.UP2GO_Dict)))
 
         if self._background:
-            self._background = self.UP2GO_Dict.keys()
+            self._background = list(self.UP2GO_Dict.keys())
         else:
             self._background = list(set(self._background).intersection(set(self.UP2GO_Dict.keys())))
 
-        self.undump_matrices()
-        self.undump_informativities()
-        self.undump_inflated_elements()
+        self._undump_matrices()
+        self._undump_informativities()
+        self._undump_inflated_elements()
 
 
-    def new_annotome_access_and_structure(self, ontology_source=('Gene Ontology')):
+    def annotome_access_and_structure(self, ontology_source=('Gene Ontology')):
         """
         Loads the relationship betweenm the UNIPROTS and annotome as one giant dictionary,
         then between the GO terms themselves
@@ -631,7 +641,9 @@ class GeneOntologyInterface(object):
 
     def compute_uniprot_dict(self):
         """
-        Computes the uniprot method required by some other dictionary
+        Unused.
+
+        Computes the uniprot method required by a third-party method
 
         :return:
         """
@@ -741,10 +753,10 @@ class GeneOntologyInterface(object):
 
     def compute_current_and_potentials(
             self,
-            memoized=True,  # Should never be set to true
-            sourced=False,  # Should never be set to true
-            incremental=False,  # This should always be false
-            cancellation=True,
+            memoized: bool = True,
+            incremental: bool = False,  # This should always be false and was used in order to
+            # resume the sampling
+            cancellation: bool = True,
             sparse_samples=False):
         """
         Builds a conduction matrix that integrates uniprots, in order to allow an easier
@@ -753,9 +765,6 @@ class GeneOntologyInterface(object):
 
         :param memoized: if the tensions and individual relation matrices should be stored in
          the matrix and dumped at the end computation (required for submatrix re-computation)
-        :param sourced: if true, all the relations will be looked up and not computed. Useful
-        for the retrieval of sub-circulation group, but requires the
-        uniprots_2_voltage to be pre-filled
         :param incremental: if True, all the circulation computation will be added to the
         existing ones. Useful for the computation of particularly big systems with
         intermediate dumps
@@ -764,14 +773,12 @@ class GeneOntologyInterface(object):
         :param sparse_samples: if set to an integer the sampling will be sparse and not dense,
          i.e. instead of computation for each node pair, only an estimation will be made, equal to
          computing sparse_samples association with other randomly chosen nodes
-        :type sparse_samples: int
         :return: adjusted conduction system
         """
         if not incremental or self.current_accumulator == np.zeros((2, 2)):
             self.current_accumulator = lil_matrix(self.inflated_Laplacian.shape)
             self.UP2UP_voltages = {}
-            if not sourced:
-                self.uniprots_2_voltage = {}
+            self.uniprots_2_voltage = {}
 
         iterator = []
         if sparse_samples:
@@ -790,12 +797,6 @@ class GeneOntologyInterface(object):
         previous_time = time()
 
         for counter, (UP1, UP2) in enumerate(iterator):
-
-            if sourced:
-                self.current_accumulator = self.current_accumulator + \
-                    cr.sparse_abs(self.uniprots_2_voltage[
-                                  tuple(sorted((UP1, UP2)))][1])
-                continue
 
             idx1, idx2 = (self.inflated_lbl2idx[UP1], self.inflated_lbl2idx[UP2])
             pre_reach = self.UP2GO_Reachable_nodes[UP1] + \
@@ -832,7 +833,7 @@ class GeneOntologyInterface(object):
             self.current_accumulator /= (ln * (ln - 1) / 2)
 
         if memoized:
-            self.dump_memoized()
+            self._dump_memoized()
 
         index_current = cr.get_current_through_nodes(self.current_accumulator)
         self.node_current = dict((self.inflated_idx2lbl[idx], val)
@@ -948,8 +949,7 @@ class GeneOntologyInterface(object):
             pool_no=None):
         """
         Randomly samples the set of deprecated_reached_uniprots_neo4j_id_list used to create the model.
-
-         This is the null model creation routine
+        This is the null model creation routine
 
         :param samples_size: list of numbers of uniprots we would like to create the model for
         :param samples_each_size: how many times we would like to sample each unirot number
@@ -960,6 +960,7 @@ class GeneOntologyInterface(object):
         Usefull in case of the chromosome comparison
         :param no_add: if set to True, the result of sampling will not be added to the database
         of samples. Usefull if re-running tests with similar parameters several times.
+        :param pool_no: explicit sampling pool number (used for reporting/debugging)
         :raise Exception: if the number of items in the samples size ann saples_each size are
          different
         """

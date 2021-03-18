@@ -10,8 +10,8 @@ from collections import defaultdict
 
 from bioflow.configs.configs_manager import compute_full_paths
 from bioflow.configs.bioflow_home import output_location, log_location, dump_location, \
-    sources_location, confs_location
-from bioflow.configs.internal_configs import reactome_forbidden_nodes
+    sources_location, confs_location, internal_storage
+from bioflow.configs.internal_configs import reactome_forbidden_nodes, uniprot_forbidden_nodes
 from bioflow.utils.general_utils import high_level_os_io as hl_os_io
 from bioflow.utils.log_behavior import get_logger
 

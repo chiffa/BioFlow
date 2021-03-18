@@ -1,5 +1,5 @@
 """
-Module responsible for the Linear Algebra routines utilized throughout the project
+Linear Algebra routines used throughout the project
 """
 from itertools import combinations_with_replacement, combinations, product
 from random import randrange, shuffle
@@ -26,7 +26,7 @@ log = get_logger(__name__)
 # @time_it_wrapper
 def normalize_laplacian(non_normalized_laplacian: spmat.lil_matrix) -> spmat.lil_matrix:
     """
-    performs a normalization of a laplacian of a graph
+    Performs a normalization of a laplacian of a graph
 
     :param non_normalized_laplacian: non-normalized laplacian
     :type non_normalized_laplacian: scipy.sparse matrix
@@ -48,9 +48,9 @@ def average_off_diag_in_sub_matrix(matrix, indexes, show=False):
     """
     Calculates the average of off-diagonal elements in a submatrix defined by the indexes
 
-    :param matrix:
-    :param indexes:
-    :param show:
+    :param matrix: matrix
+    :param indexes: index set defining the submatrix
+    :param show: if the results are rendered for a show
     :return:
     """
     extracted_matrix = lil_matrix((len(indexes), len(indexes)))

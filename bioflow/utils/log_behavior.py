@@ -28,23 +28,34 @@ on_dev = False
 # ################################
 
 
-def warn_with_traceback(message, category, filename, lineno, file=None, line=None):
+def _warn_with_traceback(message, category, filename, lineno, file=None, line=None):
+    """
+    Supporting function to allow warnings with traceback
+
+    :param message:
+    :param category:
+    :param filename:
+    :param lineno:
+    :param file:
+    :param line:
+    :return:
+    """
 
     log = file if hasattr(file,'write') else sys.stderr
     traceback.print_stack(file=log)
     log.write(warnings.formatwarning(message, category, filename, lineno, line))
 
-
-warnings.showwarning = warn_with_traceback
+warnings.showwarning = _warn_with_traceback
 
 
 def mkdir_recursive(my_path):  # pragma: no cover
     """
     Copy of mkdir recursive from saner configs, used here to remove circular dependencies
-    Recursively creates a directory that would contain a file given win-like filename (xxx.xxx)
-    or directory name
-    :param my_path:
-    :return:
+    Recursively creates a directory that would contain a file given a windows-like filename
+    (xxx.xxx) or a directory name
+
+    :param my_path: path which to recursively create
+    :return: None
     """
     my_path = os.path.abspath(my_path)
     directory_name = os.path.dirname(my_path)
@@ -56,19 +67,20 @@ def mkdir_recursive(my_path):  # pragma: no cover
             os.mkdir(my_path)
 
 
-def wipe_dir(_path):  # pragma: no cover
+def wipe_dir(my_path):  # pragma: no cover
     """
     wipes the indicated directory
-    :param _path:
+
+    :param my_path: path to wipe
     :return: True on success
     """
-    _path = os.path.abspath(_path)
-    if not os.path.exists(_path):
+    my_path = os.path.abspath(my_path)
+    if not os.path.exists(my_path):
         return True  # Nothing to do: destruction already done
-    if os.path.isdir(_path):
-        directory_name = _path
+    if os.path.isdir(my_path):
+        directory_name = my_path
     else:
-        directory_name = os.path.dirname(_path)
+        directory_name = os.path.dirname(my_path)
     if not os.path.isdir(directory_name):
         return False
     for sub_path in os.listdir(directory_name):
@@ -78,11 +90,11 @@ def wipe_dir(_path):  # pragma: no cover
     return True
 
 
-def add_to_file_handler(_logger, level, file_name, rotating=False, log_location=log_location):
+def add_to_file_handler(my_logger, level, file_name, rotating=False, log_location=log_location):
     """
     Adds a file-writing handler for the log.
 
-    :param _logger:
+    :param my_logger: the logger to which add a handler
     :param level: logging.DEBUG or other level
     :param file_name: short file name, that will be stored within the application logs location
     :param rotating: if true, rotating file handler will be added.
@@ -95,7 +107,7 @@ def add_to_file_handler(_logger, level, file_name, rotating=False, log_location=
         _fh = logging.FileHandler(handler_name, mode='a')
     _fh.setLevel(level)
     _fh.setFormatter(formatter)
-    _logger.addHandler(_fh)
+    my_logger.addHandler(_fh)
 
 
 # define a formatter
@@ -114,6 +126,7 @@ mkdir_recursive(output_location)
 def get_logger(logger_name):
     """
     Returns a properly configured logger object
+
     :param logger_name: name of the logger object
     """
     _logger = logging.getLogger(logger_name)
@@ -160,12 +173,9 @@ def get_logger(logger_name):
 
     return _logger
 
-# # test everything is working
-# logger = get_logger('this_logger_needs_to_be_renamed')
-
 
 def clear_logs():
     """
-    Wipes the logs
+    Wipes all logs
     """
     wipe_dir(log_location)

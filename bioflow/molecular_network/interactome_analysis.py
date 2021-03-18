@@ -51,8 +51,8 @@ def spawn_sampler(args_puck):
     """
     Spawns a sampler initialized from the default GO_Interface.
 
-    :param args_puck: combined list of sample sizes and
-    iterations (required for Pool.map usage)
+    :param args_puck: combined list of sample sizes, iterations, background sets, and sparse
+    sampling argument
     """
     # log.info('Pool process %d started' % args_puck[-1])
 
@@ -86,8 +86,8 @@ def spawn_sampler_pool(
     :param sample_size_list: size of the sample list
     :param interaction_list_per_pool: number of iterations performing the pooling of the samples
      in each list
-    :param sparse_rounds:
-    :param background_set:
+    :param sparse_rounds: number of sparse rounds to run (or False if sampling is dense)
+    :param background_set: set of node ids that are to be sampled from
     """
     payload = [
             (sample_size_list,

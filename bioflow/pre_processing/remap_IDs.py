@@ -5,8 +5,6 @@ These are mainly interesting to for the applications where there is little infor
 genetic networks specific to the organism in question and we would like to use it as a model for
 another organism (eg mice vs human) and we want to project genes associated to the phenotype in
 the model organism into the networks associated to the original organism.
-
-The entire pipeline is executed on import
 """
 from csv import reader as csv_reader
 from csv import writer as csv_writer

@@ -6,6 +6,7 @@ This file contains scripts that are useful to analyze and profile the code behav
 # line-by line performance profiler
 import line_profiler
 import atexit
+from bioflow.configs.main_configs import psutil_main_loop_memory_tracing
 
 profile = line_profiler.LineProfiler()
 atexit.register(profile.print_stats)
@@ -29,7 +30,14 @@ import psutil
 call_inc = 0
 last_mem_log = 0
 
+
 def log_mem(flag=''):
+    """
+    Logs memory changes from the psutil interface (when python internal memory tools bail on you)
+
+    :param flag: what is pringed for the memory change
+    :return:
+    """
     if psutil_main_loop_memory_tracing:
         global last_mem_log
         global call_inc
@@ -49,6 +57,11 @@ def log_mem(flag=''):
 
 
 def other_function_to_test():
+    """
+    Example of usage
+
+    :return:
+    """
     while True:  # loop that might leak memory
         log_mem('pre-location')
         # do something that is potentially a performance bottleneck
@@ -72,13 +85,23 @@ import traceback
 import warnings
 import sys
 
-def warn_with_traceback(message, category, filename, lineno, file=None, line=None):
+def _warn_with_traceback(message, category, filename, lineno, file=None, line=None):
+    """
+    A tool that exhibits traceback warnings in the logs
 
+    :param message:
+    :param category:
+    :param filename:
+    :param lineno:
+    :param file:
+    :param line:
+    :return:
+    """
     log = file if hasattr(file,'write') else sys.stderr
     traceback.print_stack(file=log)
     log.write(warnings.formatwarning(message, category, filename, lineno, line))
 
 
-warnings.showwarning = warn_with_traceback
+warnings.showwarning = _warn_with_traceback
 warnings.simplefilter("always")
 ###################################################################################################

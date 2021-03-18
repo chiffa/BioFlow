@@ -1,3 +1,6 @@
+"""
+This is a legacy module for the database structure analysis.
+"""
 import pickle
 
 import numpy as np

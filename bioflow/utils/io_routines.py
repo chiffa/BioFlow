@@ -9,11 +9,11 @@ import subprocess
 import numpy as np
 
 
-def get_git_revision_hash():
+def _get_git_revision_hash():
     return subprocess.check_output(['git', 'rev-parse', 'HEAD'])
 
 
-def get_git_revision_short_hash():
+def _get_git_revision_short_hash():
     return subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD'])
 
 
@@ -88,7 +88,9 @@ def get_background_bulbs_ids():
 
 
 def memoize(f):
-
+    """"
+    The standard memoization wrapper for a function
+    """
     memdict = {}
 
     def internal_function(*args, **kwargs):
@@ -102,7 +104,9 @@ def memoize(f):
 
 
 def time_exection(f):
-
+    """
+    The standard timing wrapper for a function
+    """
     def int_function(*args, **kwargs):
         now = time()
         result = f(*args, **kwargs)
@@ -115,5 +119,5 @@ def time_exection(f):
 if __name__ == "__main":
     # REFACTOR: [better environment]: actually inject the revision hashes into the execution
     #  pipeline in order to allow for reproductible execution
-    print(get_git_revision_hash())
-    print(get_git_revision_short_hash())
+    print(_get_git_revision_hash())
+    print(_get_git_revision_short_hash())

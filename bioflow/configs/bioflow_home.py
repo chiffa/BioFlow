@@ -1,6 +1,6 @@
 """
 Core start-up loop that is required by all the other modules to operate.
-Non-logged, so the configuration is minimal
+Non-logged, so the logic is minimal.
 """
 import os
 from datetime import datetime

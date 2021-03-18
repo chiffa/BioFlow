@@ -1,3 +1,6 @@
+"""
+This is a set of top-level routines that have been wrapped for convenience
+"""
 from bioflow.annotation_network.BioKnowledgeInterface import \
     GeneOntologyInterface as AnnotomeInterface
 from bioflow.molecular_network.InteractomeInterface import \
@@ -8,6 +11,13 @@ from bioflow.utils.io_routines import get_source_bulbs_ids, get_background_bulbs
 
 
 def map_and_save_gene_ids(hit_genes_location, all_detectable_genes_location=''):
+    """
+    Maps gene names/identifiers into internal database identifiers (neo4j ids) and saves them
+
+    :param hit_genes_location: genes in the set we would like to analyse
+    :param all_detectable_genes_location:  genes in the set that can be detected (background)
+    :return: list of internal db ids for hits, list of internal db ids for background
+    """
     cast_analysis_set_to_bulbs_ids(hit_genes_location)
     hit_genes_ids = get_source_bulbs_ids()
 
@@ -27,7 +37,12 @@ def map_and_save_gene_ids(hit_genes_location, all_detectable_genes_location=''):
 
 
 def rebuild_the_laplacians(all_detectable_genes=()):
+    """
+    Rebuilds the Annotome and Interactome interface objects in case of need,
 
+    :param all_detectable_genes: (optional) list of internal db ids for background
+    :return: None
+    """
     local_matrix = InteractomeInterface()
     local_matrix.full_rebuild()
 

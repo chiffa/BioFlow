@@ -1,3 +1,6 @@
+"""
+This module performs the downloading of the external databases used to build the internal DB
+"""
 from bioflow.utils.general_utils.high_level_os_io import mkdir_recursive
 from bioflow.utils.general_utils.internet_io import url_to_local, marbach_post_proc
 from bioflow.utils.log_behavior import get_logger
@@ -7,14 +10,14 @@ from bioflow.configs.main_configs import DB_locations, sources_location
 log = get_logger(__name__)
 
 
-def pull_online_dbs(_db_locations: dict =DB_locations,
-                    _sources_location: dict =sources_location) -> None:
+def pull_online_dbs(_db_locations: dict = DB_locations,
+                    _sources_location: dict = sources_location) -> None:
     """
     Pulls the databases mentionned online to the directories specified in the configs file
 
-    :param _db_locations:
-    :param sources_location:
-    :return:
+    :param _db_locations: online location of the database
+    :param sources_location: local location of the database
+    :return: None
     """
 
     for DB_type, location_dict in _db_locations.items():

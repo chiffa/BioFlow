@@ -1,3 +1,8 @@
+"""
+Mostly deprecated clustering and data structural analysis routines.
+
+"""
+
 from typing import Tuple
 
 import numpy as np

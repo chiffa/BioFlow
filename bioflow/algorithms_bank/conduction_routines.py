@@ -38,6 +38,13 @@ log = get_logger(__name__)
 
 
 def delete_row_csr(mat, i):
+    """
+    Deletes a row in a csr matrix (warning: inefficient)
+
+    :param mat: matrix
+    :param i: row index
+    :return:
+    """
     if not isinstance(mat, spmat.csr_matrix):
         raise ValueError("works only for CSR format -- use .tocsr() first")
     n = mat.indptr[i+1] - mat.indptr[i]
@@ -53,6 +60,13 @@ def delete_row_csr(mat, i):
 
 
 def trim_matrix(mat, i):
+    """
+    Trims a matrix by deleting both a row and a column in a matrix (warning: inefficient)
+
+    :param mat: matrix
+    :param i: row index
+    :return:
+    """
     mat = mat.copy()
     mat = mat.tocsr()
     delete_row_csr(mat, i)
@@ -296,14 +310,15 @@ def master_edge_current(conductivity_laplacian, index_list,
     """
     master method for all the required edge current calculations
 
-    :param conductivity_laplacian:
-    :param index_list:
-    :param cancellation:
-    :param potential_dominated:
-    :param sampling:
-    :param sampling_depth:
-    :param memory_source:
-    :param potential_diffs_remembered:
+    :param conductivity_laplacian: conductivity laplacian
+    :param index_list: indexes between which to calculate the flow
+    :param cancellation: if the total current is normalized to the sampe number
+    :param potential_dominated: if the total current is normalized to potential
+    :param sampling: if the sampling is performed
+    :param sampling_depth: to which depth is the sampling performed
+    :param memory_source: if we are using memoization, source to look it
+    :param potential_diffs_remembered: if the difference of potentials between nodes is remembered
+    :param thread_hex: debugging id of the thread in which the sampling is going on
     :return:
     """
 
@@ -431,6 +446,7 @@ def group_edge_current(conductivity_laplacian, index_list,
     :param cancellation: if True, conductance would be normalized to number of sinks used
     :param potential_dominated: if set to True, the computation is done by injecting constant
     potential difference into the system, not a constant current.
+    :param thread_hex: debugging id of the thread in which the sampling is going on
     :return: current matrix for the flow system; current through each node.
     """
     current_accumulator, _ = master_edge_current(
@@ -452,6 +468,7 @@ def group_edge_current_with_potentials(conductivity_laplacian, index_list,
     :param index_list: list of the indexes acting as current sources/sinks
     :param cancellation: if True, conductance would be normalized to number of sinks used
     :param memory_source: dictionary of memoized tension and current flow through the circuit
+    :param thread_hex: debugging id of the thread in which the sampling is going on
     :return: current matrix for the flow system, current through each node.
     """
     return master_edge_current(conductivity_laplacian, index_list,
@@ -470,6 +487,7 @@ def sample_group_edge_current(conductivity_laplacian, index_list, re_samples,
     :param index_list: list of the indexes acting as current sources/sinks
     :param cancellation: if True, conductance would be normalized to number of sinks used
     :param re_samples: number of times each element in idxlist will be sample.
+    :param thread_hex: debugging id of the thread in which the sampling is going on
     A reasonable minimal is such that len(idxlist)*resamples < 20 000
     :return: current matrix representing the flows from one node to the other. This
     flow is absolute and does not respect the Kirchoff's laws. However, it can be used to

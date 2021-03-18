@@ -381,8 +381,8 @@ def insert_pathways(pathway_steps, pathways):
 
 def re_memoize_reactome_nodes():
     """
-    In case the MetaObjects were already inserted, reloads them all to the local dictionary for
-    further annotation insertion
+    In case the Reactome meta objects were already inserted, reloads them all to the local
+    dictionary for further annotation insertion
     """
 
     reactome_nodes = DatabaseGraph.find(filter_dict={'source': 'Reactome'})

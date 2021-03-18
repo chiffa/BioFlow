@@ -1,14 +1,15 @@
 """
-Contains the access to the command line interface of the application.
+This modules manages the command line interface
 """
 import click
 
 
 def print_version(ctx, value):
+    from bioflow import __version__
     # CURRENTPASS : this is a variable that needs to be pulled elsewhere and folded into "about
     if not value or ctx.resilient_parsing:
         return
-    click.echo('0.2.3')  # CURRENTPASS: import that prpoperly
+    click.echo(__version__)  # CURRENTPASS: import that prpoperly
     ctx.exit()
 
 

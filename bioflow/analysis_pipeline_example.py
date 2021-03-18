@@ -1,5 +1,5 @@
 """
-Top-Level scripts, examples of analysis pipelines.
+An example of a top-level script that could be as an example of analysis of the data.
 """
 from bioflow.utils.log_behavior import clear_logs
 from bioflow.utils.source_dbs_download import pull_online_dbs

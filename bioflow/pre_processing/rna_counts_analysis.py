@@ -1,6 +1,7 @@
 """
 Module responsible for importing raw RNA-seq per-gene counts and pulling out statistically
-significantly different genes
+significantly different genes. Ideally calls of hits should be done by other methods,
+but in their absence raw call (RpMbp) can be used to perform intergoupt calls here.
 """
 from collections import defaultdict
 from csv import reader
@@ -24,7 +25,7 @@ pre_dict = {1: 0.80,
             5: 0.95,
             6: 0.96,
             7: 0.965,
-            8: 0.97, }
+            8: 0.97, }  # t-score corrector
 
 estimator_dilatation_table = defaultdict(lambda: 1)
 estimator_dilatation_table.update(pre_dict)

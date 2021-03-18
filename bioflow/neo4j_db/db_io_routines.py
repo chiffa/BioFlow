@@ -1,7 +1,5 @@
 """
-Module responsible for the declaration of all the database access routines that are used by other
-modules. In case a different back-end than neo4j is used, all methods in this cluster have to be
-re-implemented
+Useful thin wrapper of some useful biological knowledge database routine
 """
 import os
 import pickle

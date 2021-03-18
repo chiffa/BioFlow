@@ -1,7 +1,5 @@
 """
-Performs IO from the setup .ini files and casts into relevant Python Dictionaries
-Performs as well some basic functions based on those config files, such as pulling down the
-databases from online
+Advanced logic functions required for configurations to load
 """
 import os
 from typing import Tuple

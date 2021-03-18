@@ -1,3 +1,8 @@
+"""
+Where the actual heavy-lifting of teh database connection is actually done.
+Using a different database would require re-implementing the GraphDBPipe class to fit the
+signatures.
+"""
 import os
 from pprint import pprint
 from collections import defaultdict
@@ -39,7 +44,17 @@ required_edge_params = {'parse_type', 'source'}
 # ones that does node/edge creation
 
 
-def check_node_params(param_dict: dict) -> bool:
+def _check_node_params(param_dict: dict) -> bool:
+    """
+    Auxialry function
+
+    Checks if the parameters provided to create a new node respect the constraints on the allowed
+    `parse_tyoe`s and provide the required parameters
+
+    :param param_dict:
+    :return: True if all is good
+    :raises: exception in case either of the preconditions fail.
+    """
     if param_dict is None:
         raise Exception('param_dict supplied is empty')
 
@@ -54,7 +69,17 @@ def check_node_params(param_dict: dict) -> bool:
                         % (required_node_params - param_dict.keys()))
 
 
-def check_edge_params(param_dict: dict) -> bool:
+def _check_edge_params(param_dict: dict) -> bool:
+    """
+    Auxilary function
+
+    Checks if the parameters provided to create a new edge respect the constraints on the allowed
+    `parse_tyoe`s and provide the required parameters
+
+    :param param_dict:
+    :return: True if all is good
+    :raises: exception in case either of the preconditions fail.
+    """
     if param_dict is None:
         raise Exception('param_dict supplied is empty')
 
@@ -69,7 +94,7 @@ def check_edge_params(param_dict: dict) -> bool:
                         % (required_edge_params - param_dict.keys()))
 
 
-def neo4j_sanitize(string):
+def _neo4j_sanitize(string):
     """
     Auxilary functions making sure that backdashes are properly noted and managed in Python.
 
@@ -120,13 +145,13 @@ class GraphDBPipe(object):
 
     @staticmethod
     def _create(tx, node_type, param_dict):
-        check_node_params(param_dict)
+        _check_node_params(param_dict)
 
         instruction_puck = ["CREATE (n:%s)" % node_type]
         set_puck = []
 
         for key, value in param_dict.items():
-            set_puck.append("SET n.%s = '%s'" % (key, neo4j_sanitize(value)))
+            set_puck.append("SET n.%s = '%s'" % (key, _neo4j_sanitize(value)))
 
         instruction_puck += set_puck
         instruction_puck.append("RETURN n")
@@ -183,6 +208,11 @@ class GraphDBPipe(object):
         return result
 
     def clear_database(self) -> None:
+        """
+        Deletes all the nodes and links between them in the database
+
+        :return:
+        """
         with self._driver.session() as session:
             session.write_transaction(self._clear_database)
 
@@ -292,7 +322,7 @@ class GraphDBPipe(object):
         where_puck = []
 
         for key, value in filter_dict.items():
-            where_puck.append("a.%s = '%s'" % (key, neo4j_sanitize(value)))
+            where_puck.append("a.%s = '%s'" % (key, _neo4j_sanitize(value)))
 
         where_clause = "WHERE " + ' AND '.join(where_puck) + ' '
         instruction_puck.append(where_clause)
@@ -322,7 +352,7 @@ class GraphDBPipe(object):
 
     @staticmethod
     def _link_create(tx, node_from, node_to, link_type, params):
-        check_edge_params(params)
+        _check_edge_params(params)
 
         if link_type is None:
             link_type = 'default'
@@ -334,7 +364,7 @@ class GraphDBPipe(object):
         if params is not None:
             set_puck = []
             for key, value in params.items():
-                set_puck.append("SET r.%s = '%s'" % (key, neo4j_sanitize(value)))
+                set_puck.append("SET r.%s = '%s'" % (key, _neo4j_sanitize(value)))
             instructions_puck += set_puck
 
         instructions_puck.append("RETURN r")
@@ -386,7 +416,7 @@ class GraphDBPipe(object):
         if link_param_filter is not None:
             where_puck = []
             for key, value in link_param_filter.items():
-                where_puck.append("AND r.%s = '%s'" % (key, neo4j_sanitize(value)))
+                where_puck.append("AND r.%s = '%s'" % (key, _neo4j_sanitize(value)))
             instructions_puck += where_puck
 
         instructions_puck.append("RETURN b")
@@ -414,7 +444,7 @@ class GraphDBPipe(object):
     def _set_attributes(tx, node_id, attributes_dict):
         instructions_puck = ["MATCH (n) WHERE ID(n) = %s" % node_id]
         for key, value in attributes_dict.items():
-            instructions_puck.append("SET n.%s = '%s'" % (key, neo4j_sanitize(value)))
+            instructions_puck.append("SET n.%s = '%s'" % (key, _neo4j_sanitize(value)))
         instructions_puck.append("RETURN n")
         instruction = ' '.join(instructions_puck)
         log.debug(instruction)
@@ -462,10 +492,10 @@ class GraphDBPipe(object):
                             "SET r.parse_type = 'xref' "
                             "SET r.source = '%s' "
                             "RETURN b" % (node_id,
-                                          neo4j_sanitize(annotation_tag),
-                                          neo4j_sanitize(tag_type),
-                                          neo4j_sanitize(link_source),
-                                          neo4j_sanitize(link_source)))
+                                          _neo4j_sanitize(annotation_tag),
+                                          _neo4j_sanitize(tag_type),
+                                          _neo4j_sanitize(link_source),
+                                          _neo4j_sanitize(link_source)))
 
         else:
             result = tx.run("MATCH (a) "
@@ -480,10 +510,10 @@ class GraphDBPipe(object):
                             "SET r.parse_type = 'xref' "
                             "SET r.source = '%s' "
                             "RETURN b" % (node_id,
-                                          neo4j_sanitize(annotation_tag),
-                                          neo4j_sanitize(tag_type),
-                                          neo4j_sanitize(link_source),
-                                          neo4j_sanitize(link_source)))
+                                          _neo4j_sanitize(annotation_tag),
+                                          _neo4j_sanitize(tag_type),
+                                          _neo4j_sanitize(link_source),
+                                          _neo4j_sanitize(link_source)))
 
         return result.single()
 
@@ -507,13 +537,13 @@ class GraphDBPipe(object):
         if tag_type is None or tag_type == '':
             result = tx.run("MATCH (annotnode:Annotation)-[r:annotates]->(target) "
                             "WHERE annotnode.tag = '%s' "
-                            "RETURN target" % neo4j_sanitize(annotation_tag))
+                            "RETURN target" % _neo4j_sanitize(annotation_tag))
 
         else:
             result = tx.run("MATCH (annotnode:Annotation)-[r:annotates]->(target) "
                             "WHERE annotnode.tag = '%s' AND annotnode.type = '%s' "
-                            "RETURN target" % (neo4j_sanitize(annotation_tag),
-                                               neo4j_sanitize(tag_type)))
+                            "RETURN target" % (_neo4j_sanitize(annotation_tag),
+                                               _neo4j_sanitize(tag_type)))
 
         pre_return_puck = list(set([node['target'] for node in result]))
 
@@ -528,13 +558,13 @@ class GraphDBPipe(object):
             if tag_type is None or tag_type == '':
                 result = tx.run("MATCH (annotnode:Annotation)-[r:annotates]->(target) "
                                 "WHERE annotnode.tag = '%s' AND r.preferential = True "
-                                "RETURN target" % neo4j_sanitize(annotation_tag))
+                                "RETURN target" % _neo4j_sanitize(annotation_tag))
 
             else:
                 result = tx.run("MATCH (annotnode:Annotation)-[r:annotates]->(target) "
                                 "WHERE annotnode.tag = '%s' AND annotnode.type = '%s' AND r.preferential = True "
                                 "RETURN target" % (
-                                neo4j_sanitize(annotation_tag), neo4j_sanitize(tag_type)))
+                                    _neo4j_sanitize(annotation_tag), _neo4j_sanitize(tag_type)))
 
             return_puck = list(set([node['target'] for node in result]))
             node_types = [list(node.labels)[0] for node in return_puck]
@@ -830,6 +860,11 @@ class GraphDBPipe(object):
         return legal
 
     def node_stats(self) -> None:
+        """
+        Prints to log.info the number of nodes in each type present in the database
+
+        :return:
+        """
         with self._driver.session() as session:
             session.write_transaction(self._node_stats)
 
@@ -844,6 +879,13 @@ class GraphDBPipe(object):
             log.info("%s : %d" % (node_type, total))
 
     def mark_forbidden_nodes(self, excluded_names_or_leg_ids) -> List[Node]:
+        """
+        Marks the nodes that are not allowed to be used for information flow computation (too
+        high degree or too high eigenvector weight)
+
+        :param excluded_names_or_leg_ids: list of legacy ID or names of nodes to exclude
+        :return:
+        """
         with self._driver.session() as session:
             nodes_list = session.write_transaction(self._mark_forbidden_nodes,
                                                    excluded_names_or_leg_ids)
@@ -971,8 +1013,9 @@ class GraphDBPipe(object):
 
     def erase_node_properties(self, properties_list):
         """
+        Removes all proprties whose name is in the list from all the nodes who have it.
 
-        :param properties_list:
+        :param properties_list: list of properties to be removed
         :return:
         """
         with self._driver.session() as session:
@@ -991,7 +1034,7 @@ class GraphDBPipe(object):
 
     def self_diag(self) -> None:
         """
-        Runs and prints diagnostics on its own content
+        Runs and prints diagnostics on its own content to the stdout
 
         :return:
         """
@@ -999,7 +1042,7 @@ class GraphDBPipe(object):
             session.write_transaction(self._self_diag)
 
     @staticmethod
-    def _self_diag(tx):
+    def _self_diag(tx):  # REFACTOR: split. high cyclomatic complexity (~18)
         node_types = tx.run("MATCH (N) RETURN DISTINCT LABELS(N)")
         node_types = [_type for _type in node_types]
         node_types = [_type["LABELS(N)"][0] for _type in node_types]

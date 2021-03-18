@@ -17,8 +17,10 @@ class GdfExportInterface(object):
     :param field_types: Types of different nodes for the node description
     :param node_properties_dict: dictionary mapping the node labels to outputs
     :param min_current: minimal current below which we are not rendering the links anymore
-    :param index_2_label: Mapping from the indexes curent matrix lines/columns to the node labels
+    :param index_2_label: Mapping from the indexes of curent matrix lines/columns to the node labels
+    :param label_2_index: Mapping from the node labels to the indexes of curent matrix lines/column
     :param current_matrix: matrix of currents from which we wish to rendred the GDF
+    :param directed: if the export matrix is supposed to be directed
     """
 
     Authorised_names = ['VARCHAR', 'DOUBLE', 'BOOLEAN']

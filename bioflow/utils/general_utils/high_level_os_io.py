@@ -70,6 +70,13 @@ def wipe_dir(path):  # pragma: no cover
 
 
 def copy_if_doesnt_exist(source, destination):  # pragma: no cover
+    """
+    Copies a file if it does not exist
+
+    :param source:
+    :param destination:
+    :return:
+    """
     if not os.path.isfile(destination):
         log.info('Did not detect file %s at the destination, copying from source %s' % (source,
                                                                                         destination))

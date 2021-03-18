@@ -4,11 +4,15 @@ TODOs for the project in the future:
 On the table:
 -------------
 
+- TODO: perform the explicit background pass for BioKnowledge as for the Interactome
+
 <Documentation>
 
- - TODO: [DOC] pass and APIdoc all the functions and modules
+ - DONE: [DOC] pass and APIdoc all the functions and modules
 
- - TODO: [SANITY] remove all old dangling variables and code (deprecated X)
+ - TODO: [DOC] document all the possible exceptions that can be raised
+
+ - DONE: [SANITY] remove all old dangling variables and code (deprecated X)
 
  - TODO: [DOC] Document the proper boot cycle of the application
     - $BIOFLOWHOME check, use the default location (~/bioflow)

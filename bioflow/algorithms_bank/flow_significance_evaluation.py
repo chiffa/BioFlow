@@ -19,10 +19,10 @@ def get_neighboring_degrees(degree: int,
     at least `min_nodes` are found
     `nearest_degrees`
 
-    :param degree:
-    :param max_array:
-    :param nearest_degrees:
-    :param min_nodes:
+    :param degree: degree of the nodes
+    :param max_array: maximum nodes for a given degree in each run
+    :param nearest_degrees: the minimum number of the nearest gedgrees to look for
+    :param min_nodes: the minimum number of nodes until which to look for neighbours
     :return:
     """
 
@@ -51,10 +51,10 @@ def get_neighboring_degrees(degree: int,
 def get_p_val_by_gumbel(entry: np.array,
                         max_set_red: List[float]) -> np.array:
     """
+    Recovers the statistical significance (p-value equivalent) by performing a gumbel test
 
-
-    :param entry:
-    :param max_set_red:
+    :param entry: the values achieved in the real hits information flow computation
+    :param max_set_red: background set of maximum values achieved during blanc sampling runs
     :return:
     """
 

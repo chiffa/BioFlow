@@ -1,9 +1,9 @@
 """
+Dataviz routines
+
 All credits for the implementation and suggestions go to sega_sai (stackoverflow):
 http://stackoverflow.com/questions/10439961/efficiently-create-a-density-plot-for-high-density-regions-points-for-sparse-re
 
-As a datavisualization routine, this is a little bit hard to unitttest. As such, it has been
-excluded from the unittesting framework
 """
 # from scipy.sparse import lil_matrix, triu
 # from bioflow.utils.linalg_routines import normalize_laplacian
