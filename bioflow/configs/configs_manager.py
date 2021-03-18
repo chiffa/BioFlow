@@ -51,7 +51,7 @@ def compute_full_paths(sources_parse_dict: dict,
 
             else:
                 for file_name in os.listdir(pre_location):
-                    # TODO: now raises an error if the folder has not been initialized
+                    # Now raises an error if the folder has not been initialized
                     if source_contents['name_pattern'] in file_name:
                         target = file_name
                         break

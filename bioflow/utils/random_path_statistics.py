@@ -19,7 +19,8 @@ from bioflow.configs.main_configs import sources_location, output_location
 log = get_logger(__name__)
 
 
-# TODO: for our application a critical validation step could be to cribble the laplacian with zeros
+# REFACTOR: [Structural analysus]: for our application a critical validation step could be to
+#  cribble the laplacian with zeros
 # => That would be an additional validation of our model stability
 
 interactome_interface_instance = InteractomeInterface(True, True)
@@ -72,8 +73,6 @@ for i, sample in enumerate(find_interactome_rand_samp({'size': 2,
     io_nodes, tension = (list(tensions.items())[0][0], list(tensions.items())[0][1])
 
     print('debug tension: ', tension)
-
-    # TODO:
 
     if tension < 0.1:
         continue  # we are hitting near a very tight cluster, so the pathway will be wide and short
@@ -156,9 +155,6 @@ for i, sample in enumerate(find_interactome_rand_samp({'size': 2,
     essentiality_percentage.append(min([essential_max_current, 1.]))
 
     # raise Exception('debug')
-
-
-    # TODO: debug dump of a couple of pathways into gdf format
 
     # if any(nodes_current > 1.1):
     #     print nodes_current

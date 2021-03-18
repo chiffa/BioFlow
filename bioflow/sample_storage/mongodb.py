@@ -10,12 +10,7 @@ interactome_rand_samp_db = db[pymongo_prefix + "Interactome_samples" + pymongo_s
 
 
 # This refactoring is done to avoid problems with forks in python multithreading. Given writes
-# and reads are rare in our architecture, the performance penalty should be reasonable.
-# TODO: the problem is that the client is still not getting closed, which might lead to problems
-#  with the threads pooling. => with wrapper?
-
-# with MongoClient(mongo_db_url) as client:
-#     loc_annotome_rand_samp(client).drop()
+# and reads are relatively rare in our architecture, the performance penalty should be reasonable.
 
 def loc_annotome_rand_samp():
     client = MongoClient(mongo_db_url)

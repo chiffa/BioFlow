@@ -154,7 +154,7 @@ def convert_to_internal_ids(base):
 
     for i, (_key, match_list) in enumerate(results_tuple_list):
         if i % breakpoints == 0:
-            # TODO: change to a loading bar
+            # TODO: [loading bar]
             log.info("\t %.2f %%" % (float(i) / float(size)*100))
         if _key not in warn_list:
             for match in match_list:

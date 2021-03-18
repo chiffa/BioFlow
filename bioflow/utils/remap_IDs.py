@@ -20,14 +20,18 @@ genes_to_ids_dict = {}
 # data_source_location = '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Veena data/both_ENSMUG.csv'
 # data_dump_location = '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Veena data/both_ENSHUM.csv'
 
-# TODO: move to a configs file
+# CURRENTPASS: move this to a saner location
+#  - add to biodb downloader
+#  - add as a proper call
+#  - add to the command lines
+
 translation_file_location = '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Veena data/Mouse_2_human.tsv'
 gene_to_id_file_location = '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Kp_Km data/mouse_look_up_table.tsv'
 data_source_location = '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Kp_Km data/all_significant.csv'
 data_dump_location = '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Kp_Km data/all_sig_hum.csv'
 
 
-# TODO: wrap this as a function call.
+# CURRENTPASS: wrap this as a function call.
 
 with open(translation_file_location, 'rt') as source:
     reader = csv_reader(source, delimiter='\t')

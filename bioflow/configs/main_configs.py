@@ -42,7 +42,7 @@ with open(user_yaml_confs, 'r', encoding='utf8') as user_yaml_configs:
     configs_loaded = yaml.safe_load(user_yaml_configs)
     Servers = configs_loaded['Servers']
     Sources = configs_loaded['Sources']
-    # TODO: potential improvement - parse all organisms and select here
+    # REFACTOR: [better confs]: potential improvement - parse all organisms and select here
     DB_locations = configs_loaded['DB_locations']
     organism = Sources['META']['organism']
     user_settings = configs_loaded['User_Settings']
@@ -212,7 +212,7 @@ if path.isfile(Dumps.Forbidden_IDs):
 
 # pprint(user_settings)
 
-# casting the user definted settings > TODO: wrap them into a class
+# REFACTOR: [better confs]: wrap them into a class
 smtp_logging = bool(user_settings['smtp_logging'])
 smtp_logging_parameters = user_settings['smtp_logging_parameters']
 

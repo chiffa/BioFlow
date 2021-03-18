@@ -9,7 +9,6 @@ from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 
 log = get_logger(__name__)
 
-# REFACTOR: this should be refactored into a class to wrap memoization dicts
 # Stores relations between GO IDs and the objects in the neo4j database
 GO_term_memoization_dict = {}
 # Stores relations between the SWISSPROT UNIPROT IDs and the neo4j database objects
@@ -194,7 +193,7 @@ def insert_uniprot_annotations(swiss_prot_id, data_container):
     :param data_container:
     :return:
     """
-    # TODO: single commit annotation insertion would be faster => refactor
+    # OPTIMIZE: [database]: single commit annotation insertion would be faster
     link_annotation(swiss_prot_id, 'UNIPROT_Name',
                     data_container['Names']['Full'], preferential=True)
 
@@ -255,7 +254,7 @@ def import_uniprots(uniprot, reactome_acnum_bindings):
         set2 = set(reactome_acnum_bindings.keys())
         # Create uniprot terms
 
-        # TODO: [optimization] perform bulk insertion instead
+        # OPTIMIZE: [database]: perform bulk insertion instead
         uniprot_node = DatabaseGraph.create(
             "UNIPROT",
             {'legacyID': swiss_prot_id,
@@ -283,7 +282,7 @@ def import_uniprots(uniprot, reactome_acnum_bindings):
         Uniprot_memoization_dict[swiss_prot_id] = uniprot_node
 
         # Insert references to GOs
-        # TODO: [optimization]: perform bulk insertion
+        # OPTIMIZE: [database]: perform bulk insertion
         for GO_Term in data_container['GO']:
             if GO_Term in list(GO_term_memoization_dict.keys()):
                 linked_go_term = GO_term_memoization_dict[GO_Term]
@@ -293,7 +292,7 @@ def import_uniprots(uniprot, reactome_acnum_bindings):
                                    {'source': 'UNIPROT',
                                     'parse_type': 'annotates'})
 
-        # TODO: [optimization] perform in-database cross-linking, basically an:
+        # OPTIMIZE: [database] perform in-database cross-linking, basically an:
         #  (a:AnnotNode)-[:annotates]-(N:Uniprot),
         #  (b:AnnotNode)-[:annotates]-(M:Protein) WHERE a.tag = b.tag AND a.type=b.type
         #  Return DISTINCT (a, b)

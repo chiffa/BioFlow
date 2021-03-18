@@ -73,7 +73,6 @@ def cross_ref_tf_factors(confs='tcm'):
 
     :return:
     """
-    # TODO:
     if organism != 'Human':
         raise Exception('TF data unavailable for organisms other than human. Disable TF import in import_main.py')
 

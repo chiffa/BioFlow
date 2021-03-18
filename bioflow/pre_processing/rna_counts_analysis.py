@@ -16,7 +16,6 @@ from bioflow.neo4j_db import db_io_routines
 
 log = get_logger(__name__)
 
-# TODO: implement regression + leftover
 
 pre_dict = {1: 0.80,
             2: 0.89,
@@ -201,7 +200,7 @@ if __name__ == "__main__":
     test_groups_to_compare = [[0, 1], [0, 2]]
 
     rna_source = "/home/ank/Documents/External_Predictions/Ben_RNA_seq/counts.tsv"
-    # TODO: unittest
+    # TODO: [unittests]
     run_analysis_suite(
         rna_source,
         9,

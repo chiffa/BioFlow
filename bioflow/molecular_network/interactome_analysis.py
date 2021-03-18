@@ -32,7 +32,6 @@ from bioflow.algorithms_bank.flow_significance_evaluation import get_neighboring
 log = get_logger(__name__)
 
 
-# TODO: factor that into the "retrieve" routine of the laplacian wrapper
 def get_interactome_interface(background_up_ids=()) -> InteractomeInterface:
     """
     Retrieves an "InteractomeInterface" object
@@ -48,7 +47,6 @@ def get_interactome_interface(background_up_ids=()) -> InteractomeInterface:
     return interactome_interface_instance
 
 
-# TODO: defined only as an auxilary to the spawn_sampler_pool => inline that in the sampler pool
 def spawn_sampler(args_puck):
     """
     Spawns a sampler initialized from the default GO_Interface.
@@ -74,10 +72,7 @@ def spawn_sampler(args_puck):
         pool_no=pool_no
     )
 
-    # log.info('Pool process %d finished' % pool_no)
 
-
-# TODO: [SANITY] args puck need to be a named tuple, preferably a typed one
 def spawn_sampler_pool(
         pool_size,
         sample_size_list,
@@ -402,7 +397,8 @@ def auto_analyze(source_list: List[List[int]],
         processors = psutil.cpu_count() - 1
         log.info("Setting processor count to default: %s" % processors)
 
-    # TODO: check MongoDb to see if we have enough samples of the needed type, adjust the sampling
+    # TODO: [Better Sampling]
+    #  check MongoDb to see if we have enough samples of the needed type, adjust the sampling
     # noinspection PyTypeChecker
     if desired_depth % processors != 0:
         desired_depth = desired_depth // processors + 1

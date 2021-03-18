@@ -12,7 +12,7 @@ reactome_forbidden_nodes = ['H+', 'ATP', 'GTP', 'Pi', 'H2O', 'ADP', 'PPi', 'GDP'
 
 # Yeast uniprots that are excluded from calculation due to too high of edge values : 1300 - 3800
 # Basically, members of protein degradation pathways
-# TODO: add human nodes to the neo4j parse
+# CURRENTPASS: add human nodes to the neo4j parse
 uniprot_forbidden_nodes = ['UBI4P_YEAST', 'NAB2_YEAST', 'SSB2_YEAST', 'HSP82_YEAST', 'SMT3_YEAST',
                            ]
 

@@ -26,13 +26,14 @@ def map_and_save_gene_ids(hit_genes_location, all_detectable_genes_location=''):
     return hit_genes_ids, all_detectable_genes_ids
 
 
-def rebuild_the_laplacians(all_detectable_genes=[]):
+def rebuild_the_laplacians(all_detectable_genes=()):
 
     local_matrix = InteractomeInterface()
     local_matrix.full_rebuild()
 
     _filter = ['biological_process']
-    ref_param_set = [_filter, all_detectable_genes, (1, 1), True, 3]  # TODO: all_detectable_genes should not be here either
+    # REFACTOR: [Better environment]: all_detectable_genes should not be here either
+    ref_param_set = [_filter, all_detectable_genes, (1, 1), True, 3]
 
     annot_matrix = AnnotomeInterface(*ref_param_set)
     annot_matrix.full_rebuild()

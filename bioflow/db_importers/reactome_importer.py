@@ -11,8 +11,6 @@ from bioflow.bio_db_parsers.reactomeParser import ReactomeParser
 
 log = get_logger(__name__)
 
-# TODO: REFACTORING: put everything that uses memoization dictionary into a class
-
 memoization_dict = {}  # accelerated access pointer to the objects
 ForbiddenIDs = []
 
@@ -172,7 +170,6 @@ def insert_complex_parts(complex_property_dict):
             log.info('\t %.2f %%' % (float(i) / float(size) * 100.0))
 
         for part in complex_property_dict[key]['parts']:
-            # TODO: remove redundant protection from Stoichiometry
             if 'Stoichiometry' not in part:
                 complex_node = memoization_dict[key]
                 part_node = memoization_dict[part]
@@ -218,7 +215,7 @@ def insert_reactions(neo4j_graph_class, property_source_dict):
 
 
 # TODO: catalysis need to be inserted as nodes and then cross-linked, for better compatibility with
-# the Pathway searc
+#  the Pathway searc
 def insert_catalysis(catalysises_dict):
     """
     Inserts all the catalysis links from one meta-element to an another
@@ -233,7 +230,6 @@ def insert_catalysis(catalysises_dict):
             if catalysis_properties['controlled'] in list(memoization_dict.keys()) \
                     and catalysis_properties['controller'] in list(memoization_dict.keys()):
 
-                # TODO: this can be moved to the parsing
                 if 'ControlType' not in list(catalysises_dict[catalysis].keys()):
                     catalysis_properties['ControlType'] = 'UNKNOWN'
 
@@ -456,11 +452,6 @@ def insert_reactome(skip_import='N'):
                  % (len(reactome_parser.Complexes)))
         insert_complex_parts(reactome_parser.Complexes)
 
-        # NOW dump the ForbiddenIDs
-        # # TODO: the forbidden IDs are no more calculated here - this can be deleted
-        # pickle.dump(ForbiddenIDs, open(Dumps.Forbidden_IDs, 'wb'))
-        # raise Exception('pickle debug')
-
 
     if skip_import == 'M':
         re_memoize_reactome_nodes()
@@ -490,5 +481,6 @@ def insert_reactome(skip_import='N'):
     # insert_modulation(reactome_parser.Modulations)
     insert_pathways(reactome_parser.PathwaySteps,
                     reactome_parser.Pathways)
-    # TODO: there is no linking from the actual entities to pathways in Reactome?
-    #   There are, but they link to reactions and are currently excluded from a parse
+
+    # Q: There is no linking from the actual entities to pathways in Reactome?
+    #   There are, but through pathway steps.

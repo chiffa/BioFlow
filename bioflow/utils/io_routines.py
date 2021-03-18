@@ -113,7 +113,7 @@ def time_exection(f):
 
 
 if __name__ == "__main":
-    # TODO: actually inject the revision hashes into the execution pipeline in order to allow for
-    #  reproductible execution
+    # REFACTOR: [better environment]: actually inject the revision hashes into the execution
+    #  pipeline in order to allow for reproductible execution
     print(get_git_revision_hash())
     print(get_git_revision_short_hash())

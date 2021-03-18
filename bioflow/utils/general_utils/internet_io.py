@@ -14,7 +14,7 @@ import requests_ftp
 import hashlib
 
 
-# TODO: refactor for better separation of:
+# REFACTOR: for better separation of:
 #   - path correction
 #   - http v.s. ftp pull selection
 #   - decompression algorithm selection

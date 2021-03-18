@@ -400,7 +400,7 @@ def master_edge_current(conductivity_laplacian, index_list,
         current_accumulator = current_accumulator + sparse_abs(current_upper)
 
         if counter % breakpoints == 0 and counter > 1:
-            # TODO: the internal loop load bar goes here
+            # TODO: [load bar]: the internal loop load bar goes here
             compops = float(breakpoints) / (time() - previous_time)
             mins_before_termination = (total_pairs-counter) / compops // 60
             finish_time = datetime.datetime.now() + datetime.timedelta(minutes=mins_before_termination)

@@ -81,9 +81,9 @@ class ReactomeParser(object):
     # TODO: add unification x-ref parsing to match things like cellular locations to GO terms
     # TODO: move the definition of the file to parse from the __inti__ method to the execution tree
     # TODO: add the following post-processing filters: , ['BiochemicalReaction'] on Catalysis
-    # when parsing 'Control' object set
+    #  when parsing 'Control' object set
     # TODO: convert the system of references to a single tree that has all the different
-    # subcategories already declared
+    #  subcategories already declared
 
     def __init__(self, path_to_biopax_file=main_configs.reactome_biopax_path):
 
@@ -301,8 +301,6 @@ class ReactomeParser(object):
         :param flatten: if we want to flatten left/right tags parse results (legacy support)
         :param remap: if we want to rename some terms we've parsed (legacy support)
         """
-        # TODO: cyclomatic complexity of this method is close to 11, which is on the edge of
-        # acceptable
         for reaction_object in self._find_in_root(primary_term):
             key_ = list(reaction_object.attrib.values())[0]
             base_dict = {'right': [],

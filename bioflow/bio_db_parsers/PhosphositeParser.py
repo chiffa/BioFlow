@@ -12,7 +12,7 @@ def parse_phosphosite(phoshosite_file, organism):
     base = []
     ret_dict = {}
 
-    with open(phoshosite_file, 'rt', encoding='latin-1') as source:  # TODO: formalize the encoding
+    with open(phoshosite_file, 'rt', encoding='latin-1') as source:
         # usage
         reader = csv_reader(source, delimiter='\t')
         next(reader)

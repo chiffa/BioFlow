@@ -31,7 +31,6 @@ _correlation_factors = (1, 1)
 ref_param_set = tuple([_filter, [], (1, 1), True, 3])
 
 
-# TODO: move ref_param_set to configs
 def get_go_interface_instance(param_set=ref_param_set) -> GeneOntologyInterface:
     """
     Generates a Matrix_Knowledge_DB interface for the use in the spawner. If
@@ -108,7 +107,8 @@ def spawn_sampler_pool(
     global implicitely_threaded
 
     log.info('Spawning sampler for %s %s' % (payload[0][0], payload[0][1]))
-    if not implicitely_threaded:  # TODO: this can be extracted as a shared routine to utils module
+    if not implicitely_threaded:
+        # REFACTOR: [sanity]: this can be extracted as a shared routine to utils module
         with Pool(processes=pool_size) as pool:  # This is the object we are using to spawn a thread pool
             try:
                 log.debug('spawning the sampler with payload %s', payload)
@@ -302,9 +302,7 @@ def compare_to_blank(
 
     combined_p_vals = np.ones_like(query_array[2, :])
 
-    for degree in degrees.tolist():  # TODO: there is currently a logic where the pb fails if
-        # there is elements with edge number in the analysis set that were not found in the test
-        # sets (which is not unexpected for GO terms)
+    for degree in degrees.tolist():
         _filter = query_array[2, :] == degree
 
         entry = query_array[:, _filter]
@@ -340,11 +338,11 @@ def compare_to_blank(
               list(go_interface_instance.GO2UP_Reachable_nodes.items())[:10])
 
     node_char_list = [
-            [int(GO_id),
-             go_interface_instance.GO_Names[GO_id]] +
-            dict_system[GO_id] +
-            r_nodes[go_node_ids == float(GO_id)].tolist() +
-            [[go_interface_instance.UP_Names[up_bulbs_id][1]
+        [int(GO_id),
+         go_interface_instance.GO_names[GO_id]] +
+        dict_system[GO_id] +
+        r_nodes[go_node_ids == float(GO_id)].tolist() +
+        [[go_interface_instance.UP_names[up_bulbs_id][1]
               for up_bulbs_id in list(set(go_interface_instance.GO2UP_Reachable_nodes[GO_id]).
                                       intersection(set(go_interface_instance.active_up_sample)))]]
             for GO_id in not_random_nodes]
@@ -355,9 +353,6 @@ def compare_to_blank(
                             r_std_nodes[:, np.newaxis]))
     nodes_dict = dict((node[0], (node[1], node[2], node[3])) for node in nodes_dict.tolist())
     nodes_dict = defaultdict(lambda: (1., 0., 0.), nodes_dict)  # corresponds to the cases of super low flow - never significant
-
-    # TODO: pull the groups corresponding to non-random associations.
-    # => Will not implement, it's already done by Gephi
 
     return sorted(node_char_list, key=lambda x: x[5]), nodes_dict
 

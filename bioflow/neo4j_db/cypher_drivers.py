@@ -14,14 +14,15 @@ log = get_logger(__name__)
 # default connection parameters
 uri = neo4j_server_url
 user = 'neo4j'
-# TODO: add `db_org = confs.organism` instruction to enable parallel databases
+# REFACTOR: [better environment]:
+#  add `db_org = confs.organism` instruction to enable parallel databases
 password = os.environ['NEOPASS']
 
 
 # Type hinting support
 db_id = NewType('db_id', int)
 db_n_type = NewType('db_n_type', str)
-# TODO add a db_a_type for annotation node and db_p_e_type for physical entities?
+# REFACTOR: [typing] add a db_a_type for annotation node and db_p_e_type for physical entities?
 db_e_type = NewType('db_e_type', str)
 e_orientation = NewType('e_orientation', str)
 
@@ -144,7 +145,8 @@ class GraphDBPipe(object):
         :param node_type: (optional type of the node to be deleted)
         :return:
         """
-        with self._driver.session() as session:  # TODO: organism-specific: session(database=db_org)
+        with self._driver.session() as session:
+            # REFACTOR: [better environment]: organism-specific: session(database=db_org)
             deleted = session.write_transaction(self._delete, node_id, node_type)
             return deleted
 
@@ -457,7 +459,7 @@ class GraphDBPipe(object):
                             "SET b.source = '%s' "
                             "CREATE (a)<-[r:annotates]-(b) "
                             "SET r.preferential = True "
-                            "SET r.parse_type = 'xref' "  # INTEST
+                            "SET r.parse_type = 'xref' "
                             "SET r.source = '%s' "
                             "RETURN b" % (node_id,
                                           neo4j_sanitize(annotation_tag),
@@ -475,7 +477,7 @@ class GraphDBPipe(object):
                             "SET b.source = '%s' "
                             "CREATE (a)<-[r:annotates]-(b) "
                             "SET r.preferential = False "
-                            "SET r.parse_type = 'xref' "  # INTEST
+                            "SET r.parse_type = 'xref' "
                             "SET r.source = '%s' "
                             "RETURN b" % (node_id,
                                           neo4j_sanitize(annotation_tag),
@@ -502,7 +504,7 @@ class GraphDBPipe(object):
     @staticmethod
     def _get_from_annotation_tag(tx, annotation_tag, tag_type):
         annotation_tag = annotation_tag.upper()
-        if tag_type is None or tag_type == '':  # TODO: track back to see where '' as type is inserted
+        if tag_type is None or tag_type == '':
             result = tx.run("MATCH (annotnode:Annotation)-[r:annotates]->(target) "
                             "WHERE annotnode.tag = '%s' "
                             "RETURN target" % neo4j_sanitize(annotation_tag))

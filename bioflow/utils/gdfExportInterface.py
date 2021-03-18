@@ -7,10 +7,6 @@ from scipy.sparse import lil_matrix
 from bioflow.configs.main_configs import Dumps
 from bioflow.utils.general_utils.high_level_os_io import mkdir_recursive
 
-# TODO: this class needs to be split into the GDF core that does all the work on a matrix rendering
-# and filters that go_namespace_filter out the unwanted variables
-
-
 class GdfExportInterface(object):
     """
     An interface allowing the export of the matrix relatioin object and node characteristics to a

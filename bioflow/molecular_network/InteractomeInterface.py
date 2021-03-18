@@ -53,7 +53,7 @@ class InteractomeInterface(object):
         self.init_time = time()
         self.partial_time = time()
 
-        self.adjacency_Matrix = np.zeros((4, 4))
+        self.adjacency_matrix = np.zeros((4, 4))
         # This is just non-normalized laplacian matrix
         self.laplacian_matrix = np.zeros((4, 4))
         self.non_norm_laplacian_matrix = np.zeros((4, 4))
@@ -118,20 +118,20 @@ class InteractomeInterface(object):
         char_set = string.ascii_uppercase + string.digits
         self.thread_hex = ''.join(sample(char_set * 6, 6))
 
-    # REFACTOR: potential improvement for all dump/undump methods is to use mongo storage and index
-    #  from environment not to re-compute them every time
+    # REFACTOR: [better environment]:  potential improvement for all dump/undump methods
+    #  is to use mongo storage and index from environment not to re-compute them every time
     def dump_matrices(self):
         """
-        dumps self.adjacency_Matrix and self.laplacian_matrix
+        dumps self.adjacency_matrix and self.laplacian_matrix
         """
-        dump_object(confs.Dumps.interactome_adjacency_matrix, self.adjacency_Matrix)
+        dump_object(confs.Dumps.interactome_adjacency_matrix, self.adjacency_matrix)
         dump_object(confs.Dumps.interactome_laplacian_matrix, self.laplacian_matrix)
 
     def undump_matrices(self):
         """
-        undumps self.adjacency_Matrix and self.laplacian_matrix
+        undumps self.adjacency_matrix and self.laplacian_matrix
         """
-        self.adjacency_Matrix = undump_object(confs.Dumps.interactome_adjacency_matrix)
+        self.adjacency_matrix = undump_object(confs.Dumps.interactome_adjacency_matrix)
         self.laplacian_matrix = undump_object(confs.Dumps.interactome_laplacian_matrix)
         self.non_norm_laplacian_matrix = self.laplacian_matrix.copy()
 
@@ -335,7 +335,7 @@ class InteractomeInterface(object):
 
         all_uniprot_nodes = DatabaseGraph.get_all('UNIPROT')
 
-        self.adjacency_Matrix = adjacency_matrix  # TODO: capitalization
+        self.adjacency_matrix = adjacency_matrix
         self.laplacian_matrix = laplacian_matrix
 
         self.get_eigen_spectrum(100)
@@ -368,7 +368,7 @@ class InteractomeInterface(object):
         been preloaded first, will raise an Exception
 
         :param biggest_eigvals_to_get: specifies how many biggest eigenvalues we are willing to get.
-        :raise Exception: "Matrix must be pre-loaded first" if self.adjacency_Matrix and
+        :raise Exception: "Matrix must be pre-loaded first" if self.adjacency_matrix and
         self.laplacian_matrix have not been computed anew or pre-loaded first
         """
         if self.laplacian_matrix.shape == (4, 4):
@@ -378,7 +378,7 @@ class InteractomeInterface(object):
         log.info("entering eigenvect computation; %s", self.pretty_time())
 
         self.adj_eigenvals, self.adj_eigenvects = eigsh(
-            self.adjacency_Matrix, biggest_eigvals_to_get)
+            self.adjacency_matrix, biggest_eigvals_to_get)
         self.cond_eigenvals, self.cond_eigenvects = eigsh(
             self.laplacian_matrix, biggest_eigvals_to_get)
 
@@ -478,21 +478,14 @@ class InteractomeInterface(object):
         self.active_up_sample = \
             [uniprot for uniprot in uniprots if uniprot in self.known_uniprots_neo4j_ids]
 
-    # TODO: extract as the element performing a computation of the network
-    # critical control parameters:
-    #   - memoized => dismiss
-    #   - sourced => dismiss
-    #   - incremental => to be kept. So that we can calculate the background even better
-    #   - cancellation => to be kept
-    #   - sparse_samples => to be kept
-    #   - factor in the sampling run into this
+    # REFACTOR: extract as the element performing a computation of the network
     def compute_current_and_potentials(
             self,
             memoized=True,  # is required to enable the fast loading.
             incremental=False,  # This is always false and was used in order to resume the sampling
             cancellation=True,
             sparse_samples=False,
-            fast_load=False):  # TODO: this should not be implemented this way.
+            fast_load=False):  # REFACTOR: this should not be implemented this way.
         """
         Builds a conduction matrix that integrates uniprots, in order to allow an easier
         knowledge flow analysis
@@ -679,7 +672,8 @@ class InteractomeInterface(object):
             min_current=0.0001,
             index_2_label=self.matrix_index_2_neo4j_id,
             label_2_index=self.neo4j_id_2_matrix_index,
-            current_matrix=self.current_accumulator)  # TODO: twister compared to random sample?
+            current_matrix=self.current_accumulator)
+            # TODO: [Better stats]: twister compared to random sample?
         gdf_exporter.write()
 
 
@@ -707,8 +701,7 @@ class InteractomeInterface(object):
         if not len(samples_size) == len(samples_each_size):
             raise Exception('Not the same list sizes!')
 
-        # TODO: move that part to the interactome analysis section => Unique Interactome Interface
-        # TODO: include the limitations on the types of nodes to sample:
+        # TODO: [Better sampling]: include the limitations on the types of nodes to sample:
 
         for sample_size, iterations in zip(samples_size, samples_each_size):
 
@@ -741,7 +734,6 @@ class InteractomeInterface(object):
                             'UP_hash': md5,
                             'sys_hash': self.md5_hash(),
                             'size': sample_size,
-                            'chrom': 'False', # TODO: [ON DB rebuild]: delete
                             'sparse_rounds': sparse_rounds,
                             'UPs': pickle.dumps(analytics_uniprot_list),
                             'currents': pickle.dumps(
@@ -763,7 +755,7 @@ class InteractomeInterface(object):
                              "{0:.2f}".format(sample_size * sparse_rounds / 2 / self._time()),
                              self.pretty_time(), sparse_rounds)
 
-                # TODO: the external loop load bar goes here
+                # TODO: [load bar]: the external loop progress bar goes here
 
     @staticmethod
     def compare_dumps(dumps_folder_1, dumps_folder_2):

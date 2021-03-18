@@ -59,7 +59,7 @@ class GeneOntologyInterface(object):
      to be considered ultra-specific anymore
     """
 
-    # REFACTOR: move to configs
+    # REFACTOR: [BKI normalization]: move to configs
     _GOUpTypes = ["is_a_go", "is_part_of_go"]
     _GORegTypes = ["is_Regulant"]
 
@@ -84,9 +84,9 @@ class GeneOntologyInterface(object):
         self.All_GOs = []
         self.GO2Num = {}
         self.Num2GO = {}
-        self.total_Entropy = None
+        self.total_entropy = None
 
-        self.Reachable_nodes_dict = {}
+        self.reachable_nodes_dict = {}
 
         self.UP2GO_Reachable_nodes = {}
         self.GO2UP_Reachable_nodes = {}
@@ -94,11 +94,11 @@ class GeneOntologyInterface(object):
         self.GO2UP_step_Reachable_nodes = {}
         self.GO2_Weighted_Ent = {}
 
-        self.GO_Names = {}
-        self.GO_Legacy_IDs = {}
-        self.rev_GO_IDs = {}
+        self.GO_names = {}
+        self.GO_legacy_ids = {}
+        self.rev_GO_ids = {}
 
-        self.UP_Names = {}
+        self.UP_names = {}
 
         self.adjacency_matrix = np.zeros((2, 2))
         self.dir_adj_matrix = np.zeros((2, 2))
@@ -109,7 +109,7 @@ class GeneOntologyInterface(object):
         self.inflated_lbl2idx = {}
         self.binding_intensity = 0
 
-         # Refactor: [stateless]: this needs to be passed as an argument, not a persistent variable
+         # REFACTOR [stateless]: this needs to be passed as an argument, not a persistent variable
         self.active_up_sample = []
         self.UP2UP_voltages = {}
         self.uniprots_2_voltage = {}
@@ -120,7 +120,7 @@ class GeneOntologyInterface(object):
         char_set = string.ascii_uppercase + string.digits
         self.thread_hex = ''.join(random.sample(char_set * 6, 6))
 
-        self.Indep_Lapl = np.zeros((2, 2))
+        self.indep_lapl = np.zeros((2, 2))
         self.sparsely_sampled = False
 
         log.info('Setting up GO Interface with namespaces %s and %s background UPs',
@@ -163,33 +163,33 @@ class GeneOntologyInterface(object):
         # print(type(self.UP2GO_Dict))
         # print(type(self.GO2UP))
         # print(type(self.deprecated_SeedSet))
-        # print(type(self.Reachable_nodes_dict))
-        # print(type(self.GO_Names))
-        # print(type(self.GO_Legacy_IDs))
-        # print(type(self.rev_GO_IDs))
+        # print(type(self.reachable_nodes_dict))
+        # print(type(self.GO_names))
+        # print(type(self.GO_legacy_ids))
+        # print(type(self.rev_GO_ids))
         # print(type(self.All_GOs))
         # print(type(self.GO2Num))
         # print(type(self.Num2GO))
-        # print(type(self.UP_Names))
+        # print(type(self.UP_names))
         # print(type(self.deprecated_UPs_without_GO))
 
         dump_object(
             confs.Dumps.GO_dump,
             (self.UP2GO_Dict,
              self.GO2UP,
-             self.Reachable_nodes_dict,
-             self.GO_Names,
-             self.GO_Legacy_IDs,
-             self.rev_GO_IDs,
+             self.reachable_nodes_dict,
+             self.GO_names,
+             self.GO_legacy_ids,
+             self.rev_GO_ids,
              self.All_GOs,
              self.GO2Num,
              self.Num2GO,
-             self.UP_Names))
+             self.UP_names))
 
     def undump_core(self):
-        self.UP2GO_Dict, self.GO2UP, self.Reachable_nodes_dict, \
-        self.GO_Names, self.GO_Legacy_IDs, self.rev_GO_IDs, self.All_GOs, \
-        self.GO2Num, self.Num2GO, self.UP_Names =\
+        self.UP2GO_Dict, self.GO2UP, self.reachable_nodes_dict, \
+        self.GO_names, self.GO_legacy_ids, self.rev_GO_ids, self.All_GOs, \
+        self.GO2Num, self.Num2GO, self.UP_names =\
             undump_object(confs.Dumps.GO_dump)
 
     def dump_matrices(self):
@@ -252,10 +252,10 @@ class GeneOntologyInterface(object):
         return undump_object(confs.Dumps.GO_Analysis_memoized)
 
     def dump_independent_linear_sets(self):
-        dump_object(confs.Dumps.GO_Indep_Linset, self.Indep_Lapl)
+        dump_object(confs.Dumps.GO_Indep_Linset, self.indep_lapl)
 
     def undump_independent_linear_sets(self):
-        self.Indep_Lapl = undump_object(confs.Dumps.GO_Indep_Linset)
+        self.indep_lapl = undump_object(confs.Dumps.GO_Indep_Linset)
 
     def full_rebuild(self):
         self.new_annotome_access_and_structure()
@@ -330,13 +330,13 @@ class GeneOntologyInterface(object):
         all_nodes_dict, edges_list = DatabaseGraph.parse_knowledge_entity_net()
         term_counter = 0
 
-        self.Reachable_nodes_dict = defaultdict(lambda: (set(), set(), set(), set()))
+        self.reachable_nodes_dict = defaultdict(lambda: (set(), set(), set(), set()))
         # basically (pure up, out reg, pure down, in_reg)
 
         for node_id, node_obj in all_nodes_dict.items():
             # uniprot parse
             if list(node_obj.labels)[0] == 'UNIPROT':
-                self.UP_Names[node_id] = [node_obj['legacyID'],
+                self.UP_names[node_id] = [node_obj['legacyID'],
                                           node_obj['displayName']]
             # ontology parse
             else:
@@ -347,9 +347,9 @@ class GeneOntologyInterface(object):
                         and node_obj['Namespace'] not in self.go_namespace_filter:
                     continue
 
-                self.GO_Names[node_id] = node_obj['displayName']
-                self.GO_Legacy_IDs[node_id] = node_obj['legacyID']
-                self.rev_GO_IDs[node_obj['legacyID']] = node_id
+                self.GO_names[node_id] = node_obj['displayName']
+                self.GO_legacy_ids[node_id] = node_obj['legacyID']
+                self.rev_GO_ids[node_obj['legacyID']] = node_id
 
                 self.All_GOs.append(node_id)
                 self.Num2GO[term_counter] = node_id
@@ -388,10 +388,10 @@ class GeneOntologyInterface(object):
             # link annotations between them:
             else:  # el_obj['parse_type'] == 'annotation_relationship':
                 # for that we actually will need to build a more complicated
-                # REFACTOR: to match the previous way it functioned we would have needed to
+                # OPTIMIZE: to match the previous way it functioned we would have needed to
                 #  more up only, not down/sideways. Basically find all the UPs and run the cycle
                 #  of rel>GO>rel>GO>rel>GO maps until we are out of Uniprots.
-                # REFACTOR: that would also allow us to eliminate the overly complex
+                # OPTIMIZE: that would also allow us to eliminate the overly complex
                 #  self.get_go_reach
                 #  That would define:
                 #   - self.GO2UP_Reachable_nodes
@@ -400,21 +400,21 @@ class GeneOntologyInterface(object):
                 #   - self.UP2GO_step_Reachable_nodes
                 #   - GO2_Pure_Inf
                 #   - GO2_Weighted_Ent
-                # REFACTOR: the final decision is that to save the time we will stick with what
+                # The final decision is that to save the time we will stick with what
                 #  there was already before.
                 if rel_obj.type in self._GOUpTypes:
-                    self.Reachable_nodes_dict[start_id][0].add(end_id)
-                    self.Reachable_nodes_dict[end_id][2].add(start_id)
+                    self.reachable_nodes_dict[start_id][0].add(end_id)
+                    self.reachable_nodes_dict[end_id][2].add(start_id)
                 elif rel_obj.type in self._GORegTypes:
-                    self.Reachable_nodes_dict[start_id][1].add(end_id)
-                    self.Reachable_nodes_dict[end_id][3].add(start_id)
+                    self.reachable_nodes_dict[start_id][1].add(end_id)
+                    self.reachable_nodes_dict[end_id][3].add(start_id)
 
 
-        self.Reachable_nodes_dict = dict(self.Reachable_nodes_dict)
+        self.reachable_nodes_dict = dict(self.reachable_nodes_dict)
 
-        for key in self.Reachable_nodes_dict.keys():
-            payload = self.Reachable_nodes_dict[key]
-            self.Reachable_nodes_dict[key] = (list(payload[0]),
+        for key in self.reachable_nodes_dict.keys():
+            payload = self.reachable_nodes_dict[key]
+            self.reachable_nodes_dict[key] = (list(payload[0]),
                                               list(payload[1]),
                                               list(payload[2]),
                                               list(payload[3]))
@@ -440,7 +440,7 @@ class GeneOntologyInterface(object):
             """
             base_matrix = lil_matrix((len(self.All_GOs), len(self.All_GOs)))
             # REFACTOR: [BKI normalization] "package" should be a named tuple
-            for node, package in self.Reachable_nodes_dict.items():
+            for node, package in self.reachable_nodes_dict.items():
                 fw_nodes = package[0]
                 if include_reg:
                     fw_nodes += package[1]
@@ -458,7 +458,7 @@ class GeneOntologyInterface(object):
 
             """
             base_matrix = lil_matrix((len(self.All_GOs), len(self.All_GOs)))
-            for node, package in self.Reachable_nodes_dict.items():
+            for node, package in self.reachable_nodes_dict.items():
                 fw_nodes = package[0]
                 if include_reg:
                     fw_nodes += package[1]
@@ -477,28 +477,29 @@ class GeneOntologyInterface(object):
 
         :param number:
         """
-        # Refactor: rewrite informativity/weight calculation according to a loadable policy function
+        # REFACTOR: [Better weights]: rewrite informativity/weight calculation according to a
+        #  loadable policy function
 
-        if not self.total_Entropy:
-            self.total_Entropy = - \
+        if not self.total_entropy:
+            self.total_entropy = - \
                 math.log(1. / len(self.UP2GO_Dict.keys()), 2)
 
         if number < 1.0:
             # It actually possible now, the results just won't be used anymore
             log.debug("Term (%s) without reach (%.2f) encountered in informativity calculation "
                       % (key, number))
-            return 10 * self.total_Entropy
+            return 10 * self.total_entropy
             # raise Exception("Wrong value (%.2f) provided for entropy computation of %s" % (number,
             #                                                                                key)
 
         if number == 1.0:
-            return 2 * self.total_Entropy
+            return 2 * self.total_entropy
 
-        return pow(-self.correction_factor[0] * self.total_Entropy /
+        return pow(-self.correction_factor[0] * self.total_entropy /
                    math.log(1 / float(number), 2), self.correction_factor[1])
 
 
-    # Refactor: Method is excessively complex.
+    # REFACTOR: [Sanity]: ethod is excessively complex (cyc. complexity ~ 18).
     def get_go_reach(self):
         """
         Recovers by how many different uniprots each GO term is reached, both in
@@ -540,7 +541,7 @@ class GeneOntologyInterface(object):
         dir_reg_path = lil_matrix(dir_reg_path)
 
         # Load all the GOs that can potentially be reached
-        self.GO2UP_Reachable_nodes = dict((el, []) for el in list(self.Reachable_nodes_dict.keys()))
+        self.GO2UP_Reachable_nodes = dict((el, []) for el in list(self.reachable_nodes_dict.keys()))
         # Load all the UPs that are reached directly from the GO nodes.
         self.GO2UP_Reachable_nodes.update(self.GO2UP)
 
@@ -615,8 +616,8 @@ class GeneOntologyInterface(object):
         nz_list = copy(
             list(zip(list(base_matrix.nonzero()[0]), list(base_matrix.nonzero()[1]))))
 
-        # TODO: [weight policy]: change that to a version using a function to calculate the
-        #  weights
+        # REFACTOR: [Better weights]: change that to a version using a function to calculate the
+        #  weights (weigting policy)
         for idx1, idx2 in nz_list:
             min_inf = min(
                 self.GO2_Pure_Inf[self.Num2GO[idx1]],
@@ -636,11 +637,11 @@ class GeneOntologyInterface(object):
         """
         uniprot_dict = {}
 
-        for elt in self.UP_Names.keys():
+        for elt in self.UP_names.keys():
             node = DatabaseGraph.get(elt, 'UNIPROT')
             alt_id = node['legacyID']
             uniprot_dict[alt_id] = (
-                elt, self.UP_Names[elt][1])
+                elt, self.UP_names[elt][1])
             uniprot_dict[elt] = alt_id
         pickle.dump(uniprot_dict, open(confs.Dumps.Up_dict_dump, 'wb'))
 
@@ -812,7 +813,7 @@ class GeneOntologyInterface(object):
             self.UP2UP_voltages[(UP1, UP2)] = voltage_diff
 
             if counter % breakpoints == 0 and counter > 1:
-                # TODO: the internal loop load bar goes here
+                # TODO: [load bar] the internal loop load bar goes here
                 compops = float(breakpoints) / (time() - previous_time)
                 mins_before_termination = (total_pairs-counter) / compops // 60
                 finish_time = datetime.datetime.now() + datetime.timedelta(minutes=mins_before_termination)
@@ -907,8 +908,8 @@ class GeneOntologyInterface(object):
 
         for GO in self.GO2Num.keys():
             char_dict[GO] = [str(self.node_current[GO]),
-                             'GO', self.GO_Legacy_IDs[GO],
-                             self.GO_Names[GO].replace(',', '-'),
+                             'GO', self.GO_legacy_ids[GO],
+                             self.GO_names[GO].replace(',', '-'),
                              str(self.GO2_Pure_Inf[GO]),
                              str(len(self.GO2UP_Reachable_nodes[GO])),
                              str(p_value_dict[int(GO)][0]),
@@ -916,8 +917,8 @@ class GeneOntologyInterface(object):
 
         for UP in self.active_up_sample:
             char_dict[UP] = [str(self.node_current[UP]),
-                             'UP', self.UP_Names[UP][0],
-                             str(self.UP_Names[UP][1]).replace(',', '-'),
+                             'UP', self.UP_names[UP][0],
+                             str(self.UP_names[UP][1]).replace(',', '-'),
                              str(self.binding_intensity),
                              '1',
                              '0.1',
@@ -1004,7 +1005,6 @@ class GeneOntologyInterface(object):
                             'UP_hash': md5,
                             'sys_hash': self.md5_hash(),
                             'size': sample_size,
-                            'chrom': 'False', # TODO: [ON DB rebuild]: delete
                             'sparse_rounds': sparse_rounds,
                             'UPs': pickle.dumps(analytics_up_list),
                             'currents': pickle.dumps(
@@ -1033,21 +1033,21 @@ class GeneOntologyInterface(object):
                              "{0:.2f}".format(sample_size * sparse_rounds / 2 / self._time()),
                              self.pretty_time(), sparse_rounds)
 
-                # TODO: the external loop load bar goes here
+                # TODO: [load bar]: the external loop load bar goes here
 
     def get_independent_linear_groups(self):
         """
         Recovers independent linear groups of the GO terms. Independent linear groups are
         those that share a significant amount of deprecated_reached_uniprots_neo4j_id_list in common
         """
-        self.Indep_Lapl = lil_matrix((len(self.All_GOs), len(self.All_GOs)))
+        self.indep_lapl = lil_matrix((len(self.All_GOs), len(self.All_GOs)))
         for GO_list in self.UP2GO_Reachable_nodes.values():
             for GO1, GO2 in combinations(GO_list, 2):
                 idx1, idx2 = (self.GO2Num[GO1], self.GO2Num[GO2])
-                self.Indep_Lapl[idx1, idx2] += -1
-                self.Indep_Lapl[idx2, idx1] += -1
-                self.Indep_Lapl[idx2, idx2] += 1
-                self.Indep_Lapl[idx1, idx1] += 1
+                self.indep_lapl[idx1, idx2] += -1
+                self.indep_lapl[idx2, idx1] += -1
+                self.indep_lapl[idx2, idx2] += 1
+                self.indep_lapl[idx1, idx1] += 1
 
 
 if __name__ == '__main__':
