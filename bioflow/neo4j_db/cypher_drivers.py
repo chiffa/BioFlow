@@ -21,8 +21,6 @@ uri = neo4j_server_url
 user = 'neo4j'
 # REFACTOR: [better environment]:
 #  add `db_org = confs.organism` instruction to enable parallel databases
-password = os.environ['NEOPASS']
-
 
 # Type hinting support
 db_id = NewType('db_id', int)
@@ -116,6 +114,7 @@ class GraphDBPipe(object):
     """
 
     def __init__(self):  # REAFACTOR: add an option to supply uri, user and pwd not from configs
+        password = os.environ['NEOPASS']
         self._driver = GraphDatabase.driver(uri, auth=(user, password))
 
     def close(self):

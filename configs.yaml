@@ -121,9 +121,10 @@ User_Settings:
     False
   smtp_logging_parameters:
     local_host:
-      lpdpc4.epfl.ch
+#      0.0.0.0:25
+      lpdpc35.epfl.ch:25
     local_mail_account:
-      andrei@lpdpc4.epfl.ch
+      andrei@lpdpc35.epfl.ch
     reporting_target_mail:
       andrei.kucharavy@epfl.ch
   environment:  # TODO: use to build the environment signature that will be logged and saved

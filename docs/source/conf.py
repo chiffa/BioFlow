@@ -15,7 +15,9 @@
 import sys
 import os
 from mock import Mock as MagicMock
-from bioflow import __version__, __author__, __current_year__
+
+print(sys.executable)
+print(os.getcwd())
 
 
 def warn(message):
@@ -71,6 +73,9 @@ if on_rtd:
                     ]
 
     sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+
+
+from bioflow import __version__, __author__, __current_year__
 
 
 # If extensions (or modules to document with autodoc) are in another directory,

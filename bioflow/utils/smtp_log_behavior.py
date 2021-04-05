@@ -5,6 +5,7 @@ import logging
 from smtplib import SMTP
 from datetime import datetime
 from email.message import EmailMessage
+import platform
 
 from bioflow.configs.main_configs import smtp_logging, smtp_logging_parameters
 
@@ -12,10 +13,12 @@ from bioflow.configs.main_configs import smtp_logging, smtp_logging_parameters
 formatter = logging.Formatter(
         '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
-
 mime_message = EmailMessage()
 mime_message['From'] = smtp_logging_parameters['local_mail_account']
 mime_message['To'] = smtp_logging_parameters['reporting_target_mail']
+
+start_date = datetime.now()
+current_device = platform.node()
 
 
 def get_smtp_logger(logger_name):
@@ -41,19 +44,33 @@ def get_smtp_logger(logger_name):
     return _logger
 
 
-def successfully_completed(start_date, start_device):
+def started_process():
     """
-    Reports the successful complition of a run
+    Reports the start of a run
 
-    :param start_date: timestamp of the run start date
-    :param start_device: timestamp of the run completion date
+    :return: None
+    """
+    print(smtp_logging_parameters['local_host'])
+    with SMTP(host=smtp_logging_parameters['local_host']) as smtp_server:
+        mime_message['Subject'] = 'Run started on %s and %s' % (start_date.isoformat(),
+                                                                current_device)
+        mime_message.set_content('Run has started successfully')
+
+        smtp_server.send_message(mime_message)
+
+
+def successfully_completed():
+    """
+    Reports the successful completion of a run
+
     :return: None
     """
 
     with SMTP(host=smtp_logging_parameters['local_host']) as smtp_server:
-        mime_message['Subject'] = 'Run started on %s and %s has completed' % (start_date.isoformat(), start_device)
-        mime_message.set_content('Run has completed successfully after %s minutes' % ((datetime.now() -
-                   start_date).total_seconds()/60.))
+        mime_message['Subject'] = 'Run started on %s and %s has completed' % \
+                                  (start_date.isoformat(), current_device)
+        mime_message.set_content('Run has completed successfully after %s minutes' %
+                                 ((datetime.now() - start_date).total_seconds()/60.))
 
         smtp_server.send_message(mime_message)
 
@@ -66,7 +83,9 @@ def smtp_error_bail_out():
     """
 
     with SMTP(host=smtp_logging_parameters['local_host']) as smtp_server:
-        mime_message['Subject'] = 'SMTPHandler error bail-out'
-        mime_message.set_content("There was an error in the code and the logger's SMPTHandler bailed out.")
+        mime_message['Subject'] = 'SMTPHandler error bail-out on %s' % current_device
+        mime_message.set_content("There was an error in the code at %s  on %s and the logger's "
+                                 "SMPTHandler bailed out." % (datetime.now().isoformat(),
+                                                              current_device))
         print(smtp_server.noop())
         smtp_server.send_message(mime_message)

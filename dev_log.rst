@@ -40,7 +40,7 @@ Current refactoring:
     - TODO: put a type straight-jacket
     - TODO: move the `internet_io` to the `data_stores` package
 
- - TODO: [SANITY]: put all the imports  under the umbrella making clear where they come from
+ - TODO: [SANITY][REFACTOR]: put all the imports  under the umbrella making clear where they come from
 
 <Sanify BioKnowledge>
 
@@ -51,6 +51,7 @@ Current refactoring:
     - reactome comes from reactome and can be assigned a linkage score.
 
  - TODO: inline the reach computation to remove excessively complex function
+
 
 <Weighting of the nodes>:
 
@@ -83,13 +84,13 @@ Current refactoring:
 
 
 <Type hinting and typing>
- - TODO: [MAINTENABILITY] put a straightjacket of the types of the tuples passed around and
-        function type signatures => Partially done, long-term project
+ - TODO: [MAINTENABILITY][REFACTOR]: put a straightjacket of the types of the tuples passed
+        around and function type signatures => Partially done, long-term project
 
  - TODO: [SANITY] convert the dicts to Type Aliases / NewType and perform proper type hinting
         => Partially done, long-term project
 
- - TODO: [SANITY]: define appropriate types: => Partially done, long-term project
+ - TODO: [SANITY][REFACTOR]: define appropriate types: => Partially done, long-term project
     - neo4j IDs
     - laplacian Matrix
     - current
@@ -147,6 +148,7 @@ Current refactoring:
     - TODO: provide progress bar binding for the importers as well
 
  - TODO: [USABILITY]: fold the current verbose state into a `-v/--vebose` argument
+
 
 
  - DONE: perform the explicit background pass for BioKnowledge as for the Interactome
@@ -712,7 +714,7 @@ Bigger refactors
 buffering (if unchanged InteractomeInstance and other secondary formatting, just retrieve the
 flow from the database)
 
- - TODO: [REFACTOR] refactor the entire edge typing upon insertion, retrieval upon construction of
+ - DONE: [REFACTOR] refactor the entire edge typing upon insertion, retrieval upon construction of
 laplacian/adjacency matrix and setting of Laplacian weights
 
  - TODO: [FEATURE] Change the informativity between nodes connection from the max of their
@@ -728,17 +730,17 @@ network is log of probability of being connected through that suite of GO terms.
 
  - TODO: [FEATURE] flow to a targeted set
 
- - TODO: [FEATURE] we ighted targets flow
+ - TODO: [FEATURE] weighted targets flow
 
- - TODO: [FEATURE] modification of the Laplacian weights by the end user.
+ - DONE: [FEATURE] modification of the Laplacian weights by the end user.
 
- - TODO: [FEATURE] import credence from the interaction databases
+ - DONE: [FEATURE] import credence from the interaction databases
 
  - TODO: [FEATURE] add direct interactions for TFs in yeasts by combining
 https://www.nature.com/articles/ng2012 and https://pubmed.ncbi.nlm.nih.gov/29036684/ for binary
 interaction filters
 
- - TODO: [DEV TOOL] performance evaluation run: compute compops for sampling a large pool of
+ - DONE: [DEV TOOL] performance evaluation run: compute compops for sampling a large pool of
 genes in yeast
 
  - TOOD: [REFACTOR] set the model for the database usage for the samples by performing
@@ -748,7 +750,7 @@ of query/payload)
  - TODO: [NOT THIS ITERATION] neo4j and mongodb versionning based on the currently
 active organism. For instance, all neo4j nodes and edges need to be marked with the organism tag.
 
- - TODO: [NOT THIS ITERATION] add a mail signalling to indicate the termination or crash of the
+ - DONE: [NOT THIS ITERATION] add a mail signalling to indicate the termination or crash of the
 execution
 
 
@@ -904,10 +906,10 @@ Functional:
 
 Structural:
 -----------
--   (OK) Create a separate structure for performing the statistical analysis, that is independent from the
-    wrapper
+-   (DONE) Create a separate structure for performing the statistical analysis, that is independent
+    from the wrapper
 
--   (OK) Enforce the single source of the Interface Objects for sampling to simplify
+-   (DONE) Enforce the single source of the Interface Objects for sampling to simplify
     consistency enforcing
 
 -   Return the control of the reach-limiter from the Knowledge interface to the current routines (Why?)
@@ -930,7 +932,7 @@ Structural:
 
 -   (Won't fix)Move node annotation loading/offloading to an elasticsearch instance, always mapping to uniprots
 
--  (OK) The alteration of the chain of statistics calculation is somewhat hardcore
+-  (DONE) The alteration of the chain of statistics calculation is somewhat hardcore
 
 Integration:
 ------------
@@ -945,10 +947,10 @@ Cosmetic:
 
 -   Properly indent multi-line :param <parameter type> <parameter name>: descriptors
 
--   (OK) Integrate compops/second estimation to the sources.ini
+-   (DONE) Integrate compops/second estimation to the sources.ini
 
--   Perform profiling by creating a dedicated set of loggers that would log an "execution time"
-    flag set
+-   (DONE) Perform profiling by creating a dedicated set of loggers that would log an "execution
+    time" flag set
 
 -   Add the forwarding of the thread number to the progress report
 
