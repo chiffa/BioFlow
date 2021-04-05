@@ -3,43 +3,6 @@ TODOs for the project in the future:
 
 On the table:
 -------------
-<Documentation>
-
- - DONE: [DOC] pass and APIdoc all the functions and modules
-
- - DONE: [DOC] document all the possible exceptions that can be raised
-    - what will raise an exception
-
- - DONE: [SANITY] remove all old dangling variables and code (deprecated X)
-
- - DONE: [DOC] Document the proper boot cycle of the application
-    - $BIOFLOWHOME check, use the default location (~/bioflow)
-    - in case the user configs .yaml is not found, copy it from its own registry to $BIOFLOWHOME
-    - use the $BIOFLOWHOME/config/main_config.yaml to populate variables in main_configs
-    - use the information there to load the databases from the internet and set the parsing
-        locations
-    - be careful with edits - configs are read safely but are not checked, so you can get random
-        deep python errors that will need to be debugged.
-    - everything is logged to the run directory and the $BIOFLOWHOME/.internal/logs
-
- - DONE: [DOC] put an explanation of overall workflow of the library
-
- - DONE: [DOC] check that all the functions and modules are properly documented
-
- - DONE: [SANITY] move the additional from the "annotation_network" to somewhere saner =>
-        Separate application importing BioFlow as a library
-
- - TODO: [DOC] document where the user-mapped folders live from Docker
-
- - DONE: [DOC] document the user how to install and map to a local neo4j database
-
- - TODO: [REFACTOR] re-align the command line interface onto the example of an analysis pipeline
-
- - TODO: [SANITY] Docker:
-    - Add outputs folder map to the host filesystem to the docker-compose
-    - Remove ank as point of storage for miniconda in Docker
-
-
 
 Current refactoring:
 --------------------
@@ -189,6 +152,42 @@ Current refactoring:
  - DONE: perform the explicit background pass for BioKnowledge as for the Interactome
 
  - DONE: rename the 'meta_objects' to 'Reactome_base_object' in reactome_inserter.py
+
+<Documentation>
+
+ - DONE: [DOC] pass and APIdoc all the functions and modules
+
+ - DONE: [DOC] document all the possible exceptions that can be raised
+    - what will raise an exception
+
+ - DONE: [SANITY] remove all old dangling variables and code (deprecated X)
+
+ - DONE: [DOC] Document the proper boot cycle of the application
+    - $BIOFLOWHOME check, use the default location (~/bioflow)
+    - in case the user configs .yaml is not found, copy it from its own registry to $BIOFLOWHOME
+    - use the $BIOFLOWHOME/config/main_config.yaml to populate variables in main_configs
+    - use the information there to load the databases from the internet and set the parsing
+        locations
+    - be careful with edits - configs are read safely but are not checked, so you can get random
+        deep python errors that will need to be debugged.
+    - everything is logged to the run directory and the $BIOFLOWHOME/.internal/logs
+
+ - DONE: [DOC] put an explanation of overall workflow of the library
+
+ - DONE: [DOC] check that all the functions and modules are properly documented
+
+ - DONE: [SANITY] move the additional from the "annotation_network" to somewhere saner =>
+        Separate application importing BioFlow as a library
+
+ - DONE: [DOC] document where the user-mapped folders live from Docker
+
+ - DONE: [DOC] document the user how to install and map to a local neo4j database
+
+ - DONE: [REFACTOR] re-align the command line interface onto the example of an analysis pipeline
+
+ - DONE: [SANITY] Docker:
+    - Add outputs folder map to the host filesystem to the docker-compose
+    - Remove ank as point of storage for miniconda in Docker
 
 <node weights/context forwarding>
 

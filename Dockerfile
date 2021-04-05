@@ -1,14 +1,11 @@
-FROM ubuntu:18.04
+FROM ubuntu:20.04
 MAINTAINER "Andrei Kucharavy <ank@andreikucharavy.com>"
 # change to continuumio/anaconda
 
 RUN export DEBIAN_FRONTEND=noninteractive
 RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
 
-# create and set-up home directory:
 RUN cd /home
-RUN mkdir /home/ank
-RUN cd /home/ank
 
 # install python build dependencies and system python:
 RUN apt-get update

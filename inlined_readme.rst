@@ -272,67 +272,8 @@ The full API documentation is available at `readthedocs.org <http://bioflow.read
 .org/en/latest/>`__.
 
 
-Basic Usage.
-------------
-
-
-Mechanism of action quantified hypothesis inference.
-
-BioFlow transforms a list of physical entities (eg genes) related to a phenotype of interest
-and transforms it into a network of biological processes that are most likely involved in it.
-
-In order to achieve it, it uses existing repositories of biological knowledge, builds a
-weighted knowledge entity graph based on them, projects the physical entities onto the graph and
-infers most likely in path subnet that unifies them.
-
-Examples of knowledge entities can be:
- - Small Molecules
- - Proteins
- - Complexes
- - RNA molecules
- - Pathways
- - GO annotations
- - ....
-
-The connections between the knowledge entities are weighted accordingly to how likely they are to
-be directly connected in a mechanism of action.
- - GO term is_a relationship (Th17 speciation is a part of Adaptive immune system activation, as
-many other terms annotation the network)
- - Protein-Protein interaction (both of proteins are involved in a pathway because of a physical
-interaction between them required to transduce a signal)
- - Protein-Complex interaction (that protein is important to the process because it's part of a
-complex that catalyzes a reaction)
- - Physical Entity - Reaction (that RNA/Protein/Small Molecule are important)
-
-
-
-
-
-This project's goal is to predict a systemic effect of massive gene
-perturbation, whether triggered by a drug, causative mutation or a disease
-(such as cancer or disease with complex genetic background). It's main intended
-uses are the reduction of high-throughput experiments hit lists, in-silico prediction
-of de-novo drug toxicity based on their protein binding profile and retrieval of
-most likely pathways explaining a phenotype of interest from a complex genotype.
-
-Its main advantage is the integration of quantitative computational
-predictions with prior biological knowledge and ability to integrate
-such diverse source of knowledge as databases, simulation, publication
-data and expert knowledge.
-
-Unlike similar solutions, it provides several levels of access to the underlying data (integrated
-database instance with graph visualization, courtesy of `neo4j graph platform <https://neo4j.com/>`__,
-as well as python `numpy <http://www.numpy.org/>`__/`scikits <https://www.scipy.org/>`__
-sparse adjacency and laplacian graphs.
-
-The application is currently under development (alpha), hence the API is unstable and can be changed
-at any point without notice. If you are using it, please pin the version/commit number. If you
-run into issues, please fill the github ticket.
-
-The license is BSD 3-clause, For academic usage, please cite the *url* of this repository and
-Andrei Kucharavy as the author (publication is in preparation). The full API documentation is
-available at
-`readthedocs.org <http://bioflow.readthedocs.org/en/latest/>`__.
+Basic Usage:
+============
 
 Installation walk-through:
 --------------------------
@@ -399,6 +340,32 @@ If you want to pull from dockerhub or don't have access to BioFlow installation 
 Finally attach to the running container::
 
    > docker attach bioflow_bioflow_1
+
+For working from docker, you will have to have `$BIOFLOWHOME` environment variable defined (by
+default $HOME/bioflow).
+
+For persistent storage, the data will be stored in the mapped volumes as follows:
+
+.. list-table:: Volume mapping
+   :widths: 25 25 50
+   :header-rows: 1
+
+   * - What
+     - Docker
+     - On disk
+   * - neo4j data
+     - /data (neo4j docker)
+     - $BIOFLOWHOME/.internal/docker-neo4j/db-data
+   * - mongodb data
+     - /data/db (mongodb docker)
+     - $BIOFLOWHOME/.internal/docker-mongo/db-data
+   * - bioflow home
+     - /bioflow
+     - $BIOFLOWHOME
+   * - inputs
+     - /input
+     - $BIOFLOWHOME/input
+
 
 Usage walk-through:
 -------------------
