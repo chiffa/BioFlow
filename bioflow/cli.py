@@ -4,13 +4,34 @@ This modules manages the command line interface
 import click
 
 
+# CURRENTPASS: add smtp logging if enabled
+
 def print_version(ctx, value):
     from bioflow import __version__
-    # CURRENTPASS : this is a variable that needs to be pulled elsewhere and folded into "about
     if not value or ctx.resilient_parsing:
         return
-    click.echo(__version__)  # CURRENTPASS: import that prpoperly
+    click.echo(__version__)
     ctx.exit()
+
+
+@click.command()
+def about():
+    """
+    Information about the project
+
+    :return:
+    """
+    from bioflow import __version__, __author__, __author_mail__, __current_year__
+
+    click.echo('BioFlow \n'
+               '\tversion: %s \n'
+               '\tauthor: %s \n'
+               '\tcontact: %s \n'
+               '\tLicense: %s\n'
+               '\tcite: %s\n'
+               '\n 2013-%s Andrei Kucharavy all rights reserved' %
+               (__version__, __author__, __author_mail__, 'BSD 3-clause',
+                'https://github.com/chiffa/BioFlow', __current_year__))
 
 
 @click.group()
@@ -18,27 +39,6 @@ def print_version(ctx, value):
               expose_value=False, is_eager=True)
 def main():
     pass
-
-
-@click.command()
-@click.option('--path', default='/source',
-              prompt='Please provide the path where the data will be stored')
-@click.option('--neo4jserver', default='bolt://localhost:7687',
-              prompt='Please provide the address and port on which neo4j is currently serving')
-@click.option('--mongoserver', default='mongodb://localhost:27017/',
-              prompt='Please provide the address and port on which mongodb is currently serving')
-def initialize(path, neo4jserver, mongoserver):
-    """
-    Initialized the working environement
-    \f
-
-    :param path: path where the external data sources are expected to be stored
-    :param neo4jserver: neo4j server adress and port
-    :param mongoserver: mongodb server adress and port
-    :return:
-    """
-    from bioflow.configs_manager import set_folders
-    set_folders(path, neo4jserver, mongoserver)
 
 
 @click.command()
@@ -54,22 +54,8 @@ def downloaddbs():
 
     :return:
     """
-    from bioflow.configs_manager import pull_online_dbs
+    from bioflow.utils.source_dbs_download import pull_online_dbs
     pull_online_dbs()
-
-
-@click.command()
-@click.option('--organism', type=click.Choice(['mouse', 'human', 'yeast']), default='human')
-def setorg(organism):
-    """
-    Sets organism-specific configurations
-    \f
-
-    :param organism:
-    :return:
-    """
-    from bioflow.configs_manager import build_source_config
-    build_source_config(organism)
 
 
 @click.command()
@@ -108,7 +94,7 @@ def loadneo4j():
 @click.command()
 @click.option('--background', default='', help='path to file of IDs of all genes detectable by a method')
 @click.argument('source')
-def sethits(source, background):
+def mapsource(source, background):
     """
     Sets the source and background files that will be uses in the analysis.
 
@@ -117,7 +103,7 @@ def sethits(source, background):
     Preferred formats
     are HGCN gene names (TP53), Uniprot gene names (P53_HUMAN) or Uniprot Accession numbers (
     P04637).
-    Other sources, such as ENSEMBL or PDB IDs.
+    Other sources, such as ENSEMBL or PDB IDs are supported as well
     \f
 
     :param source:
@@ -137,10 +123,7 @@ def rebuildlaplacians():
     :return:
     """
     from bioflow.utils.top_level import rebuild_the_laplacians
-    from bioflow.utils.io_routines import get_background_bulbs_ids
-
-    background_bulbs_ids = get_background_bulbs_ids()
-    rebuild_the_laplacians(all_detectable_genes=background_bulbs_ids)
+    rebuild_the_laplacians()
 
 
 @click.command()
@@ -166,73 +149,131 @@ def purgemongo(collection):
 
 
 @click.command()
-@click.option('--depth', default=24, help='random samples used to infer flow pattern significance')
-@click.option('--processors', default=3, help='processor cores used in flow patterns calculation')
+@click.option('--matrix', type=click.Choice(['all', 'interactome', 'annotome']), default='all',
+              help='analyse molecular entities alone (interactome), annotation entities alone ('
+                   'annotome) or both')
+@click.option('--depth', default=25, help='random samples used to infer flow pattern significance')
+@click.option('--processors', default=1, help='processor cores used in flow patterns calculation')
 @click.option('--skipsampling', default=False, help='if True, skips random sampling step')
-@click.option('--skiphitflow', default=False, help='if True, skips hits sample flow computation ')
-def interactomeanalysis(depth, processors, skipsampling, skiphitflow):
+@click.option('--background', default=False, help='if True, uses the background for sampling')
+@click.option('--name', default='', help='name of the experiment')
+def analyze(name, matrix, depth, processors, skipsampling, background):
     """
-    Performs interactome analysis given background set given earlier.
-    \f
+    Performs the analysis of the information flow
 
+    :param name:
+    :param matrix:
     :param depth:
     :param processors:
     :param skipsampling:
-    :param skiphitflow:
+    :param background:
     :return:
     """
     from bioflow.utils.io_routines import get_background_bulbs_ids, get_source_bulbs_ids
     from bioflow.molecular_network.interactome_analysis import auto_analyze as interactome_analysis
-
-    source_bulbs_ids = get_source_bulbs_ids()
-    background_bulbs_ids = get_background_bulbs_ids()
-
-    interactome_analysis([source_bulbs_ids],
-                         desired_depth=depth,
-                         processors=processors,
-                         background_list=background_bulbs_ids,
-                         skip_sampling=skipsampling,
-                         from_memoization=skiphitflow)
-
-
-@click.command()
-@click.option('--depth', default=24, help='random samples used to infer flow pattern significance')
-@click.option('--processors', default=3, help='processor cores used in flow patterns calculation')
-@click.option('--skipsampling', default=False, help='if True, skips random sampling step')
-def knowledgeanalysis(depth, processors, skipsampling):
-    """
-    Performs annotome analysis given background set given earlier.
-    \f
-
-    :param depth:
-    :param processors:
-    :param skipsampling:
-    :return:
-    """
-    from bioflow.utils.io_routines import get_source_bulbs_ids
     from bioflow.annotation_network.knowledge_access_analysis \
         import auto_analyze as knowledge_analysis
 
-    source_bulbs_ids = get_source_bulbs_ids()
+    source = get_source_bulbs_ids()
 
-    knowledge_analysis([source_bulbs_ids],
-                       desired_depth=depth,
-                       processors=processors,
-                       skip_sampling=skipsampling)
+    if background:
+        background = get_background_bulbs_ids()
+
+    else:
+        background = []
+
+    if name:
+        name = [name]
+    else:
+        name = []
+
+    if matrix != 'annotome':
+        # # perform the interactome analysis
+        interactome_analysis([source],
+                             name,
+                             desired_depth=depth,
+                             processors=processors,
+                             background_list=background,
+                             skip_sampling=skipsampling
+                             )
+
+    if matrix != 'interactome':
+        # # perform the knowledge analysis
+        knowledge_analysis([source],
+                           name,
+                           desired_depth=depth,
+                           processors=processors,
+                           background_list=background, #TRACING: background
+                           skip_sampling=skipsampling,
+                            )
 
 
-main.add_command(initialize)
-main.add_command(setorg)
+
+
+# @click.command()
+# @click.option('--depth', default=24, help='random samples used to infer flow pattern significance')
+# @click.option('--processors', default=3, help='processor cores used in flow patterns calculation')
+# @click.option('--skipsampling', default=False, help='if True, skips random sampling step')
+# @click.option('--background', default=False, help='if True, skips hits sample flow computation ')
+# def interactomeanalysis(depth, processors, skipsampling, background):
+#     """
+#     Performs interactome analysis given background set given earlier.
+#     \f
+#
+#     :param depth:
+#     :param processors:
+#     :param skipsampling:
+#     :param skiphitflow:
+#     :return:
+#     """
+#     from bioflow.utils.io_routines import get_background_bulbs_ids, get_source_bulbs_ids
+#     from bioflow.molecular_network.interactome_analysis import auto_analyze as interactome_analysis
+#
+#     source_bulbs_ids = get_source_bulbs_ids()
+#     background_bulbs_ids = get_background_bulbs_ids()
+#
+#     interactome_analysis([source_bulbs_ids],
+#                          desired_depth=depth,
+#                          processors=processors,
+#                          background_list=background_bulbs_ids,
+#                          skip_sampling=skipsampling,
+#                          from_memoization=skiphitflow)
+#
+#
+# @click.command()
+# @click.option('--depth', default=24, help='random samples used to infer flow pattern significance')
+# @click.option('--processors', default=3, help='processor cores used in flow patterns calculation')
+# @click.option('--skipsampling', default=False, help='if True, skips random sampling step')
+# def knowledgeanalysis(depth, processors, skipsampling):
+#     """
+#     Performs annotome analysis given background set given earlier.
+#     \f
+#
+#     :param depth:
+#     :param processors:
+#     :param skipsampling:
+#     :return:
+#     """
+#     from bioflow.utils.io_routines import get_source_bulbs_ids
+#     from bioflow.annotation_network.knowledge_access_analysis \
+#         import auto_analyze as knowledge_analysis
+#
+#     source_bulbs_ids = get_source_bulbs_ids()
+#
+#     knowledge_analysis([source_bulbs_ids],
+#                        desired_depth=depth,
+#                        processors=processors,
+#                        skip_sampling=skipsampling)
+
+
 main.add_command(downloaddbs)
 main.add_command(purgeneo4j)
 main.add_command(loadneo4j)
 main.add_command(rebuildlaplacians)
 main.add_command(purgemongo)
-main.add_command(sethits)
-main.add_command(interactomeanalysis)
-main.add_command(knowledgeanalysis)
-# CURRENTPASS: add an "about" command that would output the version and build number, ref to the
-#  paper, license and an "2013-2021 Andrei Kucharavy all rights reserved".
+main.add_command(mapsource)
+main.add_command(analyze)
+main.add_command(about)
 
 if __name__ == '__main__':
     main()

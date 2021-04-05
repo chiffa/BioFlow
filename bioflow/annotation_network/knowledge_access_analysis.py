@@ -385,7 +385,7 @@ def auto_analyze(source_list,
                  processors=3,
                  desired_depth=24,
                  skip_sampling=False,
-                 param_set=ref_param_set,
+                 background=ref_param_set,
                  p_value_cutoff: float = -1,
                  ) -> None:
     """
@@ -400,6 +400,9 @@ def auto_analyze(source_list,
     """
 
     # Multiple re-spawns of threaded processing are incompatbile with scikits.sparse.cholmod
+    param_set = tuple([ref_param_set[0], background,
+                       ref_param_set[2], ref_param_set[3], ref_param_set[4]])
+
     if len(source_list) > 1:
         global implicitely_threaded
         implicitely_threaded = True

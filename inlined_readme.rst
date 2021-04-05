@@ -534,7 +534,11 @@ Setup environment (likely to take a while top pull all the online databases): ::
 
 Set the set of perturbed proteins on which we would want to base our analysis ::
 
-    > bioflow mapsource /your/path/here.tsv /your/other_path/here.tsv
+    > bioflow mapsource /your/path/here.tsv --background=/your/other_path/here.tsv
+
+Rebuild the laplacians ::
+
+    > bioflow rebuildlaplacians
 
 Build network interfaces ::
 

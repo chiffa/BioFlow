@@ -22,7 +22,7 @@ On the table:
         deep python errors that will need to be debugged.
     - everything is logged to the run directory and the $BIOFLOWHOME/.internal/logs
 
- - TODO: [DOC] put an explanation of overall workflow of the library
+ - DONE: [DOC] put an explanation of overall workflow of the library
 
  - DONE: [DOC] check that all the functions and modules are properly documented
 
@@ -31,7 +31,7 @@ On the table:
 
  - TODO: [DOC] document where the user-mapped folders live from Docker
 
- - TODO: [DOC] document the user how to install and map to a local neo4j database
+ - DONE: [DOC] document the user how to install and map to a local neo4j database
 
  - TODO: [REFACTOR] re-align the command line interface onto the example of an analysis pipeline
 

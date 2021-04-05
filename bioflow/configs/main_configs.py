@@ -38,6 +38,7 @@ hl_os_io.copy_if_doesnt_exist('configs.yaml', user_yaml_confs)
 
 
 # read the configs that the user might have defined
+log.info('loading configs from %s' % user_yaml_confs)
 with open(user_yaml_confs, 'r', encoding='utf8') as user_yaml_configs:
     configs_loaded = yaml.safe_load(user_yaml_configs)
     Servers = configs_loaded['Servers']
