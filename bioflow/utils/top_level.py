@@ -36,20 +36,15 @@ def map_and_save_gene_ids(hit_genes_location, all_detectable_genes_location=''):
     return hit_genes_ids, all_detectable_genes_ids
 
 
-def rebuild_the_laplacians(all_detectable_genes=()):
+def rebuild_the_laplacians():
     """
     Rebuilds the Annotome and Interactome interface objects in case of need,
 
-    :param all_detectable_genes: (optional) list of internal db ids for background
     :return: None
     """
     local_matrix = InteractomeInterface()
     local_matrix.full_rebuild()
 
-    _filter = ['biological_process']
-    # REFACTOR: [Better environment]: all_detectable_genes should not be here either
-    ref_param_set = [_filter, all_detectable_genes, (1, 1), True, 3]
-
-    annot_matrix = AnnotomeInterface(*ref_param_set)
+    annot_matrix = AnnotomeInterface()
     annot_matrix.full_rebuild()
 

@@ -385,7 +385,7 @@ def auto_analyze(source_list,
                  processors=3,
                  desired_depth=24,
                  skip_sampling=False,
-                 background=ref_param_set,
+                 background_list=[],
                  p_value_cutoff: float = -1,
                  ) -> None:
     """
@@ -400,7 +400,7 @@ def auto_analyze(source_list,
     """
 
     # Multiple re-spawns of threaded processing are incompatbile with scikits.sparse.cholmod
-    param_set = tuple([ref_param_set[0], background,
+    param_set = tuple([ref_param_set[0], background_list,
                        ref_param_set[2], ref_param_set[3], ref_param_set[4]])
 
     if len(source_list) > 1:
@@ -526,4 +526,4 @@ def auto_analyze(source_list,
 
 
 if __name__ == "__main__":
-    auto_analyze([get_source_bulbs_ids()], processors=3, desired_depth=6, param_set=ref_param_set)
+    auto_analyze([get_source_bulbs_ids()], processors=3, desired_depth=6, background_list=[])

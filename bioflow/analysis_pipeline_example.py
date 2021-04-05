@@ -152,7 +152,7 @@ if __name__ == "__main__":
                                    ['chr_%s' % filename[:-4]],
                                    desired_depth=5,
                                    processors=1,
-                                   background=background_bulbs_ids,
+                                   background_list=background_bulbs_ids,
                                    skip_sampling=False,
                                    )
 

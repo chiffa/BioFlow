@@ -203,7 +203,7 @@ def analyze(name, matrix, depth, processors, skipsampling, background):
                            name,
                            desired_depth=depth,
                            processors=processors,
-                           background_list=background, #TRACING: background
+                           background_list=background,
                            skip_sampling=skipsampling,
                             )
 
