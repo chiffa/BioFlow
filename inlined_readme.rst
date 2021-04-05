@@ -5,7 +5,7 @@ BioFlow Project
 
 Information Flow Analysis in biological networks
 
-|Build Status| |Docs| |Coverage Status| |Duplicate Lines| |Code Health|
+|Build Status| |Docs| |Coverage Status|
 
 Overview:
 ---------
@@ -577,10 +577,8 @@ For more details or usage as a library, refer to the `usage guide
 
 .. |Duplicate Lines| image:: https://img.shields.io/badge/duplicate%20lines-11.45%25-yellowgreen.svg
    :target: http://clonedigger.sourceforge.net/
-.. |Code Health| image:: https://landscape.io/github/chiffa/BioFlow/master/landscape.svg?style=flat
-   :target: https://landscape.io/github/chiffa/BioFlow/master
 
-.. |Python version| image:: https://img.shields.io/badge/python-2.7-blue.svg
+.. |Python version| image:: https://img.shields.io/badge/python-3.X-blue.svg
    :target: https://www.python.org/downloads/release/python-2715/
 .. |Branch Status| image:: https://img.shields.io/badge/status-alpha-red.svg
    :target: https://www.python.org/downloads/release/python-2715/

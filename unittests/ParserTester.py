@@ -56,121 +56,121 @@ class UniprotParserTester(unittest.TestCase):
         self.assertDictEqual(self.acces_dict, self.ref_acces_dict)
 
 
-class ReactomeParseTester(unittest.TestCase):
-    # Developers, please notice that for the real modification you would need to load the real
-    # reactome and run tests against it's initial dump first.
-    reactome_to_parse = os.path.join(os.path.dirname(__file__), 'UT_examples/reactome_extract.owl')
-    ref_parse = os.path.join(os.path.dirname(__file__), 'UT_examples/ref_reactome_parse.dmp')
-
-    @classmethod
-    def setUpClass(cls):
-        cls.actual_parser = ReactomeParser(cls.reactome_to_parse)
-        cls.actual_parser.parse_all()
-        # print(cls.actual_parser.parsed)
-        # dump_object(cls.ref_parse, cls.actual_parser)
-        cls.ref_parser = undump_object(cls.ref_parse)
-        # to parse
-        cls.maxDiff = None
-
-    def test_BioSources(self):
-        self.assertDictEqual(self.actual_parser.BioSources,
-                             self.ref_parser.BioSources)
-
-    def test_CellularLocations(self):
-        self.assertDictEqual(self.actual_parser.CellularLocations,
-                             self.ref_parser.CellularLocations)
-
-    def test_SeqModVoc(self):
-        self.assertDictEqual(self.actual_parser.SeqModVoc,
-                             self.ref_parser.SeqModVoc)
-
-    def test_SeqSite(self):
-        self.assertDictEqual(self.actual_parser.SeqSite,
-                             self.ref_parser.SeqSite)
-
-    def test_DnaRefs(self):
-        self.assertDictEqual(self.actual_parser.DnaRefs,
-                             self.ref_parser.DnaRefs)
-
-    def test_RnaRefs(self):
-        self.assertCountEqual(self.actual_parser.RnaRefs,
-                             self.ref_parser.RnaRefs)
-
-    def test_SmallMoleculeRefs(self):
-        self.assertCountEqual(self.actual_parser.SmallMoleculeRefs,
-                             self.ref_parser.SmallMoleculeRefs)
-
-    def test_ProteinRefs(self):
-        self.assertCountEqual(self.actual_parser.ProteinRefs,
-                             self.ref_parser.ProteinRefs)
-
-    def test_ModificationFeatures(self):
-        self.assertDictEqual(self.actual_parser.ModificationFeatures,
-                             self.ref_parser.ModificationFeatures)
-
-    def test_Dna(self):
-        self.assertDictEqual(self.actual_parser.Dnas,
-                             self.ref_parser.Dnas)
-        self.assertDictEqual(self.actual_parser.Dna_Collections,
-                             self.ref_parser.Dna_Collections)
-
-    def test_Rna(self):
-        self.assertCountEqual(self.actual_parser.Rnas,
-                             self.ref_parser.Rnas)
-        self.assertCountEqual(self.actual_parser.Rna_Collections,
-                             self.ref_parser.Rna_Collections)
-
-    def test_SmallMolecules(self):
-        self.assertCountEqual(self.actual_parser.SmallMolecules,
-                             self.ref_parser.SmallMolecules)
-        self.assertCountEqual(self.actual_parser.SmallMolecule_Collections,
-                             self.ref_parser.SmallMolecule_Collections)
-
-    def test_Proteins(self):
-        self.assertCountEqual(self.actual_parser.Proteins,
-                             self.ref_parser.Proteins)
-        self.assertCountEqual(self.actual_parser.Protein_Collections,
-                             self.ref_parser.Protein_Collections)
-
-    def test_PhysicalEntities(self):
-        self.assertDictEqual(self.actual_parser.PhysicalEntities,
-                             self.ref_parser.PhysicalEntities)
-        self.assertDictEqual(self.actual_parser.PhysicalEntity_Collections,
-                             self.ref_parser.PhysicalEntity_Collections)
-
-    def test_Complexes(self):
-        self.assertDictEqual(self.actual_parser.Complexes,
-                             self.ref_parser.Complexes)
-        self.assertDictEqual(self.actual_parser.Complex_Collections,
-                             self.ref_parser.Complex_Collections)
-
-    def test_TemplateReactions(self):
-        self.assertDictEqual(self.actual_parser.TemplateReactions,
-                             self.ref_parser.TemplateReactions)
-
-    def test_Degradations(self):
-        self.assertDictEqual(self.actual_parser.Degradations,
-                             self.ref_parser.Degradations)
-
-    def test_BiochemicalReactions(self):
-        self.assertDictEqual(self.actual_parser.BiochemicalReactions,
-                             self.ref_parser.BiochemicalReactions)
-
-    def test_Catalysises(self):
-        self.assertDictEqual(self.actual_parser.Catalysises,
-                             self.ref_parser.Catalysises)
-
-    def test_Modulation(self):
-        self.assertDictEqual(self.actual_parser.Modulations,
-                             self.ref_parser.Modulations)
-
-    def test_Pathways(self):
-        self.assertDictEqual(self.actual_parser.Pathways,
-                             self.ref_parser.Pathways)
-
-    def test_PathwaySteps(self):
-        self.assertDictEqual(self.actual_parser.PathwaySteps,
-                             self.ref_parser.PathwaySteps)
+# class ReactomeParseTester(unittest.TestCase):
+#     # Developers, please notice that for the real modification you would need to load the real
+#     # reactome and run tests against it's initial dump first.
+#     reactome_to_parse = os.path.join(os.path.dirname(__file__), 'UT_examples/reactome_extract.owl')
+#     ref_parse = os.path.join(os.path.dirname(__file__), 'UT_examples/ref_reactome_parse.dmp')
+#
+#     @classmethod
+#     def setUpClass(cls):
+#         cls.actual_parser = ReactomeParser(cls.reactome_to_parse)
+#         cls.actual_parser.parse_all()
+#         # print(cls.actual_parser.parsed)
+#         # dump_object(cls.ref_parse, cls.actual_parser)
+#         cls.ref_parser = undump_object(cls.ref_parse)
+#         # to parse
+#         cls.maxDiff = None
+#
+#     def test_BioSources(self):
+#         self.assertDictEqual(self.actual_parser.BioSources,
+#                              self.ref_parser.BioSources)
+#
+#     def test_CellularLocations(self):
+#         self.assertDictEqual(self.actual_parser.CellularLocations,
+#                              self.ref_parser.CellularLocations)
+#
+#     def test_SeqModVoc(self):
+#         self.assertDictEqual(self.actual_parser.SeqModVoc,
+#                              self.ref_parser.SeqModVoc)
+#
+#     def test_SeqSite(self):
+#         self.assertDictEqual(self.actual_parser.SeqSite,
+#                              self.ref_parser.SeqSite)
+#
+#     def test_DnaRefs(self):
+#         self.assertDictEqual(self.actual_parser.DnaRefs,
+#                              self.ref_parser.DnaRefs)
+#
+#     def test_RnaRefs(self):
+#         self.assertCountEqual(self.actual_parser.RnaRefs,
+#                              self.ref_parser.RnaRefs)
+#
+#     def test_SmallMoleculeRefs(self):
+#         self.assertCountEqual(self.actual_parser.SmallMoleculeRefs,
+#                              self.ref_parser.SmallMoleculeRefs)
+#
+#     def test_ProteinRefs(self):
+#         self.assertCountEqual(self.actual_parser.ProteinRefs,
+#                              self.ref_parser.ProteinRefs)
+#
+#     def test_ModificationFeatures(self):
+#         self.assertDictEqual(self.actual_parser.ModificationFeatures,
+#                              self.ref_parser.ModificationFeatures)
+#
+#     def test_Dna(self):
+#         self.assertDictEqual(self.actual_parser.Dnas,
+#                              self.ref_parser.Dnas)
+#         self.assertDictEqual(self.actual_parser.Dna_Collections,
+#                              self.ref_parser.Dna_Collections)
+#
+#     def test_Rna(self):
+#         self.assertCountEqual(self.actual_parser.Rnas,
+#                              self.ref_parser.Rnas)
+#         self.assertCountEqual(self.actual_parser.Rna_Collections,
+#                              self.ref_parser.Rna_Collections)
+#
+#     def test_SmallMolecules(self):
+#         self.assertCountEqual(self.actual_parser.SmallMolecules,
+#                              self.ref_parser.SmallMolecules)
+#         self.assertCountEqual(self.actual_parser.SmallMolecule_Collections,
+#                              self.ref_parser.SmallMolecule_Collections)
+#
+#     def test_Proteins(self):
+#         self.assertCountEqual(self.actual_parser.Proteins,
+#                              self.ref_parser.Proteins)
+#         self.assertCountEqual(self.actual_parser.Protein_Collections,
+#                              self.ref_parser.Protein_Collections)
+#
+#     def test_PhysicalEntities(self):
+#         self.assertDictEqual(self.actual_parser.PhysicalEntities,
+#                              self.ref_parser.PhysicalEntities)
+#         self.assertDictEqual(self.actual_parser.PhysicalEntity_Collections,
+#                              self.ref_parser.PhysicalEntity_Collections)
+#
+#     def test_Complexes(self):
+#         self.assertDictEqual(self.actual_parser.Complexes,
+#                              self.ref_parser.Complexes)
+#         self.assertDictEqual(self.actual_parser.Complex_Collections,
+#                              self.ref_parser.Complex_Collections)
+#
+#     def test_TemplateReactions(self):
+#         self.assertDictEqual(self.actual_parser.TemplateReactions,
+#                              self.ref_parser.TemplateReactions)
+#
+#     def test_Degradations(self):
+#         self.assertDictEqual(self.actual_parser.Degradations,
+#                              self.ref_parser.Degradations)
+#
+#     def test_BiochemicalReactions(self):
+#         self.assertDictEqual(self.actual_parser.BiochemicalReactions,
+#                              self.ref_parser.BiochemicalReactions)
+#
+#     def test_Catalysises(self):
+#         self.assertDictEqual(self.actual_parser.Catalysises,
+#                              self.ref_parser.Catalysises)
+#
+#     def test_Modulation(self):
+#         self.assertDictEqual(self.actual_parser.Modulations,
+#                              self.ref_parser.Modulations)
+#
+#     def test_Pathways(self):
+#         self.assertDictEqual(self.actual_parser.Pathways,
+#                              self.ref_parser.Pathways)
+#
+#     def test_PathwaySteps(self):
+#         self.assertDictEqual(self.actual_parser.PathwaySteps,
+#                              self.ref_parser.PathwaySteps)
 
 
 if __name__ == "__main__":

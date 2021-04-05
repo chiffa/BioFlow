@@ -1,7 +1,7 @@
 import os
 import unittest
 import numpy as np
-from scipy.sparse import lil_matrix, csc_matrix
+from scipy.sparse import csc_matrix
 import warnings
 from bioflow.algorithms_bank import conduction_routines as cr
 
@@ -32,23 +32,23 @@ class ConductionRoutinesTester(unittest.TestCase):
         self.assertListEqual(calc.T.toarray().tolist(), ref.T.tolist())
 
     def test_build_potentials(self):
-        calc = cr.get_potentials(self.test_laplacian, (0, 3))
+        calc = cr.get_potentials(self.test_laplacian, (0, 3), shared_solver=None)
         self.assertTrue(calc[0, 0] > 1e5)
-        calc = cr.get_potentials(self.test_laplacian, (0, 1))
+        calc = cr.get_potentials(self.test_laplacian, (0, 1), shared_solver=None)
         ref = np.array([[0.833333333, -0.666666666, -0.166666666666, 0.0]]).T
         self.assertTrue(np.mean(np.abs(calc - ref)) < 1e-9)
 
     def test_get_current_matrix(self):
-        potentials = cr.get_potentials(self.test_laplacian, (0, 1))
+        potentials = cr.get_potentials(self.test_laplacian, (0, 1), shared_solver=None)
         currents, triu_currents = cr.get_current_matrix(self.test_laplacian, potentials)
         calc = triu_currents.toarray()[:, 2].tolist()
         ref = np.array([2, 2, 0, 0])
         self.assertTrue(np.mean(np.abs(calc - ref)) < 1e-9)  # FAILING
 
     def test_get_current_through_nodes(self):
-        potentials = cr.get_potentials(self.test_laplacian, (0, 1))
+        potentials = cr.get_potentials(self.test_laplacian, (0, 1), shared_solver=None)
         currents, triu_currents = cr.get_current_matrix(self.test_laplacian, potentials)
-        triu_currents = lil_matrix(triu_currents)
+        triu_currents = csc_matrix(triu_currents)
         node_currents = cr.get_current_through_nodes(triu_currents)
         ref = np.array([1, 1, 2, 0])
         self.assertTrue(np.mean(np.abs(node_currents - ref)) < 1e-9)  # FAILING
