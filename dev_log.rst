@@ -12,7 +12,7 @@ On the table:
 
  - DONE: [SANITY] remove all old dangling variables and code (deprecated X)
 
- - TODO: [DOC] Document the proper boot cycle of the application
+ - DONE: [DOC] Document the proper boot cycle of the application
     - $BIOFLOWHOME check, use the default location (~/bioflow)
     - in case the user configs .yaml is not found, copy it from its own registry to $BIOFLOWHOME
     - use the $BIOFLOWHOME/config/main_config.yaml to populate variables in main_configs

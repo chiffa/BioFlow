@@ -17,27 +17,28 @@ on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
 if not on_rtd:
     requirements = [
-        'numpy < 2.0',
-        'scipy < 1.0',
-        'matplotlib < 2.0',
-        'scikit-learn < 0.17',
-        'cython < 0.23',
-        'pymongo < 4.0',
-        'requests < 3.0',
-        'click < 8.0',
-        'scikits.sparse < 0.3',
-        'mock < 2.0',
-        'requests-ftp < 0.4',
-        'neo4j-driver < 1.6',
+        'numpy',
+        'scipy',
+        'matplotlib',
+        'scikit-learn',
+        'cython',
+        'pymongo',
+        'requests',
+        'click',
+        'scikits.sparse',
+        'mock',
+        'requests-ftp',
+        'neo4j-driver',
+        'tabulate',
     ]
 
 else:
     requirements = [
-        'pymongo < 4.0',
-        'requests < 3.0',
-        'click < 8.0',
-        'requests-ftp < 0.4',
-        'neo4j-driver < 1.6',
+        'pymongo',
+        'requests',
+        'click',
+        'requests-ftp',
+        'neo4j-driver',
     ]
 
 setup(
@@ -61,7 +62,7 @@ setup(
         'Topic :: Software Development :: Libraries :: Python Modules',
         'Operating System :: POSIX :: Linux',
         'License :: OSI Approved :: BSD License',
-        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: Implementation :: CPython',
     ],
     keywords='network analysis, systems biology, interactome, computational biology',
