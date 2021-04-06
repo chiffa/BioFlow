@@ -13,6 +13,10 @@ from bioflow.configs.main_configs import smtp_logging, smtp_logging_parameters
 formatter = logging.Formatter(
         '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
+
+for key, value in smtp_logging_parameters.items():
+    print(key, value)
+
 mime_message = EmailMessage()
 mime_message['From'] = smtp_logging_parameters['local_mail_account']
 mime_message['To'] = smtp_logging_parameters['reporting_target_mail']
