@@ -52,7 +52,6 @@ class ConductionRoutinesTester(unittest.TestCase):
         triu_currents = csc_matrix(triu_currents)
         node_currents = cr.get_current_through_nodes(triu_currents)
         ref = np.array([1, 1, 2, 0])
-        print(np.abs(node_currents - ref))
         self.assertTrue(np.mean(np.abs(node_currents - ref)) < 1e-9)  # FAILING
 
     def test_group_induced_current(self):
@@ -101,7 +100,6 @@ class ConductionRoutinesTester(unittest.TestCase):
         chm[0, 2] = 2
         calc_m = triu(calc_m)
         calc_m = calc_m.toarray()
-        print("calc_m in test_laplacian_reacheable_filter", np.abs(calc_m - chm), np.mean(np.abs(calc_m - chm)))
         self.assertTrue(np.mean(np.abs(calc_m - chm)) < 1e-9)  # FAILING
 
 
