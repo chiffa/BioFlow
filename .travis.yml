@@ -32,19 +32,19 @@ install:
     # - sudo apt-get -qq install build-essential libsuitesparse-dev
     - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib
     - source activate test-environment
-    - conda install python=$TRAVIS_PYTHON_VERSION cython scikit-learn coverage pylint
+    - conda install python=$TRAVIS_PYTHON_VERSION cython scikit-learn coverage<5.0 pylint
     - pip install python-coveralls pyflakes pep8-naming mccabe flake8 codecov
     - pip install -r requirements.txt
 
 script:
     - pip freeze
     - python -m unittests.TestAll
-    - coverage run --source bioflow -m unittests.TestAll
+    - coverage run --source=bioflow -m unittests.TestAll
 
 after_success:
     - coverage report
     - coveralls
-    - flake8 --ignore=E501,N806,E12 --statistics --show-source bioflow
+    - flake8 --ignore=E501,N806,E12,E305,E303,F401,E117,W292 --statistics --show-source bioflow
     - flake8 --select=C --max-complexity 10 bioflow
 
 notifications:

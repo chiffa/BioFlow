@@ -75,7 +75,7 @@ setup(
         'test': [],
         'ci': ['coverage',
                'pylint',
-               'coveralls',
+               'coveralls<5.0',
                'pyflakes',
                'pep-8-naming',
                'maccabe',
