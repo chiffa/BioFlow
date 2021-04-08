@@ -6,6 +6,12 @@ docker build -t "bioflow" .
 # To run the container:
 docker run bioflow
 
+# create the volumes to which the docker containers will bind on the disk:
+mkdir -p $BIOFLOWHOME/input
+mkdir -p $BIOFLOWHOME/source
+mkdir -p $BIOFLOWHOME/.internal/docker-mongo/db-data
+mkdir -p $BIOFLOWHOME/.internal/docker-neo4j/db-data
+
 # To build the container after the compose:
 docker-compose build
 

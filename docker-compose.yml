@@ -12,7 +12,7 @@ services:
         source: $BIOFLOWHOME/.internal/docker-neo4j/db-data
         target: "/data"
         bind:
-          propagate: rshared
+          propagation: rshared
     environment:
       - NEO4J_AUTH=neo4j/$NEOPASS
   mongodb:
@@ -29,7 +29,7 @@ services:
         source: $BIOFLOWHOME/.internal/docker-mongo/db-data
         target: "/data/db"
         bind:
-          propagate: rshared
+          propagation: rshared
   bioflow:
     image: bioflow
     stdin_open: true
@@ -44,12 +44,12 @@ services:
         source: $BIOFLOWHOME
         target: /bioflow
         bind:
-          propagate: rshared
+          propagation: rshared
       - type: bind
         source: $BIOFLOWHOME/input
         target: /input
         bind:
-          propagate: rshared
+          propagation: rshared
     depends_on:
       - mongodb
       - neo4j

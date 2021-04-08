@@ -43,4 +43,4 @@ RUN apt-get install -yq nano
 # install project requirements:
 RUN which pip
 RUN cat /BioFlow-master/requirements.txt
-RUN cd /BioFlow-master/; pip install requirements -r requirements.txt
+RUN cd /BioFlow-master/; pip install -r requirements.txt
