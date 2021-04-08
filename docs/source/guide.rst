@@ -4,8 +4,8 @@ Data and databases setup:
 Assembling the files required for the database creation:
 --------------------------------------------------------
 
-In order to build the database, the program is going to look for the following files specified
-in the following locations within the bioflow/configs/sources.ini:
+In order to build the main knowledge repository, BioFlow will go and look for the following data
+repositories specified in the ``$BIOFLOWHOME/configs/main_configs.yaml`` file:
 
 * OBO 1.2 file of GO terms and relations,
 
@@ -48,68 +48,15 @@ in the following locations within the bioflow/configs/sources.ini:
     * downloaded from `here <https://www.phosphosite.org/staticDownloads>`__
     * will store/look for the files at $DB_HOME$/PhosphoSite
 
-It is possible to specify the file locations and identifiers manually, and then download and install them
-to the specified locations manually.
+It is possible to specify the file locations and identifiers manually, and then download and
+install them. This is to be used when the download locations for the files move.
 
-However the following command should be able to do it for you for three commonly used organism (human, mouse, saccharomyces cerevisae),
-provided you follow the instructions properly::
 
-    > python CLUI.py initialize --path myfolder --neo4jserver http://localhost:7474 --mongoserver mongodb://localhost:27017/
+Similarly, the configs file also controls the organism selection. Three organisms have provided
+configurations (human, mouse, S. Cerevisiae). Using the same pattern, other organisms can be
+configured, also the lack of data can be a problem (this is already the case for mouse - we
+recommend mapping the genes to human if the mouse is used as a model for the organism).
 
-    > python CLUI.py downloaddbs
-
-    > python CLUI.py setorgconfs --organism [mouse, human, yeast]
 
 .. WARNING::
     While BioFlow provides an interface to download the databases programmatically, the databases are subject to Licenses and Terms that it's up to the end users to respect
-
-
-Typical sources.ini configfile:
--------------------------------
-
-Here is what a typical configfile would look like::
-
-    [HINT]
-    file = HomoSapiens_binary_hq.txt
-
-    [BIOGRID]
-    name_pattern = Homo_sapiens
-
-    [INTERNAL]
-    mongosuffix = _v_1
-    dumpprefix = /human
-    mongoprefix = _human
-    compops = 1
-
-    [UNIPROT]
-    tax_ids = 9606
-
-    [GO]
-    file = go.obo
-
-    [REACTOME]
-    file = Homo_sapiens.owl
-
-    [TRRUST]
-    file = trrust_rawdata.human.tsv
-    significance = 1
-
-    [COMPLEXPORTAL]
-    file = homo_sapiens.tsv
-
-    [PHOSPHOSITE]
-    file = Kinase_Substrate_Dataset.tsv
-    organism = human
-
-
-
-The configuration files might be declared and switched manually (only the "source.ini" one will be parsed,
-folders such as "sources_organism.ini" will be ignored and can be renamed to "source.ini" quite easily)
-
-It is possible for the users to generate source.ini file for three organisms with the following command::
-
-    python CLUI.py setorgconfs --organism [mouse, human, yeast]
-
-This allows to switch rapidly between different investigated organism.
-
-Please don't forget to switch or purge neo4j databases between organisms, because each organism needs it's own neo4j instance.

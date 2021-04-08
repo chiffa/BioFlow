@@ -80,7 +80,7 @@ def purgeneo4j():
                                 'database? The process might take several hours or days')
 def loadneo4j():
     """
-    Loads the information from external database into the master repositry inside neo4j
+    Loads the information from external database into the main knowledge repository inside neo4j
     \f
 
     :return:

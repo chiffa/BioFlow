@@ -61,50 +61,56 @@ a .gdf file.
 
 BioFlow is:
 
-:   -   **robust**, because we are weighting the relationships between
-        the knowledge entities based
-
-on how likely they are to be real and be included in a mechanism of
-action. Thanks to that, we can include relationships we are not sure of
-(eg Y2H protein-protein interactions with low confidence score) and by
-assigning them a low weight make sure they will not be included into
-mechanisms of action hypothesis unless no other possible connection can
-explain a phenotype. - **quantified**, because every single biological
-knowledge entity is assigned both a weight and a p-value for how likely
-it is to contribute to a mechanism of action. - **highly granular**,
-because thanks to the weighting of edges and inclusion of multiple
-sources of biological knowledge, we can evaluate in the same pass steps
-for which we have a very good mecanistical understanding (eg specific
-cite phosphorilation on a specific isoform by another specific isoform)
-as well as steps for which we are not entirely convinced of in-vivo
-existence (once again, low score Y2H). Similarly, thanks to a unified
-model of biological entity - **explainable**, because all the steps in
-the hypothesis are biological entities and connections between them. As
-such, a direct translation from a BioFlow analysis to an experiment is
-\"let\'s suppress this entity/relationship with a high p-value and a
-high weight\" and see if it affects our process. - **customizable**,
-because BioFlow is build as a library with multiple abstraction levels
-and customization capabilities. - The knowledge graph can be directly
-accessed and modified through the graphical user interface provided by
-the [neo4j graph database](https://neo4j.com/) storage back-end, as well
-as extracted as [scipy.sparse]{.title-ref} weighted graph laplacian and
-adjacency matrices with index-to-entity-id maps. - By adding new rdf
-turtle tuple parsers into the [bioflow.bio_db_parser]{.title-ref} and
-inserters into the [bioflow.db_importers]{.title-ref}, new sources of
-biological knowledge can be integrated. - By modifying routines in the
-[bioflow.algorithms_bank]{.title-ref}, new entity relationship weighting
-modes, background sampling algorithms or evaluation methods of
-hypotheses statistical significance can be introduced. - In case of
-absolute need, alternative storage backends can be implemented by
-re-implementing the [GraphDBPipe]{.title-ref} object in
-[bioflow.neo4j_db.cypher_drivers]{.title-ref} or methods from
-[bioflow.sample_storage.mongodb]{.title-ref}. - **near-optimal** because
-we are using a finite-world version of Solomonoff Algorithmic Inference
-- a provably optimal way of learning model representation from data. In
-order to accelerate the computation and stabilize the output with
-respect to the noise often encountered in biological data, we slightly
-modify the inference mode and background computation algorithm, hence
-the \"near\"-optimality.
+-   **robust**, because we are weighting the relationships between the
+    knowledge entities based on how likely they are to be real and be
+    included in a mechanism of action. Thanks to that, we can include
+    relationships we are not sure of (eg Y2H protein-protein
+    interactions with low confidence score) and by assigning them a low
+    weight make sure they will not be included into mechanisms of action
+    hypothesis unless no other possible connection can explain a
+    phenotype.
+-   **quantified**, because every single biological knowledge entity is
+    assigned both a weight and a p-value for how likely it is to
+    contribute to a mechanism of action.
+-   \*\*highly granular because thanks to the weighting of edges and
+    inclusion of multiple sources of biological knowledge, we can
+    evaluate in the same pass steps for which we have a very good
+    mecanistical understanding (eg specific cite phosphorilation on a
+    specific isoform by another specific isoform) as well as steps for
+    which we are not entirely convinced of in-vivo existence (once
+    again, low score Y2H). Similarly, thanks to a unified model of
+    biological entity
+-   **explainable**, because all the steps in the hypothesis are
+    biological entities and connections between them. As such, a direct
+    translation from a BioFlow analysis to an experiment is \"let\'s
+    suppress this entity/relationship with a high p-value and a high
+    weight\" and see if it affects our process.
+-   **customizable**, because BioFlow is build as a library with
+    multiple abstraction levels and customization capabilities.
+    -   The knowledge graph can be directly accessed and modified
+        through the graphical user interface provided by the [neo4j
+        graph database](https://neo4j.com/) storage back-end, as well as
+        extracted as `scipy.sparse` weighted graph laplacian and
+        adjacency matrices with index-to-entity-id maps.
+    -   By adding new rdf turtle tuple parsers into the
+        `bioflow.bio_db_parser` and inserters into the
+        `bioflow.db_importers`, new sources of biological knowledge can
+        be integrated.
+    -   By modifying routines in the `bioflow.algorithms_bank`, new
+        entity relationship weighting modes, background sampling
+        algorithms or evaluation methods of hypotheses statistical
+        significance can be introduced.
+    -   In case of absolute need, alternative storage backends can be
+        implemented by re-implementing the `GraphDBPipe` object in
+        `bioflow.neo4j_db.cypher_drivers` or methods from
+        `bioflow.sample_storage.mongodb`.
+-   **near-optimal**, because we are using a finite-world version of
+    Solomonoff Algorithmic Inference - a provably optimal way of
+    learning model representation from data. In order to accelerate the
+    computation and stabilize the output with respect to the noise often
+    encountered in biological data, we slightly modify the inference
+    mode and background computation algorithm, hence the
+    \"near\"-optimality.
 
 Examples of applications:
 -------------------------
@@ -126,17 +132,19 @@ any certainty that the list is not mostly composed of experimental
 artefacts.
 
 BioFlow is capable of generating an unbiased, quantified list of
-hypotheses as to the molecular mechanism underlying the process. -
-Thanks to its integrated knowledge graph, it is capable to implicate
-mechanisms that would not be detectable by the screening method used to
-generate input data. - Thanks to its parallel evaluation of possible
-molecular mechanisms, it can point to backup mechanisms as well as
-molecular entities or pathways weekly involved in the process of
-interest. - Thanks to its null model of a random list of genes, it is
-capable to filter out random nodes that are due to artifacts. - Thanks
-to its null model, if the provided list of genes is a pure artefact, it
-will not call any nodes as likely paths and mark all hypotheses of
-molecular mechanisms as insufficiently likely.
+hypotheses as to the molecular mechanism underlying the process.
+
+-   Thanks to its integrated knowledge graph, it is capable to implicate
+    mechanisms that would not be detectable by the screening method used
+    to generate input data.
+-   Thanks to its parallel evaluation of possible molecular mechanisms,
+    it can point to backup mechanisms as well as molecular entities or
+    pathways weekly involved in the process of interest.
+-   Thanks to its null model of a random list of genes, it is capable to
+    filter out random nodes that are due to artifacts.
+-   Thanks to its null model, if the provided list of genes is a pure
+    artefact, it will not call any nodes as likely paths and mark all
+    hypotheses of molecular mechanisms as insufficiently likely.
 
 ### Personalized cancer medicine:
 
@@ -275,45 +283,48 @@ BioFlow requires an instance of [neo4j graph
 database](https://neo4j.com/) running for the main knowledge repository,
 as well as an instance of the [MongoDB](https://docs.mongodb.com).
 
-Upon start, BioFlow will look for [\$BIOFLOWHOME]{.title-ref}
-environment variable to know where to store its files. If none found, it
-will use the default [\~/bioflow]{.title-ref} directory.
+Upon start, BioFlow will look for `$BIOFLOWHOME` environment variable to
+know where to store its files. If none found, it will use the default
+`~/bioflow` directory.
 
-Inside the [\$BIOFLOWHOME]{.title-ref} it will store the user configs
-.yaml file ([\$BIOFLOWHOME/configs/main_configs.yaml]{.title-ref}). If
-for whatever reason it doesn\'t find them, it will copy the default
-configs it has there. If you want to reset configs to default, just
-delete or rename your config yaml file.
+Inside the `$BIOFLOWHOME` it will store the user configs .yaml file
+(`$BIOFLOWHOME/configs/main_configs.yaml`). If for whatever reason it
+doesn\'t find them, it will copy the default configs it has there. If
+you want to reset configs to default, just delete or rename your config
+yaml file.
 
 The config contains several sections:
 
-:   -   DB_locations: maps where to look for the databases it uses to
-        build the main biological
+-   `DB_locations`: maps where to look for the databases it uses to
+    build the main biological entity relationship graph and where to
+    store them locally. If you get an error on download, chances are one
+    of the source databases has moved. Alternatively, if you want to use
+    a specific snapshot of the database, you can change the online
+    location the file is loaded from.
+-   `Servers`: stores the urls and ports BioFlow will expect MongoDB and
+    Neo4j to be available.
+-   `Sources`: allows to select the organism. If you are not sure of
+    what you are doing, just uncomment the organism you want to work on.
+-   `User_settings`:
+    -   `smtp_logging`: enable and configure if you want to receive
+        notifications about errors or run finishing by mail. Given you
+        will need a local smtp server sending mails properly, setting
+        this section is not for the faint of heart.
+    -   `environement`: modifies how some aspects of BioFlow work.
+        Comments explain what it does, but you will need to understand
+        the inner workings of BioFlow to know how it works.
+    -   `analysis`: controls the parameters used to calculate
+        statistical significance
+    -   `debug_flags`: potentially useful if you want to debug an issue
+        or fill out a bug report.
 
-entity relationship graph and where to store them locally. If you get an
-error on download, chances are one of the source databases has moved.
-Alternatively, if you want to use a specific snapshot of the database,
-you can change the online location the file is loaded from. - servers:
-stores the urls and ports BioFlow will expect MongoDB and Neo4j to be
-available. - Sources: allows to select the organism. If you are not sure
-of what you are doing, just uncomment the organism you want to work on.
-- User settings: - smtp logging: enable and configure if you want to
-receive notifications about errors or run finishing by mail. Given you
-will need a local smtp server sending mails properly, setting this
-section is not for the faint of heart. - environement: modifies how some
-aspects of BioFlow work. Comments explain what it does, but you will
-need to understand the inner workings of BioFlow to know how it works. -
-analysis: controls the parameters used to calculate statistical
-significance - debug_flags: potentially useful if you want to debug an
-issue or fill out a bug report.
+Everything is logged to `$BIOFLOWHOME/.internal/logs`. As such, debugs,
+critical errors and warnings are all stored there.
 
-Everything is logged to [\$BIOFLOWHOME/.internal/logs]{.title-ref}. As
-such, debugs, critical errors and warnings are all stored there.
-
-Upon execution a run output folder in
-[\$BIOFLOWHOME/outputs/]{.title-ref} is created with the datetime ISO
-name that will contain any output generated by the run, as well as
-info-level log (basically, a copy of what is printed on the console).
+Upon execution a run output folder in `$BIOFLOWHOME/outputs/` is created
+with the datetime ISO name that will contain any output generated by the
+run, as well as info-level log (basically, a copy of what is printed on
+the console).
 
 Finally, due to large differences in topological structure and weighting
 algorithms, the analysis of biological knowledge nodes that represent
@@ -388,6 +399,10 @@ If you want to pull from dockerhub or don\'t have access to BioFlow
 installation directory:
 
     > wget https://github.com/chiffa/BioFlow/blob/master/docker-compose.yml
+    > mkdir -p $BIOFLOWHOME/input
+    > mkdir -p $BIOFLOWHOME/source
+    > mkdir -p $BIOFLOWHOME/.internal/docker-mongo/db-data
+    > mkdir -p $BIOFLOWHOME/.internal/docker-neo4j/db-data
     > docker-compose build
     > docker-compose up -d
 
@@ -395,9 +410,11 @@ Finally attach to the running container:
 
     > docker attach bioflow_bioflow_1
 
-For working from docker, you will have to have
-[\$BIOFLOWHOME]{.title-ref} environment variable defined (by default
-\$HOME/bioflow).
+For working from docker, you will have to have `$BIOFLOWHOME`
+environment variable defined (by default `$HOME/bioflow`).
+
+Scripts with which docker build was tested can be found in the
+`docker_script.sh` file.
 
 For persistent storage, the data will be stored in the mapped volumes as
 follows:
@@ -440,7 +457,7 @@ guide](http://bioflow.readthedocs.org/en/latest/guide.html#data-and-databases-se
 This is the recommended method for using BioFlow.
 
 An example usage script is provided by
-[bioflow.analysis_pipeline_example.py]{.title-ref}.
+`bioflow.analysis_pipeline_example.py`.
 
 First, let\'s pull the online databases:
 
@@ -472,8 +489,15 @@ IDs:
 BioFlow expects the tsv/csv for hits or background files to contain one
 hit per line, and will attempt to map them to UNIPROT protein nodes
 (used as a backbone to cross-link imported databases), based on the
-following identifier types: - Gene names - HGCN symbols - PDB Ids -
-ENSEMBL Ids - RefSeq IDs - Uniprot IDs - Uniprot accession numbers
+following identifier types:
+
+> -   Gene names
+> -   HGCN symbols
+> -   PDB Ids
+> -   ENSEMBL Ids
+> -   RefSeq IDs
+> -   Uniprot IDs
+> -   Uniprot accession numbers
 
 (Re)build the laplacians (not required unless the knowledge structure in
 the main knowledge database has changed):
@@ -529,15 +553,15 @@ skip_sampling
     ones instead
 
 BioFlow will print progress to the StdErr from then on and will output
-to the \$BIOFLOWHOME, in a folder called \'outputs_YYYY-MM_DD \<launch
-time\>\':
+to the `$BIOFLOWHOME`, in a folder called
+`outputs_YYYY-MM_DD <launch time>`:
 
 -   .gdf file with the flow network and relevance statistics
-    (Interactome_Analysis_output.gdf)
+    (`Interactome_Analysis_output.gdf`)
 -   visualisation of information flow through nodes in the null vs hits
     sets based on the node degree
--   list of strongest hits (interactome_stats.tsv) (printed to StdOut as
-    well)
+-   list of strongest hits (`interactome_stats.tsv`) (printed to StdOut
+    as well)
 
 The .gdf file can be further analysed with more appropriate tools, such
 as for instance [Gephi](https://gephi.org/).
@@ -573,14 +597,14 @@ try-except around your script code:
 
 ### Command line:
 
-::: {.warning}
-::: {.title}
-Warning
-:::
+Command line can either be invoked by python execution: :
 
-Command line interface is currently unstable and is susceptible to throw
-opaque errors.
-:::
+    > python -m bioflow.cli <command> [--options]
+
+Or, in case of installation with pip, directly from a command line
+(assumed here): :
+
+    > bioflow <command> [--options]
 
 Setup environment (likely to take a while top pull all the online
 databases): :
@@ -597,26 +621,21 @@ Rebuild the laplacians :
 
     > bioflow rebuildlaplacians
 
-Build network interfaces :
-
-    > bioflow extractmatrix --interactome
-    > bioflow extractmatrix --annotome
-
 Perform the analysis:
 
-    > bioflow analyze --matrix interactome --depth 24 --processors 4 --background True
+    > bioflow analyze --matrix interactome --depth 24 --processors 3 --background True
                     --name=<name_of_experiment>
 
-    > bioflow analyze --matrix annotome --depth 24 --processors 4 --background True
+    > bioflow analyze --matrix annotome --depth 24 --processors 3 --background True
                     --name=<name_of_experiment>
 
 Alternatively:
 
-    > bioflow analyze --depth 20 --processors 3 --background True --name=<name_of_experiment>
+    > bioflow analyze --depth 24 --processors 3 --background True --name=<name_of_experiment>
 
 More information is available with:
 
-    > bioflow help
+    > bioflow --help
 
     > bioflow about
 
@@ -631,16 +650,16 @@ It contains the following columns for the nodes:
 -   node ID
 -   information current passing through the node
 -   node type
--   legacy_id (most likely Uniprot ID)
+-   `legacy_id`
 -   degree of the node
 -   whether it is present or not in the hits list (source)
--   p-value, comparing the information flow through the node to the flow
-    expected for the random set of genes
--   -log10(p_value) (p_p-value)
--   rel_value (information flow relative to the flow expected for a
-    random set of genes)
--   std_diff (how many standard deviations above the flow for a random
-    set of genes the flow from a hits list is)
+
+\- `p-value`, comparing the information flow through the node to the
+flow expected for the random set of genes - -log10(`p_value`)
+(`p_p-value`) - `rel_value` (information flow relative to the flow
+expected for a random set of genes) - `std_diff` (how many standard
+deviations above the flow for a random set of genes the flow from a hits
+list is) (not a robust metrics)
 
 The most common pipleine involves using [Gephi open graph visualization
 platform](https://gephi.org/):
