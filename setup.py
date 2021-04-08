@@ -10,7 +10,7 @@ from bioflow import __version__, __author__, __author_mail__
 here = path.abspath(path.dirname(__file__))
 
 # Get the long description from the relevant file
-with open(path.join(here, 'README.md'), encoding='utf-8') as f:
+with open(path.join(here, 'legacy_readme.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
@@ -30,6 +30,7 @@ if not on_rtd:
         'requests-ftp',
         'neo4j-driver',
         'tabulate',
+        'pyyaml',
     ]
 
 else:
