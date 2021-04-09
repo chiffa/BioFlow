@@ -51,8 +51,8 @@ with open(user_yaml_confs, 'r', encoding='utf8') as user_yaml_configs:
 
 
 # SERVERS CONFIGURATIONS
-mongo_db_url = os.getenv('MONGOURL', Servers['PRODUCTION']['mongodb_server'])
-neo4j_server_url = os.getenv('NEO4URL', Servers['PRODUCTION']['neo4j_server'])
+mongo_db_url = os.getenv('MONGOURL', Servers['mongodb_server'])
+neo4j_server_url = os.getenv('NEO4URL', Servers['neo4j_server'])
 source_db_paths = compute_full_paths(Sources, DB_locations, sources_location)
 
 
@@ -248,7 +248,7 @@ use_normalized_laplacian = user_settings['use_normalized_laplacian']
 fraction_edges_dropped_in_laplacian = user_settings['fraction_edges_dropped_in_laplacian']
 
 sparse_analysis_threshold = int(user_settings['analysis']['default_background_samples'])
-p_val_cutoff = float(user_settings['analysis']['p_val_cutoff'])
+default_p_val_cutoff = float(user_settings['analysis']['default_p_val_cutoff'])
 min_nodes_for_p_val = int(user_settings['analysis']['sparse_analysis_threshold'])
 
 

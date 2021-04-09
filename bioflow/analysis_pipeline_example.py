@@ -101,8 +101,6 @@ if __name__ == "__main__":
         chromosomes_directory = "//localhome//kucharav//Projects//BioFlow paper//yeast_chr_genes"
         background_file = os.path.join(chromosomes_directory, "all_genes.tab")
 
-        # TRACING here is the bug source
-        # TRACING: all detectabke genes is now not required to rebuild the laplacians.
         rebuild_the_laplacians()
 
         # perform the interactome analysis

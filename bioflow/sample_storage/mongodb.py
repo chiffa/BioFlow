@@ -45,7 +45,7 @@ def insert_annotome_rand_samp(payload_dict):
     :param payload_dict:  sample contents
     :return:
     """
-    loc_annotome_rand_samp().insert_one(payload_dict)  # INTEST
+    loc_annotome_rand_samp().insert_one(payload_dict)
 
 
 def insert_interactome_rand_samp(payload_dict):
@@ -55,7 +55,7 @@ def insert_interactome_rand_samp(payload_dict):
     :param payload_dict: sample contents
     :return:
     """
-    loc_interactome_rand_samp().insert_one(payload_dict)  # INTEST
+    loc_interactome_rand_samp().insert_one(payload_dict)
 
 
 def find_annotome_rand_samp(filter_dict):

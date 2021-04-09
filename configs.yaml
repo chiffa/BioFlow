@@ -34,14 +34,11 @@ DB_locations:
     local: $DB_HOME$/Uniprot/uniprot_sprot.dat
     online: ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.dat.gz
 
-# Configurations for servers deployment for the databases
+# Where bioflow will look for server interfaces. neo4j password has to be defined as an
+# environment variable $NEO4JPASS (cf docs)
 Servers:
-  PRODUCTION:
-    mongodb_server: mongodb://localhost:27017/
-    neo4j_server: bolt://localhost:7687
-  TEST:
-    mongodb_server: mongodb://localhost:27017/
-    neo4j_server: bolt://localhost:7687
+  mongodb_server: mongodb://localhost:27017/
+  neo4j_server: bolt://localhost:7687
 
 # Configurations for different organisms.
 # To change the organism, please comment out the active organism and uncomment the one you want
@@ -127,7 +124,7 @@ User_Settings:
       andrei@lpdpc35.epfl.ch
     reporting_target_mail:
       andrei.kucharavy@epfl.ch
-  environment:  # TODO: use to build the environment signature that will be logged and saved
+  environment:
     skip_reactome:
       False
     skip_hint:
@@ -159,7 +156,7 @@ User_Settings:
     default_background_samples:
       24  # number of random samples we want to compare to by default TODO: propagate
     # This is the p-value that is set by user and is to be propagated throughout the analyses.
-    p_val_cutoff: # TODO: rename it to default_p_val cutoff
+    default_p_val_cutoff:
       0.2
     # This is the minimum nodes per degree used in p_value calculation
     min_nodes_for_p_val:
