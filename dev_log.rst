@@ -42,6 +42,11 @@ Current refactoring:
 
  - TODO: [SANITY][REFACTOR]: put all the imports  under the umbrella making clear where they come from
 
+ - TODO: [TESTING]: write integration test suite
+    - TODO: implement docker testing
+    - TODO: check computation speed
+    - TODO: check integration test coverage
+
 <Sanify BioKnowledge>
 
  - TODO: Develop a pluggable Informativity weighting function for the matrix assembly

@@ -312,7 +312,7 @@ def compare_to_blank(
                                                       max_array,
                                                       min_nodes=min_nodes_for_p_val)
 
-        p_vals = get_p_val_by_gumbel(entry, max_current_per_run)
+        p_vals = active_default_p_value_policy(entry, max_current_per_run)
         combined_p_vals[_filter] = p_vals
 
     samples_scatter_and_hist(background_array, query_array,

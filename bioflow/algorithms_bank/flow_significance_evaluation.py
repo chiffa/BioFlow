@@ -72,6 +72,12 @@ def get_p_val_by_gumbel(entry: np.array,
 
     return p_vals
 
+
+active_default_p_value_policy = get_p_val_by_gumbel
+
+
+# CURRENTPASS: set the "active_p_value_policy"
+
 # ideally, the filtration should be performed according to the rules that can differ from the degree
 # selection. From that perspective, the filtering, and the parameters should be:
 # - background_array

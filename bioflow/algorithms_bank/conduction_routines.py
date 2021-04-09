@@ -304,11 +304,11 @@ def edge_current_iteration(conductivity_laplacian: spmat.csc_matrix,
     return potential_diff, current
 
 
-# TRACING: we supply only the list_of_pairs here.
-def master_edge_current(conductivity_laplacian, index_list,
+# TRACING: flow calculation wrapper parameters need to be inserted here
+def main_flow_calc_loop(conductivity_laplacian, index_list,
                         cancellation=True, potential_dominated=True, sampling=False,
                         sampling_depth=10, memory_source=None, potential_diffs_remembered=None,
-                        thread_hex='______'):
+                        thread_hex='______', weighted_sample=False):
     """
     master method for all the required edge current calculations
 
@@ -321,6 +321,7 @@ def master_edge_current(conductivity_laplacian, index_list,
     :param memory_source: if we are using memoization, source to look it
     :param potential_diffs_remembered: if the difference of potentials between nodes is remembered
     :param thread_hex: debugging id of the thread in which the sampling is going on
+    :param weighted_sample: if true, the samples are calculated based on their weights
     :return:
     """
 
@@ -333,7 +334,7 @@ def master_edge_current(conductivity_laplacian, index_list,
              % (thread_hex, len(index_list), cancellation,
                 potential_dominated, sampling, sampling_depth))
 
-    # log.info('debug: parameters supplied to master_edge_current: '
+    # log.info('debug: parameters supplied to main_flow_calc_loop: '
     #          'conductivity_laplacian: %s,\n'
     #          'index_list: %s,\n'
     #          'cancellation: %s,\n'
@@ -358,8 +359,7 @@ def master_edge_current(conductivity_laplacian, index_list,
 
     # generate index list in agreement with the sampling strategy
 
-    # TRACING: sampling policy is implemented here.
-
+    # TRACING: flow calculation wrapper needs to be injected here
     if sampling:
         list_of_pairs = []
         for _ in repeat(None, sampling_depth):
@@ -394,6 +394,14 @@ def master_edge_current(conductivity_laplacian, index_list,
 
     for counter, (i, j) in enumerate(list_of_pairs):
 
+        if weighted_sample:
+            i, i_weight = i
+            j, j_weight = j
+        else:
+            i_weight, j_weight = (1, 1)
+
+        mean_weight = (i_weight + j_weight)/2.
+
         if memory_source and tuple(sorted((i, j))) in list(memory_source.keys()):
             potential_diff, current_upper = memory_source[tuple(sorted((i, j)))]
 
@@ -417,7 +425,8 @@ def master_edge_current(conductivity_laplacian, index_list,
                             i, j, 'Tension-normalization was aborted')
 
         # csc = csc + csc
-        current_accumulator = current_accumulator + sparse_abs(current_upper)
+        # INTEST: multiply by potential sum here if present
+        current_accumulator = current_accumulator + sparse_abs(current_upper) * mean_weight
 
         if counter % breakpoints == 0 and counter > 1:
             # TODO: [load bar]: the internal loop load bar goes here
@@ -437,6 +446,7 @@ def master_edge_current(conductivity_laplacian, index_list,
     if cancellation:
         current_accumulator /= float(total_pairs)
 
+    # TRACING: flow calculation strategy needs to be output here
     return current_accumulator, up_pair_2_voltage
 
 

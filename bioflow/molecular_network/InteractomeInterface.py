@@ -31,6 +31,7 @@ from bioflow.configs.main_configs import internal_storage
 from bioflow.algorithms_bank import conduction_routines as cr
 from bioflow.algorithms_bank import weigting_policies as wp
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
+from bioflow.algorithms_bank import sampling_policies
 
 
 log = get_logger(__name__)
@@ -240,8 +241,8 @@ class InteractomeInterface(object):
 
     def create_val_matrix(self,
                           node_dict: dict, edge_list: list,
-                          adj_weight_policy_function=wp.default_adj_source_x_type_policy,
-                          lapl_weight_policy_function=wp.default_lapl_source_x_type_policy):
+                          adj_weight_policy_function=wp.active_default_adj_weighting_policy,
+                          lapl_weight_policy_function=wp.active_default_lapl_weighting_policy):
         """
         Creates the ajacency/laplacian matrix pair for the given set of nodes and edges and the
         weighting policy functions
@@ -539,19 +540,20 @@ class InteractomeInterface(object):
 
         if sparse_samples:
             # TRACING: we supply only the list_of_pairs here.
+            # TRACING: specific sink, will be implemented in here
             current_accumulator, _ = \
-                cr.master_edge_current(self.laplacian_matrix,
+                cr.main_flow_calc_loop(self.laplacian_matrix,
                                        [self.neo4j_id_2_matrix_index[UP]
                                         for UP in self.active_up_sample],
-                                                 cancellation=cancellation,
-                                                 sampling=True,
-                                                 sampling_depth=sparse_samples,
-                                                 thread_hex=self.thread_hex)
+                                       cancellation=cancellation,
+                                       sampling=True,
+                                       sampling_depth=sparse_samples,
+                                       thread_hex=self.thread_hex)
 
         else:
             # TRACING: we supply only the list_of_pairs here.
             current_accumulator, up_pair_2_voltage =\
-                cr.master_edge_current(self.laplacian_matrix,
+                cr.main_flow_calc_loop(self.laplacian_matrix,
                                        [self.neo4j_id_2_matrix_index[UP]
                                         for UP in self.active_up_sample],
                                        cancellation=cancellation,
@@ -692,7 +694,8 @@ class InteractomeInterface(object):
             samples_each_size,
             sparse_rounds=False,
             no_add=False,
-            pool_no=None):
+            pool_no=None,
+            sampling_policy = sampling_policies.active_default_sampling_policy):
         """
         Randomly samples the set of deprecated_reached_uniprots_neo4j_id_list used to create the model.
         This is the null model creation routine
@@ -715,9 +718,9 @@ class InteractomeInterface(object):
 
         for sample_size, iterations in zip(samples_size, samples_each_size):
 
-            for i in range(0, iterations):
-                shuffle(self._background)
-                analytics_uniprot_list = self._background[:sample_size]
+            # TRACING: this needs to be polymorphic
+            for i, analytics_uniprot_list in sampling_policy(self._background, sample_size, iterations):
+
                 # print('debug: selected UProt IDs :', analytics_uniprot_list)
 
                 self.set_uniprot_source(analytics_uniprot_list)
@@ -740,6 +743,9 @@ class InteractomeInterface(object):
                              % (pool_no, sample_size, md5, sparse_rounds,
                     np.sum(self.current_accumulator)))
 
+
+                    # TRACING: this needs to characterize the sampling policy and relevant
+                    #  parameters
                     insert_interactome_rand_samp(
                         {
                             'UP_hash': md5,
