@@ -201,7 +201,6 @@ if __name__ == "__main__":
     test_groups_to_compare = [[0, 1], [0, 2]]
 
     rna_source = "/home/ank/Documents/External_Predictions/Ben_RNA_seq/counts.tsv"
-    # TODO: [unittests]
     run_analysis_suite(
         rna_source,
         9,
