@@ -14,7 +14,7 @@ from tabulate import tabulate
 
 from bioflow.annotation_network.BioKnowledgeInterface import GeneOntologyInterface
 from bioflow.configs.main_configs import estimated_comp_ops, NewOutputs, sparse_analysis_threshold, \
-    implicitely_threaded, p_val_cutoff, min_nodes_for_p_val
+    implicitely_threaded, default_p_val_cutoff, min_nodes_for_p_val
 from bioflow.sample_storage.mongodb import find_annotome_rand_samp, count_annotome_rand_samp
 from bioflow.utils.dataviz import kde_compute
 from bioflow.utils.io_routines import get_source_bulbs_ids
@@ -176,7 +176,7 @@ def samples_scatter_and_hist(background_curr_deg_conf, true_sample_bi_corr_array
 
     if true_sample_bi_corr_array is not None:
         if p_values is not None:
-            _filter = p_values < p_val_cutoff
+            _filter = p_values < default_p_val_cutoff
             anti_filter = np.logical_not(_filter)
             plt.scatter(true_sample_bi_corr_array[1, anti_filter],
                         true_sample_bi_corr_array[0, anti_filter],
@@ -424,8 +424,8 @@ def auto_analyze(source_list,
     else:
         desired_depth = desired_depth // processors
 
-    if p_value_cutoff < 0:
-        p_value_cutoff = p_val_cutoff
+    if p_value_cutoff <= 0:
+        p_value_cutoff = default_p_val_cutoff
 
     for hits_list, output_destination in zip(source_list, output_destinations_list):
 
