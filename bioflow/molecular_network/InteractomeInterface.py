@@ -538,21 +538,26 @@ class InteractomeInterface(object):
             self.node_current = defaultdict(float)
 
         if sparse_samples:
-            current_accumulator = cr.sample_group_edge_current(
-                self.laplacian_matrix,
-                [self.neo4j_id_2_matrix_index[UP] for UP in self.active_up_sample],
-                re_samples=sparse_samples,
-                cancellation=cancellation,
-                thread_hex=self.thread_hex)
+            # TRACING: we supply only the list_of_pairs here.
+            current_accumulator, _ = \
+                cr.master_edge_current(self.laplacian_matrix,
+                                       [self.neo4j_id_2_matrix_index[UP]
+                                        for UP in self.active_up_sample],
+                                                 cancellation=cancellation,
+                                                 sampling=True,
+                                                 sampling_depth=sparse_samples,
+                                                 thread_hex=self.thread_hex)
 
         else:
+            # TRACING: we supply only the list_of_pairs here.
             current_accumulator, up_pair_2_voltage =\
-                cr.group_edge_current_with_potentials(
-                    self.laplacian_matrix,
-                    [self.neo4j_id_2_matrix_index[UP]
-                     for UP in self.active_up_sample],
-                    cancellation=cancellation,
-                    thread_hex=self.thread_hex)
+                cr.master_edge_current(self.laplacian_matrix,
+                                       [self.neo4j_id_2_matrix_index[UP]
+                                        for UP in self.active_up_sample],
+                                       cancellation=cancellation,
+                                       potential_diffs_remembered=True,
+                                       thread_hex=self.thread_hex)
+
 
             self.UP2UP_voltages.update(
                 dict(((self.matrix_index_2_neo4j_id[i],
@@ -716,6 +721,7 @@ class InteractomeInterface(object):
                 # print('debug: selected UProt IDs :', analytics_uniprot_list)
 
                 self.set_uniprot_source(analytics_uniprot_list)
+
                 log.info('Sampling thread: %s, Thread hex: %s; sampling characteristics: sys_hash: '
                          '%s, size: %s, '
                          'sparse_rounds: %s' % (pool_no, self.thread_hex, self.md5_hash(),

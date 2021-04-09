@@ -788,6 +788,9 @@ class GeneOntologyInterface(object):
             self.UP2UP_voltages = {}
             self.uniprots_2_voltage = {}
 
+
+
+        # TRACING: we supply only the list_of_pairs here.
         iterator = []
         if sparse_samples:
             for _ in range(0, sparse_samples):
@@ -799,6 +802,8 @@ class GeneOntologyInterface(object):
             iterator = combinations(self.active_up_sample, 2)
 
         iterator = [item for item in iterator]
+
+        # (END) TRACING: we supply only the list_of_pairs here.
 
         total_pairs = len(iterator)
         breakpoints = 300
