@@ -60,3 +60,21 @@ recommend mapping the genes to human if the mouse is used as a model for the org
 
 .. WARNING::
     While BioFlow provides an interface to download the databases programmatically, the databases are subject to Licenses and Terms that it's up to the end users to respect
+
+
+Custom weighting function:
+--------------------------
+In order to account for different possible considerations when deciding which nodes and
+connections are more likely to be included in hypothesis generation, we provide a possibility for
+the end user to use their own weight functions for the interactome and the annotome.
+
+The provided functions are stored in ``bioflow.algorithms_bank.weighting_policies`` module. An
+expected signature of the function is ``starting_node, ending_node, edge > float``, where
+``starting_node`` and ``ending_node`` are of ``<neo4j-driver>.Node`` type, whereas ``edge`` is of
+the ``<neo4j-driver>.Edge`` type. Any properties available stored in the main knowledge
+repository (neo4j database) will be available as dict-like properties of node/edge objects
+(``<starting/ending>_node['<property>']``/``edge['property']``).
+
+The functions are to be provided to the ``bioflow.molecular_network
+.InteractomeInterface.InteractomeInterface.create_val_matrix()`` method as
+``<adj/lapl>_weight_policy_function`` for the adjacency and laplacian matrices respectively.

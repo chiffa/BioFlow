@@ -6,7 +6,9 @@ The general approach is a function that takes in any eventual parameters and out
 pairs of DB_Ids for which the flow will be calculated.
 """
 import random
-import hashlib, json
+import hashlib
+import json
+import numpy as np
 
 
 def set_signature(set_to_sign):
@@ -25,7 +27,18 @@ def set_signature(set_to_sign):
 
 def weighted_set_sampling(set_to_sample,
                           sample_size, samples,
-                          weights=None):  # samples = iterations
+                          weights=None):  # samples = iterations.
+    if weights is None:
+        for i in range(0, samples):
+            random.shuffle(set_to_sample)
+            yield i, set_to_sample[:sample_size]
+
+    else:
+        weights = np.array(weights)
+        weights = weights / np.sum(weights)  # np. random choice expects probabilities summing to 1
+        for i in range(0, samples):
+            yield i, np.random.choice(set_to_sample, size=sample_size, replace=False, p=weights)
+
     pass
 
 
