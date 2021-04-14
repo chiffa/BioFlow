@@ -7,13 +7,6 @@ On the table:
 - Remove the current defaults in the policies and allow the user to provide them explicitely upon
 modules call
 
-- The function that will generate pairs of nodes will by of type ([int OR (int, float)], None
-OR [[int OR (int, float)]]) > [(int, int, weight)]. None will lead to connex circulation. sets
-size and tupled-ness will be signatures (N_1, N_2, 1/2) to match in the database
-
-- The random sampling function will need to generate the "random" sets.
-
-
 
 Current refactoring:
 --------------------
