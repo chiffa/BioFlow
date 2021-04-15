@@ -20,6 +20,7 @@ import scipy.sparse as spmat
 from scipy.sparse.csgraph import connected_components
 from scipy.sparse.linalg import eigsh
 from itertools import chain
+from typing import Union, Tuple, List
 
 import bioflow.configs.main_configs as confs
 from bioflow.utils.gdfExportInterface import GdfExportInterface
@@ -32,6 +33,9 @@ from bioflow.algorithms_bank import conduction_routines as cr
 from bioflow.algorithms_bank import weigting_policies as wp
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from bioflow.algorithms_bank import sampling_policies
+from bioflow.algorithms_bank.flow_calculation_methods import general_flow,\
+    reduce_and_deduplicate_sample
+from bioflow.algorithms_bank.sampling_policies import characterize_flow_parameters
 
 
 log = get_logger(__name__)
@@ -41,7 +45,7 @@ class InteractomeInterface(object):
     """
     Interface between interactome in the knowledge database and the interactome graph laplacian
 
-    :param background_up_ids: (optional) background that will be used for sampling of random
+    :param background_up_ids: (optional) background that will be used for sparse_sampling of random
     nodes to build a comparison interface for the
     """
 
@@ -80,7 +84,11 @@ class InteractomeInterface(object):
         self.current_accumulator = np.zeros((2, 2))
         self.node_current = {}
 
-        self.sparsely_sampled = False  # used in case of sparse sampling
+        self.active_weighted_sample: List[Tuple[int, float]] = []
+        self.secondary_weighted_sample: Union[None, List[Tuple[int, float]]] = None
+        self.flow_calculation_method = general_flow
+
+        self.sparsely_sampled = False  # used in case of sparse sparse_sampling
         self._background = background_up_ids
         log.debug('_background set to %d' % len(background_up_ids))
 
@@ -465,17 +473,47 @@ class InteractomeInterface(object):
 
         return str(md5)
 
-    def set_uniprot_source(self, uniprots):
+    def set_flow_sources(self, sample, secondary_sample):
+
+        def _verify_uniprot_ids(uniprot_vector: List[Tuple[int, float]]):
+            # TRACING: rename to id_weight_vector
+            uniprots = np.array(uniprot_vector)[:, 0].tolist()
+
+            if not set(uniprots) <= set(self.known_uniprots_neo4j_ids):
+
+                log.warn('Following reached uniprots neo4j_ids were not retrieved upon the '
+                         'circulation matrix construction: \n %s',
+                         (set(uniprots) - set(self.known_uniprots_neo4j_ids)))
+
+            _filter = [True
+                       if uniprot in self.known_uniprots_neo4j_ids
+                       else False
+                       for uniprot in uniprots]
+
+            return uniprot_vector[_filter, :]
+
+        self.active_weighted_sample = _verify_uniprot_ids(reduce_and_deduplicate_sample(sample))
+
+        self.active_up_sample = np.array(self.active_weighted_sample)[:, 0].tolist()
+
+        if secondary_sample is not None:
+            self.secondary_weighted_sample = \
+                _verify_uniprot_ids(reduce_and_deduplicate_sample(secondary_sample))
+
+            self.active_up_sample = list(set(self.active_up_sample
+                                        + np.array(self.secondary_weighted_sample)[:, 0].tolist()))
+
+
+    def set_uniprot_source(self, uniprots):  # TRACING: replace with set_flow_sources
         """
         Sets the deprecated_reached_uniprots_neo4j_id_list on which the circulation computation routines will
-        be performed by the otehr methods. Avoids passing as argument large lists of parameters.
+        be performed by the other methods. Avoids passing as argument large lists of parameters.
 
         :param uniprots: List of node IDs of the uniprots on which we would like to
         perform current computations
         :raise Warning: if the uniprots were not present in the set of GOs for which
         we built the system or had no GO attached to them
         """
-        # Refactor: [stateless]: this needs to be passed as an argument, not a persistent variable
         if not set(uniprots) <= set(self.known_uniprots_neo4j_ids):
 
             log.warn('Following reached uniprots neo4j_ids were not retrieved upon the '
@@ -485,15 +523,15 @@ class InteractomeInterface(object):
         self.active_up_sample = \
             [uniprot for uniprot in uniprots if uniprot in self.known_uniprots_neo4j_ids]
 
-    # REFACTOR: extract as the element performing a computation of the network
     def compute_current_and_potentials(
             self,
             memoized: bool = True,  # is required to enable the fast loading.
             incremental: bool = False,  # This is always false and was used in order to resume the
-            # sampling
+            # sparse_sampling
             cancellation: bool = True,
-            sparse_samples=False,
-            fast_load: bool = False):  # REFACTOR: this should not be implemented this way.
+            sparse_samples: int = -1,
+            fast_load: bool = False):  # REFACTOR: this should not be implemented
+        # this way.
         """
         Builds a conduction matrix that integrates uniprots, in order to allow an easier
         knowledge flow analysis
@@ -504,9 +542,9 @@ class InteractomeInterface(object):
             existing ones. Useful for the computation of particularly big systems with
             intermediate dumps
         :param cancellation: divides the final current by number of bioflow-sink pairs
-        :param sparse_samples: if set to an integer the sampling will be sparse and not dense,
-            i.e. instead of computation for each node pair, only an estimation will be made, equal to
-            computing sparse_samples association with other randomly chosen nodes
+        :param sparse_samples: if set to an integer >0, the sparse_sampling will be sparse and not
+            dense,i.e. instead of computation for each node pair, only an estimation will be made,
+            equal to computing sparse_samples association with other randomly chosen nodes
         :param fast_load: if True, will try to lad a pre-saved instance
         :return: adjusted conduction system
         """
@@ -516,7 +554,8 @@ class InteractomeInterface(object):
 
         if fast_load:
             payload = self._undump_memoized()
-            UP_hash = hashlib.md5(
+
+            UP_hash = hashlib.md5(  # TRACING: hash of samples
                 json.dumps(
                     sorted(self.active_up_sample),
                     sort_keys=True).encode("utf-8")
@@ -538,34 +577,58 @@ class InteractomeInterface(object):
             self.UP2UP_voltages = {}
             self.node_current = defaultdict(float)
 
-        if sparse_samples:
-            # TRACING: we supply only the list_of_pairs here.
-            # TRACING: specific sink, will be implemented in here
-            current_accumulator, _ = \
-                cr.main_flow_calc_loop(self.laplacian_matrix,
-                                       [self.neo4j_id_2_matrix_index[UP]
-                                        for UP in self.active_up_sample],
-                                       cancellation=cancellation,
-                                       sampling=True,
-                                       sampling_depth=sparse_samples,
-                                       thread_hex=self.thread_hex)
+        translated_active_weighted_sample = [(self.neo4j_id_2_matrix_index[UP], _w) for
+                                             UP, _w in self.active_weighted_sample]
+
+        if self.secondary_weighted_sample is not None:
+            translated_secondary_weighted_sample = [(self.neo4j_id_2_matrix_index[UP], _w) for
+                                                    UP, _w in self.secondary_weighted_sample]
 
         else:
-            # TRACING: we supply only the list_of_pairs here.
-            current_accumulator, up_pair_2_voltage =\
-                cr.main_flow_calc_loop(self.laplacian_matrix,
-                                       [self.neo4j_id_2_matrix_index[UP]
-                                        for UP in self.active_up_sample],
-                                       cancellation=cancellation,
-                                       potential_diffs_remembered=True,
-                                       thread_hex=self.thread_hex)
+            translated_secondary_weighted_sample = None
 
+        current_accumulator, up_pair_2_voltage = \
+            cr.main_flow_calc_loop(self.laplacian_matrix,
+                                   translated_active_weighted_sample,
+                                   secondary_sample=translated_secondary_weighted_sample,
+                                   cancellation=cancellation,
+                                   sparse_rounds=sparse_samples,
+                                   potential_diffs_remembered=True,
+                                   # INTEST: used to be disabled on-sparsity
+                                   thread_hex=self.thread_hex,
+                                   active_sampling_function=self.flow_calculation_method)
 
-            self.UP2UP_voltages.update(
+        # INTEST: used to be disabled on-sparsity
+        self.UP2UP_voltages.update(
                 dict(((self.matrix_index_2_neo4j_id[i],
                        self.matrix_index_2_neo4j_id[j]),
                       voltage)
                      for (i, j), voltage in up_pair_2_voltage.items()))
+
+        # if sparse_samples > 1:
+        #     current_accumulator, _ = \
+        #         cr.main_flow_calc_loop(self.laplacian_matrix,
+        #                                [self.neo4j_id_2_matrix_index[UP]
+        #                                 for UP in self.active_up_sample],
+        #                                cancellation=cancellation,
+        #                                sparse_rounds=sparse_samples,
+        #                                thread_hex=self.thread_hex)
+        #
+        # else:
+        #     current_accumulator, up_pair_2_voltage =\
+        #         cr.main_flow_calc_loop(self.laplacian_matrix,
+        #                                [self.neo4j_id_2_matrix_index[UP]
+        #                                 for UP in self.active_up_sample],
+        #                                cancellation=cancellation,
+        #                                potential_diffs_remembered=True,
+        #                                thread_hex=self.thread_hex)
+        #
+        #
+        #     self.UP2UP_voltages.update(
+        #         dict(((self.matrix_index_2_neo4j_id[i],
+        #                self.matrix_index_2_neo4j_id[j]),
+        #               voltage)
+        #              for (i, j), voltage in up_pair_2_voltage.items()))
 
         if incremental:
             self.current_accumulator = self.current_accumulator + current_accumulator
@@ -610,7 +673,7 @@ class InteractomeInterface(object):
 
         if self.sparsely_sampled:
             log.warning('Computation of the information circulation was not complete, %s',
-                        'most likely due to the sampling')
+                        'most likely due to the sparse_sampling')
 
         node_char_names = [
             'Current',
@@ -634,7 +697,7 @@ class InteractomeInterface(object):
             'DOUBLE',
             'DOUBLE',
             'DOUBLE',
-            'DOUBLE']
+            'DOUBLE']  # TRACING: add the weights at the start
 
         if p_value_dict is None:
             p_value_dict = defaultdict(lambda: (np.nan, np.nan, np.nan))
@@ -692,10 +755,10 @@ class InteractomeInterface(object):
             self,
             samples_size,
             samples_each_size,
-            sparse_rounds=False,
+            sparse_rounds=-1,
             no_add=False,
             pool_no=None,
-            sampling_policy = sampling_policies.active_default_sampling_policy):
+            sampling_policy = sampling_policies.matched_sampling):
         """
         Randomly samples the set of deprecated_reached_uniprots_neo4j_id_list used to create the model.
         This is the null model creation routine
@@ -703,29 +766,38 @@ class InteractomeInterface(object):
 3
         :param samples_size: list of numbers of uniprots we would like to create the model for
         :param samples_each_size: how many times we would like to sample each uniprot number
-        :param sparse_rounds:  if we want to use sparse sampling (useful in case of
+        :param sparse_rounds:  if we want to use sparse sparse_sampling (useful in case of
         large uniprot sets), we would use this option
-        :param no_add: if set to True, the result of sampling will not be added to the
+        :param no_add: if set to True, the result of sparse_sampling will not be added to the
         database of samples. Useful if re-running tests with similar parameters several times.
-        :param pool_no: explicit sampling pool number (used for reporting/debugging)
+        :param pool_no: explicit sparse_sampling pool number (used for reporting/debugging)
         :raise Exception: if the number of items in the samples size ann samples_each size
         are different
         """
         if not len(samples_size) == len(samples_each_size):
             raise Exception('Not the same list sizes!')
 
-        # TODO: [Better sampling]: include the limitations on the types of nodes to sample:
+        # TODO: [Better sparse_sampling]: include the limitations on the types of nodes to sample:
 
         for sample_size, iterations in zip(samples_size, samples_each_size):
 
-            # TRACING: this needs to be polymorphic
-            for i, analytics_uniprot_list in sampling_policy(self._background, sample_size, iterations):
+            # CURRENTPASS: save the active_weighted_sample, sec_weighted_sample, _background, ...
+            #
 
-                # print('debug: selected UProt IDs :', analytics_uniprot_list)
+            # TRACING: sampling policy was injected here
+            for i, sample, sec_sample in sampling_policy(self.active_weighted_sample,
+                                                         self.secondary_weighted_sample,
+                                                         self._background, iterations):
 
-                self.set_uniprot_source(analytics_uniprot_list)
+                # print('debug: selected UProt IDs :', sample)
 
-                log.info('Sampling thread: %s, Thread hex: %s; sampling characteristics: sys_hash: '
+                self.set_flow_sources(sample, sec_sample)
+
+                # CURRENTPASS: continue from here
+
+                # self.set_uniprot_source(sample)
+
+                log.info('Sampling thread: %s, Thread hex: %s; sparse_sampling characteristics: sys_hash: '
                          '%s, size: %s, '
                          'sparse_rounds: %s' % (pool_no, self.thread_hex, self.md5_hash(),
                                                 sample_size, sparse_rounds))
@@ -734,7 +806,7 @@ class InteractomeInterface(object):
 
                 md5 = hashlib.md5(
                     json.dumps(
-                        sorted(analytics_uniprot_list),
+                        sorted(sample),
                         sort_keys=True).encode('utf-8')).hexdigest()
 
                 if not no_add:
@@ -744,7 +816,7 @@ class InteractomeInterface(object):
                     np.sum(self.current_accumulator)))
 
 
-                    # TRACING: this needs to characterize the sampling policy and relevant
+                    # TRACING: this needs to characterize the sparse_sampling policy and relevant
                     #  parameters
                     insert_interactome_rand_samp(
                         {
@@ -752,7 +824,7 @@ class InteractomeInterface(object):
                             'sys_hash': self.md5_hash(),
                             'size': sample_size,
                             'sparse_rounds': sparse_rounds,
-                            'UPs': pickle.dumps(analytics_uniprot_list),
+                            'UPs': pickle.dumps(sample),
                             'currents': pickle.dumps(
                                 (self.current_accumulator,
                                  self.node_current)),

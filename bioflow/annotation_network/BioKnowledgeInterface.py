@@ -51,7 +51,7 @@ class GeneOntologyInterface(object):
 
     :param namespace_filter: which namespaces will be used from the annotome (by default the
         "biological process" of the Gene Ontology)
-    :param background_up_ids: (optional) background that will be used for sampling of random
+    :param background_up_ids: (optional) background that will be used for sparse_sampling of random
         nodes to build a comparison interface for the
     :param correction_factor:informativity of the node computation correction factors
         (information entropy-wise). (Multiplicative correction factor, additive correction factor)
@@ -763,7 +763,7 @@ class GeneOntologyInterface(object):
             self,
             memoized: bool = True,
             incremental: bool = False,  # This should always be false and was used in order to
-            # resume the sampling
+            # resume the sparse_sampling
             cancellation: bool = True,
             sparse_samples=False):
         """
@@ -778,7 +778,7 @@ class GeneOntologyInterface(object):
         intermediate dumps
         :param cancellation: divides the final current by #Nodes**2/2, i.e. makes the currents
         comparable between circulation systems of different  sizes.
-        :param sparse_samples: if set to an integer the sampling will be sparse and not dense,
+        :param sparse_samples: if set to an integer the sparse_sampling will be sparse and not dense,
          i.e. instead of computation for each node pair, only an estimation will be made, equal to
          computing sparse_samples association with other randomly chosen nodes
         :return: adjusted conduction system
@@ -918,7 +918,7 @@ class GeneOntologyInterface(object):
 
         if self.sparsely_sampled:
             log.warning('Links between the elements should not be trusted: the computations was '
-                        'sampling and was not complete')
+                        'sparse_sampling and was not complete')
 
         for GO in self.GO2Num.keys():
             char_dict[GO] = [str(self.node_current[GO]),
@@ -966,14 +966,14 @@ class GeneOntologyInterface(object):
 
         :param samples_size: list of numbers of uniprots we would like to create the model for
         :param samples_each_size: how many times we would like to sample each unirot number
-        :param sparse_rounds:  if we want to use sparse sampling
+        :param sparse_rounds:  if we want to use sparse sparse_sampling
         (usefull in case of large uniprot sets),
         we would use this option
-        :param memoized: if set to True, the sampling would be rememberd for export.
+        :param memoized: if set to True, the sparse_sampling would be rememberd for export.
         Usefull in case of the chromosome comparison
-        :param no_add: if set to True, the result of sampling will not be added to the database
+        :param no_add: if set to True, the result of sparse_sampling will not be added to the database
         of samples. Usefull if re-running tests with similar parameters several times.
-        :param pool_no: explicit sampling pool number (used for reporting/debugging)
+        :param pool_no: explicit sparse_sampling pool number (used for reporting/debugging)
         :raise Exception: if the number of items in the samples size ann saples_each size are
          different
         """
@@ -996,7 +996,7 @@ class GeneOntologyInterface(object):
                 self.set_uniprot_source(analytics_up_list)
 
                 log.info('Sampling thread: %s, Thread hex: %s; '
-                         'sampling characteristics: sys_hash: %s, size: %s, '
+                         'sparse_sampling characteristics: sys_hash: %s, size: %s, '
                          'sparse_rounds: %s' % (pool_no, self.thread_hex,
                                                 self.md5_hash(), sample_size,
                                                 sparse_rounds))

@@ -19,6 +19,7 @@ from typing import Union, Tuple, List
 
 from bioflow.utils.log_behavior import get_logger
 # from bioflow.internal_configs import line_loss
+from bioflow.algorithms_bank.flow_calculation_methods import general_flow
 from bioflow.configs.main_configs import switch_to_splu, share_solver, memory_source_allowed, \
     node_current_in_debug, line_loss
 
@@ -304,24 +305,29 @@ def edge_current_iteration(conductivity_laplacian: spmat.csc_matrix,
     return potential_diff, current
 
 
-# TRACING: flow calculation wrapper parameters need to be inserted here
-def main_flow_calc_loop(conductivity_laplacian, index_list,
-                        cancellation=True, potential_dominated=True, sampling=False,
-                        sampling_depth=10, memory_source=None, potential_diffs_remembered=None,
-                        thread_hex='______', weighted_sample=False):
+def main_flow_calc_loop(conductivity_laplacian: np.typing.ArrayLike,
+                        sample: List[Tuple[int, float]],
+                        secondary_sample: Union[List[Tuple[int, float]], None] = None,
+                        cancellation: bool = True, potential_dominated: bool = True,
+                        sparse_rounds: int = -1,
+                        memory_source=None,
+                        potential_diffs_remembered: bool = False,
+                        thread_hex: str = '______',
+                        active_sampling_function=general_flow):
     """
     master method for all the required edge current calculations
 
     :param conductivity_laplacian: conductivity laplacian
-    :param index_list: indexes between which to calculate the flow
+    :param sample: (index, weight) between which to calculate the flow
+    :param secondary_sample: (index, weight) for star-like or biparty calculation
     :param cancellation: if the total current is normalized to the sampe number
     :param potential_dominated: if the total current is normalized to potential
-    :param sampling: if the sampling is performed
-    :param sampling_depth: to which depth is the sampling performed
+    :param sparse_rounds: to which depth is the sampling performed. if < 1, none will be
     :param memory_source: if we are using memoization, source to look it
     :param potential_diffs_remembered: if the difference of potentials between nodes is remembered
     :param thread_hex: debugging id of the thread in which the sampling is going on
-    :param weighted_sample: if true, the samples are calculated based on their weights
+    :param active_sampling_function: the function that converts the sample signature (sample,
+        secondary_sample, sparse_rounds) into a list of ((index, weight), (index weight)) tuples
     :return:
     """
 
@@ -330,26 +336,26 @@ def main_flow_calc_loop(conductivity_laplacian, index_list,
 
     log.info('thread hex: %s; master edge current starting to sample with %s nodes; cancellation: '
              '%s;'
-             ' potential-dominated %s; sampling %s; sampling_depth %s'
-             % (thread_hex, len(index_list), cancellation,
-                potential_dominated, sampling, sampling_depth))
+             ' potential-dominated %s; sparse_rounds %s'
+             % (thread_hex, len(sample), cancellation,
+                potential_dominated, sparse_rounds))
 
     # log.info('debug: parameters supplied to main_flow_calc_loop: '
     #          'conductivity_laplacian: %s,\n'
-    #          'index_list: %s,\n'
+    #          'sample: %s,\n'
     #          'cancellation: %s,\n'
     #          'potential_dominated: %s,\n'
-    #          'sampling %s,\n'
-    #          'sampling_depth %s,\n'
+    #          'sparse_sampling %s,\n'
+    #          'sparse_sampling_depth %s,\n'
     #          'memory_source: %s,\n'
     #          'potential_diffs_remembered: %s,\n'
     #          'thread_hex: %s' % (
     #     type(conductivity_laplacian),
-    #     type(index_list),
+    #     type(sample),
     #     cancellation,
     #     potential_dominated,
-    #     sampling,
-    #     sampling_depth,
+    #     sparse_sampling,
+    #     sparse_sampling_depth,
     #     type(memory_source),
     #     potential_diffs_remembered,
     #     thread_hex))
@@ -357,18 +363,20 @@ def main_flow_calc_loop(conductivity_laplacian, index_list,
     # convert the arguments to proper structure:
     conductivity_laplacian = conductivity_laplacian.tocsc()
 
-    # generate index list in agreement with the sampling strategy
+    # generate index list in agreement with the sparse_sampling strategy
 
-    # TRACING: flow calculation wrapper needs to be injected here
-    if sampling:
-        list_of_pairs = []
-        for _ in repeat(None, sampling_depth):
-            idx_list_c = copy(index_list)
-            random.shuffle(idx_list_c)
-            list_of_pairs += list(zip(idx_list_c[:len(idx_list_c) // 2],
-                                 idx_list_c[len(idx_list_c) // 2:]))
-    else:
-        list_of_pairs = [(i, j) for i, j in combinations(set(index_list), 2)]
+    # INTEST: flow calculation wrapper needs to be injected here
+    # if sparse_sampling:
+    #     list_of_pairs = []
+    #     for _ in repeat(None, sparse_sampling_depth):
+    #         idx_list_c = copy(sample)
+    #         random.shuffle(idx_list_c)
+    #         list_of_pairs += list(zip(idx_list_c[:len(idx_list_c) // 2],
+    #                              idx_list_c[len(idx_list_c) // 2:]))
+    # else:
+    #     list_of_pairs = [(i, j) for i, j in combinations(set(sample), 2)]
+
+    list_of_pairs = active_sampling_function(sample, secondary_sample, sparse_rounds)
 
     total_pairs = len(list_of_pairs)
 
@@ -394,13 +402,7 @@ def main_flow_calc_loop(conductivity_laplacian, index_list,
 
     for counter, (i, j) in enumerate(list_of_pairs):
 
-        if weighted_sample:
-            i, i_weight = i
-            j, j_weight = j
-        else:
-            i_weight, j_weight = (1, 1)
-
-        mean_weight = (i_weight + j_weight)/2.
+        mean_weight = (i[1] + j[1]) / 2.
 
         if memory_source and tuple(sorted((i, j))) in list(memory_source.keys()):
             potential_diff, current_upper = memory_source[tuple(sorted((i, j)))]
@@ -425,7 +427,7 @@ def main_flow_calc_loop(conductivity_laplacian, index_list,
                             i, j, 'Tension-normalization was aborted')
 
         # csc = csc + csc
-        # INTEST: multiply by potential sum here if present
+        # INTEST: multiply by potential sum here
         current_accumulator = current_accumulator + sparse_abs(current_upper) * mean_weight
 
         if counter % breakpoints == 0 and counter > 1:

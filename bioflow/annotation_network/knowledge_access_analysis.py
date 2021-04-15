@@ -89,7 +89,7 @@ def spawn_sampler_pool(
     :param sample_size_list: size of the sample list
     :param iterations_list_per_pool: number of iterations performing the pooling of the samples
      in each list
-    :param sparse_rounds: how many sparse sampling rounds to perform, if any (unless it's False)
+    :param sparse_rounds: how many sparse sparse_sampling rounds to perform, if any (unless it's False)
     :param go_interface_instance: passed go_interface instance
     :param param_set: set of parameters configuring the knowledge interface object
     """
@@ -449,7 +449,7 @@ def auto_analyze(source_list,
 
             if not skip_sampling:
 
-                log.info('length: %s \t sampling depth: %s \t, estimated round time: %s min',
+                log.info('length: %s \t sparse_sampling depth: %s \t, estimated round time: %s min',
                          len(go_interface_instance.active_up_sample),
                          'full',
                          len(go_interface_instance.active_up_sample) ** 2 / estimated_comp_ops /
@@ -476,7 +476,7 @@ def auto_analyze(source_list,
 
             if not skip_sampling:
 
-                log.info('length: %s \t sampling depth: %s \t, estimated round time: %s min',
+                log.info('length: %s \t sparse_sampling depth: %s \t, estimated round time: %s min',
                          len(go_interface_instance.active_up_sample),
                          sampling_depth,
                          len(go_interface_instance.active_up_sample) *

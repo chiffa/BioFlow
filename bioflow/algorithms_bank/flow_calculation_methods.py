@@ -23,6 +23,7 @@ def _is_int(_obj):
         return True
 
 
+# TRACING: propagate
 def reduce_and_deduplicate_sample(sample: Union[List[int], List[Tuple[int, float]]]) \
         -> List[Tuple[int, float]]:
 
@@ -50,12 +51,14 @@ def reduce_and_deduplicate_sample(sample: Union[List[int], List[Tuple[int, float
 
 def general_flow(sample: Union[List[int], List[Tuple[int, float]]],
                  secondary_sample: Union[List[int], List[Tuple[int, float]], None] = None,
-                 sparse_rounds: int = -1) -> List[Tuple[Tuple[int, float],
-                                                        Tuple[int, float]]]:
+                 sparse_rounds: int = -1) -> List[Tuple[Tuple[int, float], Tuple[int, float]]]:
+
+    # CURRENTPASS: what if we have an overlap between the items in the primary and the secondary
+    #  samples?
 
     sample = reduce_and_deduplicate_sample(sample)
 
-    if secondary_sample is None:  # connex flow
+    if secondary_sample is None:  # connex flo0w
 
         if sparse_rounds > 0:
             list_of_pairs = []

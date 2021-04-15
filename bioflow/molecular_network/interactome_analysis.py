@@ -53,7 +53,7 @@ def spawn_sampler(args_puck):
     Spawns a sampler initialized from the default GO_Interface.
 
     :param args_puck: combined list of sample sizes, iterations, background sets, and sparse
-    sampling argument
+    sparse_sampling argument
     """
     # log.info('Pool process %d started' % args_puck[-1])
 
@@ -79,7 +79,7 @@ def spawn_sampler_pool(
         sample_size_list,
         interaction_list_per_pool,
         background_set,
-        sparse_rounds=False):
+        sparse_rounds=-1):
     """
     Spawns a pool of samplers of the information flow within the GO system
 
@@ -87,7 +87,7 @@ def spawn_sampler_pool(
     :param sample_size_list: size of the sample list
     :param interaction_list_per_pool: number of iterations performing the pooling of the samples
      in each list
-    :param sparse_rounds: number of sparse rounds to run (or False if sampling is dense)
+    :param sparse_rounds: number of sparse rounds to run (or False if sparse_sampling is dense)
     :param background_set: set of node ids that are to be sampled from
     """
     payload = [
@@ -379,7 +379,7 @@ def auto_analyze(source_list: List[List[int]],
     for max performance, use N-1 processors, where N is the number of physical cores on the
     machine, which is the default
     :param background_list list of physical entities that an experimental method can retrieve
-    :param skip_sampling: if true, will skip background sampling step
+    :param skip_sampling: if true, will skip background sparse_sampling step
     """
     # Multiple re-spawns of threaded processing are incompatbile with scikits.sparse.cholmod
     if len(source_list) > 1:
@@ -399,7 +399,7 @@ def auto_analyze(source_list: List[List[int]],
         log.info("Setting processor count to default: %s" % processors)
 
     # TODO: [Better Sampling]
-    #  check MongoDb to see if we have enough samples of the needed type, adjust the sampling
+    #  check MongoDb to see if we have enough samples of the needed type, adjust the sparse_sampling
     # noinspection PyTypeChecker
     if desired_depth % processors != 0:
         desired_depth = desired_depth // processors + 1
@@ -429,7 +429,7 @@ def auto_analyze(source_list: List[List[int]],
         if len(interactome_interface.active_up_sample) < sparse_analysis_threshold:
 
             if not skip_sampling:
-                log.info('length: %s \t sampling depth: %s \t, estimated round time: %s min',
+                log.info('length: %s \t sparse_sampling depth: %s \t, estimated round time: %s min',
                          len(interactome_interface.active_up_sample),
                          'full',
                          len(interactome_interface.active_up_sample) ** 2 /
@@ -441,6 +441,7 @@ def auto_analyze(source_list: List[List[int]],
                     [desired_depth],
                     background_set=background_list)
 
+            #TRACING: sparse_samples => to -1 and int
             interactome_interface.compute_current_and_potentials()
 
             nr_nodes, p_val_dict = compare_to_blank(
@@ -459,7 +460,7 @@ def auto_analyze(source_list: List[List[int]],
 
             if not skip_sampling:
 
-                log.info('length: %s \t sampling depth: %s \t, estimated round time: %s min',
+                log.info('length: %s \t sparse_sampling depth: %s \t, estimated round time: %s min',
                          len(interactome_interface.active_up_sample),
                          sampling_depth,
                          len(interactome_interface.active_up_sample) *
@@ -475,6 +476,7 @@ def auto_analyze(source_list: List[List[int]],
                      (interactome_interface.md5_hash(),
                       len(interactome_interface.active_up_sample), sampling_depth))
 
+            #TRACING: sparse_samples => to -1 and int
             interactome_interface.compute_current_and_potentials(sparse_samples=sampling_depth)
 
             nr_nodes, p_val_dict = compare_to_blank(

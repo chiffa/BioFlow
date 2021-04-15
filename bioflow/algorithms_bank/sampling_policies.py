@@ -27,20 +27,28 @@ def _is_int(_obj):
         return True
 
 
-def matched_sample_distribution(floats_arr: np.array, samples: int, granularity: int = 100):
+def matched_sample_distribution(floats_arr: np.array, samples_no: int,
+                                granularity: int = 100, logmode: bool = False):
+
+    if logmode:
+        floats_arr = np.log(floats_arr)   # INTEST: will crash if any are 0
+
     hist, bin_edges = np.histogram(floats_arr, bins=granularity, density=True)
     pad = np.arange(granularity)
-    locations = np.choice(pad, samples, p=hist)
+    locations = np.choice(pad, samples_no, p=hist)
 
     samples = []
 
     for i in locations:
         samples.append(np.random.uniform(bin_edges[i], bin_edges[i+1]))
 
-    return samples
+    if logmode:
+        return np.exp(samples)
 
+    else:
+        return samples
 
-def reduce_distribution(floats_arr: np.array):
+def _reduce_distribution(floats_arr: np.array):
     """
     Basically gets a distribution in the [0, 1] in 100 bins, rounds to the nearest 0.01
 
@@ -54,7 +62,7 @@ def reduce_distribution(floats_arr: np.array):
     return rounded_hist
 
 
-def characterize_set(sample: Union[List[int], List[Tuple[int, float]]]):
+def _characterize_set(sample: Union[List[int], List[Tuple[int, float]]]):
 
     if sample is None:
         return 0, []
@@ -66,7 +74,7 @@ def characterize_set(sample: Union[List[int], List[Tuple[int, float]]]):
         rounded_hist = [1]*100
         rounded_hist = np.array(rounded_hist).astype(np.int)
     else:
-        rounded_hist = reduce_distribution(np.array(sample).astype(np.float)[:, 1])
+        rounded_hist = _reduce_distribution(np.array(sample).astype(np.float)[:, 1])
 
     return len(sample), rounded_hist
 
@@ -75,8 +83,8 @@ def characterize_flow_parameters(sample: Union[List[int], List[Tuple[int, float]
                                  secondary_sample: Union[List[int], List[Tuple[int, float]], None],
                                  sparse_rounds: int):
 
-    prim_len, prim_hist = characterize_set(sample)
-    sec_len, sec_hist = characterize_set(secondary_sample)
+    prim_len, prim_hist = _characterize_set(sample)
+    sec_len, sec_hist = _characterize_set(secondary_sample)
 
     hash = hashlib.md5(json.dumps([prim_len, prim_hist,
                                    sec_len, sec_hist,
@@ -92,80 +100,70 @@ def characterize_flow_parameters(sample: Union[List[int], List[Tuple[int, float]
     return prim_len, prim_hist, sec_len, sec_hist, sparse_rounds, hash
 
 
-def matched_sampling(sample, secondary_sample, background, samples):
+def _sample_floats(floats, float_sampling_method='exact', matched_distro_precision: int = 100):
 
-    if secondary_sample is None:
-        pass
+    if float_sampling_method == 'exact':
+        ret_floats = floats.copy()
+        return np.shuffle(ret_floats)
 
-    pass
+    if float_sampling_method == 'distro':
+        return matched_sample_distribution(floats, len(floats), granularity=matched_distro_precision)
 
-
-def set_signature(set_to_sign):
-    if isinstance(set_to_sign[0], tuple):
-        # it is an [(int, float)] weighted samples list, we hist sign floats
-        floats = sorted([int(_item[1]*1000) for _item in set_to_sign])
-
-    elif isinstance(set_to_sign[0], float):
-         floats = sorted([int(_item*1000) for _item in set_to_sign])
-
-    else:
-        raise Exception('not sure how to sign set with first element', set_to_sign[0])
-
-    return hashlib.md5(json.dumps(floats, sort_keys=True).encode('utf-8')).hexdigest()
+    if float_sampling_method == 'logdistro':
+        return matched_sample_distribution(floats, len(floats),
+                                           granularity=matched_distro_precision, logmode=True)
 
 
-
-
-def weighted_set_sampling(set_to_sample,
-                          sample_size, samples,
-                          weights=None):  # samples = iterations.
-    if weights is None:
-        for i in range(0, samples):
-            random.shuffle(set_to_sample)
-            yield i, set_to_sample[:sample_size]
-
-    else:
-        weights = np.array(weights)
-        weights = weights / np.sum(weights)  # np. random choice expects probabilities summing to 1
-        for i in range(0, samples):
-            yield i, np.random.choice(set_to_sample, size=sample_size, replace=False, p=weights)
-
-    pass
-
-
-def double_weighted_set_sampling(set_to_sample, set_to_sample_2,
-                                 sample_size, samples,
-                                 weights1=None, weights_2=None):
-    pass
-
-
-def set_sampling(background, sample_size, iterations):
+def matched_sampling(sample, secondary_sample, background, samples, float_sampling_method='exact'):
     """
-    Basic sampling strategy for sets
 
+
+    :param sample:
+    :param secondary_sample:
     :param background:
-    :param sample_size:
-    :param iterations:
+    :param samples:
+    :param sampling_mode: exact/distro/logdistro
     :return:
     """
-    for i in range(0, iterations):
-        random.shuffle(background)
-        yield i, background[:sample_size]
+
+    # CURRENTPASS: what if we have an overlap between the items in the primary and the secondary
+    #  samples?
+
+    if secondary_sample is None:
+
+        if _is_int(sample[0]): # it will never be an int
+            for i in range(0, samples):
+                random.shuffle(background)
+                yield i, background[:len(sample)], None
+
+        else:
+            for i in range(0, samples):
+                random.shuffle(background)
+                id_loads = background[:len(sample)]
+                float_part = _sample_floats(np.array(sample)[:, 1], float_sampling_method)
+                ids_and_floats = [(_id, _float) for _id, _float in zip(id_loads, float_part)]
+                yield i, ids_and_floats, None
+
+    else:
+
+        if _is_int(sample[0]):
+            for i in range(0, samples):
+                random.shuffle(background)
+                yield i, background[:len(sample)], \
+                      background[-len(secondary_sample):]
+
+        else:
+            for i in range(0, samples):
+                random.shuffle(background)
+
+                id_loads = background[:len(sample)]
+                float_part = _sample_floats(np.array(sample)[:, 1], float_sampling_method)
+                ids_and_floats = [(_id, _float) for _id, _float in zip(id_loads, float_part)]
 
 
-def degree_distribution_sampling():
-    return []
+                sec_id_loads = background[-len(secondary_sample):]
+                sec_float_part = _sample_floats(np.array(secondary_sample)[:, 1], float_sampling_method)
+                sec_ids_and_floats = [(_id, _float) for _id, _float
+                                      in zip(sec_id_loads, sec_float_part)]
 
-
-def single_target_sampling():
-    return []
-
-
-def weight_distribution_sampling():
-    return []
-
-
-# CURRENTPASS: this needs to be replaced by a sampling_wrapper, that decide of the strategy based
-#  on parameters provided.
-
-active_default_sampling_policy = set_sampling
+                yield i, ids_and_floats, sec_ids_and_floats

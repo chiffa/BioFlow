@@ -154,8 +154,8 @@ def purgemongo(collection):
                    'annotome) or both')
 @click.option('--depth', default=25, help='random samples used to infer flow pattern significance')
 @click.option('--processors', default=1, help='processor cores used in flow patterns calculation')
-@click.option('--skipsampling', default=False, help='if True, skips random sampling step')
-@click.option('--background', default=False, help='if True, uses the background for sampling')
+@click.option('--skipsampling', default=False, help='if True, skips random sparse_sampling step')
+@click.option('--background', default=False, help='if True, uses the background for sparse_sampling')
 @click.option('--name', default='', help='name of the experiment')
 def analyze(name, matrix, depth, processors, skipsampling, background):
     """
@@ -213,7 +213,7 @@ def analyze(name, matrix, depth, processors, skipsampling, background):
 # @click.command()
 # @click.option('--depth', default=24, help='random samples used to infer flow pattern significance')
 # @click.option('--processors', default=3, help='processor cores used in flow patterns calculation')
-# @click.option('--skipsampling', default=False, help='if True, skips random sampling step')
+# @click.option('--skipsampling', default=False, help='if True, skips random sparse_sampling step')
 # @click.option('--background', default=False, help='if True, skips hits sample flow computation ')
 # def interactomeanalysis(depth, processors, skipsampling, background):
 #     """
@@ -243,7 +243,7 @@ def analyze(name, matrix, depth, processors, skipsampling, background):
 # @click.command()
 # @click.option('--depth', default=24, help='random samples used to infer flow pattern significance')
 # @click.option('--processors', default=3, help='processor cores used in flow patterns calculation')
-# @click.option('--skipsampling', default=False, help='if True, skips random sampling step')
+# @click.option('--skipsampling', default=False, help='if True, skips random sparse_sampling step')
 # def knowledgeanalysis(depth, processors, skipsampling):
 #     """
 #     Performs annotome analysis given background set given earlier.
