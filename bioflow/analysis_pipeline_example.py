@@ -137,8 +137,8 @@ if __name__ == "__main__":
                 #     background_set = True
 
                 # # perform the interactome analysis
-                interactome_analysis([hits_ids],
-                                     ['chr_%s' % filename[:-4]],
+                interactome_analysis(source_list=[hits_ids],
+                                     output_destinations_list=['chr_%s' % filename[:-4]],
                                      desired_depth=5,
                                      processors=1,
                                      background_list=background_bulbs_ids,
@@ -146,8 +146,8 @@ if __name__ == "__main__":
                                      )
 
                 # # perform the knowledge analysis
-                knowledge_analysis([hits_ids],
-                                   ['chr_%s' % filename[:-4]],
+                knowledge_analysis(source_list=[hits_ids],
+                                   output_destinations_list=['chr_%s' % filename[:-4]],
                                    desired_depth=5,
                                    processors=1,
                                    background_list=background_bulbs_ids,

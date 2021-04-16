@@ -2,7 +2,7 @@
 These methods are responsible for generation of pairs of nodes for which we will be calculating
 and summing the flow.
 """
-from itertools import combinations, repeat, product
+from itertools import combinations, repeat, product, cycle
 from copy import copy
 import random
 from typing import Union, List, Tuple
@@ -23,7 +23,6 @@ def _is_int(_obj):
         return True
 
 
-# TRACING: propagate
 def reduce_and_deduplicate_sample(sample: Union[List[int], List[Tuple[int, float]]]) \
         -> List[Tuple[int, float]]:
 
@@ -49,6 +48,43 @@ def reduce_and_deduplicate_sample(sample: Union[List[int], List[Tuple[int, float
     return sample
 
 
+def evaluate_ops(prim_len: int, sec_len: int,
+                 sparse_rounds: int = -1) -> float:
+
+    if sparse_rounds < 1:
+
+        if sec_len == 0:
+            return prim_len**2 / 2
+
+        else:
+            return prim_len * sec_len
+
+    else:
+
+        if sec_len == 0:
+            return prim_len * sparse_rounds / 2
+
+        elif sec_len == 1:
+            return prim_len
+
+        else:
+            return prim_len * sparse_rounds
+
+
+def reduce_ops(prim_len, sec_len, max_ops) -> int:
+
+    if evaluate_ops(prim_len, sec_len) < max_ops:
+        return -1
+
+    else:
+        if sec_len == 0:
+            return max(max_ops // ( prim_len**2 ), 5)
+        elif sec_len == 1:
+            return -1
+        else:
+            return max(max_ops // prim_len, 5)
+
+
 def general_flow(sample: Union[List[int], List[Tuple[int, float]]],
                  secondary_sample: Union[List[int], List[Tuple[int, float]], None] = None,
                  sparse_rounds: int = -1) -> List[Tuple[Tuple[int, float], Tuple[int, float]]]:
@@ -58,7 +94,7 @@ def general_flow(sample: Union[List[int], List[Tuple[int, float]]],
 
     sample = reduce_and_deduplicate_sample(sample)
 
-    if secondary_sample is None:  # connex flo0w
+    if secondary_sample is None:  # connex flow
 
         if sparse_rounds > 0:
             list_of_pairs = []
@@ -81,7 +117,7 @@ def general_flow(sample: Union[List[int], List[Tuple[int, float]]],
                 idx_list_2 = copy(secondary_sample)  # CURRENTPASS: move out?
                 random.shuffle(idx_list_1)
                 random.shuffle(idx_list_2)
-                list_of_pairs += list(zip(idx_list_1, idx_list_2))
+                list_of_pairs += list(zip(idx_list_1, cycle(idx_list_2)))
 
         else:
             list_of_pairs = [(i, j) for i, j in product(sample, secondary_sample)]

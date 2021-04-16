@@ -65,39 +65,43 @@ def _reduce_distribution(floats_arr: np.array):
 def _characterize_set(sample: Union[List[int], List[Tuple[int, float]]]):
 
     if sample is None:
-        return 0, []
+        return 0, 0, []
 
     if len(sample) == 1:
-        return 1, []
+        if _is_int(sample[0]):
+            return 1, 1, []
+        else:
+            return 1, 2, []
 
     if _is_int(sample[0]):
-        rounded_hist = [1]*100
+        rounded_hist = [1] * 100
         rounded_hist = np.array(rounded_hist).astype(np.int)
+        return len(sample), 1, rounded_hist
     else:
         rounded_hist = _reduce_distribution(np.array(sample).astype(np.float)[:, 1])
-
-    return len(sample), rounded_hist
+        return len(sample), 2, rounded_hist
 
 
 def characterize_flow_parameters(sample: Union[List[int], List[Tuple[int, float]]],
                                  secondary_sample: Union[List[int], List[Tuple[int, float]], None],
                                  sparse_rounds: int):
 
-    prim_len, prim_hist = _characterize_set(sample)
-    sec_len, sec_hist = _characterize_set(secondary_sample)
+    prim_len, prim_shape, prim_hist = _characterize_set(sample)
+    sec_len, sec_shape, sec_hist = _characterize_set(secondary_sample)
 
-    hash = hashlib.md5(json.dumps([prim_len, prim_hist,
-                                   sec_len, sec_hist,
-                                   sparse_rounds],
-                                  sort_keys=True).encode('utf-8')).hexdigest()
+    _hash = hashlib.md5(json.dumps([prim_len, prim_shape, prim_hist,
+                                   sec_len, sec_shape, sec_hist,
+                                   sparse_rounds]).encode('utf-8')).hexdigest()
 
     log.info('hashed a flow parameters from:\n'
-             '%d/%s; \n'
-             '%d/%s; \n'
+             '%d/%d/%s; \n'
+             '%d/%d/%s; \n'
              '%d \n'
-             'to %s' % (prim_len, prim_hist, sec_len, sec_hist, sparse_rounds, hash))
+             'to %s' % (prim_len, prim_shape, prim_hist,
+                        sec_len, sec_shape, sec_hist,
+                        sparse_rounds, _hash))
 
-    return prim_len, prim_hist, sec_len, sec_hist, sparse_rounds, hash
+    return prim_len, prim_shape, prim_hist, sec_len, sec_shape, sec_hist, sparse_rounds, _hash
 
 
 def _sample_floats(floats, float_sampling_method='exact', matched_distro_precision: int = 100):
@@ -114,7 +118,8 @@ def _sample_floats(floats, float_sampling_method='exact', matched_distro_precisi
                                            granularity=matched_distro_precision, logmode=True)
 
 
-def matched_sampling(sample, secondary_sample, background, samples, float_sampling_method='exact'):
+def matched_sampling(sample, secondary_sample,
+                     background, samples, float_sampling_method='exact'):
     """
 
 
@@ -122,7 +127,8 @@ def matched_sampling(sample, secondary_sample, background, samples, float_sampli
     :param secondary_sample:
     :param background:
     :param samples:
-    :param sampling_mode: exact/distro/logdistro
+    :param sampling_mode: exact/distro/logdistro. the sampling parametrization method ingesting
+    all the parameters in a single string argument
     :return:
     """
 
@@ -131,7 +137,7 @@ def matched_sampling(sample, secondary_sample, background, samples, float_sampli
 
     if secondary_sample is None:
 
-        if _is_int(sample[0]): # it will never be an int
+        if _is_int(sample[0]):  # INTEST: it will never be an int, but for safety ...
             for i in range(0, samples):
                 random.shuffle(background)
                 yield i, background[:len(sample)], None

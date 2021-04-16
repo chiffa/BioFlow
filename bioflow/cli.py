@@ -189,8 +189,8 @@ def analyze(name, matrix, depth, processors, skipsampling, background):
 
     if matrix != 'annotome':
         # # perform the interactome analysis
-        interactome_analysis([source],
-                             name,
+        interactome_analysis(source_list=[source],
+                             output_destinations_list=name,
                              desired_depth=depth,
                              processors=processors,
                              background_list=background,
@@ -199,8 +199,8 @@ def analyze(name, matrix, depth, processors, skipsampling, background):
 
     if matrix != 'interactome':
         # # perform the knowledge analysis
-        knowledge_analysis([source],
-                           name,
+        knowledge_analysis(source_list=[source],
+                           output_destinations_list=name,
                            desired_depth=depth,
                            processors=processors,
                            background_list=background,

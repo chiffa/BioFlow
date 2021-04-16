@@ -34,7 +34,7 @@ from bioflow.algorithms_bank import weigting_policies as wp
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from bioflow.algorithms_bank import sampling_policies
 from bioflow.algorithms_bank.flow_calculation_methods import general_flow,\
-    reduce_and_deduplicate_sample
+    reduce_and_deduplicate_sample, evaluate_ops, reduce_ops
 from bioflow.algorithms_bank.sampling_policies import characterize_flow_parameters
 
 
@@ -79,16 +79,21 @@ class InteractomeInterface(object):
         char_set = string.ascii_uppercase + string.digits
         self.thread_hex = ''.join(sample(char_set * 6, 6))
 
-        self.active_up_sample = []  # REFACTOR [stateless]: decouple into argument
         self.UP2UP_voltages = {}
         self.current_accumulator = np.zeros((2, 2))
         self.node_current = {}
 
-        self.active_weighted_sample: List[Tuple[int, float]] = []
-        self.secondary_weighted_sample: Union[None, List[Tuple[int, float]]] = None
-        self.flow_calculation_method = general_flow
+        # REFACTOR [stateless]: decouple into arguments
+        self._active_up_sample: List[int] = []
+        self._active_weighted_sample: List[Tuple[int, float]] = []
+        self._secondary_weighted_sample: Union[None, List[Tuple[int, float]]] = None
 
-        self.sparsely_sampled = False  # used in case of sparse sparse_sampling
+        self._flow_calculation_method = general_flow
+        self._ops_evaluation_method = evaluate_ops
+        self._ops_reduction_method = reduce_ops
+
+        self.sparsely_sampled = False  # TRACING: sparse sampling save location.
+        # TRACING: always false, would have been used for export otherwise
         self._background = background_up_ids
         log.debug('_background set to %d' % len(background_up_ids))
 
@@ -165,7 +170,7 @@ class InteractomeInterface(object):
         dumps all the elements required for the mapping between the types and ids
          of database entries and matrix columns
         """
-        log.debug("pre-dump e_p_u_b_i length: %s", len(self.active_up_sample))
+        log.debug("pre-dump e_p_u_b_i length: %s", len(self._active_up_sample))
         log.debug("dumping into: %s", confs.Dumps.interactome_maps)
         dump_object(
             confs.Dumps.interactome_maps,
@@ -176,7 +181,7 @@ class InteractomeInterface(object):
              self.neo4j_id_2_node_type,
              self.neo4j_id_2_localization,
              self.known_uniprots_neo4j_ids,
-             self.active_up_sample))
+             self._active_up_sample))
 
     def _undump_maps(self):
         """
@@ -187,44 +192,44 @@ class InteractomeInterface(object):
         self.neo4j_id_2_matrix_index, self.matrix_index_2_neo4j_id, \
         self.neo4j_id_2_display_name, self.neo4j_id_2_legacy_id, self.neo4j_id_2_node_type, \
         self.neo4j_id_2_localization, \
-        self.known_uniprots_neo4j_ids, self.active_up_sample = \
+        self.known_uniprots_neo4j_ids, self._active_up_sample = \
             undump_object(confs.Dumps.interactome_maps)
-        log.debug("post-undump e_p_u_b_i length: %s", len(self.active_up_sample))
+        log.debug("post-undump e_p_u_b_i length: %s", len(self._active_up_sample))
 
-    def _dump_memoized(self):
+    def _dump_memoized(self):    # TRACING: add weighted samples chars
         """
         In a JSON, stores a dump of the following properties:
         {
             'UP_hash': md5,
             'sys_hash': self.md5_hash(),
-            'size': len(self.active_up_sample),
-            'UPs': pickle.dumps(self.active_up_sample),
+            'size': len(self._active_up_sample),
+            'UPs': pickle.dumps(self._active_up_sample),
             'currents': pickle.dumps((self.current_accumulator, self.node_current))}
         :return:
         """
         md5 = hashlib.md5(
             json.dumps(
                 sorted(
-                    self.active_up_sample),
+                    self._active_up_sample),
                 sort_keys=True).encode('utf-8')).hexdigest()
 
         payload = {
             'UP_hash': md5,
             'sys_hash': self.md5_hash(),
-            'size': len(self.active_up_sample),
-            'UPs': pickle.dumps(self.active_up_sample),
+            'size': len(self._active_up_sample),
+            'UPs': pickle.dumps(self._active_up_sample),
             'currents': pickle.dumps((self.current_accumulator, self.node_current))}
         dump_object(confs.Dumps.Interactome_Analysis_memoized, payload)
 
     @staticmethod
-    def _undump_memoized() -> dict:
+    def _undump_memoized() -> dict:    # TRACING: add weighted samples chars
         """
         Retrieves a JSON dump of the following properties:
         {
             'UP_hash': md5,
             'sys_hash': self.md5_hash(),
-            'size': len(self.active_up_sample),
-            'UPs': pickle.dumps(self.active_up_sample),
+            'size': len(self._active_up_sample),
+            'UPs': pickle.dumps(self._active_up_sample),
             'currents': pickle.dumps((self.current_accumulator, self.node_current)),
             'voltages': pickle.dumps(self.uniprots_2_voltage)}
 
@@ -365,7 +370,7 @@ class InteractomeInterface(object):
         self.known_uniprots_neo4j_ids = [_node_id for _node_id
                                          in self.neo4j_id_2_matrix_index.keys()]
 
-        self.active_up_sample = []  # REFACTOR [stateless]: decouple into argument
+        self._active_up_sample = []  # REFACTOR [stateless]: decouple into argument
 
         self._dump_maps()  # DONE
         self._dump_matrices()  # DONE
@@ -444,10 +449,10 @@ class InteractomeInterface(object):
         defined before dump/retrieval
         """
         sorted_initial_set = sorted(self.neo4j_id_2_matrix_index.keys())
-        connected_ups = sorted(self._background)
+
+        # REFACTOR: should involve database used for the build metadata
         data = [
             sorted_initial_set,
-            connected_ups,
             confs.line_loss,
             confs.use_normalized_laplacian,
             confs.fraction_edges_dropped_in_laplacian,
@@ -455,21 +460,63 @@ class InteractomeInterface(object):
 
         md5 = hashlib.md5(json.dumps(data, sort_keys=True).encode('utf-8')).hexdigest()
 
-        log.debug("md5 hashing done. hash: %s. parameters: \n"
+        log.debug("System md5 hashing done. hash: %s. parameters: \n"
                   "\t sorted init set hash: %s \n"
-                  "\t connected UNIPROTs hash: %s\n"
                   "\t line loss: %s\n"
                   "\t l_norm: %s\n"
                   "\t edge drop: %s\n"
                   "\t skipping reactome|hint|biogrid: %s\n"
                   % (md5,
                      hashlib.md5(json.dumps(sorted_initial_set, sort_keys=True).encode('utf-8')).hexdigest(),
-                     hashlib.md5(json.dumps(connected_ups, sort_keys=True).encode(
-                                                'utf-8')).hexdigest(),
                      confs.line_loss,
                      confs.use_normalized_laplacian,
                      confs.fraction_edges_dropped_in_laplacian,
                      (confs.env_skip_reactome, confs.env_skip_hint, confs.env_skip_biogrid)))
+
+        return str(md5)
+
+    def active_sample_md5_hash(self, sparse_rounds):
+        sys_hash = self.md5_hash()
+
+        background = sorted(self._background)
+
+        sample_chars = characterize_flow_parameters(self._active_weighted_sample,
+                                                     self._secondary_weighted_sample,
+                                                     sparse_rounds)
+
+        hashlib.md5(json.dumps(background, sort_keys=True).encode(
+                                                'utf-8')).hexdigest()
+
+        data = [
+            sys_hash,
+            background,
+            self._flow_calculation_method.__name__,
+            sparse_rounds,
+            sample_chars[0], sample_chars[1], sample_chars[2],
+            sample_chars[3], sample_chars[4], sample_chars[5],
+            sample_chars[6], sample_chars[7]
+        ]
+
+        md5 = hashlib.md5(json.dumps(data, sort_keys=True).encode('utf-8')).hexdigest()
+
+        log.debug('Active sample md5 hashing done: %s. parameters: \n'
+                  '\tsys_hash: %s'
+                  '\tbackground hash: %s'
+                  '\tflow policy: %s'
+                  '\tsparse sampling: %s'
+                  '\tmain sample chars: %d/%d/%s\n'
+                  '\tsec sample chars: %d/%d/%s\n'
+                  '\tsparse sampling: %d\t'
+                  '\toverall hash: %s' % (md5,
+                                          sys_hash,
+                                          hashlib.md5(
+                                              json.dumps(background, sort_keys=True).encode(
+                                                'utf-8')).hexdigest(),
+                                          self._flow_calculation_method.__name__,
+                                          sparse_rounds,
+                                          sample_chars[0], sample_chars[1], sample_chars[2],
+                                          sample_chars[3], sample_chars[4], sample_chars[5],
+                                          sample_chars[6], sample_chars[7]))
 
         return str(md5)
 
@@ -492,19 +539,30 @@ class InteractomeInterface(object):
 
             return uniprot_vector[_filter, :]
 
-        self.active_weighted_sample = _verify_uniprot_ids(reduce_and_deduplicate_sample(sample))
+        self._active_weighted_sample = _verify_uniprot_ids(reduce_and_deduplicate_sample(sample))
 
-        self.active_up_sample = np.array(self.active_weighted_sample)[:, 0].tolist()
+        self._active_up_sample = np.array(self._active_weighted_sample)[:, 0].tolist()
 
         if secondary_sample is not None:
-            self.secondary_weighted_sample = \
+            self._secondary_weighted_sample = \
                 _verify_uniprot_ids(reduce_and_deduplicate_sample(secondary_sample))
 
-            self.active_up_sample = list(set(self.active_up_sample
-                                        + np.array(self.secondary_weighted_sample)[:, 0].tolist()))
+            self._active_up_sample = list(set(self._active_up_sample
+                                              + np.array(self._secondary_weighted_sample)[:, 0].tolist()))
 
+    def evaluate_ops(self, sparse_rounds=-1):
+        ro = sampling_policies.characterize_flow_parameters(self._active_weighted_sample,
+                                                            self._secondary_weighted_sample,
+                                                            False)
+        return self._ops_evaluation_method(ro[1], ro[3], sparse_rounds)
 
-    def set_uniprot_source(self, uniprots):  # TRACING: replace with set_flow_sources
+    def reduce_ops(self, ops_limit):
+        ro = sampling_policies.characterize_flow_parameters(self._active_weighted_sample,
+                                                            self._secondary_weighted_sample,
+                                                            False)
+        return self._ops_reduction_method(ro[1], ro[3], ops_limit)
+
+    def set_uniprot_source(self, uniprots):
         """
         Sets the deprecated_reached_uniprots_neo4j_id_list on which the circulation computation routines will
         be performed by the other methods. Avoids passing as argument large lists of parameters.
@@ -520,7 +578,7 @@ class InteractomeInterface(object):
                      'circulation matrix construction: \n %s',
                      (set(uniprots) - set(self.known_uniprots_neo4j_ids)))
 
-        self.active_up_sample = \
+        self._active_up_sample = \
             [uniprot for uniprot in uniprots if uniprot in self.known_uniprots_neo4j_ids]
 
     def compute_current_and_potentials(
@@ -553,11 +611,12 @@ class InteractomeInterface(object):
             self.normalize_laplacian()
 
         if fast_load:
-            payload = self._undump_memoized()
+            payload = self._undump_memoized()  # TRACING: add weighted samples chars
 
-            UP_hash = hashlib.md5(  # TRACING: hash of samples
+              # TRACING: hash of samples. Fast ressurection requires self._weighted_samples
+            UP_hash = hashlib.md5(
                 json.dumps(
-                    sorted(self.active_up_sample),
+                    sorted(self._active_up_sample),
                     sort_keys=True).encode("utf-8")
                 ).hexdigest()
 
@@ -566,6 +625,7 @@ class InteractomeInterface(object):
 
             index_current = cr.get_current_through_nodes(self.current_accumulator)
             log.info('current accumulator shape %s', self.current_accumulator.shape)
+
             self.node_current.update(
                 dict((self.matrix_index_2_neo4j_id[idx], val) for idx, val in
                      enumerate(index_current)))
@@ -578,11 +638,11 @@ class InteractomeInterface(object):
             self.node_current = defaultdict(float)
 
         translated_active_weighted_sample = [(self.neo4j_id_2_matrix_index[UP], _w) for
-                                             UP, _w in self.active_weighted_sample]
+                                             UP, _w in self._active_weighted_sample]
 
-        if self.secondary_weighted_sample is not None:
+        if self._secondary_weighted_sample is not None:
             translated_secondary_weighted_sample = [(self.neo4j_id_2_matrix_index[UP], _w) for
-                                                    UP, _w in self.secondary_weighted_sample]
+                                                    UP, _w in self._secondary_weighted_sample]
 
         else:
             translated_secondary_weighted_sample = None
@@ -596,7 +656,7 @@ class InteractomeInterface(object):
                                    potential_diffs_remembered=True,
                                    # INTEST: used to be disabled on-sparsity
                                    thread_hex=self.thread_hex,
-                                   active_sampling_function=self.flow_calculation_method)
+                                   active_sampling_function=self._flow_calculation_method)
 
         # INTEST: used to be disabled on-sparsity
         self.UP2UP_voltages.update(
@@ -609,7 +669,7 @@ class InteractomeInterface(object):
         #     current_accumulator, _ = \
         #         cr.main_flow_calc_loop(self.laplacian_matrix,
         #                                [self.neo4j_id_2_matrix_index[UP]
-        #                                 for UP in self.active_up_sample],
+        #                                 for UP in self._active_up_sample],
         #                                cancellation=cancellation,
         #                                sparse_rounds=sparse_samples,
         #                                thread_hex=self.thread_hex)
@@ -618,7 +678,7 @@ class InteractomeInterface(object):
         #     current_accumulator, up_pair_2_voltage =\
         #         cr.main_flow_calc_loop(self.laplacian_matrix,
         #                                [self.neo4j_id_2_matrix_index[UP]
-        #                                 for UP in self.active_up_sample],
+        #                                 for UP in self._active_up_sample],
         #                                cancellation=cancellation,
         #                                potential_diffs_remembered=True,
         #                                thread_hex=self.thread_hex)
@@ -729,7 +789,8 @@ class InteractomeInterface(object):
                 self.neo4j_id_2_legacy_id[NodeID],
                 self.neo4j_id_2_display_name[NodeID].replace(',', '-'),
                 str(self.laplacian_matrix[matrix_index, matrix_index]),
-                str(float(int(NodeID in self.active_up_sample))),
+                str(float(int(NodeID in self._active_up_sample))), # TRACING: add the weights at the start
+                # CURRENTPASS: just map positive from primary_sample and negative from sec_sample
                 str(p_value_dict[int(NodeID)][0]),
                 str(nan_neg_log10(p_value_dict[int(NodeID)][0])),
                 str(float(p_value_dict[int(NodeID)][1])),
@@ -753,18 +814,18 @@ class InteractomeInterface(object):
 
     def randomly_sample(
             self,
-            samples_size,
-            samples_each_size,
+            iterations,
             sparse_rounds=-1,
             no_add=False,
             pool_no=None,
-            sampling_policy = sampling_policies.matched_sampling):
+            sampling_policy = sampling_policies.matched_sampling,
+            optional_sampling_param = 'exact'):
         """
         Randomly samples the set of deprecated_reached_uniprots_neo4j_id_list used to create the model.
         This is the null model creation routine
 
 3
-        :param samples_size: list of numbers of uniprots we would like to create the model for
+        :param sample_size: list of numbers of uniprots we would like to create the model for
         :param samples_each_size: how many times we would like to sample each uniprot number
         :param sparse_rounds:  if we want to use sparse sparse_sampling (useful in case of
         large uniprot sets), we would use this option
@@ -774,77 +835,104 @@ class InteractomeInterface(object):
         :raise Exception: if the number of items in the samples size ann samples_each size
         are different
         """
-        if not len(samples_size) == len(samples_each_size):
-            raise Exception('Not the same list sizes!')
+        sample_size = -1 # for legacy reasons
 
         # TODO: [Better sparse_sampling]: include the limitations on the types of nodes to sample:
 
-        for sample_size, iterations in zip(samples_size, samples_each_size):
+        sample_chars = characterize_flow_parameters(self._active_weighted_sample,
+                                                    self._secondary_weighted_sample, sparse_rounds)
 
-            # CURRENTPASS: save the active_weighted_sample, sec_weighted_sample, _background, ...
-            #
+        super_hash = sample_chars[7]
 
-            # TRACING: sampling policy was injected here
-            for i, sample, sec_sample in sampling_policy(self.active_weighted_sample,
-                                                         self.secondary_weighted_sample,
-                                                         self._background, iterations):
+        log.info('Starting a random sampler: \n'
+                 '\tsampling policy & optional param: %s/%s\n'
+                 '\tflow policy: %s\n'
+                 '\tsparse sampling: %s\n'
+                 '\tmain sample chars: %d/%d/%s\n'
+                 '\tsec sample chars: %d/%d/%s\n'
+                 '\tsparse sampling: %d\t'
+                 '\toverall hash: %s' % (sampling_policy.__name__, optional_sampling_param,
+                                         self._flow_calculation_method.__name__,
+                                         sparse_rounds,
+                                         sample_chars[0], sample_chars[1], sample_chars[2],
+                                         sample_chars[3], sample_chars[4], sample_chars[5],
+                                         sample_chars[6], sample_chars[7]))
 
-                # print('debug: selected UProt IDs :', sample)
+        preserved_sample = self._active_weighted_sample.copy()
+        preserved_sec_sample = self._secondary_weighted_sample.copy()
 
-                self.set_flow_sources(sample, sec_sample)
+        for i, sample, sec_sample in sampling_policy(preserved_sample,
+                                                     preserved_sec_sample,
+                                                     self._background,
+                                                     iterations,
+                                                     optional_sampling_param):
 
-                # CURRENTPASS: continue from here
+            # print('debug: selected UProt IDs :', sample)
 
-                # self.set_uniprot_source(sample)
+            self.set_flow_sources(sample, sec_sample)
 
-                log.info('Sampling thread: %s, Thread hex: %s; sparse_sampling characteristics: sys_hash: '
-                         '%s, size: %s, '
-                         'sparse_rounds: %s' % (pool_no, self.thread_hex, self.md5_hash(),
-                                                sample_size, sparse_rounds))
+            sample_chars = characterize_flow_parameters(sample, sec_sample, sparse_rounds)
+            sample_hash = sample_chars[-1]
 
-                self.compute_current_and_potentials(memoized=False, sparse_samples=sparse_rounds)
+            # self.set_uniprot_source(sample)
 
-                md5 = hashlib.md5(
-                    json.dumps(
-                        sorted(sample),
-                        sort_keys=True).encode('utf-8')).hexdigest()
+            log.info('Sampling thread: %s, Thread hex: %s; Random sample %d/%d \n'
+                     'sparse_sampling characteristics: sys_hash: %s, sample_hash: %s, '
+                     'target_hash: %s' %
+                     (pool_no, self.thread_hex, i, iterations,
+                      self.md5_hash(), sample_hash, super_hash))
 
-                if not no_add:
-                    log.info("Sampling thread %s: Adding a blanc:"
-                             "\t size: %s \t UP_hash: %s \t sparse_rounds: %s, matrix weight: %s"
-                             % (pool_no, sample_size, md5, sparse_rounds,
-                    np.sum(self.current_accumulator)))
+            # TODO: [load bar]: the external loop progress bar goes here
+
+            self.compute_current_and_potentials(memoized=False, sparse_samples=sparse_rounds)
+
+            sample_ids_md5 = hashlib.md5(
+                json.dumps(
+                    sorted(self._active_up_sample),
+                    sort_keys=True).encode('utf-8')).hexdigest()
+
+            if not no_add:
+                log.info("Sampling thread %s: Adding a blanc:"
+                         "\t sample hash: %s \t UP_hash: %s \t sparse_rounds: %s, matrix weight: %s"
+                         % (pool_no, sample_hash, super_hash,
+                            sparse_rounds, np.sum(self.current_accumulator)))
+
+                insert_interactome_rand_samp(  # INTEST: sample storage change
+                    {
+                        'UP_hash': sample_ids_md5,  # specific retrieval, but inexact.
+                        'sys_hash': self.md5_hash(),
+                        'sample_hash': self.active_sample_md5_hash(sparse_rounds),
+                        'target_sample_hash': super_hash,
+                        'sampling_policy': sampling_policy.__name__,
+                        'sampling_policy_options': optional_sampling_param,
+                        'size': -1,  # TRACING: to be removed
+                        'sparse_rounds': sparse_rounds,
+                        'UPs': pickle.dumps(self._active_up_sample),
+                        'sample': pickle.dumps(self._active_weighted_sample),
+                        'sec_sample': pickle.dumps(self._secondary_weighted_sample),
+                        'currents': pickle.dumps(
+                            (self.current_accumulator,
+                             self.node_current)),  # TRACING: node currents are dead: deprecate
+                        'voltages': pickle.dumps(
+                            self.UP2UP_voltages)})
+
+            # if not sparse_rounds:
+            #     log.info('Sampling thread %s: Thread hex: %s \t Sample size: %s \t iteration: %s\t compop/s: %s \t '
+            #              'time: %s ',
+            #              pool_no, self.thread_hex, sample_size, i,
+            #              "{0:.2f}".format(sample_size * (sample_size - 1) / 2 / self._time()),
+            #              self.pretty_time())
+            # else:
+            #     log.info('Sampling thread %s: Thread hex: %s \t Sample size: %s \t iteration: %.2f \t compop/s: %s \t '
+            #              'time: %s, sparse @ %s ',
+            #              pool_no, self.thread_hex, sample_size, i,
+            #              "{0:.2f}".format(sample_size * sparse_rounds / 2 / self._time()),
+            #              self.pretty_time(), sparse_rounds)
+
+        self._active_weighted_sample = preserved_sample
+        self._secondary_weighted_sample = preserved_sec_sample
 
 
-                    # TRACING: this needs to characterize the sparse_sampling policy and relevant
-                    #  parameters
-                    insert_interactome_rand_samp(
-                        {
-                            'UP_hash': md5,
-                            'sys_hash': self.md5_hash(),
-                            'size': sample_size,
-                            'sparse_rounds': sparse_rounds,
-                            'UPs': pickle.dumps(sample),
-                            'currents': pickle.dumps(
-                                (self.current_accumulator,
-                                 self.node_current)),
-                            'voltages': pickle.dumps(
-                                self.UP2UP_voltages)})
-
-                if not sparse_rounds:
-                    log.info('Sampling thread %s: Thread hex: %s \t Sample size: %s \t iteration: %s\t compop/s: %s \t '
-                             'time: %s ',
-                             pool_no, self.thread_hex, sample_size, i,
-                             "{0:.2f}".format(sample_size * (sample_size - 1) / 2 / self._time()),
-                             self.pretty_time())
-                else:
-                    log.info('Sampling thread %s: Thread hex: %s \t Sample size: %s \t iteration: %.2f \t compop/s: %s \t '
-                             'time: %s, sparse @ %s ',
-                             pool_no, self.thread_hex, sample_size, i,
-                             "{0:.2f}".format(sample_size * sparse_rounds / 2 / self._time()),
-                             self.pretty_time(), sparse_rounds)
-
-                # TODO: [load bar]: the external loop progress bar goes here
 
     @staticmethod
     def compare_dumps(dumps_folder_1, dumps_folder_2):
