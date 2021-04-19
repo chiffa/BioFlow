@@ -76,10 +76,12 @@ def _characterize_set(sample: Union[List[int], List[Tuple[int, float]]]):
     if _is_int(sample[0]):
         rounded_hist = [1] * 100
         rounded_hist = np.array(rounded_hist).astype(np.int)
-        return len(sample), 1, rounded_hist
+        return len(sample), 1, rounded_hist.tolist()
+
     else:
         rounded_hist = _reduce_distribution(np.array(sample).astype(np.float)[:, 1])
-        return len(sample), 2, rounded_hist
+
+        return len(sample), 2, rounded_hist.tolist()
 
 
 def characterize_flow_parameters(sample: Union[List[int], List[Tuple[int, float]]],
@@ -108,7 +110,8 @@ def _sample_floats(floats, float_sampling_method='exact', matched_distro_precisi
 
     if float_sampling_method == 'exact':
         ret_floats = floats.copy()
-        return np.shuffle(ret_floats)
+        np.random.shuffle(ret_floats)
+        return ret_floats
 
     if float_sampling_method == 'distro':
         return matched_sample_distribution(floats, len(floats), granularity=matched_distro_precision)
@@ -146,7 +149,9 @@ def matched_sampling(sample, secondary_sample,
             for i in range(0, samples):
                 random.shuffle(background)
                 id_loads = background[:len(sample)]
+                log.info('debug 0', sample)
                 float_part = _sample_floats(np.array(sample)[:, 1], float_sampling_method)
+                log.info('debug 1', id_loads, float_part)
                 ids_and_floats = [(_id, _float) for _id, _float in zip(id_loads, float_part)]
                 yield i, ids_and_floats, None
 

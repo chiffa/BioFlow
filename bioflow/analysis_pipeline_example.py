@@ -13,10 +13,12 @@ from bioflow.utils.top_level import map_and_save_gene_ids, rebuild_the_laplacian
 import os
 from bioflow.utils.smtp_log_behavior import get_smtp_logger, started_process, \
     successfully_completed, smtp_error_bail_out
+from bioflow.utils.log_behavior import get_logger
 
 
-logger = get_smtp_logger('main_smtp_logger')
+log_smtp = get_smtp_logger('main_smtp_logger')
 
+log = get_logger(__name__)
 
 if __name__ == "__main__":
     try:
@@ -101,7 +103,7 @@ if __name__ == "__main__":
         chromosomes_directory = "//localhome//kucharav//Projects//BioFlow paper//yeast_chr_genes"
         background_file = os.path.join(chromosomes_directory, "all_genes.tab")
 
-        rebuild_the_laplacians()
+        # rebuild_the_laplacians()
 
         # perform the interactome analysis
 
@@ -126,9 +128,9 @@ if __name__ == "__main__":
         # raise Exception('debugging')
 
 
-        background_set = False
         for filename in os.listdir(chromosomes_directory):
             if filename != "all_genes.tab":
+
                 target_file = os.path.join(chromosomes_directory, filename)
                 hits_ids, background_bulbs_ids = map_and_save_gene_ids(target_file, background_file)
 
@@ -137,7 +139,8 @@ if __name__ == "__main__":
                 #     background_set = True
 
                 # # perform the interactome analysis
-                interactome_analysis(source_list=[hits_ids],
+
+                interactome_analysis(source_list=[hits_ids[:20]],
                                      output_destinations_list=['chr_%s' % filename[:-4]],
                                      desired_depth=5,
                                      processors=1,
@@ -145,8 +148,10 @@ if __name__ == "__main__":
                                      skip_sampling=False
                                      )
 
+                raise Exception('Debug Exception')
+
                 # # perform the knowledge analysis
-                knowledge_analysis(source_list=[hits_ids],
+                knowledge_analysis(source_list=[hits_ids[20:]],
                                    output_destinations_list=['chr_%s' % filename[:-4]],
                                    desired_depth=5,
                                    processors=1,
@@ -157,7 +162,7 @@ if __name__ == "__main__":
                 # raise Exception('debug')
     except Exception as e:
         try:
-            logger.exception(e)
+            log_smtp.exception(e)
         except Exception as e:
             smtp_error_bail_out()
             raise e

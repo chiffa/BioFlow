@@ -27,7 +27,7 @@ from bioflow.utils.log_behavior import get_logger
 from bioflow.utils.io_routines import get_source_bulbs_ids, get_background_bulbs_ids
 from bioflow.utils.general_utils.high_level_os_io import mkdir_recursive
 from bioflow.algorithms_bank.flow_significance_evaluation import get_neighboring_degrees,\
-    active_default_p_value_policy
+    get_p_val_by_gumbel
 import bioflow.algorithms_bank.sampling_policies as sampling_policies
 
 
@@ -236,7 +236,7 @@ def samples_scatter_and_hist(background_curr_deg_conf, true_sample_bi_corr_array
 
 def compare_to_blank(interactome_interface_instance: InteractomeInterface,
                      p_val: float = 0.05,
-                     sparse_rounds: bool = False,
+                     sparse_rounds: int = -1,
                      output_destination: NewOutputs = None,
                      random_sampling_method = sampling_policies.matched_sampling,
                      random_sampling_option = 'exact',
@@ -345,7 +345,7 @@ def compare_to_blank(interactome_interface_instance: InteractomeInterface,
                                                       max_array,
                                                       min_nodes=min_nodes_for_p_val)
 
-        p_vals = active_default_p_value_policy(entry, max_current_per_run)
+        p_vals = get_p_val_by_gumbel(entry, max_current_per_run)
         combined_p_vals[_filter] = p_vals
 
     samples_scatter_and_hist(background_array, query_array,
@@ -426,7 +426,7 @@ def auto_analyze(source_list: List[Union[List[int],
     :param flow_computation_policy:
     :return:
     """
-
+    log.info('debug flag 1.1')
     # Multiple re-spawns of threaded processing are incompatbile with scikits.sparse.cholmod
     if len(source_list) > 1:
         global implicitely_threaded
@@ -457,6 +457,9 @@ def auto_analyze(source_list: List[Union[List[int],
         secondary_source_list = [None] * len(source_list)
 
 
+    log.info('debug flag 1.2')
+
+    print('debug', source_list, secondary_source_list, output_destinations_list)
     for hits_list, sec_list, output_destination in zip(source_list, secondary_source_list,
                                                        output_destinations_list):
 
@@ -466,14 +469,17 @@ def auto_analyze(source_list: List[Union[List[int],
         log.info('Auto analyzing hits list of shapes: %d/%d; %d/%d with overall hash %s' %
                  (prim_len, prim_shape, sec_len, sec_shape, hash))
 
+        log.info('debug flag 1.2.1')
         outputs_subdirs = NewOutputs(output_destination)
 
+        log.info('debug flag 1.2.4')
         interactome_interface = get_interactome_interface(background_up_ids=background_list)
 
         if explicit_interface is not None:
             interactome_interface = explicit_interface
 
         interactome_interface.set_flow_sources(hits_list, sec_list)
+        log.info('debug flag 1.2.3')
 
         # interactome_interface.set_uniprot_source(list(hits_list))
         # log.debug(" e_p_u_b_i length after UP_source was set: %s",
@@ -486,6 +492,8 @@ def auto_analyze(source_list: List[Union[List[int],
         total_ops = interactome_interface.evaluate_ops()
         sparse_rounds = interactome_interface.reduce_ops(sparse_analysis_threshold**2)
 
+        log.info('debug flag 1.2.4')
+
         if sparse_rounds > 0:
             log.info('estimated ops for dense sampling would have been %.1f, '
                      'which is more than the threshold (%d^2). '
@@ -495,6 +503,8 @@ def auto_analyze(source_list: List[Union[List[int],
 
         else:
             log.info('estimated ops for dense sampling %.1f' % (total_ops))
+
+        log.info('debug flag 1.2.5')
 
         md5_hash = interactome_interface.md5_hash()
         sample_hash = interactome_interface.active_sample_md5_hash(sparse_rounds)
@@ -514,7 +524,9 @@ def auto_analyze(source_list: List[Union[List[int],
                      (in_storage, desired_depth, desired_depth - in_storage))
             desired_depth = desired_depth - in_storage
 
+        log.info('debug flag 1.2.6')
         if not skip_sampling:
+            log.info('debug flag 1.2.7')
 
             spawn_sampler_pool(processors,
                                (hits_list, sec_list),
@@ -525,13 +537,19 @@ def auto_analyze(source_list: List[Union[List[int],
                                sampling_policy=sampling_policy,
                                sampling_options=sampling_policy_options)
 
+        log.info('debug flag 1.2.8')
         interactome_interface.compute_current_and_potentials()
 
+        log.info('debug flag 1.2.9')
         nr_nodes, p_val_dict = compare_to_blank(
             interactome_interface,
             p_val=p_value_cutoff,
-            output_destination=outputs_subdirs
+            sparse_rounds=sparse_rounds,
+            output_destination=outputs_subdirs,
+            random_sampling_method=sampling_policy,
+            random_sampling_option=sampling_policy_options
         )
+        log.info('debug flag 1.2.10')
 
         # # dense analysis
         # if len(interactome_interface._active_up_sample) < sparse_analysis_threshold:
@@ -597,6 +615,7 @@ def auto_analyze(source_list: List[Union[List[int],
         interactome_interface.export_conduction_system(p_val_dict,
                                                        output_location=outputs_subdirs.Interactome_GDF_output)
 
+        log.info('debug flag 1.2.11')
         # # old results print-out
         # log.info('\t %s \t %s \t %s \t %s \t %s', 'node id',
         #     'display name', 'info flow', 'degree', 'p value')
@@ -610,9 +629,12 @@ def auto_analyze(source_list: List[Union[List[int],
             for node in nr_nodes:
                 writer.writerow(node)
 
+        log.info('debug flag 1.2.12')
         # using tabulate
 
         headers = ['node id', 'display name', 'info flow', 'degree', 'p value']
+
+        log.info('debug flag 1.2.13')
 
         print(tabulate(nr_nodes, headers, tablefmt='simple', floatfmt=".3g"))
 

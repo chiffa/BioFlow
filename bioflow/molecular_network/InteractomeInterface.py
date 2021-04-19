@@ -537,7 +537,7 @@ class InteractomeInterface(object):
                        else False
                        for uniprot in uniprots]
 
-            return uniprot_vector[_filter, :]
+            return np.array(uniprot_vector)[_filter, :].tolist()
 
         self._active_weighted_sample = _verify_uniprot_ids(reduce_and_deduplicate_sample(sample))
 
@@ -859,7 +859,12 @@ class InteractomeInterface(object):
                                          sample_chars[6], sample_chars[7]))
 
         preserved_sample = self._active_weighted_sample.copy()
-        preserved_sec_sample = self._secondary_weighted_sample.copy()
+
+        if self._secondary_weighted_sample is not None:
+            preserved_sec_sample = self._secondary_weighted_sample.copy()
+
+        else:
+            preserved_sec_sample = None
 
         for i, sample, sec_sample in sampling_policy(preserved_sample,
                                                      preserved_sec_sample,
@@ -893,8 +898,9 @@ class InteractomeInterface(object):
 
             if not no_add:
                 log.info("Sampling thread %s: Adding a blanc:"
-                         "\t sample hash: %s \t UP_hash: %s \t sparse_rounds: %s, matrix weight: %s"
-                         % (pool_no, sample_hash, super_hash,
+                         "\t sys hash: %s \t sample hash: %s \t taraget_hash: %s \t sparse_rounds: "
+                         "%s, matrix weight: %s"
+                         % (pool_no, self.md5_hash(), sample_hash, super_hash,
                             sparse_rounds, np.sum(self.current_accumulator)))
 
                 insert_interactome_rand_samp(  # INTEST: sample storage change

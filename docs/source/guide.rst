@@ -61,6 +61,38 @@ recommend mapping the genes to human if the mouse is used as a model for the org
 .. WARNING::
     While BioFlow provides an interface to download the databases programmatically, the databases are subject to Licenses and Terms that it's up to the end users to respect
 
+Adding new data to the main knowledge repository:
+-------------------------------------------------
+The easiest way to add new information to the main knowledge repository is by finding the nodes
+to which new knowledge will attach (provided by the ``convert_to_internal_ids`` function from the
+``bioflow.neo4j_db.db_io_routines`` module for a lot of x-ref identifiers for physical entity
+nodes), and then process to add new relationships and nodes
+using the functions ``DatabaseGraph.link`` to add a connection between nodes and ``DatabaseGraph
+.create`` to add a new node. ``DatabaseGraph.attach_annotation_tag`` can be used in order to
+attach annotation tags to new nodes that can be searcheable from the outside. All functions can
+be batched (cf API documentation).
+
+A new link will have a call signature of type ``link(node_id, node_id, link_type, {param: val})
+``, where node_ids are internal database ids for the nodes provided by the
+``convert_to_internal_ids`` function, ``link_type`` is a link type that would be handy for you to
+remember (preferably in the snake_case). Two parameters are expected: ``source`` and
+``parse_type``.  ``parse_type`` can only take a value in ``['physical_entity_molecular_interaction',
+'identity', 'refines', 'annotates', 'annotation_relationship', 'xref']``, with ``'xref'`` being
+reserved for the annotation linking.
+
+A new node will have a call signature of type ``create(node_type, {param:val})`` and return the
+internal id of the created node. ``node_type`` is a node type that would be handy for you to
+remember (preferably in the snake_case). Four paramters are expected: ``'parse_type'``,
+``'source'``, ``'legacyID'`` and ``'displayName'``. ``'parse_type'`` can take only values in
+``['physical_entity', 'annotation', 'xref']``, with ``'xref'`` being reserved for the annotation
+linking. ``legacyID`` is the identifier of the node in the source database and ``displayName`` is
+the name of the biological knowledge node that that will be shown to the end user.
+
+
+Main knowledge graph parsing:
+-----------------------------
+
+
 
 Custom weighting function:
 --------------------------
@@ -78,3 +110,16 @@ repository (neo4j database) will be available as dict-like properties of node/ed
 The functions are to be provided to the ``bioflow.molecular_network
 .InteractomeInterface.InteractomeInterface.create_val_matrix()`` method as
 ``<adj/lapl>_weight_policy_function`` for the adjacency and laplacian matrices respectively.
+
+
+Custom flow calculation function:
+---------------------------------
+
+
+Custom random set sampling strategy:
+------------------------------------
+
+
+Custom significance evaluation:
+-------------------------------
+

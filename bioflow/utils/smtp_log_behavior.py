@@ -14,12 +14,15 @@ formatter = logging.Formatter(
         '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 
-for key, value in smtp_logging_parameters.items():
-    print(key, value)
+print('smtp logging enabled. '
+      'Will be using local host %s with local mail address %s to report to %s.' %
+      (smtp_logging_parameters['local_host'],
+       smtp_logging_parameters['local_mail_account'],
+       smtp_logging_parameters['reporting_target_mail'],))
 
-mime_message = EmailMessage()
-mime_message['From'] = smtp_logging_parameters['local_mail_account']
-mime_message['To'] = smtp_logging_parameters['reporting_target_mail']
+# mime_message = EmailMessage()
+# mime_message['From'] = smtp_logging_parameters['local_mail_account']
+# mime_message['To'] = smtp_logging_parameters['reporting_target_mail']
 
 start_date = datetime.now()
 current_device = platform.node()
@@ -32,7 +35,7 @@ def get_smtp_logger(logger_name):
     :param logger_name: name of the logger object
     """
     _logger = logging.getLogger(logger_name)
-    _logger.setLevel(logging.INFO)
+    _logger.setLevel(logging.WARNING)
 
     if smtp_logging:
         mail_handler = logging.handlers.SMTPHandler(
@@ -54,10 +57,15 @@ def started_process():
 
     :return: None
     """
-    print(smtp_logging_parameters['local_host'])
+    # print(smtp_logging_parameters['local_host'])
+
+    mime_message = EmailMessage()
+    mime_message['From'] = smtp_logging_parameters['local_mail_account']
+    mime_message['To'] = smtp_logging_parameters['reporting_target_mail']
+
     with SMTP(host=smtp_logging_parameters['local_host']) as smtp_server:
-        mime_message['Subject'] = 'Run started on %s and %s' % (start_date.isoformat(),
-                                                                current_device)
+        mime_message['Subject'] = 'Run started on %s at %s' % (current_device,
+                                                               start_date.strftime('%X'))
         mime_message.set_content('Run has started successfully')
 
         smtp_server.send_message(mime_message)
@@ -70,11 +78,15 @@ def successfully_completed():
     :return: None
     """
 
+    mime_message = EmailMessage()
+    mime_message['From'] = smtp_logging_parameters['local_mail_account']
+    mime_message['To'] = smtp_logging_parameters['reporting_target_mail']
+
     with SMTP(host=smtp_logging_parameters['local_host']) as smtp_server:
-        mime_message['Subject'] = 'Run started on %s and %s has completed' % \
-                                  (start_date.isoformat(), current_device)
+        mime_message['Subject'] = 'Run started on %s at %s has completed' % \
+                                  (start_date.strftime('%X'), current_device)
         mime_message.set_content('Run has completed successfully after %s minutes' %
-                                 ((datetime.now() - start_date).total_seconds()/60.))
+                                 ((datetime.now() - start_date).total_seconds()//60.))
 
         smtp_server.send_message(mime_message)
 
@@ -86,10 +98,14 @@ def smtp_error_bail_out():
     :return:
     """
 
+    mime_message = EmailMessage()
+    mime_message['From'] = smtp_logging_parameters['local_mail_account']
+    mime_message['To'] = smtp_logging_parameters['reporting_target_mail']
+
     with SMTP(host=smtp_logging_parameters['local_host']) as smtp_server:
         mime_message['Subject'] = 'SMTPHandler error bail-out on %s' % current_device
         mime_message.set_content("There was an error in the code at %s  on %s and the logger's "
-                                 "SMPTHandler bailed out." % (datetime.now().isoformat(),
+                                 "SMPTHandler bailed out." % (datetime.now().strftime('%X'),
                                                               current_device))
         print(smtp_server.noop())
         smtp_server.send_message(mime_message)

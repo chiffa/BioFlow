@@ -305,7 +305,7 @@ def edge_current_iteration(conductivity_laplacian: spmat.csc_matrix,
     return potential_diff, current
 
 
-def main_flow_calc_loop(conductivity_laplacian: np.typing.ArrayLike,
+def main_flow_calc_loop(conductivity_laplacian: np.array,
                         sample: List[Tuple[int, float]],
                         secondary_sample: Union[List[Tuple[int, float]], None] = None,
                         cancellation: bool = True, potential_dominated: bool = True,
@@ -403,6 +403,7 @@ def main_flow_calc_loop(conductivity_laplacian: np.typing.ArrayLike,
     for counter, (i, j) in enumerate(list_of_pairs):
 
         mean_weight = (i[1] + j[1]) / 2.
+        i,j = (i[0], j[0])
 
         if memory_source and tuple(sorted((i, j))) in list(memory_source.keys()):
             potential_diff, current_upper = memory_source[tuple(sorted((i, j)))]
