@@ -91,7 +91,29 @@ the name of the biological knowledge node that that will be shown to the end use
 
 Main knowledge graph parsing:
 -----------------------------
+Given the difference in the topology and potential differences in the underlying assumptions, we
+pull the interactome knowledge network (where all nodes map to molecular entities and edges - to
+physical/chemical interaction between them) and teh annotome knowledge network (where some nodes
+might be concepts used to understand the biological systems - such as ontology terms or pathways)
+separately.
 
+The parse for interactome is performed by retrieving all the nodes and edges whose ``parse_type``
+is ``physical_entity`` for nodes and ``physical_entity_molecular_interaction``, ``identity`` or
+``refines``. The giant component of the interactome is then extracted and two graph matrices -
+adjacency and laplacian - are build for it. Weights between the nodes are set in an additive
+manner according to the policy supplied as the argument to the ``InteractomeInterafce
+.full_rebuild`` function or, in a case a more granular approach is needed to the
+``InteractomeInterafce.create_val_matrix`` function. By default the
+``active_default_<adj/lapl>_weighting_policy`` functions are used from the
+``bioflow.algorithms_bank.weigting_policies`` module. Resulting matrices are stored in the
+``InteractomeInterface.adjacency_matrix`` and ``InteractomeInterface.laplacian_matrix`` instance
+variables, whears the maps between the matrix indexes and maps are stored in the
+``.neo4j_id_2_matrix_index`` and ``.matrix_index_2_neo4j_id`` variables.
+
+The parse for the annotome is performed in the same way, but matching ``parse_type`` for nodes to
+``physical_entity`` and ``annotation``. In case of a proper graph build, this will result only in
+the edges of types ``annotates`` and ``annotation_relationship`` to be pulled. Weighting
+functions are used in the similar manner, as well as the mappings storage.
 
 
 Custom weighting function:
@@ -114,12 +136,45 @@ The functions are to be provided to the ``bioflow.molecular_network
 
 Custom flow calculation function:
 ---------------------------------
+In case a specific algorithms to generate pairs of nodes between which
+to calculate the information flow is needed, it can be assigned to the ``InteractomeInterface
+._flow_calculation_method``. It's call signature should conform to the ``list, list, int ->
+list`` signature, where the return list is the list of pairs of ``(node_idx, weight)`` tuples. By
+default, the ``general_flow`` method from ``bioflow.algorithms_bank.flow_calculation_methods``
+will be used. It will try to match the expected flow calcualtion method based on the parameters
+provided (connex within a set if the secondary set is empty/None, star-like if the secondary set
+only has one element, biparty if the secondary set has more than one element).
+
+Similarly, methods to evaluate the number of operations and to reduce their number
+to a maximum ceiling with the optional int argument ``sparse_rounds`` needs to be assigned to the
+``InteractomeInterface._ops_evaluation_method`` and ``InteractomeInterface
+._ops_reduction_method``. By default, the are ``evaluate_ops`` and ``reduce_ops`` from
+``bioflow.algorithms_bank.flow_calculation_methods``.
 
 
 Custom random set sampling strategy:
 ------------------------------------
+In case a custom algorithm for the generation of the background sample needs to be implemented,
+it should be supplied to the ``InteractomeInterace.randomly_sample`` method as the
+``sampling_policy`` argument.
+
+It is expected to accept the an example of sample and secondary sample to match, background from
+which to sample, number of samples desired and finally a single string parameter modifying the
+way it works (supplied by the ``sampling_policy_options`` parameter of the
+``InteractomeInterace.randomly_sample`` method).
+
+By default, this functions implemented by the ``matched_sampling`` fundion in the
+``bioflow.algorithms_bank.sampling_policies`` module.
 
 
 Custom significance evaluation:
 -------------------------------
+by default, ``auto_analyze`` functions for the interactome and the annotome will use the default
+``compare_to_blank`` functions and seek to determine the significance of flow based on comparison
+of the flow achieved by nodes of a given degree in the real sample compared to the random "mock"
+samples. The comparison will be performed using Gumbel_r function fitted to the highest flows
+achieved by the "mock" runs.
 
+As of now, to change the mode of statistical significance evaluation, a user will need to
+re-implement the ``compare_to_blank`` functions and mokey-patch them in the modules containing
+the ``auto_analyze`` function.

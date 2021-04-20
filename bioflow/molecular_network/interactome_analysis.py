@@ -238,21 +238,25 @@ def compare_to_blank(interactome_interface_instance: InteractomeInterface,
                      p_val: float = 0.05,
                      sparse_rounds: int = -1,
                      output_destination: NewOutputs = None,
-                     random_sampling_method = sampling_policies.matched_sampling,
-                     random_sampling_option = 'exact',
+                     random_sampling_method=sampling_policies.matched_sampling,
+                     random_sampling_option='exact',
                      ) -> Tuple[list, dict]:
     """
     Recovers the statistics on the circulation nodes and shows the visual of a circulation system.
     There is no issue with using the same interactome interface instance, because they are forked when
     threads are generated and will not interfere.
 
-    :param blank_model_size: the number of uniprots in the blank model
     :param p_val: desired cutoff p_value for the returned terms
     :param sparse_rounds: if set to a number, sparse computation technique would be used
-     with the number of rounds equal the integer value of that argument
-    :param interactome_interface_instance:
+        with the number of rounds equal the integer value of that argument
+    :param interactome_interface_instance: Interactome interface with loaded real hits list to
+        analyse
+    :param output_destination: configs object from main_configs, specifying where the results
+        will be saved
+    :param random_sampling_method: sampling policy used
+    :param random_sampling_option: sampling policy optional argument
     :return: None if no significant nodes, the node and group characteristic
-     dictionaries otherwise
+        dictionaries otherwise
     """
     def get_max_for_each_degree(sample_sub_arrray):
         # print('debug max_array_shape:', str(sample_sub_arrray.shape))
@@ -349,6 +353,7 @@ def compare_to_blank(interactome_interface_instance: InteractomeInterface,
         entry = query_array[:, _filter]
         background_set = background_array[:, background_array[1, :] == degree]
 
+        # REFACTOR: this part is too coupled. we should be
         max_current_per_run = get_neighboring_degrees(degree,
                                                       max_array,
                                                       min_nodes=min_nodes_for_p_val)
@@ -428,10 +433,11 @@ def auto_analyze(source_list: List[Union[List[int],
         machine, which is the default
     :param background_list:  list of physical entities that an experimental method can retrieve
     :param skip_sampling: if true, will skip background sparse_sampling step
-    :param p_value_cutoff:
-    :param sampling_policy:
-    :param sampling_policy_options:
-    :param flow_computation_policy:
+    :param p_value_cutoff: highest p_value up to which to report the results
+    :param sampling_policy: sampling policy used
+    :param sampling_policy_options: sampling policy optional argument
+    :param explicit_interface: an explicit InteractomeInterface instance in case any of the deep
+        defaults (eg flow calculation function) are modified
     :return:
     """
     # Multiple re-spawns of threaded processing are incompatbile with scikits.sparse.cholmod

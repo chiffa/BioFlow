@@ -15,6 +15,12 @@ log = get_logger(__name__)
 
 
 def _is_int(_obj):
+    """
+    Checks if an object is an int with a try-except loop
+
+    :param _obj:
+    :return:
+    """
     try:
         int(_obj)
     except TypeError or ValueError as e:
@@ -25,6 +31,14 @@ def _is_int(_obj):
 
 def reduce_and_deduplicate_sample(sample: Union[List[int], List[Tuple[int, float]]]) \
         -> List[Tuple[int, float]]:
+    """
+    Deduplicates the nodes found in the sample by adding weights of duplicated nodes. In case a
+    list of node ids only is provided, transforms them into a weighted list with all weights set
+    to 1.
+
+    :param sample: sample to deduplicate and/or add weights to
+    :return:
+    """
 
     if _is_int(sample[0]):
         sample = [(node_id, 1) for node_id in sample]
@@ -50,6 +64,15 @@ def reduce_and_deduplicate_sample(sample: Union[List[int], List[Tuple[int, float
 
 def evaluate_ops(prim_len: int, sec_len: int,
                  sparse_rounds: int = -1) -> float:
+    """
+    Evaluates the number of total node pair flow computations needed to calculate the complete
+    flow in the sample according to the general_flow policy.
+
+    :param prim_len: length of the primary set
+    :param sec_len: length of the secondary set
+    :param sparse_rounds: sparse rounds.
+    :return:
+    """
 
     if sparse_rounds < 1:
 
@@ -72,6 +95,16 @@ def evaluate_ops(prim_len: int, sec_len: int,
 
 
 def reduce_ops(prim_len, sec_len, max_ops) -> int:
+    """
+    Determines the sparse_rounds parameter that needs to be used in order to maintain the total
+    number of pairs of nodes needed to calculate the complete flow in the sample according to the
+    general_flow_policy.
+
+    :param prim_len: length of the primary set
+    :param sec_len: length of the secondary set
+    :param max_ops: maximum allowed number of node pairs
+    :return:
+    """
 
     if evaluate_ops(prim_len, sec_len) < max_ops:
         return -1
@@ -88,6 +121,14 @@ def reduce_ops(prim_len, sec_len, max_ops) -> int:
 def general_flow(sample: Union[List[int], List[Tuple[int, float]]],
                  secondary_sample: Union[List[int], List[Tuple[int, float]], None] = None,
                  sparse_rounds: int = -1) -> List[Tuple[Tuple[int, float], Tuple[int, float]]]:
+    """
+    Performs the information flow computation best matching the provided parameters.
+
+    :param sample: primary sample of nodes
+    :param secondary_sample: secondary sample of nodes
+    :param sparse_rounds: sparse rounds, in case samples are too big
+    :return:
+    """
 
     # CURRENTPASS: what if we have an overlap between the items in the primary and the secondary
     #  samples?

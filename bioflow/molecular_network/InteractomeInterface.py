@@ -319,11 +319,15 @@ class InteractomeInterface(object):
         
         return idx_in_g_component.tolist()
 
-    def full_rebuild(self):
+    def full_rebuild(self, adj_weight_policy_function=wp.active_default_adj_weighting_policy,
+                           lapl_weight_policy_function=wp.active_default_lapl_weighting_policy):
         """
         Performs a complete rebuild of the InterfaceClass Instance based on parameters provided
         upon construction based on the data in the knowledge database. Upon rebuild saves a copy
         that can be rapidly resurrected with the fast_load() method
+
+        :param adj_weight_policy_function: adjacency matrix weight policy function
+        :param lapl_weight_policy_function: laplacian matrix weight policy function
 
         :return: None
         """
@@ -346,7 +350,9 @@ class InteractomeInterface(object):
         nodes_dict, edges_list = DatabaseGraph.parse_physical_entity_net(main_connex_only=True)
 
         node_id_2_mat_idx, mat_idx_2_note_id, adjacency_matrix, laplacian_matrix = \
-            self.create_val_matrix(nodes_dict, edges_list)
+            self.create_val_matrix(nodes_dict, edges_list,
+                                   adj_weight_policy_function=adj_weight_policy_function,
+                                   lapl_weight_policy_function=lapl_weight_policy_function)
 
         all_uniprot_nodes = DatabaseGraph.get_all('UNIPROT')
 
@@ -825,16 +831,17 @@ class InteractomeInterface(object):
             optional_sampling_param = 'exact'):
         """
         Randomly samples the set of deprecated_reached_uniprots_neo4j_id_list used to create the model.
-        This is the null model creation routine
+        This is the null model creation routine. It will match the null model to the currently
+        loaded active samples.
 
-3
-        :param sample_size: list of numbers of uniprots we would like to create the model for
-        :param samples_each_size: how many times we would like to sample each uniprot number
+        :param iterations: how many times we would like to sample each uniprot number
         :param sparse_rounds:  if we want to use sparse sparse_sampling (useful in case of
         large uniprot sets), we would use this option
         :param no_add: if set to True, the result of sparse_sampling will not be added to the
         database of samples. Useful if re-running tests with similar parameters several times.
         :param pool_no: explicit sparse_sampling pool number (used for reporting/debugging)
+        :param sampling_policy: sampling policy used
+        :param sampling_policy_options: sampling policy optional argument
         :raise Exception: if the number of items in the samples size ann samples_each size
         are different
         """
