@@ -500,13 +500,13 @@ class InteractomeInterface(object):
         md5 = hashlib.md5(json.dumps(data, sort_keys=True).encode('utf-8')).hexdigest()
 
         log.debug('Active sample md5 hashing done: %s. parameters: \n'
-                  '\tsys_hash: %s'
-                  '\tbackground hash: %s'
-                  '\tflow policy: %s'
-                  '\tsparse sampling: %s'
+                  '\tsys_hash: %s\n'
+                  '\tbackground hash: %s\n'
+                  '\tflow policy: %s\n'
+                  '\tsparse sampling: %s\n'
                   '\tmain sample chars: %d/%d/%s\n'
                   '\tsec sample chars: %d/%d/%s\n'
-                  '\tsparse sampling: %d\t'
+                  '\tsparse sampling: %d\n'
                   '\toverall hash: %s' % (md5,
                                           sys_hash,
                                           hashlib.md5(
@@ -551,15 +551,18 @@ class InteractomeInterface(object):
                                               + np.array(self._secondary_weighted_sample)[:, 0].tolist()))
 
     def evaluate_ops(self, sparse_rounds=-1):
+        log.debug('evaluate_ops call')
         ro = sampling_policies.characterize_flow_parameters(self._active_weighted_sample,
                                                             self._secondary_weighted_sample,
-                                                            False)
+                                                            -2)
         return self._ops_evaluation_method(ro[1], ro[3], sparse_rounds)
 
     def reduce_ops(self, ops_limit):
+        log.debug('reduce_ops call')
         ro = sampling_policies.characterize_flow_parameters(self._active_weighted_sample,
                                                             self._secondary_weighted_sample,
-                                                            False)
+                                                            -2)
+
         return self._ops_reduction_method(ro[1], ro[3], ops_limit)
 
     def set_uniprot_source(self, uniprots):
@@ -898,16 +901,20 @@ class InteractomeInterface(object):
 
             if not no_add:
                 log.info("Sampling thread %s: Adding a blanc:"
-                         "\t sys hash: %s \t sample hash: %s \t taraget_hash: %s \t sparse_rounds: "
-                         "%s, matrix weight: %s"
-                         % (pool_no, self.md5_hash(), sample_hash, super_hash,
-                            sparse_rounds, np.sum(self.current_accumulator)))
+                         "\t sys hash: %s "
+                         "\t sample hash: %s \t active sample hash: %s \t target_hash: %s \t "
+                         "sparse_rounds: %s \t sampling policy: %s\t sampling_options: %s \t "
+                         "matrix weight: %s"
+                         % (pool_no, self.md5_hash(),
+                            sample_hash, self.active_sample_md5_hash(sparse_rounds), super_hash,
+                            sparse_rounds, sampling_policy.__name__, optional_sampling_param,
+                            np.sum(self.current_accumulator)))
 
                 insert_interactome_rand_samp(  # INTEST: sample storage change
                     {
                         'UP_hash': sample_ids_md5,  # specific retrieval, but inexact.
                         'sys_hash': self.md5_hash(),
-                        'sample_hash': self.active_sample_md5_hash(sparse_rounds),
+                        'active_sample_hash': self.active_sample_md5_hash(sparse_rounds),
                         'target_sample_hash': super_hash,
                         'sampling_policy': sampling_policy.__name__,
                         'sampling_policy_options': optional_sampling_param,

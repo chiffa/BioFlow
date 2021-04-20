@@ -48,6 +48,7 @@ def matched_sample_distribution(floats_arr: np.array, samples_no: int,
     else:
         return samples
 
+
 def _reduce_distribution(floats_arr: np.array):
     """
     Basically gets a distribution in the [0, 1] in 100 bins, rounds to the nearest 0.01
@@ -56,7 +57,8 @@ def _reduce_distribution(floats_arr: np.array):
     :return:
     """
     normalized_arr = floats_arr / np.max(floats_arr)
-    hist, bin_edges = np.histogram(normalized_arr, bins=100, density=True)
+    bins = np.linspace(0, 1.001, 101)  # because floats round funny
+    hist, bin_edges = np.histogram(normalized_arr, bins=bins, density=True)
     rounded_hist = np.array(hist * 100).astype(np.int)
 
     return rounded_hist
@@ -95,7 +97,7 @@ def characterize_flow_parameters(sample: Union[List[int], List[Tuple[int, float]
                                    sec_len, sec_shape, sec_hist,
                                    sparse_rounds]).encode('utf-8')).hexdigest()
 
-    log.info('hashed a flow parameters from:\n'
+    log.debug('hashed a flow parameters from:\n'
              '%d/%d/%s; \n'
              '%d/%d/%s; \n'
              '%d \n'
@@ -149,9 +151,7 @@ def matched_sampling(sample, secondary_sample,
             for i in range(0, samples):
                 random.shuffle(background)
                 id_loads = background[:len(sample)]
-                log.info('debug 0', sample)
                 float_part = _sample_floats(np.array(sample)[:, 1], float_sampling_method)
-                log.info('debug 1', id_loads, float_part)
                 ids_and_floats = [(_id, _float) for _id, _float in zip(id_loads, float_part)]
                 yield i, ids_and_floats, None
 

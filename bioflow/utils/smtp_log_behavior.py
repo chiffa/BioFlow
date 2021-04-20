@@ -65,7 +65,7 @@ def started_process():
 
     with SMTP(host=smtp_logging_parameters['local_host']) as smtp_server:
         mime_message['Subject'] = 'Run started on %s at %s' % (current_device,
-                                                               start_date.strftime('%X'))
+                                                               start_date.strftime('%x %X'))
         mime_message.set_content('Run has started successfully')
 
         smtp_server.send_message(mime_message)
@@ -84,7 +84,7 @@ def successfully_completed():
 
     with SMTP(host=smtp_logging_parameters['local_host']) as smtp_server:
         mime_message['Subject'] = 'Run started on %s at %s has completed' % \
-                                  (start_date.strftime('%X'), current_device)
+                                  (start_date.strftime('%x %X'), current_device)
         mime_message.set_content('Run has completed successfully after %s minutes' %
                                  ((datetime.now() - start_date).total_seconds()//60.))
 
@@ -105,7 +105,7 @@ def smtp_error_bail_out():
     with SMTP(host=smtp_logging_parameters['local_host']) as smtp_server:
         mime_message['Subject'] = 'SMTPHandler error bail-out on %s' % current_device
         mime_message.set_content("There was an error in the code at %s  on %s and the logger's "
-                                 "SMPTHandler bailed out." % (datetime.now().strftime('%X'),
+                                 "SMPTHandler bailed out." % (datetime.now().strftime('%x %X'),
                                                               current_device))
         print(smtp_server.noop())
         smtp_server.send_message(mime_message)

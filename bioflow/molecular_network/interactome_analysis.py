@@ -270,7 +270,7 @@ def compare_to_blank(interactome_interface_instance: InteractomeInterface,
         raise Exception("tried to compare to blanc an empty interface instance")
 
     md5_hash = interactome_interface_instance.md5_hash()
-    sample_hash = interactome_interface_instance.active_sample_md5_hash(sparse_rounds)
+    active_sample_hash = interactome_interface_instance.active_sample_md5_hash(sparse_rounds)
 
     background_sub_array_list = []
     max_sub_array_list = []
@@ -279,16 +279,24 @@ def compare_to_blank(interactome_interface_instance: InteractomeInterface,
     log.info("looking to test against:"
              "\t target_hash: %s \t sys_hash: %s \n"
              "random sampled according to %s/%s" %
-             (sample_hash, md5_hash, random_sampling_method.__name__, random_sampling_option))
+             (active_sample_hash, md5_hash, random_sampling_method.__name__, random_sampling_option))
 
-    log.info("samples found to test against:\t %s" %
-             count_interactome_rand_samp({'target_sample_hash': sample_hash,
+    samples_to_test_against = count_interactome_rand_samp({
+                                          'active_sample_hash': active_sample_hash,
                                           'sys_hash': md5_hash,
                                           'sampling_policy': random_sampling_method.__name__,
-                                          'sampling_policy_options': random_sampling_option}))
+                                          'sampling_policy_options': random_sampling_option})
 
-    background_samples = find_interactome_rand_samp({'target_sample_hash': sample_hash,
-                                                    'sys_hash': md5_hash,
+    if samples_to_test_against == 0:
+        raise Exception('No samples found to test against. '
+                        'There is likely a discrepancy between the parameters used for sampling '
+                        'and parameters used for the life sample analysis')
+
+    log.info("samples found to test against:\t %d" % samples_to_test_against)
+
+    background_samples = find_interactome_rand_samp({
+                                          'active_sample_hash': active_sample_hash,
+                                          'sys_hash': md5_hash,
                                           'sampling_policy': random_sampling_method.__name__,
                                           'sampling_policy_options': random_sampling_option})
 
@@ -426,7 +434,6 @@ def auto_analyze(source_list: List[Union[List[int],
     :param flow_computation_policy:
     :return:
     """
-    log.info('debug flag 1.1')
     # Multiple re-spawns of threaded processing are incompatbile with scikits.sparse.cholmod
     if len(source_list) > 1:
         global implicitely_threaded
@@ -456,43 +463,26 @@ def auto_analyze(source_list: List[Union[List[int],
     if secondary_source_list is None:
         secondary_source_list = [None] * len(source_list)
 
-
-    log.info('debug flag 1.2')
-
-    print('debug', source_list, secondary_source_list, output_destinations_list)
     for hits_list, sec_list, output_destination in zip(source_list, secondary_source_list,
                                                        output_destinations_list):
 
-        prim_len, prim_shape, _, sec_len, sec_shape, _, _, _hash = \
+        prim_len, prim_shape, _, sec_len, sec_shape, _, _, _ = \
             sampling_policies.characterize_flow_parameters(hits_list, sec_list, False)
 
-        log.info('Auto analyzing hits list of shapes: %d/%d; %d/%d with overall hash %s' %
-                 (prim_len, prim_shape, sec_len, sec_shape, hash))
+        log.info('Auto analyzing hits list of shapes: %d/%d; %d/%d' %
+                 (prim_len, prim_shape, sec_len, sec_shape))
 
-        log.info('debug flag 1.2.1')
         outputs_subdirs = NewOutputs(output_destination)
 
-        log.info('debug flag 1.2.4')
         interactome_interface = get_interactome_interface(background_up_ids=background_list)
 
         if explicit_interface is not None:
             interactome_interface = explicit_interface
 
         interactome_interface.set_flow_sources(hits_list, sec_list)
-        log.info('debug flag 1.2.3')
-
-        # interactome_interface.set_uniprot_source(list(hits_list))
-        # log.debug(" e_p_u_b_i length after UP_source was set: %s",
-        #           len(interactome_interface._active_up_sample))
-
-        # if not skip_sampling:
-        #     log.info("spawning a sampler for %s proteins @ %s compops/sec",
-        #              len(interactome_interface._active_up_sample), estimated_comp_ops)
 
         total_ops = interactome_interface.evaluate_ops()
         sparse_rounds = interactome_interface.reduce_ops(sparse_analysis_threshold**2)
-
-        log.info('debug flag 1.2.4')
 
         if sparse_rounds > 0:
             log.info('estimated ops for dense sampling would have been %.1f, '
@@ -504,12 +494,10 @@ def auto_analyze(source_list: List[Union[List[int],
         else:
             log.info('estimated ops for dense sampling %.1f' % (total_ops))
 
-        log.info('debug flag 1.2.5')
-
         md5_hash = interactome_interface.md5_hash()
-        sample_hash = interactome_interface.active_sample_md5_hash(sparse_rounds)
+        active_sample_hash = interactome_interface.active_sample_md5_hash(sparse_rounds)
 
-        in_storage = count_interactome_rand_samp({'target_sample_hash': sample_hash,
+        in_storage = count_interactome_rand_samp({'active_sample_hash': active_sample_hash,
                                                   'sys_hash': md5_hash,
                                                   'sampling_policy': sampling_policy.__name__,
                                                   'sampling_policy_options': sampling_policy_options})
@@ -524,9 +512,7 @@ def auto_analyze(source_list: List[Union[List[int],
                      (in_storage, desired_depth, desired_depth - in_storage))
             desired_depth = desired_depth - in_storage
 
-        log.info('debug flag 1.2.6')
         if not skip_sampling:
-            log.info('debug flag 1.2.7')
 
             spawn_sampler_pool(processors,
                                (hits_list, sec_list),
@@ -537,10 +523,8 @@ def auto_analyze(source_list: List[Union[List[int],
                                sampling_policy=sampling_policy,
                                sampling_options=sampling_policy_options)
 
-        log.info('debug flag 1.2.8')
         interactome_interface.compute_current_and_potentials()
 
-        log.info('debug flag 1.2.9')
         nr_nodes, p_val_dict = compare_to_blank(
             interactome_interface,
             p_val=p_value_cutoff,
@@ -549,79 +533,9 @@ def auto_analyze(source_list: List[Union[List[int],
             random_sampling_method=sampling_policy,
             random_sampling_option=sampling_policy_options
         )
-        log.info('debug flag 1.2.10')
-
-        # # dense analysis
-        # if len(interactome_interface._active_up_sample) < sparse_analysis_threshold:
-        #
-        #     if not skip_sampling:
-        #         log.info('length: %s \t sparse_sampling depth: %s \t, estimated round time: %s min',
-        #                  len(interactome_interface._active_up_sample),
-        #                  'full',
-        #                  len(interactome_interface._active_up_sample) ** 2 /
-        #                  estimated_comp_ops / 60)
-        #
-        #         spawn_sampler_pool(
-        #             processors,
-        #             len(interactome_interface._active_up_sample),
-        #             desired_depth,
-        #             background_set=background_list)
-        #
-        #     interactome_interface.compute_current_and_potentials()
-        #
-        #     nr_nodes, p_val_dict = compare_to_blank(
-        #         len(interactome_interface._active_up_sample),
-        #         interactome_interface,
-        #         p_val=p_value_cutoff,
-        #         output_destination=outputs_subdirs
-        #     )
-        #
-        # # sparse analysis
-        # else:
-        #     ceiling = min(sparse_analysis_threshold + 5,
-        #                   len(interactome_interface._active_up_sample))
-        #     sampling_depth = max((ceiling - 5) ** 2 //
-        #                          len(interactome_interface._active_up_sample),
-        #                          5)
-        #
-        #     if not skip_sampling:
-        #
-        #         log.info('length: %s \t sparse_sampling depth: %s \t, estimated round time: %s min',
-        #                  len(interactome_interface._active_up_sample),
-        #                  sampling_depth,
-        #                  len(interactome_interface._active_up_sample) *
-        #                  sampling_depth / 2 / 60 / estimated_comp_ops)
-        #
-        #         spawn_sampler_pool(processors,
-        #                            len(interactome_interface._active_up_sample),
-        #                            desired_depth,
-        #                            sparse_rounds=sampling_depth,
-        #                            background_set=background_list)
-        #
-        #     log.info('real run characteristics: sys_hash: %s, size: %s, sparse_rounds: %s' %
-        #              (interactome_interface.md5_hash(),
-        #               len(interactome_interface._active_up_sample), sampling_depth))
-        #
-        #     interactome_interface.compute_current_and_potentials(sparse_samples=sampling_depth)
-        #
-        #     nr_nodes, p_val_dict = compare_to_blank(
-        #         len(interactome_interface._active_up_sample),
-        #         interactome_interface,
-        #         p_val=p_value_cutoff,
-        #         sparse_rounds=sampling_depth,
-        #         output_destination=outputs_subdirs
-        #     )
 
         interactome_interface.export_conduction_system(p_val_dict,
                                                        output_location=outputs_subdirs.Interactome_GDF_output)
-
-        log.info('debug flag 1.2.11')
-        # # old results print-out
-        # log.info('\t %s \t %s \t %s \t %s \t %s', 'node id',
-        #     'display name', 'info flow', 'degree', 'p value')
-        #
-        # for node in nr_nodes:
-        #     log.info('\t %s \t %s \t %.3g \t %d \t %.3g', *node)
 
         with open(outputs_subdirs.interactome_network_output, 'wt') as output:
             writer = csv_writer(output, delimiter='\t')
@@ -629,40 +543,14 @@ def auto_analyze(source_list: List[Union[List[int],
             for node in nr_nodes:
                 writer.writerow(node)
 
-        log.info('debug flag 1.2.12')
         # using tabulate
 
         headers = ['node id', 'display name', 'info flow', 'degree', 'p value']
-
-        log.info('debug flag 1.2.13')
 
         print(tabulate(nr_nodes, headers, tablefmt='simple', floatfmt=".3g"))
 
 
 if __name__ == "__main__":
 
-    # pprinter = PrettyPrinter(indent=4)
-    # background_set = MatrixGetter(True, False)
-    # background_set.fast_load()
-
-    # dumplist = undump_object(Dumps.RNA_seq_counts_compare)
-
-    # MG1.randomly_sample([150], [1], chromosome_specific=15, No_add=True)
-    # nr_nodes, nr_groups = compare_to_blanc(150, [0.5, 0.6], MG1, p_val=0.9)
-    # MG1.export_conduction_system()
-    # for group in nr_groups:
-    #     print group
-    # for node in nr_nodes:
-    #     print node
-
-    # source = get_source_bulbs_ids()
-    # background_list = get_background_bulbs_ids()
-    # auto_analyze([source], desired_depth=5, processors=6,
-    #              background_list=background_list, skip_sampling=True)
-
     local_matrix = InteractomeInterface()
     local_matrix.fast_load()
-    # spawn_sampler_pool(3, [50], [3], background_set=None)
-    spawn_sampler(([50], [3], False, None, 0))
-
-    # local_matrix.randomly_sample([195], [10], sparse_rounds=195)
