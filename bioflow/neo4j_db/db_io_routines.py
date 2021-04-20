@@ -65,12 +65,25 @@ def _auxilary_annotation_ids_from_csv(source_csv):
     :param source_csv:
     :return:
     """
-    analysis_bulbs_ids = []
+    old_ids_parse = []
+    new_ids_parse = []
+
     with open(source_csv, 'rt') as src:
         csv_reader = reader(src)
         for row in csv_reader:
-            analysis_bulbs_ids = analysis_bulbs_ids + row
-    return analysis_bulbs_ids
+            if len(row) == 1:
+                old_ids_parse = old_ids_parse + row
+            if len(row) == 2:
+                new_ids_parse.append(row)
+            if len(row) > 2:
+                raise Exception('more than two values provided in the source file')
+
+    if len(old_ids_parse) and len(new_ids_parse):
+        log.info('Both weighted and unweighted hits have been found. Merging and reverting to '
+                 'unweighted analysis.')
+        old_ids_parse += [_id for _id, _weight in new_ids_parse]
+
+    return old_ids_parse, new_ids_parse
 
 
 def cast_analysis_set_to_bulbs_ids(analysis_set_csv_location):
@@ -81,12 +94,18 @@ def cast_analysis_set_to_bulbs_ids(analysis_set_csv_location):
     :param analysis_set_csv_location:
     :return:
     """
-    analysis_bulbs_ids = _auxilary_annotation_ids_from_csv(analysis_set_csv_location)
-    analysis_bulbs_ids = [ret for ret in analysis_bulbs_ids]
-    source = look_up_annotation_set(analysis_bulbs_ids)
-    # # This is not exactly needed and is a more of a log/debug step
-    # PrettyPrinter(indent=4, stream=open(Dumps.analysis_set_display_names, 'wt')).pprint(source[1])
-    writer(open(Dumps.analysis_set_bulbs_ids, 'wt'), delimiter='\n').writerow(source[2])
+    old_live_ids, new_live_ids = _auxilary_annotation_ids_from_csv(analysis_set_csv_location)
+
+    if len(old_live_ids) > 0:
+        source = look_up_annotation_set(old_live_ids)
+        # # This is not exactly needed and is a more of a log/debug step
+        # PrettyPrinter(indent=4, stream=open(Dumps.analysis_set_display_names, 'wt')).pprint(source[1])
+        writer(open(Dumps.analysis_set_bulbs_ids, 'wt'), delimiter='\n').writerow(source[2])
+
+    else:
+        _, _, db_ids_list = look_up_annotation_set([_id for _id, _weight in new_live_ids])
+        weighted_db_map = [(_id, new_live_ids[i]) for i, _id in enumerate(db_ids_list) if _id != '']
+        writer(open(Dumps.analysis_set_bulbs_ids, 'wt'), delimiter='\n').writerow(weighted_db_map)
 
 
 def cast_background_set_to_bulbs_id(background_set_csv_location,
@@ -99,14 +118,20 @@ def cast_background_set_to_bulbs_id(background_set_csv_location,
     :param background_set_csv_location:
     :return:
     """
-    background_bulbs_ids = []
+    old_background_ids = []
     if background_set_csv_location:
-        background_bulbs_ids += _auxilary_annotation_ids_from_csv(analysis_set_csv_location)
-        background_bulbs_ids += _auxilary_annotation_ids_from_csv(background_set_csv_location)
-        background_bulbs_ids = list(set(ret for ret in background_bulbs_ids))
+        old_background_ids, new_background_ids =_auxilary_annotation_ids_from_csv(
+            background_set_csv_location)
+        old_background_ids += [_id for _id, _weight in new_background_ids]
+        old_live_ids, new_live_ids = _auxilary_annotation_ids_from_csv(
+            analysis_set_csv_location)
+        old_background_ids += old_live_ids
+        old_background_ids += [_id for _id, _weight in new_live_ids]
+        old_background_ids = list(set(ret for ret in old_background_ids))
 
-    source = look_up_annotation_set(background_bulbs_ids)
+    source = look_up_annotation_set(old_background_ids)
     writer(open(Dumps.background_set_bulbs_ids, 'wt'), delimiter='\n').writerow(source[2])
+
 
 def excluded_nodes_ids_from_names_list():
     """
