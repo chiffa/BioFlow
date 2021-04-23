@@ -94,6 +94,8 @@ def _characterize_set(sample: Union[List[int], List[Tuple[int, float]]]):
     None), rounded distribution ([] if None or items are ids)
     """
 
+    print(sample)
+
     if sample is None:
         return 0, 0, []
 

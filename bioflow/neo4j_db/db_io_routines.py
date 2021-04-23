@@ -68,8 +68,17 @@ def _auxilary_annotation_ids_from_csv(source_csv):
     old_ids_parse = []
     new_ids_parse = []
 
+    delimiter = ','
+
     with open(source_csv, 'rt') as src:
-        csv_reader = reader(src)
+        src_read = src.read()
+        print(src_read)
+        if '\t' in src_read:
+            delimiter = '\t'
+            log.info('tab detected in the %s, switching to tab-separated parse.' % source_csv)
+
+    with open(source_csv, 'rt') as src:
+        csv_reader = reader(src, delimiter=delimiter)
         for row in csv_reader:
             if len(row) == 1:
                 old_ids_parse = old_ids_parse + row
@@ -78,10 +87,16 @@ def _auxilary_annotation_ids_from_csv(source_csv):
             if len(row) > 2:
                 raise Exception('more than two values provided in the source file')
 
+    log.info('debug auxilary_annotation_ids_from_csv: old_ids_parse: %s\n'
+             '\tnew_ids_parse:%s' % (old_ids_parse, new_ids_parse))
+
     if len(old_ids_parse) and len(new_ids_parse):
         log.info('Both weighted and unweighted hits have been found. Merging and reverting to '
                  'unweighted analysis.')
         old_ids_parse += [_id for _id, _weight in new_ids_parse]
+
+    log.info('debug: return state old_ids_parse: %s\n'
+             '\tnew_ids_parse:%s' % (old_ids_parse, new_ids_parse))
 
     return old_ids_parse, new_ids_parse
 
@@ -96,16 +111,27 @@ def cast_analysis_set_to_bulbs_ids(analysis_set_csv_location):
     """
     old_live_ids, new_live_ids = _auxilary_annotation_ids_from_csv(analysis_set_csv_location)
 
+    log.info('debug: got old_live_ids (%s) and new_live_ids (%s) '
+             'from auxilary annotation ids at %s' %
+             (old_live_ids, new_live_ids, analysis_set_csv_location))
+
     if len(old_live_ids) > 0:
         source = look_up_annotation_set(old_live_ids)
         # # This is not exactly needed and is a more of a log/debug step
         # PrettyPrinter(indent=4, stream=open(Dumps.analysis_set_display_names, 'wt')).pprint(source[1])
-        writer(open(Dumps.analysis_set_bulbs_ids, 'wt'), delimiter='\n').writerow(source[2])
+        log.info('old_live_ids branch: mapped ids to %s' % source[2])
+        with open(Dumps.analysis_set_bulbs_ids, 'wt') as dist_f:
+            writer(dist_f, delimiter='\n').writerow(source[2])
 
     else:
         _, _, db_ids_list = look_up_annotation_set([_id for _id, _weight in new_live_ids])
-        weighted_db_map = [(_id, new_live_ids[i]) for i, _id in enumerate(db_ids_list) if _id != '']
-        writer(open(Dumps.analysis_set_bulbs_ids, 'wt'), delimiter='\n').writerow(weighted_db_map)
+        log.info('new_live_ids branch: mapped ids to %s' % db_ids_list)
+        weighted_db_map = [[_id, new_live_ids[i][1]] for i, _id
+                           in enumerate(db_ids_list) if _id != '']
+        log.info('built the weighted_db_map %s' % weighted_db_map)
+        with open(Dumps.analysis_set_bulbs_ids, 'wt') as dist_f:
+            writer(dist_f, delimiter=',').writerows(weighted_db_map)
+        # writer(open(Dumps.analysis_set_bulbs_ids, 'wt'), delimiter='\n').writerow(weighted_db_map)
 
 
 def cast_background_set_to_bulbs_id(background_set_csv_location,

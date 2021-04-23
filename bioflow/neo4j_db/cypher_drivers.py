@@ -113,7 +113,7 @@ class GraphDBPipe(object):
     methods that actually implement what functions XXX() expose.
     """
 
-    def __init__(self):  # REAFACTOR: add an option to supply uri, user and pwd not from configs
+    def __init__(self):  # REFACTOR: add an option to supply uri, user and pwd not from configs
         password = os.environ['NEOPASS']
         self._driver = GraphDatabase.driver(uri, auth=(user, password))
 

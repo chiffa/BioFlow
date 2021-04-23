@@ -447,11 +447,13 @@ def auto_analyze(source_list: List[Union[List[int],
 
     if output_destinations_list is None:
         output_destinations_list = list(range(len(source_list)))
+        output_destinations_list = [str(_item) for _item in output_destinations_list]
 
     if len(output_destinations_list) != len(source_list):  # we are not calling len on None
         log.warning('Output destination list has %d elements, whereas %d sources were supplied. '
                     'Falling back to default output structure')
         output_destinations_list = list(range(len(source_list)))
+        output_destinations_list = [str(_item) for _item in output_destinations_list]
 
     if processors == 0:
         processors = psutil.cpu_count() - 1
@@ -471,6 +473,13 @@ def auto_analyze(source_list: List[Union[List[int],
 
     for hits_list, sec_list, output_destination in zip(source_list, secondary_source_list,
                                                        output_destinations_list):
+
+        if hits_list is None or len(hits_list) < 2:
+            log.warning('hits list for destination %s contains less than two items: (%s).'
+                        'Skipping the analysis' % (output_destination, hits_list))
+            continue
+
+        log.info('debug 2 : %s, %s' % (hits_list, sec_list))
 
         prim_len, prim_shape, _, sec_len, sec_shape, _, _, _ = \
             sampling_policies.characterize_flow_parameters(hits_list, sec_list, False)

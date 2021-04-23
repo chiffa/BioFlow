@@ -127,6 +127,22 @@ if __name__ == "__main__":
         #
         # raise Exception('debugging')
 
+        hits_ids, background_bulbs_ids = map_and_save_gene_ids(
+            'yeast_test_gene_set-glycogen_biosynthesis_w.tsv',
+            '')
+
+        log.info('debug: hits_ids parse: %s' % hits_ids)
+
+        interactome_analysis(source_list=[hits_ids],
+                     # output_destinations_list=['chr_%s' % filename[:-4]],
+                     desired_depth=5,
+                     processors=1,
+                     background_list=background_bulbs_ids,
+                     skip_sampling=False
+                     )
+
+        raise Exception('Debug Exception')
+
 
         for filename in os.listdir(chromosomes_directory):
             if filename != "all_genes.tab":

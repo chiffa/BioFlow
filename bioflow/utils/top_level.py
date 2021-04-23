@@ -20,6 +20,7 @@ def map_and_save_gene_ids(hit_genes_location, all_detectable_genes_location=''):
     """
     cast_analysis_set_to_bulbs_ids(hit_genes_location)
     hit_genes_ids = get_source_bulbs_ids()
+    print('debug, top_level hit_genes_ids: %s' % hit_genes_ids)
 
     if all_detectable_genes_location:
         cast_background_set_to_bulbs_id(
