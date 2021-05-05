@@ -101,7 +101,7 @@ def _auxilary_annotation_ids_from_csv(source_csv):
     return old_ids_parse, new_ids_parse
 
 
-def cast_analysis_set_to_bulbs_ids(analysis_set_csv_location):
+def cast_external_refs_to_internal_ids(analysis_set_csv_location):
     """
     Unwraps the bioflow file specified in the analysis_protein_ids_csv, translates its database
     internal ids for further use
@@ -120,8 +120,8 @@ def cast_analysis_set_to_bulbs_ids(analysis_set_csv_location):
         # # This is not exactly needed and is a more of a log/debug step
         # PrettyPrinter(indent=4, stream=open(Dumps.analysis_set_display_names, 'wt')).pprint(source[1])
         log.info('old_live_ids branch: mapped ids to %s' % source[2])
-        with open(Dumps.analysis_set_bulbs_ids, 'wt') as dist_f:
-            writer(dist_f, delimiter='\n').writerow(source[2])
+
+        return source[2]
 
     else:
         _, _, db_ids_list = look_up_annotation_set([_id for _id, _weight in new_live_ids])
@@ -129,15 +129,16 @@ def cast_analysis_set_to_bulbs_ids(analysis_set_csv_location):
         weighted_db_map = [[_id, new_live_ids[i][1]] for i, _id
                            in enumerate(db_ids_list) if _id != '']
         log.info('built the weighted_db_map %s' % weighted_db_map)
-        with open(Dumps.analysis_set_bulbs_ids, 'wt') as dist_f:
-            writer(dist_f, delimiter=',').writerows(weighted_db_map)
+
+        return weighted_db_map
+
         # writer(open(Dumps.analysis_set_bulbs_ids, 'wt'), delimiter='\n').writerow(weighted_db_map)
 
 
 def cast_background_set_to_bulbs_id(background_set_csv_location,
                                     analysis_set_csv_location):
     """
-    Unwraps the bioflow file specified in the background_bulbs_ids, translates it to the database
+    Unwraps the bioflow file specified in the background_internal_ids, translates it to the database
     internal ids for further use
 
     :param analysis_set_csv_location:
@@ -280,10 +281,10 @@ if on_unittest:
 if __name__ == "__main__":
     # erase_custom_fields()
     # excluded_nodes_ids_from_names_list(forbidden_verification_list)
-    # print cast_analysis_set_to_bulbs_ids()
+    # print cast_external_refs_to_internal_ids()
     # print look_up_annotation_set('CTR86')
     # print look_up_annotation_set('ENSG00000131981', 'UNIPROT_Ensembl')
-    # cast_analysis_set_to_bulbs_ids()
+    # cast_external_refs_to_internal_ids()
     # cast_background_set_to_bulbs_id()
 
     # _, resdict, reslist = look_up_annotation_set(['RNF14'])
@@ -298,7 +299,7 @@ if __name__ == "__main__":
 
     # run_diagnostics(to_deprecate_full_list)
     # memoize_bulbs_type(to_deprecate_neo4j_names_dict['UNIPROT'][0])
-    # cast_analysis_set_to_bulbs_ids()
+    # cast_external_refs_to_internal_ids()
     # cast_background_set_to_bulbs_id(background_set_csv_location=None)
     # Akshay_p53_go_set = ["0030330", "0000019", "0000002", "0006977"]
     # go_bulbs_ids = lookup("GO Term", Akshay_p53_go_set)

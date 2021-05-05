@@ -526,4 +526,5 @@ def auto_analyze(source_list,
 
 
 if __name__ == "__main__":
-    auto_analyze([get_source_bulbs_ids()], processors=3, desired_depth=6, background_list=[])
+    source, sec_source = get_source_bulbs_ids()
+    auto_analyze(source, processors=3, desired_depth=6, background_list=[])

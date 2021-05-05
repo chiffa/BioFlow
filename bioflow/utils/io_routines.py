@@ -76,7 +76,7 @@ def undump_object(dump_filename):
     return load(dump_file)
 
 
-def get_bulbs_ids_set(location):
+def deprecated_get_bulbs_ids_set(location):
     """
     Retrieves bulbs ids for the elements for the analyzed group
 
@@ -101,14 +101,14 @@ def get_bulbs_ids_set(location):
     return bulbs_ids
 
 
-def get_source_bulbs_ids():
+def get_source_bulbs_ids():  # TRACING: signature change from 1 to 2 returns
     """ retrieves bulbs ids for the elements for the analyzed group """
-    return get_bulbs_ids_set(Dumps.analysis_set_bulbs_ids)
+    return undump_object(Dumps.analysis_set_bulbs_ids)
 
 
 def get_background_bulbs_ids():
     """ retrieves bulbs ids for the elements in the background group """
-    return get_bulbs_ids_set(Dumps.background_set_bulbs_ids)
+    return undump_object(Dumps.background_set_bulbs_ids)
 
 
 def memoize(f):

@@ -4,6 +4,25 @@ TODOs for the project in the future:
 On the table:
 -------------
 
+TEST: provide infrastructure for the loading for split hits sets
+    - The easiest to do will be to add a separation character to the loading dumps
+    - From the UI/UX perspective, however, it is a pure nightmare
+    - From the user logic, the first-class usage of the secondary set would be a nightmare as
+well - it is not a happy path, but rather an additional feature. To enable the secondary set
+analysis, we will then be using the
+    - NOPE: the final decision is to add and document the secondary set start in hits with a
+special entry "TARGET SET"
+    - PROBLEM: there is a heavy interference with the parsing of weighted vs unweighted sets that
+will be problematic.
+        - DONE: we are splitting the hits_list into two in order to supply to the downstream tools
+    - TEST:
+
+TODO: check if the background set is weighted, we can perform a sampling according to the
+    weights indicated there
+    - As of now, it is not used in sampling
+    - TODO: check if it is parsed in the weighted version
+    - TODO: check if it is propagated in the weighted version
+
 TODO: Mirror the weight sampling modifications from InteractomeInterface/interactome_analysis to
 AnnototmeInterface/knowledge_analysis.
 
@@ -63,6 +82,9 @@ Current refactoring:
 
 
 <Type hinting and typing>
+
+ - TODO: move the models and types into a top-level file "typing", containing all the class models
+
  - TODO: [MAINTENABILITY][REFACTOR]: put a straightjacket of the types of the tuples passed
         around and function type signatures => Partially done, long-term project
 

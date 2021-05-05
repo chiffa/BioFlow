@@ -195,6 +195,10 @@ def matched_sampling(sample, secondary_sample,
     # CURRENTPASS: what if we have an overlap between the items in the primary and the secondary
     #  samples?
 
+    # CURRENTPASS: we need the support for weighted sampling of background.
+    #   - Can the background arrive as a weighted set to here?
+    #   - Can the background be weighted?
+
     if secondary_sample is None:
 
         if _is_int(sample[0]):  # INTEST: it will never be an int, but for safety ...

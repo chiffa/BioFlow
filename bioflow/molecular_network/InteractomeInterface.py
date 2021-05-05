@@ -799,6 +799,7 @@ class InteractomeInterface(object):
                 self.neo4j_id_2_display_name[NodeID].replace(',', '-'),
                 str(self.laplacian_matrix[matrix_index, matrix_index]),
                 str(float(int(NodeID in self._active_up_sample))), # TRACING: add the weights at the start
+                # TRACING: add if it is a secondary sample or not.
                 # CURRENTPASS: just map positive from primary_sample and negative from sec_sample
                 str(p_value_dict[int(NodeID)][0]),
                 str(nan_neg_log10(p_value_dict[int(NodeID)][0])),

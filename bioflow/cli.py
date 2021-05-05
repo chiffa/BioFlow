@@ -174,7 +174,7 @@ def analyze(name, matrix, depth, processors, skipsampling, background):
     from bioflow.annotation_network.knowledge_access_analysis \
         import auto_analyze as knowledge_analysis
 
-    source = get_source_bulbs_ids()
+    source, sec_source = get_source_bulbs_ids()
 
     if background:
         background = get_background_bulbs_ids()
@@ -189,7 +189,8 @@ def analyze(name, matrix, depth, processors, skipsampling, background):
 
     if matrix != 'annotome':
         # # perform the interactome analysis
-        interactome_analysis(source_list=[source],
+        interactome_analysis(source_list=source,
+                             secondary_source_list= sec_source,
                              output_destinations_list=name,
                              desired_depth=depth,
                              processors=processors,
@@ -199,7 +200,7 @@ def analyze(name, matrix, depth, processors, skipsampling, background):
 
     if matrix != 'interactome':
         # # perform the knowledge analysis
-        knowledge_analysis(source_list=[source],
+        knowledge_analysis(source_list=source,
                            output_destinations_list=name,
                            desired_depth=depth,
                            processors=processors,
@@ -230,12 +231,12 @@ def analyze(name, matrix, depth, processors, skipsampling, background):
 #     from bioflow.molecular_network.interactome_analysis import auto_analyze as interactome_analysis
 #
 #     source_bulbs_ids = get_source_bulbs_ids()
-#     background_bulbs_ids = get_background_bulbs_ids()
+#     background_internal_ids = get_background_bulbs_ids()
 #
 #     interactome_analysis([source_bulbs_ids],
 #                          desired_depth=depth,
 #                          processors=processors,
-#                          background_list=background_bulbs_ids,
+#                          background_list=background_internal_ids,
 #                          skip_sampling=skipsampling,
 #                          from_memoization=skiphitflow)
 #

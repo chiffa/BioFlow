@@ -411,7 +411,7 @@ def auto_analyze(source_list: List[Union[List[int],
                                                    List[Tuple[int, float]],
                                                    None]] = None,
                  output_destinations_list: Union[List[str], None] = None,
-                 desired_depth: int = 24,  # CURRENTPASS: rename to "random samples to test again"
+                 desired_depth: int = 24,  # CURRENTPASS: rename to "random samples to test against"
                  # TRACING: propagate from main_configs
                  processors: int = 0,
                  background_list: Union[List[int], None] = None,

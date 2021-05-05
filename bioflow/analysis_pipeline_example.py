@@ -51,7 +51,7 @@ if __name__ == "__main__":
         # # building the neo4j database
         # build_db()
 
-        background_bulbs_ids = []
+        background_internal_ids = []
 
         # Map the bulbs we are seeking to analyze
 
@@ -70,7 +70,7 @@ if __name__ == "__main__":
         #     # '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/TWIST1_ECAD/All_genes.csv'
         # )
 
-        # hits_ids, background_bulbs_ids = map_and_save_gene_ids(
+        # hits_ids, background_internal_ids = map_and_save_gene_ids(
         #     'yeast_test_gene_set-glycogen_biosynthesis.tsv',
         #     '')
 
@@ -78,15 +78,15 @@ if __name__ == "__main__":
         # hits_ids = get_source_bulbs_ids()
 
 
-        # background_bulbs_ids = get_background_bulbs_ids()
+        # background_internal_ids = get_background_bulbs_ids()
 
-        # rebuild_the_laplacians(all_detectable_genes=background_bulbs_ids)
+        # rebuild_the_laplacians(all_detectable_genes=background_internal_ids)
 
         # # perform the interactome analysis
         # interactome_analysis([hits_ids],
         #                      desired_depth=30,
         #                      processors=3,
-        #                      background_list=background_bulbs_ids,
+        #                      background_list=background_internal_ids,
         #                      skip_sampling=False,
         #                      from_memoization=False)
         #
@@ -113,7 +113,7 @@ if __name__ == "__main__":
         # interactome_analysis([hits_ids],
         #                      desired_depth=20,
         #                      processors=6,
-        #                      background_list=background_bulbs_ids,
+        #                      background_list=background_internal_ids,
         #                      skip_sampling=False,
         #                      from_memoization=False)
         #
@@ -127,19 +127,38 @@ if __name__ == "__main__":
         #
         # raise Exception('debugging')
 
-        hits_ids, background_bulbs_ids = map_and_save_gene_ids(
-            'yeast_test_gene_set-glycogen_biosynthesis_w.tsv',
+        # hits_ids, sec_hit_ids, background_internal_ids = map_and_save_gene_ids(
+        #     'yeast_test_gene_set-glycogen_biosynthesis_w.tsv',
+        #     '')
+        #
+        # log.info('debug: hits_ids parse: %s' % hits_ids)
+        #
+        # interactome_analysis(source_list=hits_ids,
+        #                      secondary_source_list=sec_hit_ids,
+        #                      # output_destinations_list=['chr_%s' % filename[:-4]],
+        #                      desired_depth=5,
+        #                      processors=1,
+        #                      background_list=background_internal_ids,
+        #                      skip_sampling=False
+        #                      )
+        #
+        # raise Exception('Debug Exception')
+
+        hits_ids, sec_hit_ids, background_internal_ids = map_and_save_gene_ids(
+            ('yeast_test_gene_set-glycogen_biosynthesis_ts_1.tsv',
+             'yeast_test_gene_set-glycogen_biosynthesis_ts_2.tsv'),
             '')
 
         log.info('debug: hits_ids parse: %s' % hits_ids)
 
-        interactome_analysis(source_list=[hits_ids],
-                     # output_destinations_list=['chr_%s' % filename[:-4]],
-                     desired_depth=5,
-                     processors=1,
-                     background_list=background_bulbs_ids,
-                     skip_sampling=False
-                     )
+        interactome_analysis(source_list=hits_ids,
+                             secondary_source_list=sec_hit_ids,
+                             # output_destinations_list=['chr_%s' % filename[:-4]],
+                             desired_depth=5,
+                             processors=1,
+                             background_list=background_internal_ids,
+                             skip_sampling=False
+                             )
 
         raise Exception('Debug Exception')
 
@@ -148,10 +167,10 @@ if __name__ == "__main__":
             if filename != "all_genes.tab":
 
                 target_file = os.path.join(chromosomes_directory, filename)
-                hits_ids, background_bulbs_ids = map_and_save_gene_ids(target_file, background_file)
+                hits_ids, background_internal_ids = map_and_save_gene_ids(target_file, background_file)
 
                 # if not background_set:
-                #     rebuild_the_laplacians(all_detectable_genes=background_bulbs_ids)
+                #     rebuild_the_laplacians(all_detectable_genes=background_internal_ids)
                 #     background_set = True
 
                 # # perform the interactome analysis
@@ -160,7 +179,7 @@ if __name__ == "__main__":
                                      output_destinations_list=['chr_%s' % filename[:-4]],
                                      desired_depth=5,
                                      processors=1,
-                                     background_list=background_bulbs_ids,
+                                     background_list=background_internal_ids,
                                      skip_sampling=False
                                      )
 
@@ -171,7 +190,7 @@ if __name__ == "__main__":
                                    output_destinations_list=['chr_%s' % filename[:-4]],
                                    desired_depth=5,
                                    processors=1,
-                                   background_list=background_bulbs_ids,
+                                   background_list=background_internal_ids,
                                    skip_sampling=False,
                                    )
 
