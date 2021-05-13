@@ -111,22 +111,23 @@ def cast_external_refs_to_internal_ids(analysis_set_csv_location):
     """
     old_live_ids, new_live_ids = _auxilary_annotation_ids_from_csv(analysis_set_csv_location)
 
-    log.info('debug: got old_live_ids (%s) and new_live_ids (%s) '
+    log.info('debug: \n\tgot old_live_ids (%s)\n\tand new_live_ids (%s)\n\t'
              'from auxilary annotation ids at %s' %
              (old_live_ids, new_live_ids, analysis_set_csv_location))
 
     if len(old_live_ids) > 0:
-        source = look_up_annotation_set(old_live_ids)
+        _, _, db_ids_list = look_up_annotation_set(old_live_ids)
+        db_ids_list = [_id for _id in db_ids_list if _id != '']
         # # This is not exactly needed and is a more of a log/debug step
         # PrettyPrinter(indent=4, stream=open(Dumps.analysis_set_display_names, 'wt')).pprint(source[1])
-        log.info('old_live_ids branch: mapped ids to %s' % source[2])
+        log.info('old_live_ids branch: mapped ids to %s' % db_ids_list)
 
-        return source[2]
+        return db_ids_list
 
     else:
         _, _, db_ids_list = look_up_annotation_set([_id for _id, _weight in new_live_ids])
         log.info('new_live_ids branch: mapped ids to %s' % db_ids_list)
-        weighted_db_map = [[_id, new_live_ids[i][1]] for i, _id
+        weighted_db_map = [[_id, float(new_live_ids[i][1])] for i, _id
                            in enumerate(db_ids_list) if _id != '']
         log.info('built the weighted_db_map %s' % weighted_db_map)
 

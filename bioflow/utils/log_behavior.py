@@ -112,7 +112,7 @@ def add_to_file_handler(my_logger, level, file_name, rotating=False, log_locatio
 
 # define a formatter
 formatter = logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        '%(asctime)s - %(name)s - %(lineno)d - %(levelname)s - %(message)s')
 
 if on_dev:
     wipe_dir(log_location)

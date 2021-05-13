@@ -16,6 +16,8 @@ special entry "TARGET SET"
 will be problematic.
         - DONE: we are splitting the hits_list into two in order to supply to the downstream tools
     - TEST:
+        - Discovered that now there was an issue with unmapped values sticking around after the
+            translation
 
 TODO: check if the background set is weighted, we can perform a sampling according to the
     weights indicated there
@@ -69,6 +71,18 @@ Current refactoring:
     - TODO: implement docker testing
     - TODO: check computation speed
     - TODO: check integration test coverage
+
+ - TODO: add model_assumptions filter to the auto_analyze of the interactome_analysis as well and
+        annotome_analysis
+
+<Specific nodes/links exclusion>
+
+ - TODO: provide a list of ids of the nodes to be excluded from the analysis
+ - TODO: map the nodes to the concrete annotation/physical entity nodes
+ - TODO: after loading the laplacian interface, find the affected nodes/node pairs
+        - for nodes, null the corresponding row & column
+        - for pairs of nodes, null the specific cell pairs indicating the connections
+ - TODO:
 
 <Sanify BioKnowledge>
 

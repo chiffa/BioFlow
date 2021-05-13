@@ -145,8 +145,8 @@ if __name__ == "__main__":
         # raise Exception('Debug Exception')
 
         hits_ids, sec_hit_ids, background_internal_ids = map_and_save_gene_ids(
-            ('yeast_test_gene_set-glycogen_biosynthesis_ts_1.tsv',
-             'yeast_test_gene_set-glycogen_biosynthesis_ts_2.tsv'),
+            ('yeast_test_gene_set-glycogen_biosynthesis_tsw_1.tsv',
+             'yeast_test_gene_set-glycogen_biosynthesis_tsw_2.tsv'),
             '')
 
         log.info('debug: hits_ids parse: %s' % hits_ids)
