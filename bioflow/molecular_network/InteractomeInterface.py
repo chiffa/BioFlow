@@ -49,7 +49,7 @@ class InteractomeInterface(object):
     nodes to build a comparison interface for the
     """
 
-    def __init__(self, background_up_ids=()): # TRACING: [weighted background] GOOD
+    def __init__(self, background_up_ids=()):  # INTEST: [weighted background]
         self.init_time = time()
         self.partial_time = time()
 
@@ -94,7 +94,7 @@ class InteractomeInterface(object):
 
         self.sparsely_sampled = False  # TRACING: sparse sampling save location.
         # TRACING: always false, would have been used for export otherwise
-        self._background = background_up_ids  # TRACING: [weighted background] GOOD
+        self._background = background_up_ids  # INTEST: [weighted background]
         log.debug('_background set to %d' % len(background_up_ids))
 
     def pretty_time(self):
@@ -424,7 +424,7 @@ class InteractomeInterface(object):
         self._undump_matrices()
         self._undump_eigen()
 
-        if self._background:  # TRACING: [weighted background] GOOD
+        if self._background:  # INTEST: [weighted background]
             if _is_int(self._background[0]):
                 self._background = list(set(self.known_uniprots_neo4j_ids).intersection(
                     set(self._background)))
@@ -433,7 +433,7 @@ class InteractomeInterface(object):
                                     for _id, _weight in self._background
                                     if _id in self.known_uniprots_neo4j_ids]
 
-        else:  # TRACING: [weighted background] GOOD
+        else:  # INTEST: [weighted background]
             self._background = list(set(self.known_uniprots_neo4j_ids))
 
     def get_descriptor_for_index(self, index):
@@ -489,7 +489,7 @@ class InteractomeInterface(object):
     def active_sample_md5_hash(self, sparse_rounds):
         sys_hash = self.md5_hash()
 
-        if self._background: # TRACING: [weighted background]: GOOD
+        if self._background:  # INTEST: [weighted background]
             if _is_int(self._background[0]):
                 background = sorted(self._background)
             else:
@@ -886,7 +886,7 @@ class InteractomeInterface(object):
 
         for i, sample, sec_sample in sampling_policy(preserved_sample,
                                                      preserved_sec_sample,
-                                                     # TRACING: [weighted background] GOOD
+                                                     # INTEST: [weighted background]
                                                      self._background,
                                                      iterations,
                                                      optional_sampling_param):

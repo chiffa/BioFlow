@@ -9,7 +9,8 @@ from bioflow.annotation_network.knowledge_access_analysis import auto_analyze as
     knowledge_analysis, ref_param_set, _filter
 from bioflow.molecular_network.interactome_analysis import auto_analyze as interactome_analysis
 from bioflow.utils.io_routines import get_source_bulbs_ids, get_background_bulbs_ids
-from bioflow.utils.top_level import map_and_save_gene_ids, rebuild_the_laplacians
+from bioflow.utils.top_level import map_and_save_gene_ids, rebuild_the_laplacians, \
+    generate_random_weights
 import os
 from bioflow.utils.smtp_log_behavior import get_smtp_logger, started_process, \
     successfully_completed, smtp_error_bail_out
@@ -103,6 +104,9 @@ if __name__ == "__main__":
         chromosomes_directory = "//localhome//kucharav//Projects//BioFlow paper//yeast_chr_genes"
         background_file = os.path.join(chromosomes_directory, "all_genes.tab")
 
+        # generate_random_weights(os.path.join(chromosomes_directory, "all_genes.tab"),
+        #                         'test_weighted_background.tsv')
+
         # rebuild_the_laplacians()
 
         # perform the interactome analysis
@@ -147,7 +151,7 @@ if __name__ == "__main__":
         hits_ids, sec_hit_ids, background_internal_ids = map_and_save_gene_ids(
             ('yeast_test_gene_set-glycogen_biosynthesis_tsw_1.tsv',
              'yeast_test_gene_set-glycogen_biosynthesis_tsw_2.tsv'),
-            '')
+             'test_weighted_background.tsv')
 
         log.info('debug: hits_ids parse: %s' % hits_ids)
 

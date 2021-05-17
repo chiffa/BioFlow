@@ -34,14 +34,14 @@ import bioflow.algorithms_bank.sampling_policies as sampling_policies
 log = get_logger(__name__)
 
 
-# TRACING: [weighted background] GOOD
+# INTEST: [weighted background]
 def get_interactome_interface(background_up_ids=()) -> InteractomeInterface:
     """
     Retrieves an "InteractomeInterface" object
 
     :return:
     """
-    # TRACING: [weighted background] GOOD
+    # INTEST: [weighted background]
     interactome_interface_instance = InteractomeInterface(background_up_ids=background_up_ids)
     interactome_interface_instance.fast_load()
     log.debug("get_interactome state e_p_u_b_i length: %s",
