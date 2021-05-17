@@ -54,7 +54,7 @@ def reduce_and_deduplicate_sample(sample: Union[List[int], List[Tuple[int, float
             _mask = np_sample[:, 0] == dup_id
             sum_weight = np.sum(np_sample[_mask, 1])
             np_sample[_mask, 1] = 0
-            np_sample[_mask[0], 1] = sum_weight  # INTEST: check that the _mask[0] does not fail
+            np_sample[_mask[0], 1] = sum_weight
 
         sample = np_sample.tolist()
         sample = [(node_id, _value) for node_id, _value in sample if _value > 0]

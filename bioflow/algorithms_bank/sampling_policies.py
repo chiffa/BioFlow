@@ -18,6 +18,7 @@ from bioflow.utils.log_behavior import get_logger
 log = get_logger(__name__)
 
 
+# currentpass: move to the algo bank __init__
 def _is_int(_obj):
     """
     Checks if an object is an int with a try-except loop
@@ -50,7 +51,7 @@ def matched_sample_distribution(floats_arr: np.array, samples_no: int,
     """
 
     if logmode:
-        floats_arr = np.log(floats_arr)   # INTEST: will crash if any are 0
+        floats_arr = np.log(floats_arr)   # will crash if any are 0
 
     hist, bin_edges = np.histogram(floats_arr, bins=granularity, density=True)
     pad = np.arange(granularity)
@@ -173,6 +174,7 @@ def _sample_floats(floats, float_sampling_method='exact', matched_distro_precisi
                                            granularity=matched_distro_precision, logmode=True)
 
 
+# TRACING: [weighted background] GOOD
 def matched_sampling(sample, secondary_sample,
                      background, samples, float_sampling_method='exact'):
     """
@@ -183,7 +185,7 @@ def matched_sampling(sample, secondary_sample,
 
     :param sample: primary sample set
     :param secondary_sample: secondary sample_set
-    :param background: background of ids from which to sample
+    :param background: background of ids (and potentially weights) from which to sample
     :param samples: random samples wanted
     :param sampling_mode: exact/distro/logdistro. the sampling parametrization method ingesting
     all the parameters in a single string argument in the general case, here, a pass- through
@@ -192,24 +194,28 @@ def matched_sampling(sample, secondary_sample,
     :return:
     """
 
-    # CURRENTPASS: what if we have an overlap between the items in the primary and the secondary
-    #  samples?
+    #  What if we have an overlap between the items in the primary and the secondary
+    #  samples? => sampling will always try to separate the two, the sampling will crash if there
+    #  is not enough bacground to separate the two.
 
-    # CURRENTPASS: we need the support for weighted sampling of background.
-    #   - Can the background arrive as a weighted set to here?
-    #   - Can the background be weighted?
+    if _is_int(background[0]):
+        background_ids = np.array(background)
+        background_whg = np.ones_like(background_ids)
+
+    else:
+        background_ids = np.array(background)[:, 0]
+        background_whg = np.array(background)[:, 1]
 
     if secondary_sample is None:
 
-        if _is_int(sample[0]):  # INTEST: it will never be an int, but for safety ...
+        if _is_int(sample[0]):  # it should never be an int, but for safety ...
             for i in range(0, samples):
-                random.shuffle(background)
-                yield i, background[:len(sample)], None
+                selected = np.choice(background_ids, len(sample), p=background_whg)
+                yield i, selected, None
 
         else:
             for i in range(0, samples):
-                random.shuffle(background)
-                id_loads = background[:len(sample)]
+                id_loads = np.choice(background_ids, len(sample), p=background_whg)
                 float_part = _sample_floats(np.array(sample)[:, 1], float_sampling_method)
                 ids_and_floats = [(_id, _float) for _id, _float in zip(id_loads, float_part)]
                 yield i, ids_and_floats, None
@@ -218,20 +224,26 @@ def matched_sampling(sample, secondary_sample,
 
         if _is_int(sample[0]):
             for i in range(0, samples):
-                random.shuffle(background)
-                yield i, background[:len(sample)], \
-                      background[-len(secondary_sample):]
+                selected = np.choice(background_ids,
+                                     len(sample)+len(secondary_sample),
+                                     p=background_whg)
+                np.random.shuffle(selected)
+                yield i, selected[:len(sample)], selected[-len(secondary_sample):]
 
         else:
-            for i in range(0, samples):
-                random.shuffle(background)
 
-                id_loads = background[:len(sample)]
+            for i in range(0, samples):
+                selected = np.choice(background_ids,
+                                     len(sample)+len(secondary_sample),
+                                     p=background_whg)
+                np.random.shuffle(selected)
+
+                id_loads = selected[:len(sample)]
                 float_part = _sample_floats(np.array(sample)[:, 1], float_sampling_method)
                 ids_and_floats = [(_id, _float) for _id, _float in zip(id_loads, float_part)]
 
 
-                sec_id_loads = background[-len(secondary_sample):]
+                sec_id_loads = selected[-len(secondary_sample):]
                 sec_float_part = _sample_floats(np.array(secondary_sample)[:, 1], float_sampling_method)
                 sec_ids_and_floats = [(_id, _float) for _id, _float
                                       in zip(sec_id_loads, sec_float_part)]

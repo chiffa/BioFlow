@@ -48,6 +48,7 @@ def map_and_save_gene_ids(hit_genes_location, all_detectable_genes_location=''):
     dump_object(Dumps.analysis_set_bulbs_ids, (standardized_hits, standardized_secondary_hits))
 
     if all_detectable_genes_location:
+        # TRACING: weighted background - GOOD
         background_set = cast_external_refs_to_internal_ids(all_detectable_genes_location)
         primary_set = [y for x in standardized_hits for y in x]
         formatted_secondary_hits = [_l
@@ -84,8 +85,6 @@ def map_and_save_gene_ids(hit_genes_location, all_detectable_genes_location=''):
         background_set = []
 
     dump_object(Dumps.background_set_bulbs_ids, background_set)
-
-    # CURRENTPASS: save the background set as well as the active hits and secondary hits sets
 
     return standardized_hits, standardized_secondary_hits, background_set
 

@@ -35,7 +35,7 @@ from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from bioflow.algorithms_bank import sampling_policies
 from bioflow.algorithms_bank.flow_calculation_methods import general_flow,\
     reduce_and_deduplicate_sample, evaluate_ops, reduce_ops
-from bioflow.algorithms_bank.sampling_policies import characterize_flow_parameters
+from bioflow.algorithms_bank.sampling_policies import characterize_flow_parameters, _is_int
 
 
 log = get_logger(__name__)
@@ -49,7 +49,7 @@ class InteractomeInterface(object):
     nodes to build a comparison interface for the
     """
 
-    def __init__(self, background_up_ids=()):
+    def __init__(self, background_up_ids=()): # TRACING: [weighted background] GOOD
         self.init_time = time()
         self.partial_time = time()
 
@@ -94,7 +94,7 @@ class InteractomeInterface(object):
 
         self.sparsely_sampled = False  # TRACING: sparse sampling save location.
         # TRACING: always false, would have been used for export otherwise
-        self._background = background_up_ids
+        self._background = background_up_ids  # TRACING: [weighted background] GOOD
         log.debug('_background set to %d' % len(background_up_ids))
 
     def pretty_time(self):
@@ -424,11 +424,16 @@ class InteractomeInterface(object):
         self._undump_matrices()
         self._undump_eigen()
 
-        if self._background:
-            self._background = list(set(self.known_uniprots_neo4j_ids).intersection(
-                set(self._background)))
+        if self._background:  # TRACING: [weighted background] GOOD
+            if _is_int(self._background[0]):
+                self._background = list(set(self.known_uniprots_neo4j_ids).intersection(
+                    set(self._background)))
+            else:
+                self._background = [(_id, _weight)
+                                    for _id, _weight in self._background
+                                    if _id in self.known_uniprots_neo4j_ids]
 
-        else:
+        else:  # TRACING: [weighted background] GOOD
             self._background = list(set(self.known_uniprots_neo4j_ids))
 
     def get_descriptor_for_index(self, index):
@@ -484,11 +489,15 @@ class InteractomeInterface(object):
     def active_sample_md5_hash(self, sparse_rounds):
         sys_hash = self.md5_hash()
 
-        background = sorted(self._background)
+        if self._background: # TRACING: [weighted background]: GOOD
+            if _is_int(self._background[0]):
+                background = sorted(self._background)
+            else:
+                background = sorted(self._background, key=lambda x: x[1])
 
         sample_chars = characterize_flow_parameters(self._active_weighted_sample,
-                                                     self._secondary_weighted_sample,
-                                                     sparse_rounds)
+                                                    self._secondary_weighted_sample,
+                                                    sparse_rounds)
 
         hashlib.md5(json.dumps(background, sort_keys=True).encode(
                                                 'utf-8')).hexdigest()
@@ -663,11 +672,9 @@ class InteractomeInterface(object):
                                    cancellation=cancellation,
                                    sparse_rounds=sparse_samples,
                                    potential_diffs_remembered=True,
-                                   # INTEST: used to be disabled on-sparsity
                                    thread_hex=self.thread_hex,
                                    active_sampling_function=self._flow_calculation_method)
 
-        # INTEST: used to be disabled on-sparsity
         self.UP2UP_voltages.update(
                 dict(((self.matrix_index_2_neo4j_id[i],
                        self.matrix_index_2_neo4j_id[j]),
@@ -828,7 +835,7 @@ class InteractomeInterface(object):
             sparse_rounds=-1,
             no_add=False,
             pool_no=None,
-            sampling_policy = sampling_policies.matched_sampling,
+            sampling_policy=sampling_policies.matched_sampling,
             optional_sampling_param = 'exact'):
         """
         Randomly samples the set of deprecated_reached_uniprots_neo4j_id_list used to create the model.
@@ -879,6 +886,7 @@ class InteractomeInterface(object):
 
         for i, sample, sec_sample in sampling_policy(preserved_sample,
                                                      preserved_sec_sample,
+                                                     # TRACING: [weighted background] GOOD
                                                      self._background,
                                                      iterations,
                                                      optional_sampling_param):

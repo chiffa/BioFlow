@@ -63,6 +63,3 @@ def default_adj_source_x_type_policy(start_node, end_node, edge) -> float:
 
 active_default_lapl_weighting_policy = default_lapl_source_x_type_policy
 active_default_adj_weighting_policy = default_adj_source_x_type_policy
-
-
-# CURRENTPASS: set the "active_lapl_weight_policy" and "active_adj_weight_policy"

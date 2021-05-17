@@ -365,7 +365,6 @@ def main_flow_calc_loop(conductivity_laplacian: np.array,
 
     # generate index list in agreement with the sparse_sampling strategy
 
-    # INTEST: flow calculation wrapper needs to be injected here
     # if sparse_sampling:
     #     list_of_pairs = []
     #     for _ in repeat(None, sparse_sampling_depth):
@@ -428,7 +427,6 @@ def main_flow_calc_loop(conductivity_laplacian: np.array,
                             i, j, 'Tension-normalization was aborted')
 
         # csc = csc + csc
-        # INTEST: multiply by potential sum here
         current_accumulator = current_accumulator + sparse_abs(current_upper) * mean_weight
 
         if counter % breakpoints == 0 and counter > 1:
