@@ -174,7 +174,6 @@ def _sample_floats(floats, float_sampling_method='exact', matched_distro_precisi
                                            granularity=matched_distro_precision, logmode=True)
 
 
-# TRACING: [weighted background] GOOD
 def matched_sampling(sample, secondary_sample,
                      background, samples, float_sampling_method='exact'):
     """

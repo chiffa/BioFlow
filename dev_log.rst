@@ -4,12 +4,6 @@ TODOs for the project in the future:
 On the table:
 -------------
 
-TODO: check if the background set is weighted, we can perform a sampling according to the
-    weights indicated there
-    - As of now, it is not used in sampling
-    - TODO: check if it is parsed in the weighted version
-    - TODO: check if it is propagated in the weighted version
-
 TODO: Mirror the weight sampling modifications from InteractomeInterface/interactome_analysis to
 AnnototmeInterface/knowledge_analysis.
 
@@ -157,7 +151,7 @@ Current refactoring:
  - TODO: [USABILITY]: fold the current verbose state into a `-v/--vebose` argument
 
 
-<Split sets>0
+<Split sets>
  - DONE: provide infrastructure for the loading for split hits sets
     - The easiest to do will be to add a separation character to the loading dumps
     - From the UI/UX perspective, however, it is a pure nightmare
@@ -203,6 +197,12 @@ Current refactoring:
         - DONE: weighted set sampling
         - DONE: bipary sampling (~ set sampling)
         - DONE: weighted biparty sampling (~ weighted set sampling)
+
+ - DONE: check if the background set is weighted, we can perform a sampling according to the
+    weights indicated there
+        - As of now, it is not used in sampling
+        - DONE: check if it is parsed in the weighted version
+        - DONE: check if it is propagated in the weighted version
 
 
 - DONE: Remove the current defaults in the policies and allow the user to provide them explicitely

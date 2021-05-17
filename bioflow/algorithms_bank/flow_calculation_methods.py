@@ -130,7 +130,7 @@ def general_flow(sample: Union[List[int], List[Tuple[int, float]]],
     :return:
     """
 
-    # CURRENTPASS: what if we have an overlap between the items in the primary and the secondary
+    # TODO: what if we have an overlap between the items in the primary and the secondary
     #  samples?
 
     sample = reduce_and_deduplicate_sample(sample)
@@ -140,7 +140,7 @@ def general_flow(sample: Union[List[int], List[Tuple[int, float]]],
         if sparse_rounds > 0:
             list_of_pairs = []
             for _ in repeat(None, sparse_rounds):
-                idx_list_c = copy(sample)  # CURRENTPASS: move out?
+                idx_list_c = copy(sample)
                 random.shuffle(idx_list_c)
                 list_of_pairs += list(zip(idx_list_c[:len(idx_list_c) // 2],
                                      idx_list_c[len(idx_list_c) // 2:]))
@@ -153,9 +153,9 @@ def general_flow(sample: Union[List[int], List[Tuple[int, float]]],
 
         if sparse_rounds > 0:
             list_of_pairs = []
-            for _ in repeat(None, sparse_rounds):  # CURRENTPASS range?
-                idx_list_1 = copy(sample)  # CURRENTPASS: move out?
-                idx_list_2 = copy(secondary_sample)  # CURRENTPASS: move out?
+            for _ in range(sparse_rounds):  # INTEST range?
+                idx_list_1 = copy(sample)
+                idx_list_2 = copy(secondary_sample)
                 random.shuffle(idx_list_1)
                 random.shuffle(idx_list_2)
                 list_of_pairs += list(zip(idx_list_1, cycle(idx_list_2)))

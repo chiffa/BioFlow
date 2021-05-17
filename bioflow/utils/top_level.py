@@ -54,8 +54,6 @@ def map_and_save_gene_ids(hit_genes_location, all_detectable_genes_location=''):
     dump_object(Dumps.analysis_set_bulbs_ids, (standardized_hits, standardized_secondary_hits))
 
     if all_detectable_genes_location:
-        # TRACING: [weighted background] FAILS => it's the background logic with weighted items
-        #  that fails, not directly the background
         background_set = cast_external_refs_to_internal_ids(all_detectable_genes_location)
         print(background_set)
         primary_set = [y for x in standardized_hits for y in x]  # flattens the mapped ids list
