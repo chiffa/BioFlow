@@ -293,6 +293,18 @@ class GeneOntologyInterface(object):
         self._dump_informativities()
         self._dump_inflated_elements()
 
+        if self._background:
+            if _is_int(self._background[0]):
+                self._background = list(set(self.entity_2_terms_neo4j_ids.keys()).intersection(
+                    set(self._background)))
+            else:
+                self._background = [(_id, _weight)
+                                    for _id, _weight in self._background
+                                    if _id in self.entity_2_terms_neo4j_ids.keys()]
+
+        else:
+            self._background = list(self.entity_2_terms_neo4j_ids.keys())
+
         log.info('Finished rebuilding the GO Interface object %s', self.pretty_time())
 
     def fast_load(self):
@@ -335,10 +347,22 @@ class GeneOntologyInterface(object):
 
         log.info("_background: %d, entity_2_terms_neo4j_ids %s" % (len(self._background), len(self.entity_2_terms_neo4j_ids)))
 
-        if not self._background:
-            self._background = list(self.entity_2_terms_neo4j_ids.keys())
+        if self._background:
+            if _is_int(self._background[0]):
+                self._background = list(set(self.entity_2_terms_neo4j_ids.keys()).intersection(
+                    set(self._background)))
+            else:
+                self._background = [(_id, _weight)
+                                    for _id, _weight in self._background
+                                    if _id in self.entity_2_terms_neo4j_ids.keys()]
+
         else:
-            self._background = list(set(self._background).intersection(set(self.entity_2_terms_neo4j_ids.keys())))
+            self._background = list(self.entity_2_terms_neo4j_ids.keys())
+
+        # if not self._background:
+        #     self._background = list(self.entity_2_terms_neo4j_ids.keys())
+        # else:
+        #     self._background = list(set(self._background).intersection(set(self.entity_2_terms_neo4j_ids.keys())))
 
         self._undump_matrices()
         self._undump_informativities()
@@ -797,7 +821,7 @@ class GeneOntologyInterface(object):
 
         def _verify_uniprot_ids(uniprot_vector: List[Tuple[int, float]]):
             # TRACING: rename to id_weight_vector
-            uniprots = np.array(uniprot_vector)[:, 0].tolist()
+            uniprots = np.array(uniprot_vector)[:, 0].astype(np.int).tolist()
 
             if not set(uniprots) <= known_up_ids:
 
@@ -817,8 +841,15 @@ class GeneOntologyInterface(object):
         self._active_up_sample = np.array(self._active_weighted_sample)[:, 0].tolist()
 
         if secondary_sample is not None:
+
+            log.info('debug: secondary_weight sample %s' % secondary_sample)
+
             self._secondary_weighted_sample = \
                 _verify_uniprot_ids(reduce_and_deduplicate_sample(secondary_sample))
+
+            # TODO: logic bug occurs if the ids supplied have no annotations in the db
+
+            log.info('debug: secondary_weight sample %s' % np.array(self._secondary_weighted_sample))
 
             self._active_up_sample = list(set(self._active_up_sample
                                               + np.array(self._secondary_weighted_sample)[:, 0].tolist()))

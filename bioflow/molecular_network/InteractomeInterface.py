@@ -378,6 +378,18 @@ class InteractomeInterface(object):
 
         self._active_up_sample = []  # REFACTOR [stateless]: decouple into argument
 
+        if self._background:
+            if _is_int(self._background[0]):
+                self._background = list(set(self.known_neo4j_ids).intersection(
+                    set(self._background)))
+            else:
+                self._background = [(_id, _weight)
+                                    for _id, _weight in self._background
+                                    if _id in self.known_neo4j_ids]
+
+        else:
+            self._background = list(set(self.known_neo4j_ids))
+
         self._dump_maps()  # DONE
         self._dump_matrices()  # DONE
         self._dump_eigen()  # DONE

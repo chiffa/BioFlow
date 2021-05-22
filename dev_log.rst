@@ -36,6 +36,12 @@ On the table:
     - DONE: revert the change to sparse_sampling in the text documentation of methods
     - DONE: pass the arguments down the pipeline
 
+    - TODO: move self.entity_2_terms_neo4j_ids.keys() into self.known_UP_ids upon construction, then
+        in all the references
+    - TODO: upon debug discovered that the UNIPROT/GO parse is currently broken:
+        - TODO: a lot of uniprot node connections and "weak interactions" parse ast GO terms
+        - TODO: the proper GO terms are not loading
+
 ASIDE:
  - TODO: fold in the different policy functions into the internal properties of the Interface
     object and carry them through to avoid excessive arguments forwarding
