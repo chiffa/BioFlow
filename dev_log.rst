@@ -4,8 +4,43 @@ TODOs for the project in the future:
 On the table:
 -------------
 
-TODO: Mirror the weight sampling modifications from InteractomeInterface/interactome_analysis to
-AnnototmeInterface/knowledge_analysis.
+ - TEST: Mirror the weight sampling modifications from InteractomeInterface/interactome_analysis to
+        AnnototmeInterface/knowledge_analysis.
+    - DONE: conduction routines (does not apply - the loop is accessed directly from the
+        Knowledge loop due to filtering)
+    - DONE: flow calculation methods
+        - DONE: change the calculation of ops to the included method
+        - DONE: change the decision to go sparse with
+        - DONE: change the generation of the pairs to the one included in the flow calculation
+            method
+    - DONE: add support for split and weighted sets in knowledge_access_analysis
+        - DONE: forwarding of the secondary set and hits set in the knowledge_access_analysis
+        - DONE: forwarding of the weights in the knowledge_access_analysis
+    - DONE: add support for split and weighted sets in the BioKnowledge interface:
+        - DONE: - flow calcualtion/evaluation/reduction methods
+        - DONE: - separation of active up_sample from the weighted sample
+        - DONE: - switch active samples to private
+        - NOFX: - explicit weight functions to be supplied upon a full rebuild
+                - Add an explicit weight function transfer to allow the rebuild
+        - NOFX: - fast_load: background logic needs to account for if it is a list of ids or
+                ids+weights (NOFX: currently does not work)
+        - DONE: add active sample md5 hash that takes in account the flow and weights as well as
+            sampling/flow calculation methods
+        - DONE: add self.set_flow sources, evaluate ops and reduce ops
+        - DONE: sparse samples standardized to -1
+        - DONE: random sampling is now a forwards of the random sampling method in the "policy
+            folder"
+        - DONE: parse modification - propagate the options now
+
+    - DONE: switch to sampling policy in KnowledgeInterface
+    - DONE: revert the change to sparse_sampling in the text documentation of methods
+    - DONE: pass the arguments down the pipeline
+
+ASIDE:
+ - TODO: fold in the different policy functions into the internal properties of the Interface
+    object and carry them through to avoid excessive arguments forwarding
+ - TODO: transplant those functions into the hash calcualtion
+
 
 TODO: inline the mapping of the foreground/background IDs inside the auto-analyze set
     - improves run state registration
@@ -14,6 +49,12 @@ TODO: inline the mapping of the foreground/background IDs inside the auto-analyz
 
 TODO: add specific nodes exclusion of the flow calculation.
     - auto-search of disrupting set
+
+TODO: clean up dead code
+    - TODO: check for doc inconsistency
+    - TODO: switch pool spin-up to internal function (_)
+    - TODO: switch the calculation of the sparsity into the active samples loading function, drop
+        elsewhere
 
 Current refactoring:
 --------------------

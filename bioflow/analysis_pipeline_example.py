@@ -6,7 +6,7 @@ from bioflow.utils.source_dbs_download import pull_online_dbs
 from bioflow.configs.main_configs import sources_location
 from bioflow.db_importers.import_main import destroy_db, build_db
 from bioflow.annotation_network.knowledge_access_analysis import auto_analyze as \
-    knowledge_analysis, ref_param_set, _filter
+    knowledge_analysis
 from bioflow.molecular_network.interactome_analysis import auto_analyze as interactome_analysis
 from bioflow.utils.io_routines import get_source_bulbs_ids, get_background_bulbs_ids
 from bioflow.utils.top_level import map_and_save_gene_ids, rebuild_the_laplacians, \
@@ -155,14 +155,23 @@ if __name__ == "__main__":
 
         log.info('debug: hits_ids parse: %s' % hits_ids)
 
-        interactome_analysis(source_list=hits_ids,
-                             secondary_source_list=sec_hit_ids,
-                             # output_destinations_list=['chr_%s' % filename[:-4]],
-                             desired_depth=5,
-                             processors=1,
-                             background_list=background_internal_ids,
-                             skip_sampling=False
-                             )
+        # interactome_analysis(source_list=hits_ids,
+        #                      secondary_source_list=sec_hit_ids,
+        #                      # output_destinations_list=['chr_%s' % filename[:-4]],
+        #                      desired_depth=5,
+        #                      processors=1,
+        #                      background_list=background_internal_ids,
+        #                      skip_sampling=False
+        #                      )
+
+        knowledge_analysis(source_list=hits_ids,
+                           secondary_source_list=sec_hit_ids,
+                           # output_destinations_list=['chr_%s' % filename[:-4]],
+                           desired_depth=5,
+                           processors=1,
+                           background_list=background_internal_ids,
+                           skip_sampling=False,
+                           )
 
         raise Exception('Debug Exception')
 

@@ -43,8 +43,8 @@ def get_interactome_interface(background_up_ids=()) -> InteractomeInterface:
     interactome_interface_instance = InteractomeInterface(background_up_ids=background_up_ids)
     interactome_interface_instance.fast_load()
     log.debug("get_interactome state e_p_u_b_i length: %s",
-              len(interactome_interface_instance._active_up_sample))
-    log.info("interactome interface loaded in %s" % interactome_interface_instance.pretty_time())
+              len(interactome_interface_instance._background))
+    # log.info("interactome interface loaded in %s" % interactome_interface_instance.pretty_time())
     # is the case now
     return interactome_interface_instance
 
@@ -53,7 +53,7 @@ def spawn_sampler(args_puck):
     """
     Spawns a sampler initialized from the default GO_Interface.
 
-    :param args_puck: combined list of sample sizes, iterations, background sets, and sparse
+    :param args_puck: combined list of sample sizes, samples to imitate, background sets, and sparse
     sparse_sampling argument
     """
     # log.info('Pool process %d started' % args_puck[-1])
@@ -100,19 +100,11 @@ def spawn_sampler_pool(
 
     :param pool_size: number of processes that are performing the sample pooling and analyzing
     :param sample_sets_to_match: size of the sample list
-    :param sample_depth: number of iterations performing the pooling of the samples
-     in each list
+    :param sample_depth: number of random samples we look to generate performing the pooling of the
+        samples in each list
     :param sparse_rounds: number of sparse rounds to run (or False if sparse_sampling is dense)
     :param background_set: set of node ids that are to be sampled from
     """
-    payload = [(sample_sets_to_match,
-                sample_depth,
-                sparse_rounds,
-                background_set,
-                forced_interactome_interface,
-                sampling_policy,
-                sampling_options)]
-
     global implicitely_threaded
 
     if not implicitely_threaded:
@@ -122,6 +114,14 @@ def spawn_sampler_pool(
             sample_depth = sample_depth // pool_size + 1
         else:
             sample_depth = sample_depth // pool_size
+
+    payload = [(sample_sets_to_match,
+                sample_depth,
+                sparse_rounds,
+                background_set,
+                forced_interactome_interface,
+                sampling_policy,
+                sampling_options)]
 
     payload_list = payload * pool_size
     payload_list = [list(item) + [i] for i, item in enumerate(payload_list)]  # prepare the payload
@@ -207,7 +207,6 @@ def samples_scatter_and_hist(background_curr_deg_conf, true_sample_bi_corr_array
         plt.hist(true_sample_bi_corr_array[0, :],
                  bins=bins, histtype='step', log=True, color='r')
 
-
     plt.subplot(212)
     plt.scatter(background_curr_deg_conf[1, :],
                 background_curr_deg_conf[0, :], color='b', alpha=0.1)
@@ -235,7 +234,7 @@ def samples_scatter_and_hist(background_curr_deg_conf, true_sample_bi_corr_array
 
 
 def compare_to_blank(interactome_interface_instance: InteractomeInterface,
-                     p_val: float = 0.05,
+                     p_val: float = 0.05, # CURRENTPASS: rename to p_val cutoff
                      sparse_rounds: int = -1,
                      output_destination: NewOutputs = None,
                      random_sampling_method=sampling_policies.matched_sampling,
@@ -353,7 +352,7 @@ def compare_to_blank(interactome_interface_instance: InteractomeInterface,
         entry = query_array[:, _filter]
         background_set = background_array[:, background_array[1, :] == degree]
 
-        # REFACTOR: this part is too coupled. we should be
+        # REFACTOR: this part is too coupled. we should factor it out
         max_current_per_run = get_neighboring_degrees(degree,
                                                       max_array,
                                                       min_nodes=min_nodes_for_p_val)
@@ -387,7 +386,8 @@ def compare_to_blank(interactome_interface_instance: InteractomeInterface,
               list(interactome_interface_instance.neo4j_id_2_display_name.items())[:10])
 
     node_char_list = [
-        [int(nr_node_id), interactome_interface_instance.neo4j_id_2_display_name[nr_node_id]] +
+        [int(nr_node_id),
+         interactome_interface_instance.neo4j_id_2_display_name[nr_node_id]] +
         dict_system[nr_node_id] + r_nodes[node_ids == float(nr_node_id)].tolist()
         for nr_node_id in not_random_nodes]
 
@@ -404,9 +404,7 @@ def compare_to_blank(interactome_interface_instance: InteractomeInterface,
     return sorted(node_char_list, key=lambda x: x[4]), nodes_dict
 
 
-# TODO: [weighted inputs] add support for a dict as source_list, not only list
-def auto_analyze(source_list: List[Union[List[int],
-                                         List[Tuple[int, float]]]],
+def auto_analyze(source_list: List[Union[List[int], List[Tuple[int, float]]]],
                  secondary_source_list: List[Union[List[int],
                                                    List[Tuple[int, float]],
                                                    None]] = None,
@@ -414,7 +412,7 @@ def auto_analyze(source_list: List[Union[List[int],
                  desired_depth: int = 24,  # CURRENTPASS: rename to "random samples to test against"
                  # TRACING: propagate from main_configs
                  processors: int = 0,
-                 background_list: Union[List[int], None] = None,
+                 background_list: List[Union[List[int], List[Tuple[int, float]], None]] = None,
                  skip_sampling: bool = False,
                  p_value_cutoff: float = -1,
                  sampling_policy=sampling_policies.matched_sampling,
@@ -422,7 +420,7 @@ def auto_analyze(source_list: List[Union[List[int],
                  explicit_interface=None,
                  ) -> None:
     """
-    Automatically analyzes the itneractome synergetic action of the RNA_seq results
+    Automatically analyzes the interactome synergetic action of the experimental hit lists
 
     :param source_list: python list of hits for each condition
     :param secondary_source_list: secondary list to which calculate the flow from hist, if needed
@@ -431,7 +429,8 @@ def auto_analyze(source_list: List[Union[List[int],
     :param processors: number of processes that will be loaded. as a rule of thumb,
         for max performance, use N-1 processors, where N is the number of physical cores on the
         machine, which is the default
-    :param background_list:  list of physical entities that an experimental method can retrieve
+    :param background_list:  list of physical entities that an experimental method can retrieve,
+        optionally with weights indicating the likelyhood of retrieval at random
     :param skip_sampling: if true, will skip background sparse_sampling step
     :param p_value_cutoff: highest p_value up to which to report the results
     :param sampling_policy: sampling policy used
@@ -441,6 +440,9 @@ def auto_analyze(source_list: List[Union[List[int],
     :return:
     """
     # Multiple re-spawns of threaded processing are incompatbile with scikits.sparse.cholmod
+    if background_list is None:
+        background_list = []
+
     if len(source_list) > 1:
         global implicitely_threaded
         implicitely_threaded = True
@@ -458,12 +460,6 @@ def auto_analyze(source_list: List[Union[List[int],
     if processors == 0:
         processors = psutil.cpu_count() - 1
         log.info("Setting processor count to default: %s" % processors)
-
-    # noinspection PyTypeChecker
-    if desired_depth % processors != 0:
-        desired_depth = desired_depth // processors + 1
-    else:
-        desired_depth = desired_depth // processors
 
     if p_value_cutoff <= 0:
         p_value_cutoff = default_p_val_cutoff

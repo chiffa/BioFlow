@@ -70,7 +70,7 @@ class InteractomeInterface(object):
         self.neo4j_id_2_legacy_id = {}
         self.neo4j_id_2_node_type = {}
         self.neo4j_id_2_localization = {}
-        self.known_uniprots_neo4j_ids = []
+        self.known_neo4j_ids = []
 
         self.maps_dumps_location = confs.Dumps.interactome_maps
         self.adjacency_dumps_location = confs.Dumps.interactome_adjacency_matrix
@@ -180,7 +180,7 @@ class InteractomeInterface(object):
              self.neo4j_id_2_legacy_id,
              self.neo4j_id_2_node_type,
              self.neo4j_id_2_localization,
-             self.known_uniprots_neo4j_ids,
+             self.known_neo4j_ids,
              self._active_up_sample))
 
     def _undump_maps(self):
@@ -192,7 +192,7 @@ class InteractomeInterface(object):
         self.neo4j_id_2_matrix_index, self.matrix_index_2_neo4j_id, \
         self.neo4j_id_2_display_name, self.neo4j_id_2_legacy_id, self.neo4j_id_2_node_type, \
         self.neo4j_id_2_localization, \
-        self.known_uniprots_neo4j_ids, self._active_up_sample = \
+        self.known_neo4j_ids, self._active_up_sample = \
             undump_object(confs.Dumps.interactome_maps)
         log.debug("post-undump e_p_u_b_i length: %s", len(self._active_up_sample))
 
@@ -373,8 +373,8 @@ class InteractomeInterface(object):
         self.neo4j_id_2_localization = {_id: _node.get('localization', 'NA')
                                         for (_id, _node) in nodes_dict.items()}
 
-        self.known_uniprots_neo4j_ids = [_node_id for _node_id
-                                         in self.neo4j_id_2_matrix_index.keys()]
+        self.known_neo4j_ids = [_node_id for _node_id
+                                in self.neo4j_id_2_matrix_index.keys()]
 
         self._active_up_sample = []  # REFACTOR [stateless]: decouple into argument
 
@@ -426,15 +426,15 @@ class InteractomeInterface(object):
 
         if self._background:
             if _is_int(self._background[0]):
-                self._background = list(set(self.known_uniprots_neo4j_ids).intersection(
+                self._background = list(set(self.known_neo4j_ids).intersection(
                     set(self._background)))
             else:
                 self._background = [(_id, _weight)
                                     for _id, _weight in self._background
-                                    if _id in self.known_uniprots_neo4j_ids]
+                                    if _id in self.known_neo4j_ids]
 
         else:
-            self._background = list(set(self.known_uniprots_neo4j_ids))
+            self._background = list(set(self.known_neo4j_ids))
 
     def get_descriptor_for_index(self, index):
         """
@@ -487,7 +487,10 @@ class InteractomeInterface(object):
         return str(md5)
 
     def active_sample_md5_hash(self, sparse_rounds):
+
         sys_hash = self.md5_hash()
+
+        background = []
 
         if self._background:
             if _is_int(self._background[0]):
@@ -541,14 +544,14 @@ class InteractomeInterface(object):
             # TRACING: rename to id_weight_vector
             uniprots = np.array(uniprot_vector)[:, 0].tolist()
 
-            if not set(uniprots) <= set(self.known_uniprots_neo4j_ids):
+            if not set(uniprots) <= set(self.known_neo4j_ids):
 
                 log.warn('Following reached uniprots neo4j_ids were not retrieved upon the '
                          'circulation matrix construction: \n %s',
-                         (set(uniprots) - set(self.known_uniprots_neo4j_ids)))
+                         (set(uniprots) - set(self.known_neo4j_ids)))
 
             _filter = [True
-                       if uniprot in self.known_uniprots_neo4j_ids
+                       if uniprot in self.known_neo4j_ids
                        else False
                        for uniprot in uniprots]
 
@@ -590,14 +593,14 @@ class InteractomeInterface(object):
         :raise Warning: if the uniprots were not present in the set of GOs for which
         we built the system or had no GO attached to them
         """
-        if not set(uniprots) <= set(self.known_uniprots_neo4j_ids):
+        if not set(uniprots) <= set(self.known_neo4j_ids):
 
             log.warn('Following reached uniprots neo4j_ids were not retrieved upon the '
                      'circulation matrix construction: \n %s',
-                     (set(uniprots) - set(self.known_uniprots_neo4j_ids)))
+                     (set(uniprots) - set(self.known_neo4j_ids)))
 
         self._active_up_sample = \
-            [uniprot for uniprot in uniprots if uniprot in self.known_uniprots_neo4j_ids]
+            [uniprot for uniprot in uniprots if uniprot in self.known_neo4j_ids]
 
     def compute_current_and_potentials(
             self,
@@ -606,7 +609,7 @@ class InteractomeInterface(object):
             # sparse_sampling
             cancellation: bool = True,
             sparse_samples: int = -1,
-            fast_load: bool = False):  # REFACTOR: this should not be implemented
+            fast_load: bool = False):  # REFACTOR: this should be implemented otherwise
         # this way.
         """
         Builds a conduction matrix that integrates uniprots, in order to allow an easier
@@ -620,7 +623,7 @@ class InteractomeInterface(object):
         :param cancellation: divides the final current by number of bioflow-sink pairs
         :param sparse_samples: if set to an integer >0, the sparse_sampling will be sparse and not
             dense,i.e. instead of computation for each node pair, only an estimation will be made,
-            equal to computing sparse_samples association with other randomly chosen nodes
+            equal to computing sparse_rounds association with other randomly chosen nodes
         :param fast_load: if True, will try to lad a pre-saved instance
         :return: adjusted conduction system
         """
@@ -673,21 +676,22 @@ class InteractomeInterface(object):
                                    sparse_rounds=sparse_samples,
                                    potential_diffs_remembered=True,
                                    thread_hex=self.thread_hex,
+                                   # CURRENTPASS: rename to flow_calculation_method
                                    active_sampling_function=self._flow_calculation_method)
 
         self.UP2UP_voltages.update(
-                dict(((self.matrix_index_2_neo4j_id[i],
+                dict(((self.matrix_index_2_neo4j_id[i],  # TRACING: neo4j_ids are unsorted as is
                        self.matrix_index_2_neo4j_id[j]),
                       voltage)
                      for (i, j), voltage in up_pair_2_voltage.items()))
 
-        # if sparse_samples > 1:
+        # if sparse_rounds > 1:
         #     current_accumulator, _ = \
         #         cr.main_flow_calc_loop(self.laplacian_matrix,
         #                                [self.neo4j_id_2_matrix_index[UP]
         #                                 for UP in self._active_up_sample],
         #                                cancellation=cancellation,
-        #                                sparse_rounds=sparse_samples,
+        #                                sparse_rounds=sparse_rounds,
         #                                thread_hex=self.thread_hex)
         #
         # else:
@@ -831,8 +835,8 @@ class InteractomeInterface(object):
 
     def randomly_sample(
             self,
-            iterations,
-            sparse_rounds=-1,
+            random_samples,
+            sparse_rounds: int = -1,
             no_add=False,
             pool_no=None,
             sampling_policy=sampling_policies.matched_sampling,
@@ -842,7 +846,7 @@ class InteractomeInterface(object):
         This is the null model creation routine. It will match the null model to the currently
         loaded active samples.
 
-        :param iterations: how many times we would like to sample each uniprot number
+        :param random_samples: how many times we would like to sample each uniprot number
         :param sparse_rounds:  if we want to use sparse sparse_sampling (useful in case of
         large uniprot sets), we would use this option
         :param no_add: if set to True, the result of sparse_sampling will not be added to the
@@ -853,9 +857,8 @@ class InteractomeInterface(object):
         :raise Exception: if the number of items in the samples size ann samples_each size
         are different
         """
-        sample_size = -1 # for legacy reasons
-
-        # TODO: [Better sparse_sampling]: include the limitations on the types of nodes to sample:
+        # DONE: [Better sparse_sampling]: include the limitations on the types of nodes to sample
+        #   solved by weighted background
 
         sample_chars = characterize_flow_parameters(self._active_weighted_sample,
                                                     self._secondary_weighted_sample, sparse_rounds)
@@ -887,7 +890,7 @@ class InteractomeInterface(object):
         for i, sample, sec_sample in sampling_policy(preserved_sample,
                                                      preserved_sec_sample,
                                                      self._background,
-                                                     iterations,
+                                                     random_samples,
                                                      optional_sampling_param):
 
             # print('debug: selected UProt IDs :', sample)
@@ -902,11 +905,12 @@ class InteractomeInterface(object):
             log.info('Sampling thread: %s, Thread hex: %s; Random sample %d/%d \n'
                      'sparse_sampling characteristics: sys_hash: %s, sample_hash: %s, '
                      'target_hash: %s' %
-                     (pool_no, self.thread_hex, i, iterations,
+                     (pool_no, self.thread_hex, i, random_samples,
                       self.md5_hash(), sample_hash, super_hash))
 
             # TODO: [load bar]: the external loop progress bar goes here
 
+            # TRACING: fast resurrection is impossible (memoized is false, but pipeline is broken)
             self.compute_current_and_potentials(memoized=False, sparse_samples=sparse_rounds)
 
             sample_ids_md5 = hashlib.md5(

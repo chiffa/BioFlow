@@ -401,8 +401,8 @@ def main_flow_calc_loop(conductivity_laplacian: np.array,
 
     for counter, (i, j) in enumerate(list_of_pairs):
 
-        mean_weight = (i[1] + j[1]) / 2.
-        i,j = (i[0], j[0])
+        mean_weight = (i[1] + j[1]) / 2.  # TRACING: not sure if it works if the weight of one is 0
+        i, j = (i[0], j[0])
 
         if memory_source and tuple(sorted((i, j))) in list(memory_source.keys()):
             potential_diff, current_upper = memory_source[tuple(sorted((i, j)))]
@@ -432,7 +432,7 @@ def main_flow_calc_loop(conductivity_laplacian: np.array,
         if counter % breakpoints == 0 and counter > 1:
             # TODO: [load bar]: the internal loop load bar goes here
             compops = float(breakpoints) / (time() - previous_time)
-            mins_before_termination = (total_pairs-counter) / compops // 60
+            mins_before_termination = (total_pairs - counter) / compops // 60
             finish_time = datetime.datetime.now() + datetime.timedelta(minutes=mins_before_termination)
             log.info("thread hex: %s; progress: %s/%s, current speed: %.2f compop/s, "
                      "time remaining: "
@@ -447,7 +447,6 @@ def main_flow_calc_loop(conductivity_laplacian: np.array,
     if cancellation:
         current_accumulator /= float(total_pairs)
 
-    # TRACING: flow calculation strategy needs to be output here
     return current_accumulator, up_pair_2_voltage
 
 
