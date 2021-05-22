@@ -5,12 +5,32 @@ On the table:
 -------------
 
 ASIDE:
- - TODO: fold in the different policy functions into the internal properties of the Interface
-    object and carry them through to avoid excessive arguments forwarding
- - TODO: transplant those functions into the hash calcualtion
+ - NOFX: fold in the different policy functions into the internal properties of the Interface
+    object and carry them through to avoid excessive arguments forwarding (NOFX: not an essential
+    feature)
+ - DONE: transplant those functions into the hash calcualtion
 
-TODO: add specific nodes exclusion of the flow calculation.
-    - auto-search of disrupting set
+<Specific nodes/links exclusion>
+
+ - TODO: provide a list of ids of the nodes to be excluded from the analysis
+ - TODO: map the nodes to the concrete annotation/physical entity nodes
+ - TODO: after loading the laplacian interface, find the affected nodes/node pairs
+        - for nodes, null the corresponding row & column
+        - for pairs of nodes, null the specific cell pairs indicating the connections
+
+<pretty progress>
+
+ - TODO: [USABILITY] Improve the progress reporting
+        Move the INFO to a progress bar. The problem is that we are working with multiple threads in
+        async environment. This can be mitigated by using the `aptbar` library
+    - TODO: single sample loop to aptbar progress monitoring
+    - TODO: outer loop (X samples) to aptbar progress monitoring
+    - TODO: move parameters that are currently being printed in the main loop in INFO channel to
+        DEBUG channel
+    - TODO: provide progress bar binding for the importers as well
+
+ - TODO: [USABILITY]: fold the current verbose state into a `-v/--vebose` argument
+
 
 TODO: clean up dead code
     - DONE: Delete old code path
@@ -55,9 +75,6 @@ Current refactoring:
  - TODO: [REFACTOR]: factor out the process spawning logic shared between knowledge and
         interactome analysis to a "utility" domain of BioFlow
 
- - TODO: [USABILITY]: adjust the sampling spin-up according to how many "good" samples are
-        already in the mongodb
-
  - TODO: [SANITY] [REFACTOR]: sanify the databases management
     - TODO: create the `data_stores` package and move everything relating to mongoDB and neo4j there
     - TODO: remove the `GraphDeclarator.py`, fold the logic directly into the `cypher_drivers`
@@ -76,7 +93,6 @@ Current refactoring:
     - Knowledge & Interactome
     - No background, flat backgroumd, weighted background
 
-
  - TODO: [TESTING]: write integration test suite
     - TODO: implement docker testing
     - TODO: check computation speed
@@ -84,15 +100,7 @@ Current refactoring:
 
  - TODO: add model_assumptions filter to the auto_analyze of the interactome_analysis as well and
         annotome_analysis
-
-<Specific nodes/links exclusion>
-
- - TODO: provide a list of ids of the nodes to be excluded from the analysis
- - TODO: map the nodes to the concrete annotation/physical entity nodes
- - TODO: after loading the laplacian interface, find the affected nodes/node pairs
-        - for nodes, null the corresponding row & column
-        - for pairs of nodes, null the specific cell pairs indicating the connections
- - TODO:
+ - TODO: [SANIFY][REFACTOR] Add a typing module with shared types
 
 <Sanify BioKnowledge>
 
@@ -151,33 +159,22 @@ Current refactoring:
  - TODO: [USABILITY] move the dumps into a mongo database instance to allow swaps between builds
         - wrt backgrounds and the neo4j states
 
- - TODO: [USABILITY] since 4.0 neo4j allows multi-database support that can be used in order to
+ - DONE: [USABILITY] since 4.0 neo4j allows multi-database support that can be used in order to
     build organism-specific databases and then switch between them, without a need to rebuild
 
  - TODO: [USABILITY]: allow a fast analysis re-run by storing actual UP groups analysis in a
         mongo database - aka a true memoization.
 
-
  - ????: [USABILITY] add the Laplacian nonzero elements to the shape one (????)
 
-
-<pretty progress>
-
- - TODO: [USABILITY] Improve the progress reporting
-        Move the INFO to a progress bar. The problem is that we are working with multiple threads in
-        async environment. This can be mitigated by using the `aptbar` library
-    - TODO: single sample loop to aptbar progress monitoring
-    - TODO: outer loop (X samples) to aptbar progress monitoring
-    - TODO: move parameters that are currently being printed in the main loop in INFO channel to
-        DEBUG channel
-    - TODO: provide progress bar binding for the importers as well
-
- - TODO: [USABILITY]: fold the current verbose state into a `-v/--vebose` argument
 
 
 DONE SEPARATOR:
 
-NOFX: inline the mapping of the foreground/background IDs inside the auto-analyze set
+ - DONE: [USABILITY]: adjust the sampling spin-up according to how many "good" samples are
+        already in the mongodb
+
+ - NOFX: inline the mapping of the foreground/background IDs inside the auto-analyze set
     (NOFX: not an essentail feature)
     - improves run state registration
     - removes an additional layer of logic of saving/retrieving
