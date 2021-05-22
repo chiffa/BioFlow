@@ -224,7 +224,7 @@ env_skip_biogrid = bool(user_settings['environment']['skip_biogrid'])
 # REFACTOR: [better confs]: Make sure those are injected into the BioKnowledgeInterface
 #  properly
 env_use_background = bool(user_settings['environment']['use_background'])
-env_bki_filter = [user_settings['environment']['bki_filter']]
+env_bki_filter = user_settings['environment']['bki_filter']
 env_bki_correlation_factors = tuple(user_settings['environment']['bki_correlation_factors'])
 env_bki_ultraspec_clean = bool(user_settings['environment']['bki_ultraspec_clean'])
 # BKI cleans ultra-specific terms

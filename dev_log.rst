@@ -55,6 +55,7 @@ TODO: clean up dead code
     - TODO: switch pool spin-up to internal function (_)
     - TODO: switch the calculation of the sparsity into the active samples loading function, drop
         elsewhere
+    - TODO: move debug prints/logs to the log.debug
 
 Current refactoring:
 --------------------
@@ -93,6 +94,12 @@ Current refactoring:
     - TODO: move the `internet_io` to the `data_stores` package
 
  - TODO: [SANITY][REFACTOR]: put all the imports  under the umbrella making clear where they come from
+
+ - TODO: [SANITY][REFACTOR]: Integration test grid
+    - Flat prim, weighted prim, flat prim/sec, weighted prim/sec
+    - Knowledge & Interactome
+    - No background, flat backgroumd, weighted background
+
 
  - TODO: [TESTING]: write integration test suite
     - TODO: implement docker testing

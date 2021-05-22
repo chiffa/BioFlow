@@ -311,7 +311,9 @@ class GeneOntologyInterface(object):
         namespace_filter, initial_set, correction_factor, ultraspec_cleaned, ultraspec_lvl = \
             self._undump_statics()
         if self.go_namespace_filter != namespace_filter:
-            log.critical("Wrong Filtering attempted to be recovered from storage")
+            log.critical("Wrong Filtering attempted to be recovered from storage.\n"
+                         "\tsaved: %s\n"
+                         "\tcurrently active: %s" % (namespace_filter, self.go_namespace_filter))
             raise Exception(
                 "Wrong Filtering attempted to be recovered from storage")
         if self.correction_factor != correction_factor:
