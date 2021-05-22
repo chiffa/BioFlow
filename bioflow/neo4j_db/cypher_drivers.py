@@ -115,7 +115,7 @@ class GraphDBPipe(object):
         password = os.environ['NEOPASS']
         self._driver = GraphDatabase.driver(uri, auth=(user, password))
         if neo4j_db_name is None:
-            self._active_database = DEFAULT_DATABASE  # INTEST:
+            self._active_database = DEFAULT_DATABASE
         else:
             self._active_database = neo4j_db_name
 

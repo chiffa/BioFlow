@@ -48,8 +48,6 @@ def spawn_sampler(args_puck):
     :param args_puck: combined list of sample sets to match, expected random samples and other
         parameters (packing required to start the pool)
     """
-    # log.info('Pool process %d started' % args_puck[-1])
-
     # (sample_sets_to_match,        0
     # sample_depth,                 1
     # sparse_rounds,                2
@@ -67,7 +65,7 @@ def spawn_sampler(args_puck):
         go_interface_instance = get_go_interface_instance(background_set_arg)
 
     hits_list, sec_list = args_puck[0]
-    go_interface_instance.set_flow_sources(hits_list, sec_list)   # TRACING [knowledge interface mirror]
+    go_interface_instance.set_flow_sources(hits_list, sec_list)
 
     iterations = args_puck[1]
     sparse_rounds = args_puck[2]
@@ -77,38 +75,14 @@ def spawn_sampler(args_puck):
 
     pool_no = args_puck[-1]   # TODO: switch over to PID here
 
-    go_interface_instance.reset_thread_hex()  # TRACING [knowledge interface mirror]
+    go_interface_instance.reset_thread_hex()
     go_interface_instance.randomly_sample(
         iterations,
         sparse_rounds=sparse_rounds,
         pool_no=pool_no,
-        sampling_policy=sampling_policy,          # TRACING [knowledge interface mirror]
-        optional_sampling_param=sampling_options  # TRACING [knowledge interface mirror]
+        sampling_policy=sampling_policy,
+        optional_sampling_param=sampling_options
     )
-
-    # ######################################
-    # # OLD CODE PATH
-    # go_interface_instance = args_puck[3]
-    # background = args_puck[4]
-    #
-    # if go_interface_instance is None:
-    #     go_interface_instance = get_go_interface_instance(background=background)
-    # sample_size_list = args_puck[0]
-    # iteration_list = args_puck[1]
-    # sparse_rounds = args_puck[2]
-    # pool_no = args_puck[-1]
-    #
-    # go_interface_instance.randomly_sample(
-    #     sample_size_list,
-    #     iteration_list,
-    #     sparse_rounds,
-    #     pool_no=pool_no)
-    #
-    # # OLD CODE PATH END
-    # ######################################
-
-    # log.info('Pool process %d finished' % pool_no)
-
 
 def spawn_sampler_pool(
         pool_size,
@@ -123,11 +97,14 @@ def spawn_sampler_pool(
     Spawns a pool of samplers of the information flow within the GO system
 
     :param pool_size: number of processes that are performing the sample pooling and analyzing
-    :param sample_size_list: size of the sample list
-    :param iterations_list_per_pool: number of random samples we look to generate to match the
-        reference set
-    :param sparse_rounds: how many sparse sampling rounds to perform, if any (unless it's False)
-    :param background: background
+    :param sample_sets_to_match: size of the sample list
+    :param sample_depth: number of random samples we look to generate performing the pooling of the
+        samples in each list
+    :param sparse_rounds: number of sparse rounds to run (or False if sparse_sampling is dense)
+    :param background_set: set of node ids that are to be sampled from
+    :param forced_go_interface: a provided BioKnowledgeInterface that contains sets to imitate
+    :param sampling_policy: sampling policy to be employed
+    :param sampling_options: options to the sampling policy
     """
     global implicitely_threaded
 
@@ -177,7 +154,7 @@ def samples_scatter_and_hist(background_curr_deg_conf, true_sample_bi_corr_array
     """
     A general function that performs demonstration of an example of random samples of
      the same size as our sample and of our sample and conducts the statistical tests
-     on wherther any of nodes or functional groups in our sample are non-random
+     on whether any of nodes or functional groups in our sample are non-random
 
     :param background_curr_deg_conf: [[current, informativity, confusion_potential], ...] -
     characteristics of the random samples
@@ -260,7 +237,7 @@ def compare_to_blank(
         will be saved
     :param random_sampling_method: sampling policy used
     :param random_sampling_option: sampling policy optional argument
-    :return: None if no significant nodes, the node and group characterisitc dictionaries
+    :return: None if no significant nodes, the node and group characteristic dictionaries
      otherwise
     """
 
@@ -282,7 +259,7 @@ def compare_to_blank(
         raise Exception("tried to compare to blanc an empty interface instance")
 
     md5_hash = go_interface_instance.md5_hash()
-    active_sample_hash = go_interface_instance.active_sample_md5_hash(sparse_rounds)  # INTEST [knowledge interface mirror]
+    active_sample_hash = go_interface_instance.active_sample_md5_hash(sparse_rounds)
 
     background_sub_array_list = []
     max_sub_array_list = []
@@ -294,7 +271,7 @@ def compare_to_blank(
              (active_sample_hash, md5_hash, random_sampling_method.__name__, random_sampling_option))
 
     samples_to_test_against = count_annotome_rand_samp({
-                                          'active_sample_hash': active_sample_hash,  # INTEST [knowledge interface mirror]
+                                          'active_sample_hash': active_sample_hash,
                                           'sys_hash': md5_hash,
                                           'sampling_policy': random_sampling_method.__name__,
                                           'sampling_policy_options': random_sampling_option})
@@ -307,7 +284,7 @@ def compare_to_blank(
     log.info("samples found to test against:\t %d" % samples_to_test_against)
 
     background_sample = find_annotome_rand_samp({
-                                          'active_sample_hash': active_sample_hash,  # INTEST [knowledge interface mirror]
+                                          'active_sample_hash': active_sample_hash,
                                           'sys_hash': md5_hash,
                                           'sampling_policy': random_sampling_method.__name__,
                                           'sampling_policy_options': random_sampling_option})
@@ -421,28 +398,6 @@ def compare_to_blank(
     return sorted(node_char_list, key=lambda x: x[5]), nodes_dict
 
 
-# def get_estimated_time(samples, sample_sizes, operations_per_sec=2.2):
-#     """
-#     Short time to estimate the time required for the generation of random saples
-#
-#     :param samples: size of the sample
-#     :param sample_sizes: times each sample size is sampled
-#     :param operations_per_sec: complex operations per second
-#     :return:
-#     """
-#     counter = 0
-#     for sample, sample_size in zip(samples, sample_sizes):
-#         counter += sample_size * sample ** 2 / operations_per_sec
-#         log.info("Computing a sample of %s proteins would take %s secs",
-#                  sample, "{0:.2f}".format(sample ** 2 / operations_per_sec))
-#         log.info("Repeated %s times: %s h. Total time after phase: %s h",
-#                  sample_size,
-#                  "{0:.2f}".format(sample_size * sample ** 2 / operations_per_sec / 3600),
-#                  "{0:.2f}".format(counter / 3600))
-#     return counter
-
-
-# TODO: [weighted inputs] add support for a dict as source_list, not only list
 def auto_analyze(source_list: List[Union[List[int], List[Tuple[int, float]]]],
                  secondary_source_list: List[Union[List[int], List[Tuple[int, float]], None]] = None,
                  output_destinations_list: Union[List[str], None] = None,
@@ -457,7 +412,7 @@ def auto_analyze(source_list: List[Union[List[int], List[Tuple[int, float]]]],
                  explicit_interface=None,
                  ) -> None:
     """
-    Automatically analyzes the GO annotation of the exerimental hit lists
+    Automatically analyzes the GO annotation of the experimental hit lists
 
     :param source_list: python list of hits for each condition
     :param secondary_source_list: secondary list to which calculate the flow from hist, if needed
@@ -467,7 +422,7 @@ def auto_analyze(source_list: List[Union[List[int], List[Tuple[int, float]]]],
         for max performance, use N-1 processors, where N is the number of physical cores on the
         machine, which is the default
     :param background_list:  list of physical entities that an experimental method can retrieve,
-        optionally with weights indicating the likelyhood of retrieval at random
+        optionally with weights indicating the likelihood of retrieval at random
     :param skip_sampling: if true, will skip background sampling step
     :param p_value_cutoff: highest p_value up to which to report the results
     :param sampling_policy: sampling policy used
@@ -476,7 +431,7 @@ def auto_analyze(source_list: List[Union[List[int], List[Tuple[int, float]]]],
         defaults (eg flow calculation function) are modified
     :return:
     """
-    # Multiple re-spawns of threaded processing are incompatbile with scikits.sparse.cholmod
+    # Multiple re-spawns of threaded processing are incompatible with scikits.sparse.cholmod
 
     if background_list is None:
         background_list = []
@@ -528,9 +483,9 @@ def auto_analyze(source_list: List[Union[List[int], List[Tuple[int, float]]]],
         if explicit_interface is not None:
             go_interface = explicit_interface
 
-        go_interface.set_flow_sources(hits_list, sec_list)  # INTEST [knowledge interace mirror]
-        total_ops = go_interface.evaluate_ops()  # INTEST [knowledge interace mirror]
-        sparse_rounds = go_interface.reduce_ops(sparse_analysis_threshold**2)  # INTEST [knowledge interace mirror]
+        go_interface.set_flow_sources(hits_list, sec_list)
+        total_ops = go_interface.evaluate_ops()
+        sparse_rounds = go_interface.reduce_ops(sparse_analysis_threshold**2)
 
         if sparse_rounds > 0:
             log.info('estimated ops for dense sampling would have been %.1f, '
@@ -542,10 +497,10 @@ def auto_analyze(source_list: List[Union[List[int], List[Tuple[int, float]]]],
         else:
             log.info('estimated ops for dense sampling %.1f' % (total_ops))
 
-        md5_hash = go_interface.md5_hash()  # INTEST [knowledge interace mirror]
-        active_sample_hash = go_interface.active_sample_md5_hash(sparse_rounds)  # INTEST [knowledge interace mirror]
+        md5_hash = go_interface.md5_hash()
+        active_sample_hash = go_interface.active_sample_md5_hash(sparse_rounds)
 
-        in_storage = count_annotome_rand_samp({'active_sample_hash': active_sample_hash,  # INTEST [knowledge interace mirror]
+        in_storage = count_annotome_rand_samp({'active_sample_hash': active_sample_hash,
                                                'sys_hash': md5_hash,
                                                'sampling_policy': sampling_policy.__name__,
                                                'sampling_policy_options': sampling_policy_options})
@@ -561,7 +516,7 @@ def auto_analyze(source_list: List[Union[List[int], List[Tuple[int, float]]]],
             desired_depth = desired_depth - in_storage
 
         if not skip_sampling:
-            spawn_sampler_pool(processors,  # INTEST [knowledge interface mirror]
+            spawn_sampler_pool(processors,
                                (hits_list, sec_list),
                                desired_depth,
                                sparse_rounds=sparse_rounds,
@@ -572,7 +527,7 @@ def auto_analyze(source_list: List[Union[List[int], List[Tuple[int, float]]]],
 
         go_interface.compute_current_and_potentials()
 
-        nr_nodes, p_val_dict = compare_to_blank(  # INTEST [knowledge interface mirror]
+        nr_nodes, p_val_dict = compare_to_blank(
             go_interface,
             p_value_cutoff=p_value_cutoff,
             sparse_rounds=sparse_rounds,
@@ -581,79 +536,8 @@ def auto_analyze(source_list: List[Union[List[int], List[Tuple[int, float]]]],
             random_sampling_option=sampling_policy_options
         )
 
-
-        # ###########################################
-        # # OLD CODE PATH
-        # if not skip_sampling:
-        #     log.info("spawning a sampler for %s proteins @ %s compops/sec",
-        #              len(go_interface._active_up_sample), estimated_comp_ops)
-        #
-        # if len(go_interface._active_up_sample) < sparse_analysis_threshold:
-        #
-        #     if not skip_sampling:
-        #
-        #         log.info('length: %s \t sparse_sampling depth: %s \t, estimated round time: %s min',
-        #                  len(go_interface._active_up_sample),
-        #                  'full',
-        #                  len(go_interface._active_up_sample) ** 2 / estimated_comp_ops /
-        #                  60)
-        #
-        #         spawn_sampler_pool(processors,
-        #                            [len(go_interface._active_up_sample)],
-        #                            [desired_depth],
-        #                            go_interface_instance=None,
-        #                            param_set=param_set)
-        #
-        #     go_interface.compute_current_and_potentials()
-        #
-        #     nr_nodes, p_val_dict = compare_to_blank(
-        #         len(go_interface._active_up_sample),
-        #         go_interface,
-        #         p_value_cutoff=p_value_cutoff,
-        #         output_destination=outputs_subdirs)
-        #
-        # # sparse analysis
-        # else:
-        #     ceiling = min(205, len(go_interface._active_up_sample))
-        #     sampling_depth = max((ceiling - 5) ** 2 // len(go_interface._active_up_sample), 5)
-        #
-        #     if not skip_sampling:
-        #
-        #         log.info('length: %s \t sparse_sampling depth: %s \t, estimated round time: %s min',
-        #                  len(go_interface._active_up_sample),
-        #                  sampling_depth,
-        #                  len(go_interface._active_up_sample) *
-        #                  sampling_depth / 2 / 60 / estimated_comp_ops)
-        #
-        #         spawn_sampler_pool(processors,
-        #                            [len(go_interface._active_up_sample)],
-        #                            [desired_depth],
-        #                            sparse_rounds=sampling_depth,
-        #                            go_interface_instance=None,
-        #                            param_set=param_set)
-        #
-        #     go_interface.compute_current_and_potentials(sparse_rounds=sampling_depth)
-        #
-        #     # explicit_interface.export_conduction_system()
-        #     nr_nodes, p_val_dict = compare_to_blank(
-        #         len(go_interface._active_up_sample),
-        #         go_interface,
-        #         p_value_cutoff=p_value_cutoff,2
-        #         sparse_rounds=sampling_depth,
-        #         output_destination=outputs_subdirs)
-        #
-        # # OLD CODE PATH END
-        # ####################################
-
         go_interface.export_conduction_system(p_val_dict,
                                                     output_location=outputs_subdirs.GO_GDF_output)
-
-        # # old results print-out
-        # log.info('\t NodeID \t Name \t current \t informativity \t confusion_potential \t p_val \t '
-        #          'UP_list')
-        #
-        # for node in nr_nodes:
-        #     log.info('\t %s \t %s \t %.3g \t %.3g \t %d \t %.3g \t %s', *node)
 
         with open(outputs_subdirs.knowledge_network_output, 'wt') as output:
             writer = csv_writer(output, delimiter='\t')

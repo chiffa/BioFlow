@@ -499,6 +499,14 @@ class InteractomeInterface(object):
         return str(md5)
 
     def active_sample_md5_hash(self, sparse_rounds):
+        """
+        Performs a hash of characteristics of loaded primary hits list, secondary hits list,
+        and background with flow calculation methods. Basically, everything needed to know if a
+        random sample is relevant to the currently loaded sample
+
+        :param sparse_rounds: -1 if dense flow calculation, otherwise sparse sampling parameter
+        :return:
+        """
 
         sys_hash = self.md5_hash()
 
@@ -551,6 +559,13 @@ class InteractomeInterface(object):
         return str(md5)
 
     def set_flow_sources(self, sample, secondary_sample):
+        """
+        Sets the sample to analyze - primary and secondary sources
+
+        :param sample: primary sample being loaded
+        :param secondary_sample: secondary sample being loaded (None if none)
+        :return:
+        """
 
         def _verify_uniprot_ids(uniprot_vector: List[Tuple[int, float]]):
             # TRACING: rename to id_weight_vector
@@ -581,6 +596,12 @@ class InteractomeInterface(object):
                                               + np.array(self._secondary_weighted_sample)[:, 0].tolist()))
 
     def evaluate_ops(self, sparse_rounds=-1):
+        """
+        Evaluate the number of pairs of nodes that wlll be used for flow calculation
+
+        :param sparse_rounds: sparse rounds parameter, if -1 will be considered dense
+        :return:
+        """
         log.debug('evaluate_ops call')
         ro = sampling_policies.characterize_flow_parameters(self._active_weighted_sample,
                                                             self._secondary_weighted_sample,
@@ -588,6 +609,13 @@ class InteractomeInterface(object):
         return self._ops_evaluation_method(ro[1], ro[3], sparse_rounds)
 
     def reduce_ops(self, ops_limit):
+        """
+        Evaluates the value of the sparse_round parameter need to keep the number of pairs of
+        nodes used for flow calculation under a given budget
+
+        :param ops_limit: node pair budget
+        :return:
+        """
         log.debug('reduce_ops call')
         ro = sampling_policies.characterize_flow_parameters(self._active_weighted_sample,
                                                             self._secondary_weighted_sample,
@@ -865,9 +893,7 @@ class InteractomeInterface(object):
         database of samples. Useful if re-running tests with similar parameters several times.
         :param pool_no: explicit sparse_sampling pool number (used for reporting/debugging)
         :param sampling_policy: sampling policy used
-        :param sampling_policy_options: sampling policy optional argument
-        :raise Exception: if the number of items in the samples size ann samples_each size
-        are different
+        :param optional_sampling_param: sampling policy optional argument
         """
         # DONE: [Better sparse_sampling]: include the limitations on the types of nodes to sample
         #   solved by weighted background

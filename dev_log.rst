@@ -4,66 +4,34 @@ TODOs for the project in the future:
 On the table:
 -------------
 
- - DONE: Mirror the weight sampling modifications from InteractomeInterface/interactome_analysis to
-        AnnototmeInterface/knowledge_analysis.
-    - DONE: conduction routines (does not apply - the loop is accessed directly from the
-        Knowledge loop due to filtering)
-    - DONE: flow calculation methods
-        - DONE: change the calculation of ops to the included method
-        - DONE: change the decision to go sparse with
-        - DONE: change the generation of the pairs to the one included in the flow calculation
-            method
-    - DONE: add support for split and weighted sets in knowledge_access_analysis
-        - DONE: forwarding of the secondary set and hits set in the knowledge_access_analysis
-        - DONE: forwarding of the weights in the knowledge_access_analysis
-    - DONE: add support for split and weighted sets in the BioKnowledge interface:
-        - DONE: - flow calcualtion/evaluation/reduction methods
-        - DONE: - separation of active up_sample from the weighted sample
-        - DONE: - switch active samples to private
-        - NOFX: - explicit weight functions to be supplied upon a full rebuild
-                - Add an explicit weight function transfer to allow the rebuild
-        - NOFX: - fast_load: background logic needs to account for if it is a list of ids or
-                ids+weights (NOFX: currently does not work)
-        - DONE: add active sample md5 hash that takes in account the flow and weights as well as
-            sampling/flow calculation methods
-        - DONE: add self.set_flow sources, evaluate ops and reduce ops
-        - DONE: sparse samples standardized to -1
-        - DONE: random sampling is now a forwards of the random sampling method in the "policy
-            folder"
-        - DONE: parse modification - propagate the options now
-
-    - DONE: switch to sampling policy in KnowledgeInterface
-    - DONE: revert the change to sparse_sampling in the text documentation of methods
-    - DONE: pass the arguments down the pipeline
-
-    - DONE: move self.entity_2_terms_neo4j_ids.keys() into self.known_UP_ids upon construction, then
-        in all the references
-
-    - DONE: upon debug discovered that the UNIPROT/GO parse is currently broken:
-        The borked edges seem to be coming from the BioGRID database
-        - DONE: a lot of uniprot node connections and "weak interactions" parse ast GO terms
-        - DONE: the proper GO terms are not loading - dangling legacy code
-
 ASIDE:
  - TODO: fold in the different policy functions into the internal properties of the Interface
     object and carry them through to avoid excessive arguments forwarding
  - TODO: transplant those functions into the hash calcualtion
 
-
-TODO: inline the mapping of the foreground/background IDs inside the auto-analyze set
-    - improves run state registration
-    - removes an additional layer of logic of saving/retrieving
-    - is not necessary now that background is used only for the sampling
-
 TODO: add specific nodes exclusion of the flow calculation.
     - auto-search of disrupting set
 
 TODO: clean up dead code
-    - TODO: check for doc inconsistency
+    - DONE: Delete old code path
+    - TODO: Clear deprecation markers
+    - TODO: Follow up with the propagate from main configs markers
+    - TODO: Follow up with the renaming of nodes
+    - DONE: check for doc inconsistency
     - TODO: switch pool spin-up to internal function (_)
-    - TODO: switch the calculation of the sparsity into the active samples loading function, drop
-        elsewhere
+    - NOFX: switch the calculation of the sparsity into the active samples loading function, drop
+        elsewhere: calculated only in the auto_analyze so far
     - TODO: move debug prints/logs to the log.debug
+
+TODO: document new features
+    TODO: Basic usage:
+        - TODO: weighted background
+        - TODO: weighted main sample
+        - TODO: secondary sample
+        - TODO: specific nodes exclusion
+    TODO: Advanced usage
+        - TODO: pair generation method
+        - TODO: sampling method
 
 Current refactoring:
 --------------------
@@ -207,6 +175,16 @@ Current refactoring:
  - TODO: [USABILITY]: fold the current verbose state into a `-v/--vebose` argument
 
 
+DONE SEPARATOR:
+
+NOFX: inline the mapping of the foreground/background IDs inside the auto-analyze set
+    (NOFX: not an essentail feature)
+    - improves run state registration
+    - removes an additional layer of logic of saving/retrieving
+    - is not necessary now that background is used only for the sampling
+
+<new flow and sampling routines>
+
 <Split sets>
  - DONE: provide infrastructure for the loading for split hits sets
     - The easiest to do will be to add a separation character to the loading dumps
@@ -260,6 +238,46 @@ Current refactoring:
         - DONE: check if it is parsed in the weighted version
         - DONE: check if it is propagated in the weighted version
 
+<knowledge interface mirror>
+ - DONE: Mirror the weight sampling modifications from InteractomeInterface/interactome_analysis to
+        AnnototmeInterface/knowledge_analysis.
+    - DONE: conduction routines (does not apply - the loop is accessed directly from the
+        Knowledge loop due to filtering)
+    - DONE: flow calculation methods
+        - DONE: change the calculation of ops to the included method
+        - DONE: change the decision to go sparse with
+        - DONE: change the generation of the pairs to the one included in the flow calculation
+            method
+    - DONE: add support for split and weighted sets in knowledge_access_analysis
+        - DONE: forwarding of the secondary set and hits set in the knowledge_access_analysis
+        - DONE: forwarding of the weights in the knowledge_access_analysis
+    - DONE: add support for split and weighted sets in the BioKnowledge interface:
+        - DONE: - flow calcualtion/evaluation/reduction methods
+        - DONE: - separation of active up_sample from the weighted sample
+        - DONE: - switch active samples to private
+        - NOFX: - explicit weight functions to be supplied upon a full rebuild
+                - Add an explicit weight function transfer to allow the rebuild
+        - NOFX: - fast_load: background logic needs to account for if it is a list of ids or
+                ids+weights (NOFX: currently does not work)
+        - DONE: add active sample md5 hash that takes in account the flow and weights as well as
+            sampling/flow calculation methods
+        - DONE: add self.set_flow sources, evaluate ops and reduce ops
+        - DONE: sparse samples standardized to -1
+        - DONE: random sampling is now a forwards of the random sampling method in the "policy
+            folder"
+        - DONE: parse modification - propagate the options now
+
+    - DONE: switch to sampling policy in KnowledgeInterface
+    - DONE: revert the change to sparse_sampling in the text documentation of methods
+    - DONE: pass the arguments down the pipeline
+
+    - DONE: move self.entity_2_terms_neo4j_ids.keys() into self.known_UP_ids upon construction, then
+        in all the references
+
+    - DONE: upon debug discovered that the UNIPROT/GO parse is currently broken:
+        The borked edges seem to be coming from the BioGRID database
+        - DONE: a lot of uniprot node connections and "weak interactions" parse ast GO terms
+        - DONE: the proper GO terms are not loading - dangling legacy code
 
 - DONE: Remove the current defaults in the policies and allow the user to provide them explicitely
 upon modules call

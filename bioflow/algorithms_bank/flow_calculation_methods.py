@@ -153,7 +153,7 @@ def general_flow(sample: Union[List[int], List[Tuple[int, float]]],
 
         if sparse_rounds > 0:
             list_of_pairs = []
-            for _ in range(sparse_rounds):  # INTEST range?
+            for _ in range(sparse_rounds):
                 idx_list_1 = copy(sample)
                 idx_list_2 = copy(secondary_sample)
                 random.shuffle(idx_list_1)

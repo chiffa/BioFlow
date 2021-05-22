@@ -56,8 +56,6 @@ def spawn_sampler(args_puck):
     :param args_puck: combined list of sample sizes, samples to imitate, background sets, and sparse
     sparse_sampling argument
     """
-    # log.info('Pool process %d started' % args_puck[-1])
-
     background_set_arg = args_puck[3]
 
     if args_puck[4] is not None:
@@ -104,6 +102,10 @@ def spawn_sampler_pool(
         samples in each list
     :param sparse_rounds: number of sparse rounds to run (or False if sparse_sampling is dense)
     :param background_set: set of node ids that are to be sampled from
+    :param forced_interactome_interface: a provided InteractomeInterface that contains sets to
+        imitate
+    :param sampling_policy: sampling policy to be employed
+    :param sampling_options: options to the sampling policy
     """
     global implicitely_threaded
 
@@ -170,7 +172,7 @@ def samples_scatter_and_hist(background_curr_deg_conf, true_sample_bi_corr_array
     """
     A general function that performs demonstration of an example of random samples of
      the same size as our sample and of our sample and conducts the statistical tests
-     on wherther any of nodes or functional groups in our sample are non-random
+     on whether any of nodes or functional groups in our sample are non-random
 
     :param background_curr_deg_conf: [[current, informativity, confusion_potential], ...] -
     characteristics of the random samples
@@ -430,7 +432,7 @@ def auto_analyze(source_list: List[Union[List[int], List[Tuple[int, float]]]],
         for max performance, use N-1 processors, where N is the number of physical cores on the
         machine, which is the default
     :param background_list:  list of physical entities that an experimental method can retrieve,
-        optionally with weights indicating the likelyhood of retrieval at random
+        optionally with weights indicating the likelihood of retrieval at random
     :param skip_sampling: if true, will skip background sparse_sampling step
     :param p_value_cutoff: highest p_value up to which to report the results
     :param sampling_policy: sampling policy used

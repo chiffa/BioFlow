@@ -372,11 +372,6 @@ class GeneOntologyInterface(object):
         else:
             self._background = list(self.known_up_ids)
 
-        # if not self._background:
-        #     self._background = list(self.entity_2_terms_neo4j_ids.keys())
-        # else:
-        #     self._background = list(set(self._background).intersection(set(self.entity_2_terms_neo4j_ids.keys())))
-
         self._undump_matrices()
         self._undump_informativities()
         self._undump_inflated_elements()
@@ -390,11 +385,6 @@ class GeneOntologyInterface(object):
         :param ontology_source:
         :return:
         """
-        # self._background here is irrelevant
-        # self.deprecated_SeedSet becomes deprecated as well
-        # self._go_up_types dissapear
-        # self._GO_Reg_Types disappear as we;;
-
         all_nodes_dict, edges_list = DatabaseGraph.parse_knowledge_entity_net()
         term_counter = 0
 
@@ -567,7 +557,7 @@ class GeneOntologyInterface(object):
                    math.log(1 / float(number), 2), self.correction_factor[1])
 
 
-    # REFACTOR: [Sanity]: ethod is excessively complex (cyc. complexity ~ 18).
+    # REFACTOR: [Sanity]: method is excessively complex (cyc. complexity ~ 18).
     def get_go_reach(self):
         """
         Recovers by how many different uniprots each GO term is reached, both in
@@ -775,6 +765,14 @@ class GeneOntologyInterface(object):
         return str(md5)
 
     def active_sample_md5_hash(self, sparse_rounds):
+        """
+        Performs a hash of characteristics of loaded primary hits list, secondary hits list,
+        and background with flow calculation methods. Basically, everything needed to know if a
+        random sample is relevant to the currently loaded sample
+
+        :param sparse_rounds: -1 if dense flow calculation, otherwise sparse sampling parameter
+        :return:
+        """
 
         sys_hash = self.md5_hash()
 
@@ -786,8 +784,8 @@ class GeneOntologyInterface(object):
             else:
                 background = sorted(self._background, key=lambda x: x[1])
 
-        sample_chars = characterize_flow_parameters(self._active_weighted_sample,  # TRACING [knowledge interface mirror]
-                                                    self._secondary_weighted_sample,  # TRACING [knowledge interface mirror]
+        sample_chars = characterize_flow_parameters(self._active_weighted_sample,
+                                                    self._secondary_weighted_sample,
                                                     sparse_rounds)
 
         hashlib.md5(json.dumps(background, sort_keys=True).encode(
@@ -827,6 +825,13 @@ class GeneOntologyInterface(object):
         return str(md5)
 
     def set_flow_sources(self, sample, secondary_sample):
+        """
+        Sets the sample to analyze - primary and secondary sources
+
+        :param sample: primary sample being loaded
+        :param secondary_sample: secondary sample being loaded (None if none)
+        :return:
+        """
 
         def _verify_uniprot_ids(uniprot_vector: List[Tuple[int, float]]):
             # TRACING: rename to id_weight_vector
@@ -864,6 +869,12 @@ class GeneOntologyInterface(object):
                                               + np.array(self._secondary_weighted_sample)[:, 0].tolist()))
 
     def evaluate_ops(self, sparse_rounds=-1):
+        """
+        Evaluate the number of pairs of nodes that wlll be used for flow calculation
+
+        :param sparse_rounds: sparse rounds parameter, if -1 will be considered dense
+        :return:
+        """
         log.debug('evaluate_ops call')
         ro = sampling_policies.characterize_flow_parameters(self._active_weighted_sample,
                                                             self._secondary_weighted_sample,
@@ -871,6 +882,13 @@ class GeneOntologyInterface(object):
         return self._ops_evaluation_method(ro[1], ro[3], sparse_rounds)
 
     def reduce_ops(self, ops_limit):
+        """
+        Evaluates the value of the sparse_round parameter need to keep the number of pairs of
+        nodes used for flow calculation under a given budget
+
+        :param ops_limit: node pair budget
+        :return:
+        """
         log.debug('reduce_ops call')
         ro = sampling_policies.characterize_flow_parameters(self._active_weighted_sample,
                                                             self._secondary_weighted_sample,
@@ -933,8 +951,6 @@ class GeneOntologyInterface(object):
 
         self._active_up_sample = [uniprot for uniprot in uniprots if uniprot in self.known_up_ids]
 
-        # log.info("tried to set up list %d, intersected with %d UP2GO_dict.keys(), ended up with %d"
-        #          % (len(uniprots), len(self.entity_2_terms_neo4j_ids.keys()), len(self._active_up_sample)))
 
     def compute_current_and_potentials(
             self,
@@ -958,6 +974,7 @@ class GeneOntologyInterface(object):
         :param sparse_rounds: if set to a positive integer the sampling will be sparse and
         not dense, i.e. instead of computation for each node pair, only an estimation will be
         made, equal to computing sparse sampling association with other randomly chosen nodes
+        :param potential_dominated: if the total current is normalized to potential
         :return: adjusted conduction system
         """
 
@@ -966,24 +983,6 @@ class GeneOntologyInterface(object):
             self.UP2UP_voltages = {}
             self.uniprots_2_voltage = {}  # CURRENTPASS: UNUSED
 
-
-
-        # INTEST: we supply only the list_of_pairs here.
-        # ###################################################
-        # # OLD CODE PATH
-        # iterator = []
-        # if sparse_rounds:
-        #     for _ in range(0, sparse_rounds):
-        #         _sample = copy(self._active_up_sample)
-        #         random.shuffle(_sample)
-        #         iterator += list(zip(_sample[:len(_sample) // 2], _sample[len(_sample) // 2:]))
-        #         self.sparsely_sampled = True
-        # else:
-        #     iterator = combinations(self._active_up_sample, 2)
-        #
-        # iterator = [item for item in iterator]
-        # # OLD CODE PATH END
-        # ###################################################
 
         weighted_up_pairs = self._flow_calculation_method(self._active_weighted_sample,
                                                           self._secondary_weighted_sample,
@@ -1172,17 +1171,14 @@ class GeneOntologyInterface(object):
         Randomly samples the set of deprecated_reached_uniprots_neo4j_id_list used to create the model.
         This is the null model creation routine
 
-        :param deprec_lis_size: list of numbers of uniprots we would like to create the model for
         :param random_samples: how many times we would like to sample each unirot number
         :param sparse_rounds:  if we want to use sparse sampling
             (useful in case of large uniprot sets),
         :param no_add: if set to True, the result of sampling will not be added to the database
-            of samples. Usefull if re-running tests with similar parameters several times.
+            of samples. Useful if re-running tests with similar parameters several times.
         :param pool_no: explicit sampling pool number (used for reporting/debugging)
         :param sampling_policy: sampling policy used
-        :param sampling_policy_options: sampling policy optional argument
-        :raise Exception: if the number of items in the samples size ann saples_each size are
-            different
+        :param optional_sampling_param: sampling policy optional argument
         """
 
         sample_chars = characterize_flow_parameters(self._active_weighted_sample,
@@ -1271,75 +1267,6 @@ class GeneOntologyInterface(object):
 
         self._active_weighted_sample = preserved_sample
         self._secondary_weighted_sample = preserved_sec_sample
-
-        # ###################################################
-        # # OLD CODE PATH
-        # if not len(deprec_lis_size) == len(random_samples):
-        #     raise Exception('Not the same list sizes!')
-        #
-        # for sample_size, deprec_lis_size in zip(deprec_lis_size, random_samples):
-        #
-        #     sample_size = min(sample_size, len(self._background))
-        #     for i in range(0, deprec_lis_size):
-        #         log.info("selecting %d from %d ups" % (sample_size, len(self._background)))
-        #         shuffle(self._background)
-        #         analytics_up_list = self._background[:sample_size]
-        #
-        #         self.set_uniprot_source(analytics_up_list)
-        #
-        #         log.info('Sampling thread: %s, Thread hex: %s; '
-        #                  'sparse_sampling characteristics: sys_hash: %s, size: %s, '
-        #                  'sparse_rounds: %s' % (pool_no, self.thread_hex,
-        #                                         self.md5_hash(), sample_size,
-        #                                         sparse_rounds))
-        #
-        #         self.compute_current_and_potentials(
-        #             memoized=False, sparse_rounds=sparse_rounds)
-        #
-        #         md5 = hashlib.md5(
-        #             json.dumps(
-        #                 sorted(analytics_up_list),
-        #                 sort_keys=True).encode('utf-8')).hexdigest()
-        #
-        #         if not no_add:
-        #             log.info("Sampling thread %s: Adding a blanc:"
-        #                      "\t size: %s \t sys_hash: %s \t sparse_rounds: %s, matrix weight: %s" % (
-        #                         pool_no, sample_size, md5, sparse_rounds, np.sum(self.current_accumulator)))
-        #
-        #             insert_annotome_rand_samp(
-        #                 {
-        #                     'UP_hash': md5,
-        #                     'sys_hash': self.md5_hash(),
-        #                     'size': sample_size,
-        #                     'sparse_rounds': sparse_rounds,
-        #                     'UPs': pickle.dumps(analytics_up_list),
-        #                     'currents': pickle.dumps(
-        #                         (self.current_accumulator,
-        #                          self.node_current)),
-        #                     'voltages': pickle.dumps(
-        #                         self.UP2UP_voltages)})
-        #
-        #         if not sparse_rounds:
-        #             log.info('Sampling thread %s: Thread hex: %s \t'
-        #                      ' Sample size: %s \t iteration: %s\t'
-        #                      ' compop/s: %s \t '
-        #                      'time: %s ',
-        #                      pool_no, self.thread_hex,
-        #                      sample_size, i,
-        #                      "{0:.2f}".format(sample_size * (sample_size - 1) / 2 / self._time()),
-        #                      self.pretty_time())
-        #
-        #         else:
-        #             log.info('Sampling thread %s: Thread hex: %s \t'
-        #                      ' Sample size: %d \t iteration: %d \t'
-        #                      ' compop/s: %s \t '
-        #                      'time: %s, sparse @ %s ',
-        #                      pool_no, self.thread_hex,
-        #                      sample_size, i,
-        #                      "{0:.2f}".format(sample_size * sparse_rounds / 2 / self._time()),
-        #                      self.pretty_time(), sparse_rounds)
-        # # OLD CODE PATH END
-        # ##############################
 
     def get_independent_linear_groups(self):
         """
