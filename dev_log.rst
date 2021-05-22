@@ -38,9 +38,11 @@ On the table:
 
     - TODO: move self.entity_2_terms_neo4j_ids.keys() into self.known_UP_ids upon construction, then
         in all the references
-    - TODO: upon debug discovered that the UNIPROT/GO parse is currently broken:
-        - TODO: a lot of uniprot node connections and "weak interactions" parse ast GO terms
-        - TODO: the proper GO terms are not loading
+
+    - done: upon debug discovered that the UNIPROT/GO parse is currently broken:
+        The borked edges seem to be coming from the BioGRID database
+        - DONE: a lot of uniprot node connections and "weak interactions" parse ast GO terms
+        - DONE: the proper GO terms are not loading - dangling legacy code
 
 ASIDE:
  - TODO: fold in the different policy functions into the internal properties of the Interface

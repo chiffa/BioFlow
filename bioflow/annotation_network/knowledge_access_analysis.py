@@ -86,22 +86,26 @@ def spawn_sampler(args_puck):
         optional_sampling_param=sampling_options  # TRACING [knowledge interface mirror]
     )
 
-
-    go_interface_instance = args_puck[3]
-    background = args_puck[4]
-
-    if go_interface_instance is None:
-        go_interface_instance = get_go_interface_instance(background=background)
-    sample_size_list = args_puck[0]
-    iteration_list = args_puck[1]
-    sparse_rounds = args_puck[2]
-    pool_no = args_puck[-1]
-
-    go_interface_instance.randomly_sample(
-        sample_size_list,
-        iteration_list,
-        sparse_rounds,
-        pool_no=pool_no)
+    # ######################################
+    # # OLD CODE PATH
+    # go_interface_instance = args_puck[3]
+    # background = args_puck[4]
+    #
+    # if go_interface_instance is None:
+    #     go_interface_instance = get_go_interface_instance(background=background)
+    # sample_size_list = args_puck[0]
+    # iteration_list = args_puck[1]
+    # sparse_rounds = args_puck[2]
+    # pool_no = args_puck[-1]
+    #
+    # go_interface_instance.randomly_sample(
+    #     sample_size_list,
+    #     iteration_list,
+    #     sparse_rounds,
+    #     pool_no=pool_no)
+    #
+    # # OLD CODE PATH END
+    # ######################################
 
     # log.info('Pool process %d finished' % pool_no)
 
@@ -113,7 +117,6 @@ def spawn_sampler_pool(
         sparse_rounds,
         background_set,
         forced_go_interface,
-        go_interface_instance,
         sampling_policy,
         sampling_options):
     """
@@ -124,7 +127,6 @@ def spawn_sampler_pool(
     :param iterations_list_per_pool: number of random samples we look to generate to match the
         reference set
     :param sparse_rounds: how many sparse sampling rounds to perform, if any (unless it's False)
-    :param go_interface_instance: passed go_interface instance
     :param background: background
     """
     global implicitely_threaded

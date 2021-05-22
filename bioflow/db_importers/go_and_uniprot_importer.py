@@ -286,6 +286,7 @@ def import_uniprots(uniprot, reactome_acnum_bindings):
         for GO_Term in data_container['GO']:
             if GO_Term in list(GO_term_memoization_dict.keys()):
                 linked_go_term = GO_term_memoization_dict[GO_Term]
+
                 DatabaseGraph.link(uniprot_node.id,
                                    linked_go_term.id,
                                    'is_go_annotation',

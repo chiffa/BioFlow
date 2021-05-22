@@ -11,6 +11,7 @@ import math
 import datetime
 from collections import defaultdict
 from copy import copy
+from random import shuffle, sample
 from csv import reader
 from itertools import combinations, chain
 from pprint import PrettyPrinter
@@ -158,6 +159,15 @@ class GeneOntologyInterface(object):
     def _time(self):
         pt = time() - self.partial_time
         return pt
+
+    def reset_thread_hex(self):
+        """
+        Reset the hex identifier of the object. used when multiprocessing
+
+        :return:
+        """
+        char_set = string.ascii_uppercase + string.digits
+        self.thread_hex = ''.join(sample(char_set * 6, 6))
 
     def _dump_statics(self):
         dump_object(
@@ -1154,7 +1164,6 @@ class GeneOntologyInterface(object):
 
     def randomly_sample(
             self,
-            deprec_lis_size,
             random_samples,
             sparse_rounds: int = -1,
             no_add=False,

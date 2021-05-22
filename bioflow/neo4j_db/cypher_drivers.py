@@ -42,7 +42,7 @@ required_edge_params = {'parse_type', 'source'}
 
 def _check_node_params(param_dict: dict) -> bool:
     """
-    Auxialry function
+    Auxilary function
 
     Checks if the parameters provided to create a new node respect the constraints on the allowed
     `parse_tyoe`s and provide the required parameters
@@ -147,6 +147,9 @@ class GraphDBPipe(object):
     @staticmethod
     def _create(tx, node_type, param_dict):
         _check_node_params(param_dict)
+
+        if node_type == 'GOTerm' and param_dict['parse_type'] != 'annotation':
+            raise Exception('Term class name and type inconsistency detected')
 
         instruction_puck = ["CREATE (n:%s)" % node_type]
         set_puck = []
