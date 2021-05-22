@@ -199,11 +199,15 @@ def matched_sampling(sample, secondary_sample,
 
     if _is_int(background[0]):
         background_ids = np.array(background)
-        background_whg = np.ones_like(background_ids)
+        background_whg = np.ones_like(background_ids).astype(np.float)
 
     else:
         background_ids = np.array(background)[:, 0]
         background_whg = np.array(background)[:, 1]
+
+    log.info('debug sum %s, type: %s, all:%s' % (np.sum(background_whg),
+                                             type(background_whg),
+                                             background_whg))
 
     background_whg /= np.sum(background_whg)
 
