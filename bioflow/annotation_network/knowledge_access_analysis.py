@@ -35,7 +35,7 @@ def get_go_interface_instance(background: Union[List[int], List[Tuple[int, float
     """
     go_interface_instance = GeneOntologyInterface(background=background)
     go_interface_instance.fast_load()
-    log.info('Annotation interface created with background length',
+    log.info('Annotation interface created with background length %d' %
              len(go_interface_instance._background))
     return go_interface_instance
 
