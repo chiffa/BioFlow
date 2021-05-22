@@ -85,11 +85,11 @@ phosphosite_organism = Sources['PHOSPHOSITE']['organism']
 up_tax_ids = [tax_id.strip() for tax_id in Sources['UNIPROT'][
     'tax_ids'].split(',') if tax_id not in ('', ' ')]
 
-
 # Defines Mongodb properties and connections
 pymongo_prefix = Sources['INTERNAL']['mongoprefix']
 pymongo_suffix = Sources['INTERNAL']['mongosuffix']
 estimated_comp_ops = int(Sources['INTERNAL']['compops'])  # pairwise flows computed per second
+neo4j_db_name = Sources['INTERNAL'].get('neo4jdb', None)
 
 
 class Dumps(object):

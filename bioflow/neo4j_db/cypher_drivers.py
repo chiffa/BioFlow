@@ -7,11 +7,11 @@ import os
 from pprint import pprint
 from collections import defaultdict
 from itertools import combinations_with_replacement
-from neo4j import GraphDatabase
+from neo4j import GraphDatabase, DEFAULT_DATABASE
 from neo4j.graph import Node, Relationship, Path
 from typing import List, Tuple, NewType, Dict
 from bioflow.utils.log_behavior import get_logger
-from bioflow.configs.main_configs import neo4j_server_url
+from bioflow.configs.main_configs import neo4j_server_url, neo4j_db_name
 
 
 log = get_logger(__name__)
@@ -19,8 +19,6 @@ log = get_logger(__name__)
 # default connection parameters
 uri = neo4j_server_url
 user = 'neo4j'
-# REFACTOR: [better environment]:
-#  add `db_org = confs.organism` instruction to enable parallel databases
 
 # Type hinting support
 db_id = NewType('db_id', int)
@@ -116,6 +114,10 @@ class GraphDBPipe(object):
     def __init__(self):  # REFACTOR: add an option to supply uri, user and pwd not from configs
         password = os.environ['NEOPASS']
         self._driver = GraphDatabase.driver(uri, auth=(user, password))
+        if neo4j_db_name is None:
+            self._active_database = DEFAULT_DATABASE  # INTEST:
+        else:
+            self._active_database = neo4j_db_name
 
     def close(self):
         """
@@ -138,7 +140,7 @@ class GraphDBPipe(object):
         :param param_dict: parameters of the node to be set in the database
         :return: the created node
         """
-        with self._driver.session() as session:
+        with self._driver.session(database=self._active_database) as session:
             new_node = session.write_transaction(self._create, node_type, param_dict)
             return new_node
 
@@ -169,7 +171,7 @@ class GraphDBPipe(object):
         :param node_type: (optional type of the node to be deleted)
         :return:
         """
-        with self._driver.session() as session:
+        with self._driver.session(database=self._active_database) as session:
             # REFACTOR: [better environment]: organism-specific: session(database=db_org)
             deleted = session.write_transaction(self._delete, node_id, node_type)
             return deleted
@@ -195,7 +197,7 @@ class GraphDBPipe(object):
         :param node_type: types of the nodes to be deleted
         :return:
         """
-        with self._driver.session() as session:
+        with self._driver.session(database=self._active_database) as session:
             suppression = session.write_transaction(self._delete_all, node_type)
             return suppression
 
@@ -212,7 +214,7 @@ class GraphDBPipe(object):
 
         :return:
         """
-        with self._driver.session() as session:
+        with self._driver.session(database=self._active_database) as session:
             session.write_transaction(self._clear_database)
 
     @staticmethod
@@ -238,7 +240,7 @@ class GraphDBPipe(object):
         :param node_type: (optional) type of the node to be retrieved
         :return:
         """
-        with self._driver.session() as session:
+        with self._driver.session(database=self._active_database) as session:
             node = session.write_transaction(self._get, node_type, node_id)
             return node
 
@@ -269,7 +271,7 @@ class GraphDBPipe(object):
         :param node_type: type of the nodes to get
         :return:
         """
-        with self._driver.session() as session:
+        with self._driver.session(database=self._active_database) as session:
             nodes = session.write_transaction(self._get_all, node_type)
             return nodes
 
@@ -286,7 +288,7 @@ class GraphDBPipe(object):
         :param node_type: type of nodes to count
         :return:
         """
-        with self._driver.session() as session:
+        with self._driver.session(database=self._active_database) as session:
             nodes_count = session.write_transaction(self._count, node_type)
             return nodes_count
 
@@ -307,7 +309,7 @@ class GraphDBPipe(object):
         :param node_type: (optional) type of nodes among which to search
         :return: list of found nodes
         """
-        with self._driver.session() as session:
+        with self._driver.session(database=self._active_database) as session:
             nodes = session.write_transaction(self._find, node_type, filter_dict)
             return nodes
 
@@ -345,7 +347,7 @@ class GraphDBPipe(object):
         :param params: provided link parameters
         :return: list containing the the created link object
         """
-        with self._driver.session() as session:
+        with self._driver.session(database=self._active_database) as session:
             link = session.write_transaction(self._link_create, node_id_from, node_id_to, link_type, params)
             return link
 
@@ -387,7 +389,7 @@ class GraphDBPipe(object):
         be followed
         :return: list of nodes that were found
         """
-        with self._driver.session() as session:
+        with self._driver.session(database=self._active_database) as session:
             results = session.write_transaction(self._get_linked, node_id, orientation, link_type, link_param_filter)
             return results
 
@@ -435,7 +437,7 @@ class GraphDBPipe(object):
         :param attributes_dict: dictionary of properties to set
         :return: edited node
         """
-        with self._driver.session() as session:
+        with self._driver.session(database=self._active_database) as session:
             edited_node = session.write_transaction(self._set_attributes, node_id, attributes_dict)
             return edited_node
 
@@ -467,7 +469,7 @@ class GraphDBPipe(object):
         :param: source: (optional) where the link comes from
         :return: new node containing the annotation
         """
-        with self._driver.session() as session:
+        with self._driver.session(database=self._active_database) as session:
             annot_tag = session.write_transaction(self._attach_annotation_tag,
                                                   node_id, annotation_tag, tag_type,
                                                   preferential, source)
@@ -526,7 +528,7 @@ class GraphDBPipe(object):
         :param tag_type: (optional) the type of the external identifier
         :return: list of nodes that are annotated by the external identifier
         """
-        with self._driver.session() as session:
+        with self._driver.session(database=self._active_database) as session:
             annotated_nodes = session.write_transaction(self._get_from_annotation_tag, annotation_tag, tag_type)
             return annotated_nodes
 
@@ -597,7 +599,7 @@ class GraphDBPipe(object):
         :param source: (optional: source of the annotation)
         :return: list of all newly created annotation nodes
         """
-        with self._driver.session() as session:
+        with self._driver.session(database=self._active_database) as session:
             tx = session.begin_transaction()
             annot_nodes = []
             for annot_type, annot_list in annot_type_2_annot_list.items():
@@ -622,7 +624,7 @@ class GraphDBPipe(object):
         :param batch_size: (optional) how many nodes insert per batch
         :return: list of created nodes
         """
-        with self._driver.session() as session:
+        with self._driver.session(database=self._active_database) as session:
             tx = session.begin_transaction()
             new_nodes = []
             for i, (n_type, n_params) in enumerate(zip(type_list, param_dicts_list)):
@@ -648,7 +650,7 @@ class GraphDBPipe(object):
         :param batch_size: (optional) links created in each transaction
         :return: list of set links
         """
-        with self._driver.session() as session:
+        with self._driver.session(database=self._active_database) as session:
             tx = session.begin_transaction()
             new_links = []
             for i, (_from, _to), n_type, n_params in enumerate(zip(id_pairs_list, type_list, param_dicts_list)):
@@ -671,7 +673,7 @@ class GraphDBPipe(object):
         :param batch_size: (optional) nodes to set parameters in each batch
         :return: list of updated nodes
         """
-        with self._driver.session() as session:
+        with self._driver.session(database=self._active_database) as session:
             tx = session.begin_transaction()
             edited_nodes = []
             for i, (n_id, n_params) in enumerate(zip(id_list, param_dicts_list)):
@@ -696,7 +698,7 @@ class GraphDBPipe(object):
         :return: list of lists of found physical entity nodes
         """
         log.info('Batch retrieval started with %s elements' % len(annotation_tags_list))
-        with self._driver.session() as session:
+        with self._driver.session(database=self._active_database) as session:
             tx = session.begin_transaction()
             annotated_nodes = []
 
@@ -728,7 +730,7 @@ class GraphDBPipe(object):
 
         :return:
         """
-        with self._driver.session() as session:
+        with self._driver.session(database=self._active_database) as session:
             session.write_transaction(self._build_indexes)
 
     @staticmethod
@@ -747,7 +749,7 @@ class GraphDBPipe(object):
         :param annotation_type: source of annotation on which the cross-linking is done
         :return: nodes that has been cross-linked
         """
-        with self._driver.session() as session:
+        with self._driver.session(database=self._active_database) as session:
             dirty_nodes = session.write_transaction(self._cross_link_on_xrefs, annotation_type)
             return dirty_nodes
 
@@ -772,7 +774,7 @@ class GraphDBPipe(object):
 
         :return:
         """
-        with self._driver.session() as session:
+        with self._driver.session(database=self._active_database) as session:
             session.write_transaction(self._count_direct_coverage)
             session.write_transaction(self._count_indirect_coverage)
             session.write_transaction(self._count_up_inf_content)
@@ -809,7 +811,7 @@ class GraphDBPipe(object):
 
         :return: {UNIPROT.LegacyId: preferential annotation tag}
         """
-        with self._driver.session() as session:
+        with self._driver.session(database=self._active_database) as session:
             name_maps = session.write_transaction(self._get_preferential_gene_names)
             return name_maps
 
@@ -835,7 +837,7 @@ class GraphDBPipe(object):
         :param legacy_id_2: LegacyId of a second Uniprot node
         :return: how many paths including an `is_likely_same` edge are between the two nodes
         """
-        with self._driver.session() as session:
+        with self._driver.session(database=self._active_database) as session:
             legal = session.write_transaction(self._check_connection_permutation, legacy_id_1, legacy_id_2)
             log.info('checking_permutation')
             return legal
@@ -864,7 +866,7 @@ class GraphDBPipe(object):
 
         :return:
         """
-        with self._driver.session() as session:
+        with self._driver.session(database=self._active_database) as session:
             session.write_transaction(self._node_stats)
 
     @staticmethod
@@ -885,7 +887,7 @@ class GraphDBPipe(object):
         :param excluded_names_or_leg_ids: list of legacy ID or names of nodes to exclude
         :return:
         """
-        with self._driver.session() as session:
+        with self._driver.session(database=self._active_database) as session:
             nodes_list = session.write_transaction(self._mark_forbidden_nodes,
                                                    excluded_names_or_leg_ids)
         return nodes_list
@@ -912,7 +914,7 @@ class GraphDBPipe(object):
         :return:
         """
         log.info('Massive pull from the database, this might take a while, please wait')
-        with self._driver.session() as session:
+        with self._driver.session(database=self._active_database) as session:
             nodes_dict, rels_list = session.write_transaction(self._parse_physical_entity_net,
                                                               main_connex_only)
         log.info('Pull suceeded')
@@ -980,7 +982,7 @@ class GraphDBPipe(object):
         :return:
         """
         log.info('Massive pull from the database, this might take a while, please wait')
-        with self._driver.session() as session:
+        with self._driver.session(database=self._active_database) as session:
             nodes_dict, rels_list = session.write_transaction(self._parse_knowledge_entity_net)
         log.info('Pull suceeded')
         return nodes_dict, rels_list
@@ -1018,7 +1020,7 @@ class GraphDBPipe(object):
         :raise Exception: if a parameter that is required is cleared
         :return:
         """
-        with self._driver.session() as session:
+        with self._driver.session(database=self._active_database) as session:
             session.write_transaction(self._erase_node_properties, properties_list)
 
     @staticmethod
@@ -1038,7 +1040,7 @@ class GraphDBPipe(object):
 
         :return:
         """
-        with self._driver.session() as session:
+        with self._driver.session(database=self._active_database) as session:
             session.write_transaction(self._self_diag)
 
     @staticmethod

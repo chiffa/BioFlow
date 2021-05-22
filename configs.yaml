@@ -54,6 +54,7 @@ Sources:  # Yeast
     dumpprefix: /yeast
     mongoprefix: _yeast
     mongosuffix: _v_1
+    neo4jdb: yeast
   META:
     organism: Yeast
   PHOSPHOSITE:
@@ -78,6 +79,7 @@ Sources:  # Yeast
 #    dumpprefix: /human
 #    mongoprefix: _human
 #    mongosuffix: _v_1
+#    neo4jdb: human
 #  META:
 #    organism: Human
 #  PHOSPHOSITE:
@@ -103,6 +105,7 @@ Sources:  # Yeast
 #    dumpprefix: /mouse
 #    mongoprefix: _mouse
 #    mongosuffix: _v_1
+#    neo4jdb: mouse
 #  META:
 #    organism: Mouse
 #  PHOSPHOSITE:
