@@ -4,7 +4,7 @@ TODOs for the project in the future:
 On the table:
 -------------
 
- - TEST: Mirror the weight sampling modifications from InteractomeInterface/interactome_analysis to
+ - DONE: Mirror the weight sampling modifications from InteractomeInterface/interactome_analysis to
         AnnototmeInterface/knowledge_analysis.
     - DONE: conduction routines (does not apply - the loop is accessed directly from the
         Knowledge loop due to filtering)
@@ -36,10 +36,10 @@ On the table:
     - DONE: revert the change to sparse_sampling in the text documentation of methods
     - DONE: pass the arguments down the pipeline
 
-    - TODO: move self.entity_2_terms_neo4j_ids.keys() into self.known_UP_ids upon construction, then
+    - DONE: move self.entity_2_terms_neo4j_ids.keys() into self.known_UP_ids upon construction, then
         in all the references
 
-    - done: upon debug discovered that the UNIPROT/GO parse is currently broken:
+    - DONE: upon debug discovered that the UNIPROT/GO parse is currently broken:
         The borked edges seem to be coming from the BioGRID database
         - DONE: a lot of uniprot node connections and "weak interactions" parse ast GO terms
         - DONE: the proper GO terms are not loading - dangling legacy code

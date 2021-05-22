@@ -87,6 +87,7 @@ class GeneOntologyInterface(object):
         self.partial_time = time()
 
         self.entity_2_terms_neo4j_ids = defaultdict(list)
+        self.known_up_ids = set()
         self.term_2_entities_neo4j_ids = defaultdict(list)
         self.all_nodes_neo4j_ids = []
         self.node_id_2_mat_idx = {}
@@ -216,6 +217,8 @@ class GeneOntologyInterface(object):
         self.node_id_2_mat_idx, self.mat_idx_2_note_id, self.up_neo4j_id_2_leg_id_disp_name =\
             undump_object(confs.Dumps.GO_dump)
 
+        self.known_up_ids = self.entity_2_terms_neo4j_ids.keys()
+
     def _dump_matrices(self):
         dump_object(
             confs.Dumps.GO_Mats,
@@ -305,15 +308,14 @@ class GeneOntologyInterface(object):
 
         if self._background:
             if _is_int(self._background[0]):
-                self._background = list(set(self.entity_2_terms_neo4j_ids.keys()).intersection(
-                    set(self._background)))
+                self._background = list(set(self.known_up_ids).intersection(set(self._background)))
             else:
                 self._background = [(_id, _weight)
                                     for _id, _weight in self._background
-                                    if _id in self.entity_2_terms_neo4j_ids.keys()]
+                                    if _id in self.known_up_ids]
 
         else:
-            self._background = list(self.entity_2_terms_neo4j_ids.keys())
+            self._background = list(self.known_up_ids)
 
         log.info('Finished rebuilding the GO Interface object %s', self.pretty_time())
 
@@ -355,19 +357,20 @@ class GeneOntologyInterface(object):
 
         self._undump_core()
 
-        log.info("_background: %d, entity_2_terms_neo4j_ids %s" % (len(self._background), len(self.entity_2_terms_neo4j_ids)))
+        log.info("_background: %d, entity_2_terms_neo4j_ids %s" % (len(self._background),
+                                                                   len(self.known_up_ids)))
 
         if self._background:
             if _is_int(self._background[0]):
-                self._background = list(set(self.entity_2_terms_neo4j_ids.keys()).intersection(
+                self._background = list(set(self.known_up_ids).intersection(
                     set(self._background)))
             else:
                 self._background = [(_id, _weight)
                                     for _id, _weight in self._background
-                                    if _id in self.entity_2_terms_neo4j_ids.keys()]
+                                    if _id in self.known_up_ids]
 
         else:
-            self._background = list(self.entity_2_terms_neo4j_ids.keys())
+            self._background = list(self.known_up_ids)
 
         # if not self._background:
         #     self._background = list(self.entity_2_terms_neo4j_ids.keys())
@@ -487,9 +490,7 @@ class GeneOntologyInterface(object):
         self.term_2_entities_neo4j_ids = dict(self.term_2_entities_neo4j_ids)
         self.entity_2_terms_neo4j_ids = dict(self.entity_2_terms_neo4j_ids)
 
-
-        # TRACING: background as a pure set here
-        self._background = list(self.entity_2_terms_neo4j_ids.keys())
+        self.known_up_ids = self.entity_2_terms_neo4j_ids.keys()
 
     def get_go_adjacency_and_laplacian(self, include_reg=True):
         """
@@ -549,7 +550,7 @@ class GeneOntologyInterface(object):
 
         if not self.total_entropy:
             self.total_entropy = - \
-                math.log(1. / len(self.entity_2_terms_neo4j_ids.keys()), 2)
+                math.log(1. / len(self.known_up_ids), 2)
 
         if number < 1.0:
             # It actually possible now, the results just won't be used anymore
@@ -652,9 +653,9 @@ class GeneOntologyInterface(object):
         # Now we need to invert the reach to get the set of all the primary and
         # derived GO terms that describe a UP
         self._limiter_up_2_go_reachable_nodes = dict(
-            (key, []) for key in list(self.entity_2_terms_neo4j_ids.keys()))
+            (key, []) for key in self.known_up_ids)
         self._limiter_up_2_go_step_reachable_nodes = dict(
-            (key, defaultdict(list)) for key in list(self.entity_2_terms_neo4j_ids.keys()))
+            (key, defaultdict(list)) for key in self.known_up_ids)
         self._limiter_go_2_up_step_reachable_nodes = dict(
             (key, defaultdict(list)) for key in list(pre_go2up_step_reachable_nodes.keys()))
 
@@ -827,20 +828,18 @@ class GeneOntologyInterface(object):
 
     def set_flow_sources(self, sample, secondary_sample):
 
-        known_up_ids = set(self.entity_2_terms_neo4j_ids.keys())
-
         def _verify_uniprot_ids(uniprot_vector: List[Tuple[int, float]]):
             # TRACING: rename to id_weight_vector
             uniprots = np.array(uniprot_vector)[:, 0].astype(np.int).tolist()
 
-            if not set(uniprots) <= known_up_ids:
+            if not set(uniprots) <= self.known_up_ids:
 
                 log.warn('Following reached uniprots neo4j_ids were not retrieved upon the '
                          'circulation matrix construction: \n %s',
-                         (set(uniprots) - known_up_ids))
+                         (set(uniprots) - self.known_up_ids))
 
             _filter = [True
-                       if uniprot in known_up_ids
+                       if uniprot in self.known_up_ids
                        else False
                        for uniprot in uniprots]
 
@@ -890,17 +889,17 @@ class GeneOntologyInterface(object):
         fixed_index = self.laplacian_matrix.shape[0]
 
         up2idxs = dict((UP, fixed_index + Idx)
-                       for Idx, UP in enumerate(self.entity_2_terms_neo4j_ids.keys()))
+                       for Idx, UP in enumerate(self.known_up_ids))
         idx2ups = dict((Idx, UP) for UP, Idx in up2idxs.items())
 
         self.inflated_laplacian = lil_matrix(
-            (self.laplacian_matrix.shape[0] + len(set(self.entity_2_terms_neo4j_ids.keys())),
-             self.laplacian_matrix.shape[1] + len(set(self.entity_2_terms_neo4j_ids.keys()))))
+            (self.laplacian_matrix.shape[0] + len(self.known_up_ids),
+             self.laplacian_matrix.shape[1] + len(self.known_up_ids)))
 
         self.inflated_laplacian[:self.laplacian_matrix.shape[0], :self.laplacian_matrix.shape[1]] =\
             self.laplacian_matrix
 
-        for uniprot in self.entity_2_terms_neo4j_ids.keys():
+        for uniprot in self.known_up_ids:
             for go_term in self.entity_2_terms_neo4j_ids.get(uniprot, []):  # should never hit the [] though
                 self.inflated_laplacian[
                     up2idxs[uniprot], up2idxs[uniprot]] += self.binding_intensity
@@ -926,14 +925,13 @@ class GeneOntologyInterface(object):
         :raise Warning: if the uniprots were not present in the set of GOs for which we
         built the system or had no GO attached to them
         """
-        known_up_ids = set(self.entity_2_terms_neo4j_ids.keys())
-        if not set(uniprots) <= known_up_ids :
-            na_set = set(uniprots) - known_up_ids
+        if not set(uniprots) <= self.known_up_ids :
+            na_set = set(uniprots) - self.known_up_ids
             log.warning('%s uniprots out of %s either were not present in the constructions set '
                         'or have no GO terms attached to them.', len(na_set), len(set(uniprots)))
             log.debug('full list of uniprots that cannot be analyzed: \n%s', na_set)
 
-        self._active_up_sample = [uniprot for uniprot in uniprots if uniprot in known_up_ids]
+        self._active_up_sample = [uniprot for uniprot in uniprots if uniprot in self.known_up_ids]
 
         # log.info("tried to set up list %d, intersected with %d UP2GO_dict.keys(), ended up with %d"
         #          % (len(uniprots), len(self.entity_2_terms_neo4j_ids.keys()), len(self._active_up_sample)))
