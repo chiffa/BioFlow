@@ -41,10 +41,6 @@ if __name__ == "__main__":
         # # pulling the online databases
         # pull_online_dbs()
 
-        ##########################################
-        # After you've changed folders/sources above, you need to re-start python to force
-        # main_configs update
-        ##########################################
 
         # # clearing the database, if required
         # destroy_db()
@@ -148,30 +144,34 @@ if __name__ == "__main__":
         #
         # raise Exception('Debug Exception')
 
+        # hits_ids, sec_hit_ids, background_internal_ids = map_and_save_gene_ids(
+        #     ('yeast_test_gene_set-glycogen_biosynthesis_tsw_1.tsv',
+        #      'yeast_test_gene_set-glycogen_biosynthesis_tsw_2.tsv'),
+        #      'test_weighted_background.tsv')
+
         hits_ids, sec_hit_ids, background_internal_ids = map_and_save_gene_ids(
-            ('yeast_test_gene_set-glycogen_biosynthesis_tsw_1.tsv',
-             'yeast_test_gene_set-glycogen_biosynthesis_tsw_2.tsv'),
-             'test_weighted_background.tsv')
+             'yeast_test_gene_set-glycogen_biosynthesis.tsv',
+             '')
 
         log.info('debug: hits_ids parse: %s' % hits_ids)
 
-        # interactome_analysis(source_list=hits_ids,
-        #                      secondary_source_list=sec_hit_ids,
-        #                      # output_destinations_list=['chr_%s' % filename[:-4]],
-        #                      desired_depth=5,
-        #                      processors=1,
-        #                      background_list=background_internal_ids,
-        #                      skip_sampling=False
-        #                      )
+        interactome_analysis(source_list=hits_ids,
+                             secondary_source_list=sec_hit_ids,
+                             # output_destinations_list=['chr_%s' % filename[:-4]],
+                             desired_depth=5,
+                             processors=1,
+                             background_list=background_internal_ids,
+                             skip_sampling=False
+                             )
 
-        knowledge_analysis(source_list=hits_ids,
-                           secondary_source_list=sec_hit_ids,
-                           # output_destinations_list=['chr_%s' % filename[:-4]],
-                           desired_depth=5,
-                           processors=1,
-                           background_list=background_internal_ids,
-                           skip_sampling=False,
-                           )
+        # knowledge_analysis(source_list=hits_ids,
+        #                    secondary_source_list=sec_hit_ids,
+        #                    # output_destinations_list=['chr_%s' % filename[:-4]],
+        #                    desired_depth=5,
+        #                    processors=1,
+        #                    background_list=background_internal_ids,
+        #                    skip_sampling=False,
+        #                    )
 
         raise Exception('Debug Exception')
 

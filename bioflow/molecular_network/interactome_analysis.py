@@ -26,6 +26,7 @@ from bioflow.utils.dataviz import kde_compute
 from bioflow.utils.log_behavior import get_logger
 from bioflow.utils.io_routines import get_source_bulbs_ids, get_background_bulbs_ids
 from bioflow.utils.general_utils.high_level_os_io import mkdir_recursive
+from bioflow.neo4j_db.db_io_routines import cast_external_refs_to_internal_ids
 from bioflow.algorithms_bank.flow_significance_evaluation import get_neighboring_degrees,\
     get_p_val_by_gumbel
 import bioflow.algorithms_bank.sampling_policies as sampling_policies
@@ -420,6 +421,7 @@ def auto_analyze(source_list: List[Union[List[int], List[Tuple[int, float]]]],
                  sampling_policy=sampling_policies.matched_sampling,
                  sampling_policy_options='exact',
                  explicit_interface=None,
+                 excludede_nodes = (),
                  ) -> None:
     """
     Automatically analyzes the interactome synergetic action of the experimental hit lists

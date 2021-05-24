@@ -4,12 +4,6 @@ TODOs for the project in the future:
 On the table:
 -------------
 
-ASIDE:
- - NOFX: fold in the different policy functions into the internal properties of the Interface
-    object and carry them through to avoid excessive arguments forwarding (NOFX: not an essential
-    feature)
- - DONE: transplant those functions into the hash calcualtion
-
 <Specific nodes/links exclusion>
 
  - TODO: provide a list of ids of the nodes to be excluded from the analysis
@@ -17,20 +11,6 @@ ASIDE:
  - TODO: after loading the laplacian interface, find the affected nodes/node pairs
         - for nodes, null the corresponding row & column
         - for pairs of nodes, null the specific cell pairs indicating the connections
-
-<pretty progress>
-
- - TODO: [USABILITY] Improve the progress reporting
-        Move the INFO to a progress bar. The problem is that we are working with multiple threads in
-        async environment. This can be mitigated by using the `aptbar` library
-    - TODO: single sample loop to aptbar progress monitoring
-    - TODO: outer loop (X samples) to aptbar progress monitoring
-    - TODO: move parameters that are currently being printed in the main loop in INFO channel to
-        DEBUG channel
-    - TODO: provide progress bar binding for the importers as well
-
- - TODO: [USABILITY]: fold the current verbose state into a `-v/--vebose` argument
-
 
 TODO: clean up dead code
     - DONE: Delete old code path
@@ -52,6 +32,10 @@ TODO: document new features
     TODO: Advanced usage
         - TODO: pair generation method
         - TODO: sampling method
+    TODO: Command line alignment
+
+TODO: change the active organism by simple list and then read from the main_configs
+
 
 Current refactoring:
 --------------------
@@ -167,6 +151,18 @@ Current refactoring:
 
  - ????: [USABILITY] add the Laplacian nonzero elements to the shape one (????)
 
+<pretty progress>
+
+ - TODO: [USABILITY] Improve the progress reporting
+        Move the INFO to a progress bar. The problem is that we are working with multiple threads in
+        async environment. This can be mitigated by using the `aptbar` library
+    - TODO: single sample loop to aptbar progress monitoring
+    - TODO: outer loop (X samples) to aptbar progress monitoring
+    - TODO: move parameters that are currently being printed in the main loop in INFO channel to
+        DEBUG channel
+    - TODO: provide progress bar binding for the importers as well
+
+ - TODO: [USABILITY]: fold the current verbose state into a `-v/--vebose` argument
 
 
 DONE SEPARATOR:
@@ -179,6 +175,11 @@ DONE SEPARATOR:
     - improves run state registration
     - removes an additional layer of logic of saving/retrieving
     - is not necessary now that background is used only for the sampling
+
+ - NOFX: fold in the different policy functions into the internal properties of the Interface
+    object and carry them through to avoid excessive arguments forwarding (NOFX: not an essential
+    feature)
+ - DONE: transplant those functions into the hash calcualtion
 
 <new flow and sampling routines>
 
