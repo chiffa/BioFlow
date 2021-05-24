@@ -595,6 +595,29 @@ class InteractomeInterface(object):
             self._active_up_sample = list(set(self._active_up_sample
                                               + np.array(self._secondary_weighted_sample)[:, 0].tolist()))
 
+    def apply_reweight_dict(self, lapl_reweight_dict):
+        """
+        Applies a weight update instruction array providec by laplacian reweeighting dictionary
+
+        :param lapl_reweight_dict: laplacian reweighting dictionary for instructions
+        :return:
+        """
+        for _id_or_tuple, value in lapl_reweight_dict.items():
+
+            if type(_id_or_tuple) == tuple:
+                matrix_id_1 = self.neo4j_id_2_matrix_index[_id_or_tuple[0]]
+                matrix_id_2 = self.neo4j_id_2_matrix_index[_id_or_tuple[1]]
+                self.laplacian_matrix[matrix_id_1, matrix_id_2] = value
+                self.laplacian_matrix[matrix_id_2, matrix_id_1] = value
+
+            else:
+                matrix_id = self.neo4j_id_2_matrix_index[_id_or_tuple]
+                self.laplacian_matrix[matrix_id, :] *= value
+                self.laplacian_matrix[:, matrix_id] *= value
+                if value != 0:
+                    self.laplacian_matrix[matrix_id, matrix_id] /= value
+
+
     def evaluate_ops(self, sparse_rounds=-1):
         """
         Evaluate the number of pairs of nodes that wlll be used for flow calculation
@@ -724,31 +747,6 @@ class InteractomeInterface(object):
                        self.matrix_index_2_neo4j_id[j]),
                       voltage)
                      for (i, j), voltage in up_pair_2_voltage.items()))
-
-        # if sparse_rounds > 1:
-        #     current_accumulator, _ = \
-        #         cr.main_flow_calc_loop(self.laplacian_matrix,
-        #                                [self.neo4j_id_2_matrix_index[UP]
-        #                                 for UP in self._active_up_sample],
-        #                                cancellation=cancellation,
-        #                                sparse_rounds=sparse_rounds,
-        #                                thread_hex=self.thread_hex)
-        #
-        # else:
-        #     current_accumulator, up_pair_2_voltage =\
-        #         cr.main_flow_calc_loop(self.laplacian_matrix,
-        #                                [self.neo4j_id_2_matrix_index[UP]
-        #                                 for UP in self._active_up_sample],
-        #                                cancellation=cancellation,
-        #                                potential_diffs_remembered=True,
-        #                                thread_hex=self.thread_hex)
-        #
-        #
-        #     self.UP2UP_voltages.update(
-        #         dict(((self.matrix_index_2_neo4j_id[i],
-        #                self.matrix_index_2_neo4j_id[j]),
-        #               voltage)
-        #              for (i, j), voltage in up_pair_2_voltage.items()))
 
         if incremental:
             self.current_accumulator = self.current_accumulator + current_accumulator

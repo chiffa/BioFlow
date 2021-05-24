@@ -11,7 +11,7 @@ import traceback
 from pprint import pprint
 import os
 import psutil
-from typing import Any, Union, TypeVar, NewType, Tuple, List
+from typing import Any, Union, TypeVar, NewType, Tuple, List, Dict
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy.stats import gumbel_r
@@ -26,13 +26,28 @@ from bioflow.utils.dataviz import kde_compute
 from bioflow.utils.log_behavior import get_logger
 from bioflow.utils.io_routines import get_source_bulbs_ids, get_background_bulbs_ids
 from bioflow.utils.general_utils.high_level_os_io import mkdir_recursive
-from bioflow.neo4j_db.db_io_routines import cast_external_refs_to_internal_ids
+from bioflow.neo4j_db.db_io_routines import convert_to_internal_ids
 from bioflow.algorithms_bank.flow_significance_evaluation import get_neighboring_degrees,\
     get_p_val_by_gumbel
 import bioflow.algorithms_bank.sampling_policies as sampling_policies
 
 
 log = get_logger(__name__)
+
+
+def _is_int(_obj):
+    """
+    Checks if an object is an int with a try-except loop
+
+    :param _obj:
+    :return:
+    """
+    try:
+        int(_obj)
+    except TypeError or ValueError as e:
+        return False
+    else:
+        return True
 
 
 def get_interactome_interface(background_up_ids=()) -> InteractomeInterface:
@@ -407,6 +422,46 @@ def compare_to_blank(interactome_interface_instance: InteractomeInterface,
     return sorted(node_char_list, key=lambda x: x[4]), nodes_dict
 
 
+# TRACING: move to db_io
+def translate_reweight_dict(reweight_dict: Dict) -> Dict:
+    """
+    Checks a dict assigning desired weight changes in the matrix and if needed translates the
+    exterrnal db xrefs to internal db ids
+
+    :param reweight_dict: dict of instructions to re-assign weights
+    :return: reweigt_dict translated into internal ids
+    """
+    discordance_switch = False
+    updated_reweight_dict = {}
+
+    for _id_or_tuple, value in reweight_dict.items():
+        if type(_id_or_tuple) == tuple:
+            if _is_int(_id_or_tuple[0]):
+                if discordance_switch:
+                    raise Exception("mixed ID types in reweight dict, found an int in %s"
+                                    % str(_id_or_tuple))
+                return reweight_dict  # internal DB ids were supplied
+            else:
+                discordance_switch = True
+                id_lookup = convert_to_internal_ids(_id_or_tuple)
+                updated_reweight_dict[(id_lookup[_id_or_tuple[0]],
+                                       id_lookup[_id_or_tuple[1]])] = float(value)
+
+        else:
+            if _is_int(_id_or_tuple):
+                if discordance_switch:
+                    raise Exception("mixed ID types in reweight dict, found an int in %s"
+                                    % str(_id_or_tuple))
+                return reweight_dict
+            else:
+                discordance_switch = True
+                id_lookup = convert_to_internal_ids([_id_or_tuple])
+                updated_reweight_dict[(id_lookup[_id_or_tuple])] = float(value)
+
+    return updated_reweight_dict
+
+
+
 def auto_analyze(source_list: List[Union[List[int], List[Tuple[int, float]]]],
                  secondary_source_list: List[Union[List[int],
                                                    List[Tuple[int, float]],
@@ -421,7 +476,7 @@ def auto_analyze(source_list: List[Union[List[int], List[Tuple[int, float]]]],
                  sampling_policy=sampling_policies.matched_sampling,
                  sampling_policy_options='exact',
                  explicit_interface=None,
-                 excludede_nodes = (),
+                 forced_lapl_reweight=None,  # TRACING: a dict
                  ) -> None:
     """
     Automatically analyzes the interactome synergetic action of the experimental hit lists
@@ -470,6 +525,9 @@ def auto_analyze(source_list: List[Union[List[int], List[Tuple[int, float]]]],
 
     if secondary_source_list is None:
         secondary_source_list = [None] * len(source_list)
+
+    if forced_lapl_reweight is not None:
+        forced_lapl_reweight = translate_reweight_dict(forced_lapl_reweight)
 
     for hits_list, sec_list, output_destination in zip(source_list, secondary_source_list,
                                                        output_destinations_list):
@@ -537,6 +595,9 @@ def auto_analyze(source_list: List[Union[List[int], List[Tuple[int, float]]]],
                                forced_interactome_interface=explicit_interface,
                                sampling_policy=sampling_policy,
                                sampling_options=sampling_policy_options)
+
+        if forced_lapl_reweight is not None:
+            interactome_interface.apply_reweight_dict(forced_lapl_reweight)  # TRACING: weights update
 
         interactome_interface.compute_current_and_potentials()
 
