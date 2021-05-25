@@ -161,7 +161,8 @@ if __name__ == "__main__":
                              desired_depth=5,
                              processors=1,
                              background_list=background_internal_ids,
-                             skip_sampling=False
+                             skip_sampling=False,
+                             forced_lapl_reweight={155606: 0.0}
                              )
 
         # knowledge_analysis(source_list=hits_ids,

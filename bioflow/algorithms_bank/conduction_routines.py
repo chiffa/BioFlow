@@ -363,6 +363,13 @@ def main_flow_calc_loop(conductivity_laplacian: np.array,
     # convert the arguments to proper structure:
     conductivity_laplacian = conductivity_laplacian.tocsc()
 
+    # line_of_interest = 7493
+    # log.info('mat_lines of interest max: %f, %f; %d, %d' %
+    #          (np.max(conductivity_laplacian[line_of_interest, :]),
+    #           np.max(conductivity_laplacian[:, line_of_interest]),
+    #           np.sum((conductivity_laplacian[line_of_interest, :] != 0).astype(np.int)),
+    #           np.sum((conductivity_laplacian[:, line_of_interest] != 0).astype(np.int))))
+
     # generate index list in agreement with the sparse_sampling strategy
 
     # if sparse_sampling:

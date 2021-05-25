@@ -44,7 +44,10 @@ def _is_int(_obj):
     """
     try:
         int(_obj)
-    except TypeError or ValueError as e:
+    except Exception as e:  # for whatever reason value error is not capturing properly here
+        print(e)
+        print(type(e))
+        print('==============================================')
         return False
     else:
         return True
@@ -455,7 +458,9 @@ def translate_reweight_dict(reweight_dict: Dict) -> Dict:
                 return reweight_dict
             else:
                 discordance_switch = True
+                log.info('debug of c: %s' % _id_or_tuple)
                 id_lookup = convert_to_internal_ids([_id_or_tuple])
+                log.info('id lookup parse: %s' % str(id_lookup))
                 updated_reweight_dict[(id_lookup[_id_or_tuple])] = float(value)
 
     return updated_reweight_dict
@@ -496,6 +501,9 @@ def auto_analyze(source_list: List[Union[List[int], List[Tuple[int, float]]]],
     :param sampling_policy_options: sampling policy optional argument
     :param explicit_interface: an explicit InteractomeInterface instance in case any of the deep
         defaults (eg flow calculation function) are modified
+    :param forced_lapl_reweight: dictionary providing instructions for the modification of
+        interactome laplacians weight edges will be set to a given value, nodes will have all the
+        edges connecting to them multiplied by the value
     :return:
     """
     # Multiple re-spawns of threaded processing are incompatbile with scikits.sparse.cholmod
@@ -527,7 +535,10 @@ def auto_analyze(source_list: List[Union[List[int], List[Tuple[int, float]]]],
         secondary_source_list = [None] * len(source_list)
 
     if forced_lapl_reweight is not None:
+        print('<<<<<')
         forced_lapl_reweight = translate_reweight_dict(forced_lapl_reweight)
+        print(forced_lapl_reweight)
+        print('>>>>>')
 
     for hits_list, sec_list, output_destination in zip(source_list, secondary_source_list,
                                                        output_destinations_list):
@@ -575,7 +586,7 @@ def auto_analyze(source_list: List[Union[List[int], List[Tuple[int, float]]]],
                                                   'sampling_policy': sampling_policy.__name__,
                                                   'sampling_policy_options': sampling_policy_options})
 
-        if in_storage > desired_depth:
+        if in_storage >= desired_depth:
             log.info("%d suitable random samples found in storage for %d desired. Skipping "
                      "sampling" % (in_storage, desired_depth))
             skip_sampling = True

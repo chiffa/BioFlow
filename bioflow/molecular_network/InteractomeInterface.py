@@ -22,6 +22,8 @@ from scipy.sparse.linalg import eigsh
 from itertools import chain
 from typing import Union, Tuple, List
 
+import traceback
+
 import bioflow.configs.main_configs as confs
 from bioflow.utils.gdfExportInterface import GdfExportInterface
 from bioflow.utils.io_routines import write_to_csv, dump_object, undump_object
@@ -143,6 +145,7 @@ class InteractomeInterface(object):
         self.adjacency_matrix = undump_object(confs.Dumps.interactome_adjacency_matrix)
         self.laplacian_matrix = undump_object(confs.Dumps.interactome_laplacian_matrix)
         self.non_norm_laplacian_matrix = self.laplacian_matrix.copy()
+        # log.info('undump happening here. %s ' % traceback.extract_stack().format())
 
     def _dump_eigen(self):
         """
@@ -604,17 +607,28 @@ class InteractomeInterface(object):
         """
         for _id_or_tuple, value in lapl_reweight_dict.items():
 
+            log.debug('Applying a reweight for %d to %f' % (_id_or_tuple, value))
+
             if type(_id_or_tuple) == tuple:
+                log.debug('Tuple branch')
                 matrix_id_1 = self.neo4j_id_2_matrix_index[_id_or_tuple[0]]
                 matrix_id_2 = self.neo4j_id_2_matrix_index[_id_or_tuple[1]]
+
                 self.laplacian_matrix[matrix_id_1, matrix_id_2] = value
                 self.laplacian_matrix[matrix_id_2, matrix_id_1] = value
 
             else:
+
                 matrix_id = self.neo4j_id_2_matrix_index[_id_or_tuple]
-                self.laplacian_matrix[matrix_id, :] *= value
-                self.laplacian_matrix[:, matrix_id] *= value
-                if value != 0:
+                log.debug('Node branch at matrix idx %d' % matrix_id)
+
+                if value == 0:
+                    self.laplacian_matrix[matrix_id, :] = value
+                    self.laplacian_matrix[:, matrix_id] = value
+
+                else:
+                    self.laplacian_matrix[matrix_id, :] *= value
+                    self.laplacian_matrix[:, matrix_id] *= value
                     self.laplacian_matrix[matrix_id, matrix_id] /= value
 
 

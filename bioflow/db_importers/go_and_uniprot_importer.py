@@ -194,8 +194,9 @@ def insert_uniprot_annotations(swiss_prot_id, data_container):
     :return:
     """
     # OPTIMIZE: [database]: single commit annotation insertion would be faster
-    link_annotation(swiss_prot_id, 'UNIPROT_Name',
-                    data_container['Names']['Full'], preferential=True)
+    link_annotation(swiss_prot_id, 'UNIPROT_SwissProtId', swiss_prot_id, preferential=True)
+
+    link_annotation(swiss_prot_id, 'UNIPROT_Name', data_container['Names']['Full'])
 
     for acc_num in data_container['Acnum']:
         link_annotation(swiss_prot_id, 'UNIPROT_Accnum', acc_num)

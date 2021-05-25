@@ -140,23 +140,23 @@ def get_logger(logger_name):
     add_to_file_handler(_logger, logging.CRITICAL, 'critical.log')
     # add_to_file_handler()
 
-    def handle_exception(exc_type, exc_value, exc_traceback):
-
-        if issubclass(exc_type, KeyboardInterrupt):
-            sys.__excepthook__(exc_type, exc_value, exc_traceback)
-            return
-
-        _logger.critical("Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback))
-        # raise RuntimeError("Terminating the Exception handling")
-
-    sys.excepthook = handle_exception
-
-    def handle_thread_exception(exc_type, exc_value, exc_traceback):
-
-        _logger.critical("Uncaught thread exception", exc_info=(exc_type, exc_value, exc_traceback))
-        raise RuntimeError("Terminating the Exception handling")
-
-    threading.excepthook = handle_thread_exception
+    # def handle_exception(exc_type, exc_value, exc_traceback):
+    #
+    #     if issubclass(exc_type, KeyboardInterrupt):
+    #         sys.__excepthook__(exc_type, exc_value, exc_traceback)
+    #         return
+    #
+    #     _logger.critical("Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback))
+    #     # raise RuntimeError("Terminating the Exception handling")
+    #
+    # sys.excepthook = handle_exception
+    #
+    # def handle_thread_exception(exc_type, exc_value, exc_traceback):
+    #
+    #     _logger.critical("Uncaught thread exception", exc_info=(exc_type, exc_value, exc_traceback))
+    #     raise RuntimeError("Terminating the Exception handling")
+    #
+    # threading.excepthook = handle_thread_exception
 
     logging.captureWarnings(True)
     default_warn_logger = logging.getLogger("py.warnings")
