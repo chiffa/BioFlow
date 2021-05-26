@@ -139,9 +139,9 @@ def get_logger(logger_name):
     _logger.setLevel(logging.DEBUG)
 
     add_to_file_handler(_logger, logging.DEBUG, 'debug.log', rotating=True)
-    # add_to_file_handler(_logger, logging.INFO, 'info.log')
+    add_to_file_handler(_logger, logging.INFO, 'info.log')
     add_to_file_handler(_logger, logging.INFO, 'run.log',
-                        log_location=output_location, _formatter=info_formatter)
+                        log_location=output_location)
     add_to_file_handler(_logger, logging.WARNING, 'warning.log')
     add_to_file_handler(_logger, logging.ERROR, 'error.log')
     add_to_file_handler(_logger, logging.CRITICAL, 'critical.log')
@@ -154,7 +154,6 @@ def get_logger(logger_name):
             return
 
         _logger.critical("Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback))
-        # raise RuntimeError("Terminating the Exception handling")
 
     sys.excepthook = handle_exception
     #
@@ -175,7 +174,7 @@ def get_logger(logger_name):
             ch.setLevel(logging.DEBUG)
         else:
             ch.setLevel(logging.INFO)
-        ch.setFormatter(formatter)
+        ch.setFormatter(info_formatter)
         _logger.addHandler(ch)
 
     return _logger

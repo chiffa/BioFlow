@@ -212,10 +212,6 @@ if path.isfile(Dumps.Forbidden_IDs):
 
 
 # REFACTOR: [better confs]: wrap the 'env_' variables it all in an "environment" wrap
-
-# pprint(user_settings)
-
-# REFACTOR: [better confs]: wrap them into a class
 smtp_logging = bool(user_settings['smtp_logging'])
 smtp_logging_parameters = user_settings['smtp_logging_parameters']
 
@@ -223,8 +219,6 @@ env_skip_reactome = bool(user_settings['environment']['skip_reactome'])
 env_skip_hint = bool(user_settings['environment']['skip_hint'])
 env_skip_biogrid = bool(user_settings['environment']['skip_biogrid'])
 
-# REFACTOR: [better confs]: Make sure those are injected into the BioKnowledgeInterface
-#  properly
 env_use_background = bool(user_settings['environment']['use_background'])
 env_bki_filter = user_settings['environment']['bki_filter']
 env_bki_correlation_factors = tuple(user_settings['environment']['bki_correlation_factors'])

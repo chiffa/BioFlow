@@ -10,7 +10,7 @@ from bioflow.utils.top_level import map_and_save_gene_ids, rebuild_the_laplacian
     generate_random_weights
 import os
 from bioflow.utils.smtp_log_behavior import get_smtp_logger, started_process, \
-    successfully_completed, smtp_error_bail_out
+    completed, smtp_error_bail_out
 from bioflow.utils.log_behavior import get_logger
 
 

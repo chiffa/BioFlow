@@ -12,10 +12,14 @@ from bioflow.utils.io_routines import get_source_bulbs_ids, get_background_bulbs
 from bioflow.utils.top_level import map_and_save_gene_ids, rebuild_the_laplacians, \
     generate_random_weights
 import os
-from bioflow.utils.smtp_log_behavior import smtp_logger
 from bioflow.utils.log_behavior import get_logger
+from bioflow.utils.smtp_log_behavior import mail_handler
 
 log = get_logger(__name__)
+log.addHandler(mail_handler)
+
+# TODOC: add mail handler as a patch
+
 
 if __name__ == "__main__":
 

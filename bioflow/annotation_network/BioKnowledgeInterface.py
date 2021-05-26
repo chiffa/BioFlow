@@ -1132,7 +1132,7 @@ class GeneOntologyInterface(object):
         for UP in self._active_up_sample:
 
             in_sample_weight = 1
-            for node, weight in self._active_up_sample:
+            for node, weight in self._active_weighted_sample:
                 if UP == node:
                     in_sample_weight = weight
 

@@ -570,7 +570,7 @@ Enabling the SMTP logging would require you to manually build a
 try-except around your script code:
 
     > from bioflow.utils.smtp_log_behavior import get_smtp_logger, started_process, \
-    successfully_completed, smtp_error_bail_out
+    completed, smtp_error_bail_out
 
     > try:
     >   started_process()
@@ -590,7 +590,7 @@ try-except around your script code:
 
     > else:
     >   try:
-    >       successfully_completed()
+    >       completed()
     >   except Exception as e:
     >       smtp_error_bail_out()
     >       raise e

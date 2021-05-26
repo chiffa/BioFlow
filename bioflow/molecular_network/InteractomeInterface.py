@@ -825,8 +825,8 @@ class InteractomeInterface(object):
 
         characterization_dict = {}
 
-        log.info("Laplacian shape %s", self.laplacian_matrix.shape)
-        log.info("Matrix size %s", max(self.matrix_index_2_neo4j_id.keys()))
+        log.debug("Laplacian shape %s", self.laplacian_matrix.shape)
+        log.debug("Matrix size %s", max(self.matrix_index_2_neo4j_id.keys()))
 
         for NodeID in self.node_current.keys():
             matrix_index = self.neo4j_id_2_matrix_index[NodeID]
@@ -845,7 +845,7 @@ class InteractomeInterface(object):
             if NodeID in self._active_up_sample:
                 in_sample_state = 1
                 in_sample_weight = 1
-                for node, weight in self._active_up_sample:
+                for node, weight in self._active_weighted_sample:
                     if NodeID == node:
                         in_sample_state = 1  # for clarity
                         in_sample_weight = weight

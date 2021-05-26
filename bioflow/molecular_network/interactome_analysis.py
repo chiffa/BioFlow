@@ -472,7 +472,7 @@ def auto_analyze(source_list: List[Union[List[int], List[Tuple[int, float]]]],
     if forced_lapl_reweight is not None:
         # print('<<<<<')
         forced_lapl_reweight = translate_reweight_dict(forced_lapl_reweight)
-        log.debug("forced reweight instructions dict" % str(forced_lapl_reweight))
+        log.debug("forced reweight instructions dict: %s " % str(forced_lapl_reweight))
         # print('>>>>>')
 
     for hits_list, sec_list, output_destination in zip(source_list, secondary_source_list,

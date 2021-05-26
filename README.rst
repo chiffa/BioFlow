@@ -485,7 +485,7 @@ The .gdf file can be further analysed with more appropriate tools, such as for i
 Enabling the SMTP logging would require you to manually build a try-except around your script code::
 
     > from bioflow.utils.smtp_log_behavior import get_smtp_logger, started_process, \
-    successfully_completed, smtp_error_bail_out
+    completed, smtp_error_bail_out
 
     > try:
     >   started_process()
@@ -505,7 +505,7 @@ Enabling the SMTP logging would require you to manually build a try-except aroun
 
     > else:
     >   try:
-    >       successfully_completed()
+    >       completed()
     >   except Exception as e:
     >       smtp_error_bail_out()
     >       raise e
