@@ -11,14 +11,14 @@ from neo4j import GraphDatabase, DEFAULT_DATABASE
 from neo4j.graph import Node, Relationship, Path
 from typing import List, Tuple, NewType, Dict
 from bioflow.utils.log_behavior import get_logger
-from bioflow.configs.main_configs import neo4j_server_url, neo4j_db_name
+from bioflow.configs.main_configs import neo4j_server_url, neo4j_db_name, neo4j_user
 
 
 log = get_logger(__name__)
 
 # default connection parameters
 uri = neo4j_server_url
-user = 'neo4j'
+# neo4j_user = 'neo4j'
 
 # Type hinting support
 db_id = NewType('db_id', int)
@@ -113,7 +113,7 @@ class GraphDBPipe(object):
 
     def __init__(self):  # REFACTOR: add an option to supply uri, user and pwd not from configs
         password = os.environ['NEOPASS']
-        self._driver = GraphDatabase.driver(uri, auth=(user, password))
+        self._driver = GraphDatabase.driver(uri, auth=(neo4j_user, password))
         if neo4j_db_name is None:
             self._active_database = DEFAULT_DATABASE
         else:
@@ -591,7 +591,7 @@ class GraphDBPipe(object):
                                     annot_type_2_annot_list: dict,
                                     preferential: bool = False,
                                     source: str = 'NA') -> List[Node]:
-        # TODO: preferential is supposed to be a list here and needs to be zipped in
+        # TODO: [CONSISTENCY] preferential is supposed to be a list here and needs to be zipped in
         #  enumerate [unused for now]
         """
         Attaches all the external identifiers of given types to a node based on its ID
@@ -1051,7 +1051,7 @@ class GraphDBPipe(object):
         node_types = tx.run("MATCH (N) RETURN DISTINCT LABELS(N)")
         node_types = [_type for _type in node_types]
         node_types = [_type["LABELS(N)"][0] for _type in node_types]
-        # TODO: add multi-label support
+        # TODO: [CONSISTENCY] add multi-label support
         rel_types = tx.run("MATCH ()-[r]-() RETURN DISTINCT TYPE(r)")
         rel_types = [_type["TYPE(r)"] for _type in rel_types]
 
@@ -1176,7 +1176,7 @@ class GraphDBPipe(object):
                                    "RETURN N,COUNT(M)")
 
         node_2_degree_map = [(_match['N'], int(_match['COUNT(M)'])) for _match in node_2_degree_map]
-        node_2_degree_map = sorted(node_2_degree_map, key=lambda x: x[1])[100:]
+        node_2_degree_map = sorted(node_2_degree_map, key=lambda x: x[1])[-100:]
         node_2_degree_map = ['%s, %s: %d' % (node['legacyID'], node.id, count)
                              for node, count in node_2_degree_map]
 

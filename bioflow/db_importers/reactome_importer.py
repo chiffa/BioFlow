@@ -214,8 +214,8 @@ def insert_reactions(neo4j_graph_class, property_source_dict):
                                         'parse_type': 'physical_entity_molecular_interaction'})
 
 
-# TODO: catalysis need to be inserted as nodes and then cross-linked, for better compatibility with
-#  the Pathway searc
+# TODO: [data organization] catalysis need to be inserted as nodes and then cross-linked,
+#  for better compatibility with the Pathway searcj
 def insert_catalysis(catalysises_dict):
     """
     Inserts all the catalysis links from one meta-element to an another

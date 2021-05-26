@@ -42,6 +42,7 @@ from bioflow.algorithms_bank.sampling_policies import characterize_flow_paramete
 log = get_logger(__name__)
 
 
+# a pair of debug functions
 def _characterise(_object):
     print('Object of size %s and type %s' % (len(_object), type(_object)))
 
@@ -137,7 +138,6 @@ class GeneOntologyInterface(object):
         self.thread_hex = ''.join(random.sample(char_set * 6, 6))
 
         self.indep_lapl = np.zeros((2, 2))
-        self.sparsely_sampled = False
 
         log.info('Setting up GO Interface with namespaces %s and %s background UPs',
                  self.go_namespace_filter, len(self._background))
@@ -265,7 +265,6 @@ class GeneOntologyInterface(object):
         payload = {
             'UP_hash': md5,
             'sys_hash': self.md5_hash(),
-            'size': len(self._active_up_sample),
             'UPs': pickle.dumps(self._active_up_sample),
             'currents': pickle.dumps((self.current_accumulator, self.node_current)),
             'voltages': pickle.dumps(self.uniprots_2_voltage)}
@@ -557,7 +556,7 @@ class GeneOntologyInterface(object):
                    math.log(1 / float(number), 2), self.correction_factor[1])
 
 
-    # REFACTOR: [Sanity]: method is excessively complex (cyc. complexity ~ 18).
+    # REFACTOR: [Maintenability]: method is excessively complex (cyc. complexity ~ 18).
     def get_go_reach(self):
         """
         Recovers by how many different uniprots each GO term is reached, both in
@@ -833,9 +832,8 @@ class GeneOntologyInterface(object):
         :return:
         """
 
-        def _verify_uniprot_ids(uniprot_vector: List[Tuple[int, float]]):
-            # TRACING: rename to id_weight_vector
-            uniprots = np.array(uniprot_vector)[:, 0].astype(np.int).tolist()
+        def _verify_uniprot_ids(id_weight_vector: List[Tuple[int, float]]):
+            uniprots = np.array(id_weight_vector)[:, 0].astype(np.int).tolist()
 
             if not set(uniprots) <= self.known_up_ids:
 
@@ -848,7 +846,7 @@ class GeneOntologyInterface(object):
                        else False
                        for uniprot in uniprots]
 
-            return np.array(uniprot_vector)[_filter, :].tolist()
+            return np.array(id_weight_vector)[_filter, :].tolist()
 
         self._active_weighted_sample = _verify_uniprot_ids(reduce_and_deduplicate_sample(sample))
 
@@ -856,14 +854,15 @@ class GeneOntologyInterface(object):
 
         if secondary_sample is not None:
 
-            log.info('debug: secondary_weight sample %s' % secondary_sample)
+            log.debug('debug: secondary_weight sample %s' % secondary_sample)
 
             self._secondary_weighted_sample = \
                 _verify_uniprot_ids(reduce_and_deduplicate_sample(secondary_sample))
 
-            # TODO: logic bug occurs if the ids supplied have no annotations in the db
+            # KNOWNBUG: logic bug occurs if the ids supplied have no annotations in the db
 
-            log.info('debug: secondary_weight sample %s' % np.array(self._secondary_weighted_sample))
+            log.debug('debug: secondary_weight sample %s' % np.array(
+                self._secondary_weighted_sample))
 
             self._active_up_sample = list(set(self._active_up_sample
                                               + np.array(self._secondary_weighted_sample)[:, 0].tolist()))
@@ -981,7 +980,7 @@ class GeneOntologyInterface(object):
         if not incremental or self.current_accumulator == np.zeros((2, 2)):
             self.current_accumulator = lil_matrix(self.inflated_laplacian.shape)
             self.UP2UP_voltages = {}
-            self.uniprots_2_voltage = {}  # CURRENTPASS: UNUSED
+            self.uniprots_2_voltage = {}  # REFACTOR [maintenance]: remove
 
 
         weighted_up_pairs = self._flow_calculation_method(self._active_weighted_sample,
@@ -1099,7 +1098,8 @@ class GeneOntologyInterface(object):
             'Pure_informativity',
             'Confusion_potential',
             'p-value',
-            'p_p-value']
+            'p_p-value',
+            'Source_W']
 
         node_char_types = [
             'DOUBLE',
@@ -1109,7 +1109,8 @@ class GeneOntologyInterface(object):
             'DOUBLE',
             'DOUBLE',
             'DOUBLE',
-            'DOUBLE']   # TRACING: add the weights at the start
+            'DOUBLE',
+            'DOUBLE']
 
         if p_value_dict is None:
             p_value_dict = defaultdict(lambda: (np.nan, np.nan, np.nan))
@@ -1118,10 +1119,6 @@ class GeneOntologyInterface(object):
 
         char_dict = {}
 
-        if self.sparsely_sampled:
-            log.warning('Links between the elements should not be trusted: the computations was '
-                        'sparse_sampling and was not complete')
-
         for GO in self.node_id_2_mat_idx.keys():
             char_dict[GO] = [str(self.node_current[GO]),
                              'GO', self.neo4j_id_2_legacy_id[GO],
@@ -1129,20 +1126,29 @@ class GeneOntologyInterface(object):
                              str(self.GO2_Pure_Inf[GO]),
                              str(len(self._limiter_go_2_up_reachable_nodes[GO])),
                              str(p_value_dict[int(GO)][0]),
-                             str(nan_neg_log10(p_value_dict[int(GO)][0]))]
+                             str(nan_neg_log10(p_value_dict[int(GO)][0])),
+                             '0']
 
         for UP in self._active_up_sample:
+
+            in_sample_weight = 1
+            for node, weight in self._active_up_sample:
+                if UP == node:
+                    in_sample_weight = weight
+
+            if self._secondary_weighted_sample is not None:
+                for node, weight in self._secondary_weighted_sample:
+                    if UP == node:
+                        in_sample_weight = -weight
+
             char_dict[UP] = [str(self.node_current[UP]),
-                             # TRACING: factor out legacy id and disp_name combined use
                              'UP', self.up_neo4j_id_2_leg_id_disp_name[UP][0],
                              str(self.up_neo4j_id_2_leg_id_disp_name[UP][1]).replace(',', '-'),
                              str(self.binding_intensity),
                              '1',
                              '0.1',
-                             '1']  #DOC: document the defaults
-             # TRACING: add the weights at the start
-             # TRACING: add if it is a secondary sample or not.
-             # CURRENTPASS: just map positive from primary_sample and negative from sec_sample
+                             '1',
+                             str(in_sample_weight)]  # TODOC: document the defaults
 
         if output_location == '':
             output_location = NewOutputs().GO_GDF_output
@@ -1227,7 +1233,8 @@ class GeneOntologyInterface(object):
 
             # TODO: [load bar]: the external loop progress bar goes here
 
-            # TRACING: fast resurrection is impossible (memoized is false, but pipeline is broken)
+            # TODO: [fast resurrection] fast resurrection is impossible (memoized is false,
+            #  but pipeline is broken)
             self.compute_current_and_potentials(memoized=False, sparse_rounds=sparse_rounds)
 
             sample_ids_md5 = hashlib.md5(
@@ -1254,14 +1261,13 @@ class GeneOntologyInterface(object):
                             'target_sample_hash': super_hash,
                             'sampling_policy': sampling_policy.__name__,
                             'sampling_policy_options': optional_sampling_param,
-                            'size': -1,  # TRACING: to be removed
                             'sparse_rounds': sparse_rounds,
                             'UPs': pickle.dumps(self._active_up_sample),
                             'sample': pickle.dumps(self._active_weighted_sample),
                             'sec_sample': pickle.dumps(self._secondary_weighted_sample),
                             'currents': pickle.dumps(
                                 (self.current_accumulator,
-                                 self.node_current)),  # TRACING: node currents are dead: deprecate
+                                 self.node_current)),
                             'voltages': pickle.dumps(
                                 self.UP2UP_voltages)})
 

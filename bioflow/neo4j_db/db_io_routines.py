@@ -6,11 +6,13 @@ import pickle
 from collections import defaultdict
 from csv import reader, writer
 from pprint import PrettyPrinter, pprint
+from typing import Dict
+
 from bioflow.configs.main_configs import forbidden_neo4j_ids, Dumps
 from bioflow.configs.main_configs import reactome_forbidden_nodes, uniprot_forbidden_nodes
+from bioflow.utils.general_utils import _is_int
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from bioflow.utils.log_behavior import get_logger
-from bioflow.utils.io_routines import write_to_csv, memoize, time_exection
 
 log = get_logger(__name__)
 
@@ -72,7 +74,7 @@ def _auxilary_annotation_ids_from_csv(source_csv):
 
     with open(source_csv, 'rt') as src:
         src_read = src.read()
-        print(src_read)
+        # print(src_read)
         if '\t' in src_read:
             delimiter = '\t'
             log.info('tab detected in the %s, switching to tab-separated parse.' % source_csv)
@@ -87,15 +89,15 @@ def _auxilary_annotation_ids_from_csv(source_csv):
             if len(row) > 2:
                 raise Exception('more than two values provided in the source file')
 
-    log.info('debug auxilary_annotation_ids_from_csv: old_ids_parse: %s\n'
+    log.debug('debug auxilary_annotation_ids_from_csv: old_ids_parse: %s\n'
              '\tnew_ids_parse:%s' % (old_ids_parse, new_ids_parse))
 
     if len(old_ids_parse) and len(new_ids_parse):
-        log.info('Both weighted and unweighted hits have been found. Merging and reverting to '
+        log.warning('Both weighted and unweighted hits have been found. Merging and reverting to '
                  'unweighted analysis.')
         old_ids_parse += [_id for _id, _weight in new_ids_parse]
 
-    log.info('debug: return state old_ids_parse: %s\n'
+    log.debug('debug: return state old_ids_parse: %s\n'
              '\tnew_ids_parse:%s' % (old_ids_parse, new_ids_parse))
 
     return old_ids_parse, new_ids_parse
@@ -111,7 +113,7 @@ def cast_external_refs_to_internal_ids(analysis_set_csv_location):
     """
     old_live_ids, new_live_ids = _auxilary_annotation_ids_from_csv(analysis_set_csv_location)
 
-    log.info('debug: \n\tgot old_live_ids (%s)\n\tand new_live_ids (%s)\n\t'
+    log.debug('debug: \n\tgot old_live_ids (%s)\n\tand new_live_ids (%s)\n\t'
              'from auxilary annotation ids at %s' %
              (old_live_ids, new_live_ids, analysis_set_csv_location))
 
@@ -120,7 +122,7 @@ def cast_external_refs_to_internal_ids(analysis_set_csv_location):
         db_ids_list = [_id for _id in db_ids_list if _id != '']
         # # This is not exactly needed and is a more of a log/debug step
         # PrettyPrinter(indent=4, stream=open(Dumps.analysis_set_display_names, 'wt')).pprint(source[1])
-        log.info('old_live_ids branch: mapped ids to %s' % db_ids_list)
+        log.debug('old_live_ids branch: mapped ids to %s' % db_ids_list)
 
         return db_ids_list
 
@@ -219,7 +221,7 @@ def convert_to_internal_ids(base):
     return return_dict
 
 
-# REFACTOR: this has to be parametrized and moved to the configs .yaml file for the user to
+# NOFX: this has to be parametrized and moved to the configs .yaml file for the user to
 #  modify the identifiers on which the cross-linking is done.
 def cross_link_identifiers():
     """
@@ -268,16 +270,53 @@ def pull_up_inf_density():
                                             name_maps.get(node['legacyID'], None)))
 
 
-# TODO: find a more safe and permanent way to do it
+# REFACTOR: [MAINTAINABILITY] find a more safe and permanent way to do it
 on_rtd = os.environ.get('READTHEDOCS') == 'True'
 on_unittest = os.environ.get('UNITTESTING') == 'True'
 
 if on_unittest:
-    # TODO: find a more safe and permanent way to do it
     import sys
     import unittests.Mocks.DB_IO_Mocks as SelfMock
     sys.modules[__name__] = SelfMock
 
+def translate_reweight_dict(reweight_dict: Dict) -> Dict:
+    """
+    Checks a dict assigning desired weight changes in the matrix and if needed translates the
+    exterrnal db xrefs to internal db ids
+
+    :param reweight_dict: dict of instructions to re-assign weights
+    :return: reweigt_dict translated into internal ids
+    """
+    discordance_switch = False
+    updated_reweight_dict = {}
+
+    for _id_or_tuple, value in reweight_dict.items():
+        if type(_id_or_tuple) == tuple:
+            if _is_int(_id_or_tuple[0]):
+                if discordance_switch:
+                    raise Exception("mixed ID types in reweight dict, found an int in %s"
+                                    % str(_id_or_tuple))
+                return reweight_dict  # internal DB ids were supplied
+            else:
+                discordance_switch = True
+                id_lookup = convert_to_internal_ids(_id_or_tuple)
+                updated_reweight_dict[(id_lookup[_id_or_tuple[0]],
+                                       id_lookup[_id_or_tuple[1]])] = float(value)
+
+        else:
+            if _is_int(_id_or_tuple):
+                if discordance_switch:
+                    raise Exception("mixed ID types in reweight dict, found an int in %s"
+                                    % str(_id_or_tuple))
+                return reweight_dict
+            else:
+                discordance_switch = True
+                log.debug('debug of c: %s' % _id_or_tuple)
+                id_lookup = convert_to_internal_ids([_id_or_tuple])
+                log.debug('id lookup parse: %s' % str(id_lookup))
+                updated_reweight_dict[(id_lookup[_id_or_tuple])] = float(value)
+
+    return updated_reweight_dict
 
 if __name__ == "__main__":
     # erase_custom_fields()

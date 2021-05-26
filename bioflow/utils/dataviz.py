@@ -129,7 +129,7 @@ def kde_compute(bi_array, bin_no=30, samples=10, show=True):
 #     plt.hist(arr, bins=100, log=True, histtype='step')
 #     plt.show()
 
-# TRACING: [run path] pipe hdd save destination here (0)
+# LEGACY: [run path] pipe hdd save destination here (0)
 def render_2d_matrix(matrix: np.array,
                      name: str,
                      destination: str = '') -> None:
@@ -143,7 +143,7 @@ def render_2d_matrix(matrix: np.array,
     plt.title(name)
     plt.imshow(matrix, interpolation='nearest')
     plt.colorbar()
-    # TRACING: [run path] here is where we save the clustering
+    # LEGACY: [run path] here is where we save the clustering
     plt.savefig(os.path.join(output_location, name + '.png'))
 
 

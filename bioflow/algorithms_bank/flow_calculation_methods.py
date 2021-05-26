@@ -10,23 +10,9 @@ import collections.abc
 import numpy as np
 
 from bioflow.utils.log_behavior import get_logger
+from bioflow.utils.general_utils import _is_int
 
 log = get_logger(__name__)
-
-
-def _is_int(_obj):
-    """
-    Checks if an object is an int with a try-except loop
-
-    :param _obj:
-    :return:
-    """
-    try:
-        int(_obj)
-    except TypeError or ValueError as e:
-        return False
-    else:
-        return True
 
 
 def reduce_and_deduplicate_sample(sample: Union[List[int], List[Tuple[int, float]]]) \

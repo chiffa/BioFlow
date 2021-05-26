@@ -9,6 +9,12 @@ the model organism into the networks associated to the original organism.
 from csv import reader as csv_reader
 from csv import writer as csv_writer
 
+from bioflow.utils.log_behavior import get_logger
+
+
+log = get_logger(__name__)
+
+
 def translate_identifiers(data_source_location, data_dump_location,
                           translation_file_location, gene_to_id_file_location):
     """
@@ -29,7 +35,7 @@ def translate_identifiers(data_source_location, data_dump_location,
 
     with open(translation_file_location, 'rt') as source:
         reader = csv_reader(source, delimiter='\t')
-        print(next(reader))
+        log.debug('org translation file header: %s' % str(next(reader)))
         for line in reader:
             if line[0] and line[1]:
                 if int(line[3]):
@@ -45,7 +51,7 @@ def translate_identifiers(data_source_location, data_dump_location,
     if gene_to_id_file_location:
         with open(gene_to_id_file_location, 'rt') as source:
             reader = csv_reader(source, delimiter='\t')
-            print(next(reader))
+            log.debug('gene to id file header: %s' % str(next(reader)))
             for line in reader:
                 genes_to_ids_dict[line[2]] = line[0]
 
@@ -60,9 +66,10 @@ def translate_identifiers(data_source_location, data_dump_location,
             if word in list(low_conf_translation_dict.keys()):
                 low_conf_trans.append(low_conf_translation_dict[word])
 
-    print("out of %s, %s were translated with high confidence, %s with low and %s were not found" % \
-          (i, len(high_conf_trans), len(low_conf_trans),
-           i - len(high_conf_trans) - len(low_conf_trans)))
+    log.info("out of %s, %s were translated with high confidence,"
+             " %s with low and %s were not found" % \
+             (i, len(high_conf_trans), len(low_conf_trans),
+              i - len(high_conf_trans) - len(low_conf_trans)))
 
     with open(data_dump_location, 'wt') as destination:
         writer = csv_writer(destination)

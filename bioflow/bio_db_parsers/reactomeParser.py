@@ -82,8 +82,8 @@ class ReactomeParser(object):
     # TODO: move the definition of the file to parse from the __inti__ method to the execution tree
     # TODO: add the following post-processing filters: , ['BiochemicalReaction'] on Catalysis
     #  when parsing 'Control' object set
-    # TODO: convert the system of references to a single tree that has all the different
-    #  subcategories already declared
+    # REFACTOR: [MAINTENABILITY]: convert the system of references to a single tree that has all
+    #  the different subcategories already declared
 
     def __init__(self, path_to_biopax_file=main_configs.reactome_biopax_path):
 
@@ -341,7 +341,6 @@ class ReactomeParser(object):
             base_dict = {}
             for catalysis_property in catalysis_object:
                 if '}controlled' in catalysis_property.tag:
-                    # TODO: biochemical reaction filtering should be around here
                     base_dict['controlled'] = list(catalysis_property.attrib.values())[0][1:]
                 if '}controller' in catalysis_property.tag:
                     base_dict['controller'] = list(catalysis_property.attrib.values())[0][1:]
@@ -400,7 +399,6 @@ class ReactomeParser(object):
         """
         Parses Pathway steps
         """
-        # TODO: why the exclusion? => direct links. They will be resolvable after the refactor
         exclude = [
             'Modulation',  # does not exist anymore
             'Control',

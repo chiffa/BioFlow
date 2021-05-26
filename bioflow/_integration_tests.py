@@ -32,7 +32,7 @@ def analysis_loop_test(primary, secondary=None, background=''):
     interactome_analysis(source_list=hits_ids,
                          secondary_source_list=sec_hit_ids,
                          # output_destinations_list=['chr_%s' % filename[:-4]],
-                         desired_depth=5,
+                         random_samples_to_test_against=5,
                          processors=1,
                          background_list=background_internal_ids,
                          skip_sampling=False
@@ -41,7 +41,7 @@ def analysis_loop_test(primary, secondary=None, background=''):
     knowledge_analysis(source_list=hits_ids,
                        secondary_source_list=sec_hit_ids,
                        # output_destinations_list=['chr_%s' % filename[:-4]],
-                       desired_depth=5,
+                       random_samples_to_test_against=5,
                        processors=1,
                        background_list=background_internal_ids,
                        skip_sampling=False,

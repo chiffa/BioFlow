@@ -13,25 +13,9 @@ from typing import Union, List, Tuple
 import collections.abc
 
 from bioflow.utils.log_behavior import get_logger
-
+from bioflow.utils.general_utils import _is_int
 
 log = get_logger(__name__)
-
-
-# currentpass: move to the algo bank __init__
-def _is_int(_obj):
-    """
-    Checks if an object is an int with a try-except loop
-
-    :param _obj:
-    :return:
-    """
-    try:
-        int(_obj)
-    except TypeError or ValueError as e:
-        return False
-    else:
-        return True
 
 
 def matched_sample_distribution(floats_arr: np.array, samples_no: int,
@@ -94,9 +78,6 @@ def _characterize_set(sample: Union[List[int], List[Tuple[int, float]]]):
     :return: set length (0 if None), 1 if items are ids, 2 if ids and weights (0 if
     None), rounded distribution ([] if None or items are ids)
     """
-
-    print(sample)
-
     if sample is None:
         return 0, 0, []
 
@@ -205,7 +186,7 @@ def matched_sampling(sample, secondary_sample,
         background_ids = np.array(background)[:, 0]
         background_whg = np.array(background)[:, 1]
 
-    log.info('debug sum %s, type: %s, all:%s' % (np.sum(background_whg),
+    log.debug('debug sum %s, type: %s, all:%s' % (np.sum(background_whg),
                                              type(background_whg),
                                              background_whg))
 

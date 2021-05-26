@@ -53,6 +53,8 @@ with open(user_yaml_confs, 'r', encoding='utf8') as user_yaml_configs:
 # SERVERS CONFIGURATIONS
 mongo_db_url = os.getenv('MONGOURL', Servers['mongodb_server'])
 neo4j_server_url = os.getenv('NEO4URL', Servers['neo4j_server'])
+neo4j_user = 'neo4j'
+# neo4j_user = os.getenv('NEO4USER', Servers['neo4j_user'])  # TRACING: activate on configs rebuild
 source_db_paths = compute_full_paths(Sources, DB_locations, sources_location)
 
 
@@ -164,7 +166,7 @@ class NewOutputs(object):
         self.knowledge_network_scatterplot = path.join(root_path, 'knowledge.png')
 
 
-# REFACTOR: [better confs]: move this to configs.yaml
+# This can now be reweighted by policy modification
 laplacian_default_type_edge_weighting = {
     "is_part_of_collection": 0.5,
     "is_same": 100,
@@ -247,10 +249,10 @@ node_current_in_debug = bool(user_settings['debug_flags']['node_current_in_debug
 use_normalized_laplacian = user_settings['use_normalized_laplacian']
 fraction_edges_dropped_in_laplacian = user_settings['fraction_edges_dropped_in_laplacian']
 
-sparse_analysis_threshold = int(user_settings['analysis']['default_background_samples'])
+sparse_analysis_threshold = int(user_settings['analysis']['sparse_analysis_threshold'])
+default_background_samples = int(user_settings['analysis']['default_background_samples'])
 default_p_val_cutoff = float(user_settings['analysis']['default_p_val_cutoff'])
-min_nodes_for_p_val = int(user_settings['analysis']['sparse_analysis_threshold'])
-
+min_nodes_for_p_val = int(user_settings['analysis']['min_nodes_for_p_val'])
 
 
 if __name__ == "__main__":

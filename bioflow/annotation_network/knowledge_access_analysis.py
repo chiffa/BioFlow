@@ -15,7 +15,7 @@ from typing import Any, Union, TypeVar, NewType, Tuple, List
 
 from bioflow.annotation_network.BioKnowledgeInterface import GeneOntologyInterface
 from bioflow.configs.main_configs import estimated_comp_ops, NewOutputs, sparse_analysis_threshold, \
-    implicitely_threaded, default_p_val_cutoff, min_nodes_for_p_val
+    implicitely_threaded, default_p_val_cutoff, min_nodes_for_p_val, default_background_samples
 from bioflow.sample_storage.mongodb import find_annotome_rand_samp, count_annotome_rand_samp
 from bioflow.utils.dataviz import kde_compute
 from bioflow.utils.io_routines import get_source_bulbs_ids
@@ -40,8 +40,8 @@ def get_go_interface_instance(background: Union[List[int], List[Tuple[int, float
     return go_interface_instance
 
 
-# REFACTOR: [SANITY] args puck need to be a named tuple, preferably a typed one
-def spawn_sampler(args_puck):
+# REFACTOR: [MAINTAINABILITY] args puck need to be a named tuple, preferably a typed one
+def _spawn_sampler(args_puck):
     """
     Spawns a sampler initialized from the default GO_Interface
 
@@ -73,7 +73,7 @@ def spawn_sampler(args_puck):
     sampling_policy = args_puck[5]
     sampling_options = args_puck[6]
 
-    pool_no = args_puck[-1]   # TODO: switch over to PID here
+    pool_no = args_puck[-1]
 
     go_interface_instance.reset_thread_hex()
     go_interface_instance.randomly_sample(
@@ -84,7 +84,8 @@ def spawn_sampler(args_puck):
         optional_sampling_param=sampling_options
     )
 
-def spawn_sampler_pool(
+
+def _spawn_sampler_pool(
         pool_size,
         sample_sets_to_match,
         sample_depth,
@@ -132,7 +133,7 @@ def spawn_sampler_pool(
         with Pool(processes=pool_size) as pool:  # This is the object we are using to spawn a thread pool
             try:
                 log.debug('spawning the sampler with payload %s', payload)
-                pool.map(spawn_sampler, payload_list)  # This what we spawn as a sampler
+                pool.map(_spawn_sampler, payload_list)  # This what we spawn as a sampler
                 # KNOWNBUG: hangs with no message upon a second start attempt in Interactome
                 #  analysis due to cholmod
             except Exception as e:
@@ -146,7 +147,7 @@ def spawn_sampler_pool(
     else:
         log.debug('spawning single-thread sampler with payload %s', payload)
         for _payload in payload_list:
-            spawn_sampler(_payload)
+            _spawn_sampler(_payload)
 
 
 def samples_scatter_and_hist(background_curr_deg_conf, true_sample_bi_corr_array,
@@ -347,7 +348,7 @@ def compare_to_blank(
         entry = query_array[:, _filter]
         background_set = background_array[:, background_array[2, :] == degree]
 
-        # REFACTOR: this part is too coupled. we should factor it out
+        # REFACTOR: [maintenability] this part is too coupled. we should factor it out
         max_current_per_run = get_neighboring_degrees(degree,
                                                       max_array,
                                                       min_nodes=min_nodes_for_p_val)
@@ -385,7 +386,6 @@ def compare_to_blank(
               for up_bulbs_id
               in list(set(go_interface_instance._limiter_go_2_up_reachable_nodes[nr_node_id]).
                       intersection(set(go_interface_instance._active_up_sample)))]]
-        # REFACTOR: this render is hard to follow
         for nr_node_id in not_random_nodes]
 
     nodes_dict = np.hstack((go_node_ids[:, np.newaxis],
@@ -401,8 +401,7 @@ def compare_to_blank(
 def auto_analyze(source_list: List[Union[List[int], List[Tuple[int, float]]]],
                  secondary_source_list: List[Union[List[int], List[Tuple[int, float]], None]] = None,
                  output_destinations_list: Union[List[str], None] = None,
-                 desired_depth=24,  # CURRENTPASS: rename to "random samples to test against"
-                 # TRACING: propagate from main_configs
+                 random_samples_to_test_against=default_background_samples,
                  processors: int = 0,
                  background_list: List[Union[List[int], List[Tuple[int, float]], None]] = None,
                  skip_sampling: bool = False,
@@ -417,7 +416,7 @@ def auto_analyze(source_list: List[Union[List[int], List[Tuple[int, float]]]],
     :param source_list: python list of hits for each condition
     :param secondary_source_list: secondary list to which calculate the flow from hist, if needed
     :param output_destinations_list: list of names for each condition
-    :param desired_depth: total samples we would like to compare each set of hits with
+    :param random_samples_to_test_against: total samples we would like to compare each set of hits with
     :param processors: number of processes that will be loaded. as a rule of thumb,
         for max performance, use N-1 processors, where N is the number of physical cores on the
         machine, which is the default
@@ -468,7 +467,7 @@ def auto_analyze(source_list: List[Union[List[int], List[Tuple[int, float]]]],
                         'Skipping the analysis' % (output_destination, hits_list))
             continue
 
-        log.info('debug 2 : %s, %s' % (hits_list, sec_list))
+        log.debug('debug 2 : %s, %s' % (hits_list, sec_list))
 
         prim_len, prim_shape, _, sec_len, sec_shape, _, _, _ = \
             sampling_policies.characterize_flow_parameters(hits_list, sec_list, False)
@@ -505,25 +504,25 @@ def auto_analyze(source_list: List[Union[List[int], List[Tuple[int, float]]]],
                                                'sampling_policy': sampling_policy.__name__,
                                                'sampling_policy_options': sampling_policy_options})
 
-        if in_storage > desired_depth:
+        if in_storage > random_samples_to_test_against:
             log.info("%d suitable random samples found in storage for %d desired. Skipping "
-                     "sampling" % (in_storage, desired_depth))
+                     "sampling" % (in_storage, random_samples_to_test_against))
             skip_sampling = True
 
         else:
             log.info("%d suitable random samples found in storage for %d desired. Sampling %d" %
-                     (in_storage, desired_depth, desired_depth - in_storage))
-            desired_depth = desired_depth - in_storage
+                     (in_storage, random_samples_to_test_against, random_samples_to_test_against - in_storage))
+            random_samples_to_test_against = random_samples_to_test_against - in_storage
 
         if not skip_sampling:
-            spawn_sampler_pool(processors,
-                               (hits_list, sec_list),
-                               desired_depth,
-                               sparse_rounds=sparse_rounds,
-                               background_set=background_list,
-                               forced_go_interface=explicit_interface,
-                               sampling_policy=sampling_policy,
-                               sampling_options=sampling_policy_options)
+            _spawn_sampler_pool(processors,
+                                (hits_list, sec_list),
+                                random_samples_to_test_against,
+                                sparse_rounds=sparse_rounds,
+                                background_set=background_list,
+                                forced_go_interface=explicit_interface,
+                                sampling_policy=sampling_policy,
+                                sampling_options=sampling_policy_options)
 
         go_interface.compute_current_and_potentials()
 
@@ -556,4 +555,4 @@ def auto_analyze(source_list: List[Union[List[int], List[Tuple[int, float]]]],
 
 if __name__ == "__main__":
     source, sec_source = get_source_bulbs_ids()
-    auto_analyze(source, processors=3, desired_depth=6, background_list=[])
+    auto_analyze(source, processors=3, random_samples_to_test_against=6, background_list=[])

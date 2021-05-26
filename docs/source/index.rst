@@ -1,13 +1,20 @@
 .. include:: ../../README.rst
 
-Usage Guides:
-=============
+Usage Guide:
+============
 
 .. toctree::
    :maxdepth: 2
 
    guide
 
+Advanced Usage Guide:
+=====================
+
+.. toctree::
+   :maxdepth: 2
+
+   advanced_guide
 
 API documentation:
 ==================

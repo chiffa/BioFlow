@@ -13,11 +13,10 @@ import io
 import requests_ftp
 import hashlib
 
+from bioflow.utils.log_behavior import get_logger
 
-# REFACTOR: for better separation of:
-#   - path correction
-#   - http v.s. ftp pull selection
-#   - decompression algorithm selection
+
+log = get_logger(__name__)
 
 
 def url_to_local_path(url, path, rename=None):
@@ -57,7 +56,7 @@ def url_to_local_path(url, path, rename=None):
                 f.write(r.content)
 
     else:
-        print(r.status_code)
+        log.critical('url %s failed, return code: %s' % (url, r.status_code))
         raise Exception(
             "Something is wrong with the url provided: %s.\n Please attempt downloading files manually" %
             url)

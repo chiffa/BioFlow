@@ -9,6 +9,7 @@ from bioflow.configs.main_configs import mongo_db_url, pymongo_prefix, pymongo_s
 client = MongoClient(mongo_db_url)
 db = client.BioFlow_database
 # REFACTOR: [Better database]: change mongoDB names to something more intuitive
+
 annotome_rand_samp = db[pymongo_prefix + "UP_r_samples" + pymongo_suffix]
 interactome_rand_samp_db = db[pymongo_prefix + "Interactome_samples" + pymongo_suffix]
 

@@ -2,55 +2,31 @@
 New analytical routines for the interactome
 """
 import pickle
-from collections import namedtuple
-from csv import reader
 from csv import writer as csv_writer
 from multiprocessing import Pool
 from collections import defaultdict
 import traceback
-from pprint import pprint
-import os
 import psutil
-from typing import Any, Union, TypeVar, NewType, Tuple, List, Dict
+from typing import Union, Tuple, List
 import numpy as np
 from matplotlib import pyplot as plt
-from scipy.stats import gumbel_r
 from tabulate import tabulate
 
-from bioflow.configs.main_configs import Dumps, estimated_comp_ops, NewOutputs, \
-    sparse_analysis_threshold, implicitely_threaded, default_p_val_cutoff, min_nodes_for_p_val
+from bioflow.configs.main_configs import NewOutputs, \
+    sparse_analysis_threshold, default_p_val_cutoff, min_nodes_for_p_val, \
+    default_background_samples
 from bioflow.sample_storage.mongodb import find_interactome_rand_samp, count_interactome_rand_samp
-from bioflow.configs.main_configs import output_location
 from bioflow.molecular_network.InteractomeInterface import InteractomeInterface
 from bioflow.utils.dataviz import kde_compute
+from bioflow.utils.general_utils import _is_int
 from bioflow.utils.log_behavior import get_logger
-from bioflow.utils.io_routines import get_source_bulbs_ids, get_background_bulbs_ids
-from bioflow.utils.general_utils.high_level_os_io import mkdir_recursive
-from bioflow.neo4j_db.db_io_routines import convert_to_internal_ids
+from bioflow.neo4j_db.db_io_routines import translate_reweight_dict
 from bioflow.algorithms_bank.flow_significance_evaluation import get_neighboring_degrees,\
     get_p_val_by_gumbel
 import bioflow.algorithms_bank.sampling_policies as sampling_policies
 
 
 log = get_logger(__name__)
-
-
-def _is_int(_obj):
-    """
-    Checks if an object is an int with a try-except loop
-
-    :param _obj:
-    :return:
-    """
-    try:
-        int(_obj)
-    except Exception as e:  # for whatever reason value error is not capturing properly here
-        print(e)
-        print(type(e))
-        print('==============================================')
-        return False
-    else:
-        return True
 
 
 def get_interactome_interface(background_up_ids=()) -> InteractomeInterface:
@@ -68,12 +44,13 @@ def get_interactome_interface(background_up_ids=()) -> InteractomeInterface:
     return interactome_interface_instance
 
 
-def spawn_sampler(args_puck):
+# REFACTOR: [MAINTAINABILITY] args puck need to be a named tuple, preferably a typed one
+def _spawn_sampler(args_puck):
     """
     Spawns a sampler initialized from the default GO_Interface.
 
     :param args_puck: combined list of sample sizes, samples to imitate, background sets, and sparse
-    sparse_sampling argument
+    sampling argument
     """
     background_set_arg = args_puck[3]
 
@@ -91,7 +68,7 @@ def spawn_sampler(args_puck):
     sampling_policy = args_puck[5]
     sampling_options = args_puck[6]
 
-    pool_no = args_puck[-1]   # TODO: switch over to PID here
+    pool_no = args_puck[-1]
 
     interactome_interface_instance.reset_thread_hex()
     interactome_interface_instance.randomly_sample(
@@ -103,7 +80,7 @@ def spawn_sampler(args_puck):
     )
 
 
-def spawn_sampler_pool(
+def _spawn_sampler_pool(
         pool_size,
         sample_sets_to_match,
         sample_depth,
@@ -119,7 +96,7 @@ def spawn_sampler_pool(
     :param sample_sets_to_match: size of the sample list
     :param sample_depth: number of random samples we look to generate performing the pooling of the
         samples in each list
-    :param sparse_rounds: number of sparse rounds to run (or False if sparse_sampling is dense)
+    :param sparse_rounds: number of sparse rounds to run (or False if sampling is dense)
     :param background_set: set of node ids that are to be sampled from
     :param forced_interactome_interface: a provided InteractomeInterface that contains sets to
         imitate
@@ -151,7 +128,7 @@ def spawn_sampler_pool(
         with Pool(processes=pool_size) as pool:  # This is the object we are using to spawn a thread pool
             try:
                 log.debug('spawning the sampler with payload %s', payload)
-                pool.map(spawn_sampler, payload_list)  # This what we spawn as a sampler
+                pool.map(_spawn_sampler, payload_list)  # This what we spawn as a sampler
                 # KNOWNBUG: hangs with no message upon a second start attempt in Interactome
                 #  analysis due to cholmod
             except Exception as e:
@@ -165,7 +142,7 @@ def spawn_sampler_pool(
     else:
         log.debug('spawning single-thread sampler with payload %s', payload)
         for _payload in payload_list:
-            spawn_sampler(_payload)
+            _spawn_sampler(_payload)
 
 
 def local_indexed_select(bi_array, array_column, selection_span):
@@ -255,7 +232,7 @@ def samples_scatter_and_hist(background_curr_deg_conf, true_sample_bi_corr_array
 
 
 def compare_to_blank(interactome_interface_instance: InteractomeInterface,
-                     p_val: float = 0.05, # CURRENTPASS: rename to p_val cutoff
+                     p_val_cutoff: float = 0.05,
                      sparse_rounds: int = -1,
                      output_destination: NewOutputs = None,
                      random_sampling_method=sampling_policies.matched_sampling,
@@ -266,7 +243,7 @@ def compare_to_blank(interactome_interface_instance: InteractomeInterface,
     There is no issue with using the same interactome interface instance, because they are forked when
     threads are generated and will not interfere.
 
-    :param p_val: desired cutoff p_value for the returned terms
+    :param p_val_cutoff: desired cutoff p_value for the returned terms
     :param sparse_rounds: if set to a number, sparse computation technique would be used
         with the number of rounds equal the integer value of that argument
     :param interactome_interface_instance: Interactome interface with loaded real hits list to
@@ -373,7 +350,7 @@ def compare_to_blank(interactome_interface_instance: InteractomeInterface,
         entry = query_array[:, _filter]
         background_set = background_array[:, background_array[1, :] == degree]
 
-        # REFACTOR: this part is too coupled. we should factor it out
+        # REFACTOR: [MODULARITY] this part is too coupled. we should factor it out
         max_current_per_run = get_neighboring_degrees(degree,
                                                       max_array,
                                                       min_nodes=min_nodes_for_p_val)
@@ -397,7 +374,7 @@ def compare_to_blank(interactome_interface_instance: InteractomeInterface,
     r_rels = np.array(r_rels)
     r_std_nodes = np.array(r_std_nodes)
 
-    not_random_nodes = [node_id for node_id in node_ids[r_nodes < p_val].tolist()]
+    not_random_nodes = [node_id for node_id in node_ids[r_nodes < p_val_cutoff].tolist()]
 
     # basically the second element below are the nodes that contribute to the
     #  information flow through the node that is considered as non-random
@@ -419,52 +396,11 @@ def compare_to_blank(interactome_interface_instance: InteractomeInterface,
     nodes_dict = dict((node[0], (node[1], node[2], node[3])) for node in nodes_dict.tolist())
     nodes_dict = defaultdict(lambda: (1., 0., 0.), nodes_dict)  # corresponds to the cases of super low flow - never significant
 
-    # TODO: pull the groups corresponding to non-random associations.
+    # NOFX: [structure analysis] pull the groups corresponding to non-random associations.
+    # TODO: [total flow] pull out the internode tension map
     # => Will not implement, it's already done by Gephi
 
     return sorted(node_char_list, key=lambda x: x[4]), nodes_dict
-
-
-# TRACING: move to db_io
-def translate_reweight_dict(reweight_dict: Dict) -> Dict:
-    """
-    Checks a dict assigning desired weight changes in the matrix and if needed translates the
-    exterrnal db xrefs to internal db ids
-
-    :param reweight_dict: dict of instructions to re-assign weights
-    :return: reweigt_dict translated into internal ids
-    """
-    discordance_switch = False
-    updated_reweight_dict = {}
-
-    for _id_or_tuple, value in reweight_dict.items():
-        if type(_id_or_tuple) == tuple:
-            if _is_int(_id_or_tuple[0]):
-                if discordance_switch:
-                    raise Exception("mixed ID types in reweight dict, found an int in %s"
-                                    % str(_id_or_tuple))
-                return reweight_dict  # internal DB ids were supplied
-            else:
-                discordance_switch = True
-                id_lookup = convert_to_internal_ids(_id_or_tuple)
-                updated_reweight_dict[(id_lookup[_id_or_tuple[0]],
-                                       id_lookup[_id_or_tuple[1]])] = float(value)
-
-        else:
-            if _is_int(_id_or_tuple):
-                if discordance_switch:
-                    raise Exception("mixed ID types in reweight dict, found an int in %s"
-                                    % str(_id_or_tuple))
-                return reweight_dict
-            else:
-                discordance_switch = True
-                log.info('debug of c: %s' % _id_or_tuple)
-                id_lookup = convert_to_internal_ids([_id_or_tuple])
-                log.info('id lookup parse: %s' % str(id_lookup))
-                updated_reweight_dict[(id_lookup[_id_or_tuple])] = float(value)
-
-    return updated_reweight_dict
-
 
 
 def auto_analyze(source_list: List[Union[List[int], List[Tuple[int, float]]]],
@@ -472,8 +408,7 @@ def auto_analyze(source_list: List[Union[List[int], List[Tuple[int, float]]]],
                                                    List[Tuple[int, float]],
                                                    None]] = None,
                  output_destinations_list: Union[List[str], None] = None,
-                 desired_depth: int = 24,  # CURRENTPASS: rename to "random samples to test against"
-                 # TRACING: propagate from main_configs
+                 random_samples_to_test_against: int = default_background_samples,
                  processors: int = 0,
                  background_list: List[Union[List[int], List[Tuple[int, float]], None]] = None,
                  skip_sampling: bool = False,
@@ -481,7 +416,7 @@ def auto_analyze(source_list: List[Union[List[int], List[Tuple[int, float]]]],
                  sampling_policy=sampling_policies.matched_sampling,
                  sampling_policy_options='exact',
                  explicit_interface=None,
-                 forced_lapl_reweight=None,  # TRACING: a dict
+                 forced_lapl_reweight=None,
                  ) -> None:
     """
     Automatically analyzes the interactome synergetic action of the experimental hit lists
@@ -489,7 +424,7 @@ def auto_analyze(source_list: List[Union[List[int], List[Tuple[int, float]]]],
     :param source_list: python list of hits for each condition
     :param secondary_source_list: secondary list to which calculate the flow from hist, if needed
     :param output_destinations_list: list of names for each condition
-    :param desired_depth: total samples we would like to compare each set of hits with
+    :param random_samples_to_test_against: total samples we would like to compare each set of hits with
     :param processors: number of processes that will be loaded. as a rule of thumb,
         for max performance, use N-1 processors, where N is the number of physical cores on the
         machine, which is the default
@@ -535,10 +470,10 @@ def auto_analyze(source_list: List[Union[List[int], List[Tuple[int, float]]]],
         secondary_source_list = [None] * len(source_list)
 
     if forced_lapl_reweight is not None:
-        print('<<<<<')
+        # print('<<<<<')
         forced_lapl_reweight = translate_reweight_dict(forced_lapl_reweight)
-        print(forced_lapl_reweight)
-        print('>>>>>')
+        log.debug("forced reweight instructions dict" % str(forced_lapl_reweight))
+        # print('>>>>>')
 
     for hits_list, sec_list, output_destination in zip(source_list, secondary_source_list,
                                                        output_destinations_list):
@@ -548,7 +483,7 @@ def auto_analyze(source_list: List[Union[List[int], List[Tuple[int, float]]]],
                         'Skipping the analysis' % (output_destination, hits_list))
             continue
 
-        log.info('debug 2 : %s, %s' % (hits_list, sec_list))
+        log.debug('debug 2 : %s, %s' % (hits_list, sec_list))
 
         prim_len, prim_shape, _, sec_len, sec_shape, _, _, _ = \
             sampling_policies.characterize_flow_parameters(hits_list, sec_list, False)
@@ -586,35 +521,35 @@ def auto_analyze(source_list: List[Union[List[int], List[Tuple[int, float]]]],
                                                   'sampling_policy': sampling_policy.__name__,
                                                   'sampling_policy_options': sampling_policy_options})
 
-        if in_storage >= desired_depth:
+        if in_storage >= random_samples_to_test_against:
             log.info("%d suitable random samples found in storage for %d desired. Skipping "
-                     "sampling" % (in_storage, desired_depth))
+                     "sampling" % (in_storage, random_samples_to_test_against))
             skip_sampling = True
 
         else:
             log.info("%d suitable random samples found in storage for %d desired. Sampling %d" %
-                     (in_storage, desired_depth, desired_depth - in_storage))
-            desired_depth = desired_depth - in_storage
+                     (in_storage, random_samples_to_test_against, random_samples_to_test_against - in_storage))
+            random_samples_to_test_against = random_samples_to_test_against - in_storage
 
         if not skip_sampling:
 
-            spawn_sampler_pool(processors,
-                               (hits_list, sec_list),
-                               desired_depth,
-                               sparse_rounds=sparse_rounds,
-                               background_set=background_list,
-                               forced_interactome_interface=explicit_interface,
-                               sampling_policy=sampling_policy,
-                               sampling_options=sampling_policy_options)
+            _spawn_sampler_pool(processors,
+                                (hits_list, sec_list),
+                                random_samples_to_test_against,
+                                sparse_rounds=sparse_rounds,
+                                background_set=background_list,
+                                forced_interactome_interface=explicit_interface,
+                                sampling_policy=sampling_policy,
+                                sampling_options=sampling_policy_options)
 
         if forced_lapl_reweight is not None:
-            interactome_interface.apply_reweight_dict(forced_lapl_reweight)  # TRACING: weights update
+            interactome_interface.apply_reweight_dict(forced_lapl_reweight)
 
         interactome_interface.compute_current_and_potentials()
 
         nr_nodes, p_val_dict = compare_to_blank(
             interactome_interface,
-            p_val=p_value_cutoff,
+            p_val_cutoff=p_value_cutoff,
             sparse_rounds=sparse_rounds,
             output_destination=outputs_subdirs,
             random_sampling_method=sampling_policy,

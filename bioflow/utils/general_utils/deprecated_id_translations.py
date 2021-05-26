@@ -7,7 +7,7 @@ from csv import reader as csv_reader
 from csv import writer as csv_writer
 import os
 
-# CURRENTPASS: this is the place where the id translation from mouse to humans can go
+# LEGACY: this is the place where the id translation from mouse to humans can go
 
 def retrieve_id_translation_table(id_list, id_ptable=None):
     """

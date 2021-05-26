@@ -60,7 +60,7 @@ class InteractomeInterface(object):
         self.laplacian_matrix = np.zeros((4, 4))
         self.non_norm_laplacian_matrix = np.zeros((4, 4))
 
-        # REFACTOR [stateless]: decouple into argument
+        # REFACTOR: [structure analysis]: decouple into argument
         self.adj_eigenvects = np.zeros((4, 4))
         self.adj_eigenvals = np.zeros((4, 4))
         self.cond_eigenvects = np.zeros((4, 4))
@@ -85,7 +85,6 @@ class InteractomeInterface(object):
         self.current_accumulator = np.zeros((2, 2))
         self.node_current = {}
 
-        # REFACTOR [stateless]: decouple into arguments
         self._active_up_sample: List[int] = []
         self._active_weighted_sample: List[Tuple[int, float]] = []
         self._secondary_weighted_sample: Union[None, List[Tuple[int, float]]] = None
@@ -94,8 +93,6 @@ class InteractomeInterface(object):
         self._ops_evaluation_method = evaluate_ops
         self._ops_reduction_method = reduce_ops
 
-        self.sparsely_sampled = False  # TRACING: sparse sampling save location.
-        # TRACING: always false, would have been used for export otherwise
         self._background = background_up_ids
         log.debug('_background set to %d' % len(background_up_ids))
 
@@ -199,13 +196,12 @@ class InteractomeInterface(object):
             undump_object(confs.Dumps.interactome_maps)
         log.debug("post-undump e_p_u_b_i length: %s", len(self._active_up_sample))
 
-    def _dump_memoized(self):    # TRACING: add weighted samples chars
+    def _dump_memoized(self):    # TODO: [fast resurrection] add weighted samples chars
         """
         In a JSON, stores a dump of the following properties:
         {
             'UP_hash': md5,
             'sys_hash': self.md5_hash(),
-            'size': len(self._active_up_sample),
             'UPs': pickle.dumps(self._active_up_sample),
             'currents': pickle.dumps((self.current_accumulator, self.node_current))}
         :return:
@@ -219,19 +215,17 @@ class InteractomeInterface(object):
         payload = {
             'UP_hash': md5,
             'sys_hash': self.md5_hash(),
-            'size': len(self._active_up_sample),
             'UPs': pickle.dumps(self._active_up_sample),
             'currents': pickle.dumps((self.current_accumulator, self.node_current))}
         dump_object(confs.Dumps.Interactome_Analysis_memoized, payload)
 
     @staticmethod
-    def _undump_memoized() -> dict:    # TRACING: add weighted samples chars
+    def _undump_memoized() -> dict:    # TODO: [fast resurrection] add weighted samples chars
         """
         Retrieves a JSON dump of the following properties:
         {
             'UP_hash': md5,
             'sys_hash': self.md5_hash(),
-            'size': len(self._active_up_sample),
             'UPs': pickle.dumps(self._active_up_sample),
             'currents': pickle.dumps((self.current_accumulator, self.node_current)),
             'voltages': pickle.dumps(self.uniprots_2_voltage)}
@@ -379,7 +373,7 @@ class InteractomeInterface(object):
         self.known_neo4j_ids = [_node_id for _node_id
                                 in self.neo4j_id_2_matrix_index.keys()]
 
-        self._active_up_sample = []  # REFACTOR [stateless]: decouple into argument
+        self._active_up_sample = []
 
         if self._background:
             if _is_int(self._background[0]):
@@ -476,7 +470,7 @@ class InteractomeInterface(object):
         """
         sorted_initial_set = sorted(self.neo4j_id_2_matrix_index.keys())
 
-        # REFACTOR: should involve database used for the build metadata
+        # REFACTOR: [environment registration] should involve database used for the build metadata
         data = [
             sorted_initial_set,
             confs.line_loss,
@@ -570,9 +564,8 @@ class InteractomeInterface(object):
         :return:
         """
 
-        def _verify_uniprot_ids(uniprot_vector: List[Tuple[int, float]]):
-            # TRACING: rename to id_weight_vector
-            uniprots = np.array(uniprot_vector)[:, 0].tolist()
+        def _verify_uniprot_ids(id_weight_vector: List[Tuple[int, float]]):
+            uniprots = np.array(id_weight_vector)[:, 0].tolist()
 
             if not set(uniprots) <= set(self.known_neo4j_ids):
 
@@ -585,7 +578,7 @@ class InteractomeInterface(object):
                        else False
                        for uniprot in uniprots]
 
-            return np.array(uniprot_vector)[_filter, :].tolist()
+            return np.array(id_weight_vector)[_filter, :].tolist()
 
         self._active_weighted_sample = _verify_uniprot_ids(reduce_and_deduplicate_sample(sample))
 
@@ -686,7 +679,7 @@ class InteractomeInterface(object):
             # sparse_sampling
             cancellation: bool = True,
             sparse_samples: int = -1,
-            fast_load: bool = False):  # REFACTOR: this should be implemented otherwise
+            fast_load: bool = False):  # REFACTOR: [fast resurrection] currently dead
         # this way.
         """
         Builds a conduction matrix that integrates uniprots, in order to allow an easier
@@ -709,9 +702,8 @@ class InteractomeInterface(object):
             self.normalize_laplacian()
 
         if fast_load:
-            payload = self._undump_memoized()  # TRACING: add weighted samples chars
-
-              # TRACING: hash of samples. Fast ressurection requires self._weighted_samples
+            payload = self._undump_memoized()  # TODO: [fast resurrection] add weighted samples
+            # TODO: [fast resurrection] hash of samples. Requires self._weighted_samples
             UP_hash = hashlib.md5(
                 json.dumps(
                     sorted(self._active_up_sample),
@@ -753,14 +745,12 @@ class InteractomeInterface(object):
                                    sparse_rounds=sparse_samples,
                                    potential_diffs_remembered=True,
                                    thread_hex=self.thread_hex,
-                                   # CURRENTPASS: rename to flow_calculation_method
-                                   active_sampling_function=self._flow_calculation_method)
+                                   flow_calculation_method=self._flow_calculation_method)
 
         self.UP2UP_voltages.update(
-                dict(((self.matrix_index_2_neo4j_id[i],  # TRACING: neo4j_ids are unsorted as is
-                       self.matrix_index_2_neo4j_id[j]),
-                      voltage)
-                     for (i, j), voltage in up_pair_2_voltage.items()))
+            {tuple(sorted([self.matrix_index_2_neo4j_id[i],
+                           self.matrix_index_2_neo4j_id[j]])) : voltage
+                     for (i, j), voltage in up_pair_2_voltage.items()})
 
         if incremental:
             self.current_accumulator = self.current_accumulator + current_accumulator
@@ -802,11 +792,6 @@ class InteractomeInterface(object):
          :param p_value_dict:
          :param output_location:
         """
-
-        if self.sparsely_sampled:
-            log.warning('Computation of the information circulation was not complete, %s',
-                        'most likely due to the sparse_sampling')
-
         node_char_names = [
             'Current',
             'Type',
@@ -814,6 +799,7 @@ class InteractomeInterface(object):
             'Names',
             'Degree',
             'Source',
+            'Source_W'
             'p-value',
             'p_p-value',
             'rel_value',
@@ -829,7 +815,8 @@ class InteractomeInterface(object):
             'DOUBLE',
             'DOUBLE',
             'DOUBLE',
-            'DOUBLE']  # TRACING: add the weights at the start
+            'DOUBLE',
+            'DOUBLE']
 
         if p_value_dict is None:
             p_value_dict = defaultdict(lambda: (np.nan, np.nan, np.nan))
@@ -855,19 +842,36 @@ class InteractomeInterface(object):
                 self.neo4j_id_2_display_name[NodeID] = "None"
                 continue
 
+            if NodeID in self._active_up_sample:
+                in_sample_state = 1
+                in_sample_weight = 1
+                for node, weight in self._active_up_sample:
+                    if NodeID == node:
+                        in_sample_state = 1  # for clarity
+                        in_sample_weight = weight
+
+                if self._secondary_weighted_sample is not None:
+                    for node, weight in self._secondary_weighted_sample:
+                        if NodeID == node:
+                            in_sample_state = -1
+                            in_sample_weight = -weight
+
+            else:
+                in_sample_state = 0
+                in_sample_weight = 0
+
             characterization_dict[NodeID] = [
-                str(self.node_current[NodeID]),
-                self.neo4j_id_2_node_type[NodeID],
-                self.neo4j_id_2_legacy_id[NodeID],
-                self.neo4j_id_2_display_name[NodeID].replace(',', '-'),
-                str(self.laplacian_matrix[matrix_index, matrix_index]),
-                str(float(int(NodeID in self._active_up_sample))), # TRACING: add the weights at the start
-                # TRACING: add if it is a secondary sample or not.
-                # CURRENTPASS: just map positive from primary_sample and negative from sec_sample
-                str(p_value_dict[int(NodeID)][0]),
-                str(nan_neg_log10(p_value_dict[int(NodeID)][0])),
-                str(float(p_value_dict[int(NodeID)][1])),
-                str(float(p_value_dict[int(NodeID)][2]))]
+                str(self.node_current[NodeID]),                             # current
+                self.neo4j_id_2_node_type[NodeID],                          # type
+                self.neo4j_id_2_legacy_id[NodeID],                          # legacy id
+                self.neo4j_id_2_display_name[NodeID].replace(',', '-'),     # Names
+                str(self.laplacian_matrix[matrix_index, matrix_index]),     # Degree
+                str(in_sample_state),                                       # Source
+                str(in_sample_weight),                                      # Source weight
+                str(p_value_dict[int(NodeID)][0]),                          # p-val
+                str(nan_neg_log10(p_value_dict[int(NodeID)][0])),           # p_p-val
+                str(float(p_value_dict[int(NodeID)][1])),                   # rel_value
+                str(float(p_value_dict[int(NodeID)][2]))]                   # std_diffs
 
         if output_location == '':
             output_location = confs.NewOutputs().Interactome_GDF_output
@@ -960,7 +964,8 @@ class InteractomeInterface(object):
 
             # TODO: [load bar]: the external loop progress bar goes here
 
-            # TRACING: fast resurrection is impossible (memoized is false, but pipeline is broken)
+            # KNOWNBUG: [fast resurrection] fast resurrection is impossible (memoized hard-coded to
+            #  false, because the pipeline is broken)
             self.compute_current_and_potentials(memoized=False, sparse_samples=sparse_rounds)
 
             sample_ids_md5 = hashlib.md5(
@@ -979,7 +984,7 @@ class InteractomeInterface(object):
                             sparse_rounds, sampling_policy.__name__, optional_sampling_param,
                             np.sum(self.current_accumulator)))
 
-                insert_interactome_rand_samp(  # INTEST: sample storage change
+                insert_interactome_rand_samp(
                     {
                         'UP_hash': sample_ids_md5,  # specific retrieval, but inexact.
                         'sys_hash': self.md5_hash(),
@@ -987,14 +992,13 @@ class InteractomeInterface(object):
                         'target_sample_hash': super_hash,
                         'sampling_policy': sampling_policy.__name__,
                         'sampling_policy_options': optional_sampling_param,
-                        'size': -1,  # TRACING: to be removed
                         'sparse_rounds': sparse_rounds,
                         'UPs': pickle.dumps(self._active_up_sample),
                         'sample': pickle.dumps(self._active_weighted_sample),
                         'sec_sample': pickle.dumps(self._secondary_weighted_sample),
                         'currents': pickle.dumps(
                             (self.current_accumulator,
-                             self.node_current)),  # TRACING: node currents are dead: deprecate
+                             self.node_current)),
                         'voltages': pickle.dumps(
                             self.UP2UP_voltages)})
 

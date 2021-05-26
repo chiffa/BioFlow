@@ -8,6 +8,7 @@ from typing import Any, Union, Tuple, List, Dict
 Optionally_Weighted_Internal_IDs = NewType('Optionally_Weighted_Internal_IDs',
                                            Union[List[int], List[Tuple[int, float]]])
 
-# TODO:
+# TODO [typing]:
+#   - neo4j node types and xref node types
 #   - annotome sample entry
 #   - interactome sample entry

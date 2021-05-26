@@ -9,21 +9,6 @@ import subprocess
 import numpy as np
 
 
-def _is_int(_obj):
-    """
-    Checks if an object is an int with a try-except loop
-
-    :param _obj:
-    :return:
-    """
-    try:
-        int(_obj)
-    except TypeError or ValueError as e:
-        return False
-    else:
-        return True
-
-
 def _get_git_revision_hash():
     return subprocess.check_output(['git', 'rev-parse', 'HEAD'])
 
@@ -75,32 +60,6 @@ def undump_object(dump_filename):
     # print(dump_filename)
     return load(dump_file)
 
-
-def deprecated_get_bulbs_ids_set(location):
-    """
-    Retrieves bulbs ids for the elements for the analyzed group
-
-    :param location: where the bulbs ids are loaded
-
-    """
-    bulbs_ids = []
-
-    with open(location, 'rt') as src:
-        csv_reader = reader(src)
-        for row in csv_reader:
-           bulbs_ids.append(row)
-
-    print('debug: %s' % bulbs_ids)
-
-    if len(bulbs_ids[0]) == 1:
-        bulbs_ids = [int(ret[0]) for ret in bulbs_ids]
-
-    else:
-        bulbs_ids = [(int(ret), float(ret_w)) for ret, ret_w in bulbs_ids]
-
-    return bulbs_ids
-
-
 def get_source_bulbs_ids():
     """ retrieves bulbs ids for the elements for the analyzed group """
     return undump_object(Dumps.analysis_set_bulbs_ids)
@@ -125,19 +84,6 @@ def memoize(f):
             memdict[args] = result
             return result
     return internal_function
-
-
-def time_exection(f):
-    """
-    The standard timing wrapper for a function
-    """
-    def int_function(*args, **kwargs):
-        now = time()
-        result = f(*args, **kwargs)
-        print(time() - now)
-        return result
-
-    return int_function
 
 
 if __name__ == "__main":

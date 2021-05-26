@@ -4,8 +4,6 @@ This modules manages the command line interface
 import click
 
 
-# CURRENTPASS: add smtp logging if enabled
-
 def print_version(ctx, value):
     from bioflow import __version__
     if not value or ctx.resilient_parsing:
@@ -55,6 +53,8 @@ def downloaddbs():
     :return:
     """
     from bioflow.utils.source_dbs_download import pull_online_dbs
+    from bioflow.utils.smtp_log_behavior import smtp_logger
+
     pull_online_dbs()
 
 
@@ -72,6 +72,8 @@ def purgeneo4j():
     print('neo4j will start purging the master database. It will take some time to finish.' \
           ' Please do not close the shell')
     from bioflow.db_importers.import_main import destroy_db
+    from bioflow.utils.smtp_log_behavior import smtp_logger
+
     destroy_db()
 
 
@@ -88,6 +90,8 @@ def loadneo4j():
     print('neo4j will start loading data into the master database. It will take a couple ' \
           'of hours to finish. Please do not close the shell.')
     from bioflow.db_importers.import_main import build_db
+    from bioflow.utils.smtp_log_behavior import smtp_logger
+
     build_db()
 
 
@@ -123,6 +127,8 @@ def rebuildlaplacians():
     :return:
     """
     from bioflow.utils.top_level import rebuild_the_laplacians
+    from bioflow.utils.smtp_log_behavior import smtp_logger
+
     rebuild_the_laplacians()
 
 
@@ -154,8 +160,8 @@ def purgemongo(collection):
                    'annotome) or both')
 @click.option('--depth', default=25, help='random samples used to infer flow pattern significance')
 @click.option('--processors', default=1, help='processor cores used in flow patterns calculation')
-@click.option('--skipsampling', default=False, help='if True, skips random sparse_sampling step')
-@click.option('--background', default=False, help='if True, uses the background for sparse_sampling')
+@click.option('--skipsampling', default=False, help='if True, skips random sampling step')
+@click.option('--background', default=False, help='if True, uses the background for sampling')
 @click.option('--name', default='', help='name of the experiment')
 def analyze(name, matrix, depth, processors, skipsampling, background):
     """
@@ -173,6 +179,7 @@ def analyze(name, matrix, depth, processors, skipsampling, background):
     from bioflow.molecular_network.interactome_analysis import auto_analyze as interactome_analysis
     from bioflow.annotation_network.knowledge_access_analysis \
         import auto_analyze as knowledge_analysis
+    from bioflow.utils.smtp_log_behavior import smtp_logger
 
     source, sec_source = get_source_bulbs_ids()
 
@@ -192,7 +199,7 @@ def analyze(name, matrix, depth, processors, skipsampling, background):
         interactome_analysis(source_list=source,
                              secondary_source_list= sec_source,
                              output_destinations_list=name,
-                             desired_depth=depth,
+                             random_samples_to_test_against=depth,
                              processors=processors,
                              background_list=background,
                              skip_sampling=skipsampling
@@ -202,11 +209,11 @@ def analyze(name, matrix, depth, processors, skipsampling, background):
         # # perform the knowledge analysis
         knowledge_analysis(source_list=source,
                            output_destinations_list=name,
-                           desired_depth=depth,
+                           random_samples_to_test_against=depth,
                            processors=processors,
                            background_list=background,
                            skip_sampling=skipsampling,
-                            )
+                           )
 
 
 
@@ -234,7 +241,7 @@ def analyze(name, matrix, depth, processors, skipsampling, background):
 #     background_internal_ids = get_background_bulbs_ids()
 #
 #     interactome_analysis([source_bulbs_ids],
-#                          desired_depth=depth,
+#                          random_samples_to_test_against=depth,
 #                          processors=processors,
 #                          background_list=background_internal_ids,
 #                          skip_sampling=skipsampling,
@@ -262,7 +269,7 @@ def analyze(name, matrix, depth, processors, skipsampling, background):
 #     source_bulbs_ids = get_source_bulbs_ids()
 #
 #     knowledge_analysis([source_bulbs_ids],
-#                        desired_depth=depth,
+#                        random_samples_to_test_against=depth,
 #                        processors=processors,
 #                        skip_sampling=skipsampling)
 

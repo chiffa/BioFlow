@@ -39,6 +39,7 @@ DB_locations:
 Servers:
   mongodb_server: mongodb://localhost:27017/
   neo4j_server: bolt://localhost:7687
+  neo4j_user: 'neo4j'
 
 # Configurations for different organisms.
 # To change the organism, please comment out the active organism and uncomment the one you want
@@ -157,7 +158,7 @@ User_Settings:
       200  # number of proteins in analysis set at which we will be switching to sparse sparse_sampling
       # in sparse sparse_sampling mode, the number oif pairs sampled will be (this threshold)^2 / 2
     default_background_samples:
-      24  # number of random samples we want to compare to by default TODO: propagate
+      24  # number of random samples we want to compare to by default
     # This is the p-value that is set by user and is to be propagated throughout the analyses.
     default_p_val_cutoff:
       0.2

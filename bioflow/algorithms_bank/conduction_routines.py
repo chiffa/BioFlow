@@ -222,10 +222,10 @@ def get_current_through_nodes(triu_current_matrix: spmat.csc_matrix) -> List[np.
         outgoing_current = np.array((negative_current + negative_current.T).sum(axis=1)).flatten() / 2
 
         if np.any(outgoing_current):
-            print('incoming', incoming_current)
-            print('outgoing', outgoing_current)
-            print('diff', incoming_current + outgoing_current)
-            print(np.any(incoming_current + outgoing_current > 0.))
+            log.critical('incoming', incoming_current)
+            log.critical('outgoing', outgoing_current)
+            log.critical('diff', incoming_current + outgoing_current)
+            log.critical(np.any(incoming_current + outgoing_current > 0.))
             raise Exception('debug: assumption failed....')
 
     ret = list(incoming_current)
@@ -313,7 +313,7 @@ def main_flow_calc_loop(conductivity_laplacian: np.array,
                         memory_source=None,
                         potential_diffs_remembered: bool = False,
                         thread_hex: str = '______',
-                        active_sampling_function=general_flow):
+                        flow_calculation_method=general_flow):
     """
     master method for all the required edge current calculations
 
@@ -326,7 +326,7 @@ def main_flow_calc_loop(conductivity_laplacian: np.array,
     :param memory_source: if we are using memoization, source to look it
     :param potential_diffs_remembered: if the difference of potentials between nodes is remembered
     :param thread_hex: debugging id of the thread in which the sampling is going on
-    :param active_sampling_function: the function that converts the sample signature (sample,
+    :param flow_calculation_method: the function that converts the sample signature (sample,
         secondary_sample, sparse_rounds) into a list of ((index, weight), (index weight)) tuples
     :return:
     """
@@ -340,7 +340,7 @@ def main_flow_calc_loop(conductivity_laplacian: np.array,
              % (thread_hex, len(sample), cancellation,
                 potential_dominated, sparse_rounds))
 
-    # log.info('debug: parameters supplied to main_flow_calc_loop: '
+    # log.debug('debug: parameters supplied to main_flow_calc_loop: '
     #          'conductivity_laplacian: %s,\n'
     #          'sample: %s,\n'
     #          'cancellation: %s,\n'
@@ -382,7 +382,7 @@ def main_flow_calc_loop(conductivity_laplacian: np.array,
     # else:
     #     list_of_pairs = [(i, j) for i, j in combinations(set(sample), 2)]
 
-    list_of_pairs = active_sampling_function(sample, secondary_sample, sparse_rounds)
+    list_of_pairs = flow_calculation_method(sample, secondary_sample, sparse_rounds)
 
     total_pairs = len(list_of_pairs)
 
@@ -408,7 +408,7 @@ def main_flow_calc_loop(conductivity_laplacian: np.array,
 
     for counter, (i, j) in enumerate(list_of_pairs):
 
-        mean_weight = (i[1] + j[1]) / 2.  # TRACING: not sure if it works if the weight of one is 0
+        mean_weight = (i[1] + j[1]) / 2.  # KNOWNBUG: not sure if it works if the weight of one is 0
         i, j = (i[0], j[0])
 
         if memory_source and tuple(sorted((i, j))) in list(memory_source.keys()):

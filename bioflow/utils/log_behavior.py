@@ -13,12 +13,19 @@ import threading
 
 from bioflow.configs.bioflow_home import output_location, log_location
 
+
 on_unittest = os.environ.get('UNITTESTING') == 'True'  # if we are unittesting
 on_remote_unittest = os.environ.get('REMOTE_UNITTEST') == 'True'  # if we are testing on CI tools
 on_remote = os.environ.get('REMOTE') == 'True'
 
 on_dev = False
 # on_dev = True
+
+# define a formatter
+formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(lineno)d - %(levelname)s - %(message)s')
+
+info_formatter = logging.Formatter('%(asctime)s - %(name)s - %(message)s')
 
 # #################################
 # redirecting all to a log file
@@ -90,7 +97,9 @@ def wipe_dir(my_path):  # pragma: no cover
     return True
 
 
-def add_to_file_handler(my_logger, level, file_name, rotating=False, log_location=log_location):
+def add_to_file_handler(my_logger, level, file_name,
+                        rotating=False, log_location=log_location,
+                        _formatter=formatter):
     """
     Adds a file-writing handler for the log.
 
@@ -106,13 +115,10 @@ def add_to_file_handler(my_logger, level, file_name, rotating=False, log_locatio
     else:
         _fh = logging.FileHandler(handler_name, mode='a')
     _fh.setLevel(level)
-    _fh.setFormatter(formatter)
+    _fh.setFormatter(_formatter)
     my_logger.addHandler(_fh)
 
 
-# define a formatter
-formatter = logging.Formatter(
-        '%(asctime)s - %(name)s - %(lineno)d - %(levelname)s - %(message)s')
 
 if on_dev:
     wipe_dir(log_location)
@@ -133,23 +139,24 @@ def get_logger(logger_name):
     _logger.setLevel(logging.DEBUG)
 
     add_to_file_handler(_logger, logging.DEBUG, 'debug.log', rotating=True)
-    add_to_file_handler(_logger, logging.INFO, 'info.log')
-    add_to_file_handler(_logger, logging.INFO, 'run.log', log_location=output_location)
+    # add_to_file_handler(_logger, logging.INFO, 'info.log')
+    add_to_file_handler(_logger, logging.INFO, 'run.log',
+                        log_location=output_location, _formatter=info_formatter)
     add_to_file_handler(_logger, logging.WARNING, 'warning.log')
     add_to_file_handler(_logger, logging.ERROR, 'error.log')
     add_to_file_handler(_logger, logging.CRITICAL, 'critical.log')
     # add_to_file_handler()
 
-    # def handle_exception(exc_type, exc_value, exc_traceback):
-    #
-    #     if issubclass(exc_type, KeyboardInterrupt):
-    #         sys.__excepthook__(exc_type, exc_value, exc_traceback)
-    #         return
-    #
-    #     _logger.critical("Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback))
-    #     # raise RuntimeError("Terminating the Exception handling")
-    #
-    # sys.excepthook = handle_exception
+    def handle_exception(exc_type, exc_value, exc_traceback):
+
+        if issubclass(exc_type, KeyboardInterrupt):
+            sys.__excepthook__(exc_type, exc_value, exc_traceback)
+            return
+
+        _logger.critical("Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback))
+        # raise RuntimeError("Terminating the Exception handling")
+
+    sys.excepthook = handle_exception
     #
     # def handle_thread_exception(exc_type, exc_value, exc_traceback):
     #
