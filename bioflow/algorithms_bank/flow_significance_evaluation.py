@@ -54,7 +54,7 @@ def get_p_val_by_gumbel(entry: np.array,
     Recovers the statistical significance (p-value equivalent) by performing a gumbel test
 
     :param entry: the values achieved in the real hits information flow computation
-    :param max_set_red: background set of maximum values achieved during blanc sparse_sampling runs
+    :param max_set_red: background set of maximum values achieved during blanc sampling runs
     :return:
     """
 

@@ -703,7 +703,7 @@ class GeneOntologyInterface(object):
             node = DatabaseGraph.get(elt, 'UNIPROT')
             alt_id = node['legacyID']
             uniprot_dict[alt_id] = (
-                elt, self.up_neo4j_id_2_leg_id_disp_name[elt][1])
+                elt, self.up_neo4j_id_2_leg_id_disp_name[elt][1])  # UP_Name
             uniprot_dict[elt] = alt_id
         pickle.dump(uniprot_dict, open(confs.Dumps.Up_dict_dump, 'wb'))
 
@@ -1121,7 +1121,8 @@ class GeneOntologyInterface(object):
 
         for GO in self.node_id_2_mat_idx.keys():
             char_dict[GO] = [str(self.node_current[GO]),
-                             'GO', self.neo4j_id_2_legacy_id[GO],
+                             'GO',
+                             self.neo4j_id_2_legacy_id[GO],
                              self.neo4j_id_2_display_name[GO].replace(',', '-'),
                              str(self.GO2_Pure_Inf[GO]),
                              str(len(self._limiter_go_2_up_reachable_nodes[GO])),
@@ -1142,13 +1143,14 @@ class GeneOntologyInterface(object):
                         in_sample_weight = -weight
 
             char_dict[UP] = [str(self.node_current[UP]),
-                             'UP', self.up_neo4j_id_2_leg_id_disp_name[UP][0],
+                             'UP',
+                             self.up_neo4j_id_2_leg_id_disp_name[UP][0],  # UP leg ID/name
                              str(self.up_neo4j_id_2_leg_id_disp_name[UP][1]).replace(',', '-'),
                              str(self.binding_intensity),
                              '1',
-                             '0.1',
-                             '1',
-                             str(in_sample_weight)]  # TODOC: document the defaults
+                             '0.05',
+                             '1.3',
+                             str(in_sample_weight)]
 
         if output_location == '':
             output_location = NewOutputs().GO_GDF_output

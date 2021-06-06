@@ -4,52 +4,50 @@ TODOs for the project in the future:
 On the table:
 -------------
 
-TEST: clean up dead code
-    - DONE: Delete old code path
-    - DONE: Clear deprecation markers
-    - DONE: Follow up with the propagate from main configs markers
-    - DONE: Follow up with the renaming of nodes
-    - TODO: Clear the dangling currentpass and tracing/intest/todoc todos
-    - DONE: check for doc inconsistency
-    - DONE: switch pool spin-up to internal function (_)
-    - NOFX: switch the calculation of the sparsity into the active samples loading function, drop
-        elsewhere: calculated only in the auto_analyze so far
-    - DONE: move debug prints/logs to the log.debug
-    - DONE: modify so that the line is printed only into the debug log and not into the info.log
-        (aka console log)
-    - TEST: figure out wtf is wrong with the exception reporting through the SMTP
-    - TODO: disable all sys.excepthooks in logging and smtp logging and insert explicit wrappers
-    - TODO: correct all the sparse_sampling in the docs
-    - TODO: in knowledge interface, find instances of the coupled LegacyID and name and rename them
-
 TODO: document new features
-    TODO: Basic usage:
-        - TODO: weighted background
-        - TODO: weighted main sample
-        - TODO: secondary sample
-        - TODO: specific nodes exclusion
-    TODO: Advanced usage
-        - TODO: pair generation method
-        - TODO: sampling method
-    TODO: Command line alignment
+    TODO: CLI:
+        - DONE: add support for secondary sets
+        - DONE: add support for mail report of completion (import log as well and patch the log)
+        - DONE: switch pure boolean options to flags; propagate to readme examples
+    TODO: todoc pass
     TODO: Three levels of usage:
-        - Basic >>> readme
-            - TODO: rewrite an example for basic usage, from CLI and example line
-            - TODO: mention the integration tests and the samples shipped for unittests
-        - Advanced
-        - Deep dive
-            - Weighting schema modification
-            - Pair generation method
-            - Statistical significance
-            - Sampling method
+        - DONE: Basic >>> readme
+            - DONE: rewrite an example for basic usage, from CLI and example line
+            - DONE: mention the integration tests and the samples shipped for unittests
+        - TODO: Advanced
+            - DONE: secondary set
+            - DONE: weighted set
+            - DONE: weighted background
+            - TODO: reweighting/specific nodes exclusion
+        - TODO: Deep dive
+            - DONE: adding to the main database
+            - DONE: Weighting schema modification
+            - DONE: Pair generation method
+            - DONE: Statistical significance
+            - DONE: Sampling method
+            - DONE: GDF
 
-TODO: change the active organism by simple list and then read from the main_configs
+TODO: rebuild and upload the project to the PyPI
+TODO: test docker deployment
+
+
+
+ - TODO: [FEATURE]: Bayesian re-weighting
+    - TODO: sample a large set of nodes, non-normalized
+    - TODO:
 
  - TODO: [FEATURE]: Factor out the structural analysis of the network properties to a module
+    - TODO: basically eigenvalues + eigenvector for the largest one
 
  - TODO: [FEATURE]: Factor out the clustering analysis of the network to a different function in
         the knowledge/interactome analyses
-
+    - TODO: write a significance analysis function,
+        - taking in the UP2UP tension + UP2UP background tension
+        - if the analysis was dense
+        - hierarchically clustering the matrix
+        - sorting the clusters by size and average flow
+        - for each size, compare the flow intensity
+        - use Gumbel to determine significance
 
 Current refactoring:
 --------------------
@@ -155,8 +153,32 @@ Current refactoring:
 
  - TODO: [USABILITY]: fold the current verbose state into a `-v/--vebose` argument
 
+<>
+
 
 DONE SEPARATOR:
+
+ - NOFX : change the active organism by simple list and then read from the main_configs
+    (NOFX: major refactor, interferes)
+
+DONE: clean up dead code
+    - DONE: Delete old code path
+    - DONE: Clear deprecation markers
+    - DONE: Follow up with the propagate from main configs markers
+    - DONE: Follow up with the renaming of nodes
+    - TODO: Clear the dangling currentpass and tracing/intest/todoc todos
+    - DONE: check for doc inconsistency
+    - DONE: switch pool spin-up to internal function (_)
+    - NOFX: switch the calculation of the sparsity into the active samples loading function, drop
+        elsewhere: calculated only in the auto_analyze so far
+    - DONE: move debug prints/logs to the log.debug
+    - DONE: modify so that the line is printed only into the debug log and not into the info.log
+        (aka console log)
+    - DONE: figure out wtf is wrong with the exception reporting through the SMTP
+    - DONE: disable all sys.excepthooks in logging and smtp logging and insert explicit wrappers
+    - DONE: correct all the sparse_sampling in the docs
+    - NOFX: in knowledge interface, find instances of the coupled LegacyID and name and rename them
+        (NOFX: they are uniprot-specific and are used in iterations. That would be a major refactor)
 
 <Memoization of actual analysis runs>
 
@@ -858,9 +880,9 @@ Bigger refactors
     => Change log management so that the info gets logged into a file without rising to the
         surface and couple all the log.info with a "print"
 
- - TODO: [FEATURE] [DECIDE IF IMPLEMENT] add flow calculation for real samples saving to mongodb, +
+ - NOPE: [FEATURE] add flow calculation for real samples saving to mongodb, +
 buffering (if unchanged InteractomeInstance and other secondary formatting, just retrieve the
-flow from the database)
+flow from the database: we added support for matrix reweighting)
 
  - DONE: [REFACTOR] refactor the entire edge typing upon insertion, retrieval upon construction of
 laplacian/adjacency matrix and setting of Laplacian weights
@@ -876,9 +898,9 @@ signatures/compare samples
  - TODO: [FEATURE] change the informativity computation so that the path between nodes through the
 network is log of probability of being connected through that suite of GO terms.
 
- - TODO: [FEATURE] flow to a targeted set
+ - DONE: [FEATURE] flow to a targeted set
 
- - TODO: [FEATURE] weighted targets flow
+ - DONE: [FEATURE] weighted targets flow
 
  - DONE: [FEATURE] modification of the Laplacian weights by the end user.
 
@@ -891,11 +913,11 @@ interaction filters
  - DONE: [DEV TOOL] performance evaluation run: compute compops for sampling a large pool of
 genes in yeast
 
- - TOOD: [REFACTOR] set the model for the database usage for the samples by performing
+ - TOOD: [TYPING] set the model for the database usage for the samples by performing
 insertions/conversions inside the `sample_storage` databases wrappers (for mongodb: form the dict
 of query/payload)
 
- - TODO: [NOT THIS ITERATION] neo4j and mongodb versionning based on the currently
+ - DONE: neo4j and mongodb versionning based on the currently
 active organism. For instance, all neo4j nodes and edges need to be marked with the organism tag.
 
  - DONE: [NOT THIS ITERATION] add a mail signalling to indicate the termination or crash of the

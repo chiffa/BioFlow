@@ -154,8 +154,8 @@ User_Settings:
       1e-10
   analysis:
     sparse_analysis_threshold:
-      200  # number of proteins in analysis set at which we will be switching to sparse sparse_sampling
-      # in sparse sparse_sampling mode, the number oif pairs sampled will be (this threshold)^2 / 2
+      200  # number of proteins in analysis set at which we will be switching to sparse sampling
+      # in sparse sampling mode, the number oif pairs sampled will be (this threshold)^2 / 2
     default_background_samples:
       24  # number of random samples we want to compare to by default
     # This is the p-value that is set by user and is to be propagated throughout the analyses.

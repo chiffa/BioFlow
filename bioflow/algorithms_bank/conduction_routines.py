@@ -287,18 +287,6 @@ def edge_current_iteration(conductivity_laplacian: spmat.csc_matrix,
 
     voltages = get_potentials(conductivity_laplacian, index_pair, shared_solver)
 
-    # if solver:
-    #     if switch_to_splu:
-    #         pass  # because the solver was not passed to start with
-    #     else:
-    #         io_array = build_sink_source_current_array((i, j), conductivity_laplacian.shape)  # csc
-    #         voltages = solver(io_array)  # csc;
-    # else:
-    #     voltages = get_potentials(conductivity_laplacian, (i, j))
-    #     # problem: are we retrieving anything with i, j when we cut the laplacian?
-    #     if switch_to_splu:
-    #         voltages = np.insert(voltages, j, 0, axis=0)
-
     _, current = get_current_matrix(conductivity_laplacian, voltages)  # csc, csc;
     potential_diff = abs(voltages[i, 0] - voltages[j, 0])  # np.float64
 
@@ -340,47 +328,8 @@ def main_flow_calc_loop(conductivity_laplacian: np.array,
              % (thread_hex, len(sample), cancellation,
                 potential_dominated, sparse_rounds))
 
-    # log.debug('debug: parameters supplied to main_flow_calc_loop: '
-    #          'conductivity_laplacian: %s,\n'
-    #          'sample: %s,\n'
-    #          'cancellation: %s,\n'
-    #          'potential_dominated: %s,\n'
-    #          'sparse_sampling %s,\n'
-    #          'sparse_sampling_depth %s,\n'
-    #          'memory_source: %s,\n'
-    #          'potential_diffs_remembered: %s,\n'
-    #          'thread_hex: %s' % (
-    #     type(conductivity_laplacian),
-    #     type(sample),
-    #     cancellation,
-    #     potential_dominated,
-    #     sparse_sampling,
-    #     sparse_sampling_depth,
-    #     type(memory_source),
-    #     potential_diffs_remembered,
-    #     thread_hex))
-
     # convert the arguments to proper structure:
     conductivity_laplacian = conductivity_laplacian.tocsc()
-
-    # line_of_interest = 7493
-    # log.info('mat_lines of interest max: %f, %f; %d, %d' %
-    #          (np.max(conductivity_laplacian[line_of_interest, :]),
-    #           np.max(conductivity_laplacian[:, line_of_interest]),
-    #           np.sum((conductivity_laplacian[line_of_interest, :] != 0).astype(np.int)),
-    #           np.sum((conductivity_laplacian[:, line_of_interest] != 0).astype(np.int))))
-
-    # generate index list in agreement with the sparse_sampling strategy
-
-    # if sparse_sampling:
-    #     list_of_pairs = []
-    #     for _ in repeat(None, sparse_sampling_depth):
-    #         idx_list_c = copy(sample)
-    #         random.shuffle(idx_list_c)
-    #         list_of_pairs += list(zip(idx_list_c[:len(idx_list_c) // 2],
-    #                              idx_list_c[len(idx_list_c) // 2:]))
-    # else:
-    #     list_of_pairs = [(i, j) for i, j in combinations(set(sample), 2)]
 
     list_of_pairs = flow_calculation_method(sample, secondary_sample, sparse_rounds)
 
@@ -395,12 +344,6 @@ def main_flow_calc_loop(conductivity_laplacian: np.array,
         shared_solver = chmd.cholesky(conductivity_laplacian, line_loss)
     else:
         shared_solver = None
-
-
-    # if not switch_to_splu and share_solver:
-    #     cholesky_shared_solver = cholesky(conductivity_laplacian, line_loss)
-    # else:
-    #     cholesky_shared_solver = None
 
     # run the main loop on the list of indexes in agreement with the memoization strategy:
     breakpoints = 300

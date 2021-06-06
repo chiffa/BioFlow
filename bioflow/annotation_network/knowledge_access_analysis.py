@@ -101,7 +101,7 @@ def _spawn_sampler_pool(
     :param sample_sets_to_match: size of the sample list
     :param sample_depth: number of random samples we look to generate performing the pooling of the
         samples in each list
-    :param sparse_rounds: number of sparse rounds to run (or False if sparse_sampling is dense)
+    :param sparse_rounds: number of sparse rounds to run (or False if sampling is dense)
     :param background_set: set of node ids that are to be sampled from
     :param forced_go_interface: a provided BioKnowledgeInterface that contains sets to imitate
     :param sampling_policy: sampling policy to be employed
@@ -382,7 +382,7 @@ def compare_to_blank(
         [int(nr_node_id),
          go_interface_instance.neo4j_id_2_display_name[nr_node_id]] +
         dict_system[nr_node_id] + r_nodes[go_node_ids == float(nr_node_id)].tolist() +
-        [[go_interface_instance.up_neo4j_id_2_leg_id_disp_name[up_bulbs_id][1]
+        [[go_interface_instance.up_neo4j_id_2_leg_id_disp_name[up_bulbs_id][1]  # UP name
               for up_bulbs_id
               in list(set(go_interface_instance._limiter_go_2_up_reachable_nodes[nr_node_id]).
                       intersection(set(go_interface_instance._active_up_sample)))]]

@@ -18,6 +18,10 @@ from bioflow.db_importers.go_and_uniprot_importer import memoize_go_terms, impor
 from bioflow.neo4j_db.db_io_routines import excluded_nodes_ids_from_names_list, run_diagnostics,\
     cross_link_identifiers, compute_annotation_informativity
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
+from bioflow.utils.log_behavior import get_logger
+
+
+log = get_logger(__name__)
 
 
 def build_db():

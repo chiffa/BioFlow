@@ -18,9 +18,6 @@ from bioflow.utils.smtp_log_behavior import mail_handler
 log = get_logger(__name__)
 log.addHandler(mail_handler)
 
-# TODOC: add mail handler as a patch
-
-
 if __name__ == "__main__":
 
     # first, let's clear logs:

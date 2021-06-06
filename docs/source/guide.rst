@@ -61,120 +61,49 @@ recommend mapping the genes to human if the mouse is used as a model for the org
 .. WARNING::
     While BioFlow provides an interface to download the databases programmatically, the databases are subject to Licenses and Terms that it's up to the end users to respect
 
-Adding new data to the main knowledge repository:
--------------------------------------------------
-The easiest way to add new information to the main knowledge repository is by finding the nodes
-to which new knowledge will attach (provided by the ``convert_to_internal_ids`` function from the
-``bioflow.neo4j_db.db_io_routines`` module for a lot of x-ref identifiers for physical entity
-nodes), and then process to add new relationships and nodes
-using the functions ``DatabaseGraph.link`` to add a connection between nodes and ``DatabaseGraph
-.create`` to add a new node. ``DatabaseGraph.attach_annotation_tag`` can be used in order to
-attach annotation tags to new nodes that can be searcheable from the outside. All functions can
-be batched (cf API documentation).
 
-A new link will have a call signature of type ``link(node_id, node_id, link_type, {param: val})
-``, where node_ids are internal database ids for the nodes provided by the
-``convert_to_internal_ids`` function, ``link_type`` is a link type that would be handy for you to
-remember (preferably in the snake_case). Two parameters are expected: ``source`` and
-``parse_type``.  ``parse_type`` can only take a value in ``['physical_entity_molecular_interaction',
-'identity', 'refines', 'annotates', 'annotation_relationship', 'xref']``, with ``'xref'`` being
-reserved for the annotation linking.
+Weighting and secondary set:
+============================
 
-A new node will have a call signature of type ``create(node_type, {param:val})`` and return the
-internal id of the created node. ``node_type`` is a node type that would be handy for you to
-remember (preferably in the snake_case). Four paramters are expected: ``'parse_type'``,
-``'source'``, ``'legacyID'`` and ``'displayName'``. ``'parse_type'`` can take only values in
-``['physical_entity', 'annotation', 'xref']``, with ``'xref'`` being reserved for the annotation
-linking. ``legacyID`` is the identifier of the node in the source database and ``displayName`` is
-the name of the biological knowledge node that that will be shown to the end user.
+In addition to the main analysis set, it is possible to supply to BioFlow as well the secondary
+analysis set. In case it is supplied, the information flow will be calculated between the set of
+hits and the secondary set. In other terms, only the hypothesis that link the primary set to the
+secondary set will be evaluated. This is useful in cases where a set of hits from experimental
+results need to be linked to the set of proteins canonically involved in a phenotype or process
+of interest.
 
+The secondary set can be supplied to both the ``knowledge_analysis`` and ``interactome_analysis``
+as an optional parameter ``secondary_source_list``. This is the ``sec_ids`` return from the
+``map_and_save_gene_ids`` method. In order to generate mappints of the ids from the files that
+would be compatible with the ``auto_analyze`` methods, there are several possible ways of
+supplying file paths::
 
-Main knowledge graph parsing:
------------------------------
-Given the difference in the topology and potential differences in the underlying assumptions, we
-pull the interactome knowledge network (where all nodes map to molecular entities and edges - to
-physical/chemical interaction between them) and teh annotome knowledge network (where some nodes
-might be concepts used to understand the biological systems - such as ontology terms or pathways)
-separately.
+    > # No background
+    > hit_ids, sec_ids, background_ids = map_and_save_gene_ids(hits_file)
+    > # Background
+    > hit_ids, sec_ids, background_ids = map_and_save_gene_ids(hits_file, background_file)
+    > # Single secondary file with background
+    > hit_ids, sec_ids, background_ids = map_and_save_gene_ids((hits_file, sec_file), background_file)
+    > # mixed list of files with background
+    > hit_ids, sec_ids, background_ids = map_and_save_gene_ids([(hits_file, sec_file)
+                                                                hits_file_2, ...],
+                                                               background_file)
 
-The parse for interactome is performed by retrieving all the nodes and edges whose ``parse_type``
-is ``physical_entity`` for nodes and ``physical_entity_molecular_interaction``, ``identity`` or
-``refines``. The giant component of the interactome is then extracted and two graph matrices -
-adjacency and laplacian - are build for it. Weights between the nodes are set in an additive
-manner according to the policy supplied as the argument to the ``InteractomeInterafce
-.full_rebuild`` function or, in a case a more granular approach is needed to the
-``InteractomeInterafce.create_val_matrix`` function. By default the
-``active_default_<adj/lapl>_weighting_policy`` functions are used from the
-``bioflow.algorithms_bank.weigting_policies`` module. Resulting matrices are stored in the
-``InteractomeInterface.adjacency_matrix`` and ``InteractomeInterface.laplacian_matrix`` instance
-variables, whears the maps between the matrix indexes and maps are stored in the
-``.neo4j_id_2_matrix_index`` and ``.matrix_index_2_neo4j_id`` variables.
-
-The parse for the annotome is performed in the same way, but matching ``parse_type`` for nodes to
-``physical_entity`` and ``annotation``. In case of a proper graph build, this will result only in
-the edges of types ``annotates`` and ``annotation_relationship`` to be pulled. Weighting
-functions are used in the similar manner, as well as the mappings storage.
+All of them generate valid input for both the ``knowledge_analysis`` and
+``interactome_analysis``, but if you are using a list, a list of experiment names is strongly
+recommended.
 
 
-Custom weighting function:
---------------------------
-In order to account for different possible considerations when deciding which nodes and
-connections are more likely to be included in hypothesis generation, we provide a possibility for
-the end user to use their own weight functions for the interactome and the annotome.
-
-The provided functions are stored in ``bioflow.algorithms_bank.weighting_policies`` module. An
-expected signature of the function is ``starting_node, ending_node, edge > float``, where
-``starting_node`` and ``ending_node`` are of ``<neo4j-driver>.Node`` type, whereas ``edge`` is of
-the ``<neo4j-driver>.Edge`` type. Any properties available stored in the main knowledge
-repository (neo4j database) will be available as dict-like properties of node/edge objects
-(``<starting/ending>_node['<property>']``/``edge['property']``).
-
-The functions are to be provided to the ``bioflow.molecular_network
-.InteractomeInterface.InteractomeInterface.create_val_matrix()`` method as
-``<adj/lapl>_weight_policy_function`` for the adjacency and laplacian matrices respectively.
+.. WARNING::
+    Secondary set has to be disjoing from the primary set. If this is not the case, an explicit error will be raised
 
 
-Custom flow calculation function:
----------------------------------
-In case a specific algorithms to generate pairs of nodes between which
-to calculate the information flow is needed, it can be assigned to the ``InteractomeInterface
-._flow_calculation_method``. It's call signature should conform to the ``list, list, int ->
-list`` signature, where the return list is the list of pairs of ``(node_idx, weight)`` tuples. By
-default, the ``general_flow`` method from ``bioflow.algorithms_bank.flow_calculation_methods``
-will be used. It will try to match the expected flow calcualtion method based on the parameters
-provided (connex within a set if the secondary set is empty/None, star-like if the secondary set
-only has one element, biparty if the secondary set has more than one element).
-
-Similarly, methods to evaluate the number of operations and to reduce their number
-to a maximum ceiling with the optional int argument ``sparse_rounds`` needs to be assigned to the
-``InteractomeInterface._ops_evaluation_method`` and ``InteractomeInterface
-._ops_reduction_method``. By default, the are ``evaluate_ops`` and ``reduce_ops`` from
-``bioflow.algorithms_bank.flow_calculation_methods``.
+For the main as well as the secondary set BioFlow supports weighting. It is possible to supply a
 
 
-Custom random set sampling strategy:
-------------------------------------
-In case a custom algorithm for the generation of the background sample needs to be implemented,
-it should be supplied to the ``InteractomeInterace.randomly_sample`` method as the
-``sampling_policy`` argument.
 
-It is expected to accept the an example of sample and secondary sample to match, background from
-which to sample, number of samples desired and finally a single string parameter modifying the
-way it works (supplied by the ``sampling_policy_options`` parameter of the
-``InteractomeInterace.randomly_sample`` method).
-
-By default, this functions implemented by the ``matched_sampling`` fundion in the
-``bioflow.algorithms_bank.sampling_policies`` module.
+Bioflow supports as well the weighting of the main
 
 
-Custom significance evaluation:
--------------------------------
-by default, ``auto_analyze`` functions for the interactome and the annotome will use the default
-``compare_to_blank`` functions and seek to determine the significance of flow based on comparison
-of the flow achieved by nodes of a given degree in the real sample compared to the random "mock"
-samples. The comparison will be performed using Gumbel_r function fitted to the highest flows
-achieved by the "mock" runs.
-
-As of now, to change the mode of statistical significance evaluation, a user will need to
-re-implement the ``compare_to_blank`` functions and mokey-patch them in the modules containing
-the ``auto_analyze`` function.
+Reweighting and node edge exclusion:
+====================================

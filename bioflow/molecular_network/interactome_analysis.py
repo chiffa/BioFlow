@@ -430,7 +430,7 @@ def auto_analyze(source_list: List[Union[List[int], List[Tuple[int, float]]]],
         machine, which is the default
     :param background_list:  list of physical entities that an experimental method can retrieve,
         optionally with weights indicating the likelihood of retrieval at random
-    :param skip_sampling: if true, will skip background sparse_sampling step
+    :param skip_sampling: if true, will skip background sampling step
     :param p_value_cutoff: highest p_value up to which to report the results
     :param sampling_policy: sampling policy used
     :param sampling_policy_options: sampling policy optional argument

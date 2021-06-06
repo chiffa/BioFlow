@@ -249,7 +249,7 @@ files. If none found, it will use the default ``~/bioflow`` directory.
 Inside the ``$BIOFLOWHOME`` it will store the user configs .yaml file
 (``$BIOFLOWHOME/configs/main_configs.yaml``). If for whatever reason it doesn't find them, it will
 copy the default configs it has there. If you want to reset configs to default, just delete or
-rename your config yaml file.
+rename your ``configs.yaml`` file.
 
 The config contains several sections:
 
@@ -264,9 +264,9 @@ The config contains several sections:
 
   - ``smtp_logging``: enable and configure if you want to receive notifications about errors or
     run finishing by mail. Given you will need a local smtp server sending mails properly, setting
-    this section is not for the faint of heart.
-  - ``environement``: modifies how some aspects of BioFlow work. Comments explain what it does,
-    but you will need to understand the inner workings of BioFlow to know how it works.
+    this section is for advanced users only.
+  - ``environement``: modifies how some aspects of BioFlow work. Comments in ``configs.yaml``
+    explain what they do. Most of them can be overriden in direct calls
   - ``analysis``: controls the parameters used to calculate statistical significance
   - ``debug_flags``: potentially useful if you want to debug an issue or fill out a bug report.
 
@@ -283,8 +283,8 @@ and the ones that represent human-made abstractions to reason about them (Gene O
 Pathways, ...) are split into two different modules (molecular network/Interactome vs annotation
 network/BioKnowledge modules/classes).
 
-The full API documentation is available at `readthedocs.org <http://bioflow.readthedocs
-.org/en/latest/>`__.
+The full API documentation and more in-depth guides are available at `readthedocs.org
+<http://bioflow.readthedocs.org/en/latest/>`__.
 
 
 Basic Usage:
@@ -335,8 +335,8 @@ Or, if you want to install it directly::
 Docker:
 ```````
 
-If you want to build locally (notice you need to issue docker commands with the actual docker-enabled
-user; usually prepending sudo to the commands)::
+If you want to build locally (notice you need to issue docker commands with docker-enabled
+users)::
 
    > git clone https://github.com/chiffa/BioFlow.git
    > cd <BioFlow installation folder>
@@ -418,7 +418,7 @@ The building process will take a bit - up to a couple of hours.
 Now, you can start using the BioFlow proper::
 
    > from bioflow.annotation_network.knowledge_access_analysis import auto_analyze as \
-   >    knowledge_analysis, _filter
+   >    knowledge_analysis
    > from bioflow.molecular_network.interactome_analysis import auto_analyze as interactome_analysis
 
    > hits_file = "/your/path/here.tsv"
@@ -426,7 +426,7 @@ Now, you can start using the BioFlow proper::
 
 And get to  work: map the hits and the background genes to internal db IDs::
 
-   > hit_ids, background_ids = map_and_save_gene_ids(hits_file, background_file)
+   > hit_ids, sec_ids, background_ids = map_and_save_gene_ids(hits_file, background_file)
 
 BioFlow expects the tsv/csv for hits or background files to contain one hit per line, and will
 attempt to map them to UNIPROT protein nodes (used as a backbone to cross-link imported
@@ -482,33 +482,21 @@ in a folder called ``outputs_YYYY-MM_DD <launch time>``:
 The .gdf file can be further analysed with more appropriate tools, such as for instance
 `Gephi <https://gephi.org/>`__.
 
-Enabling the SMTP logging would require you to manually build a try-except around your script code::
+NOTE: there is also a possibility to provide a flow target set (secondary set) as well as to
+assign weights to hits as well as the background. This information is available in `the usage guide
+<http://bioflow.readthedocs.org/en/latest/guide.html#weighting-and-secondary-set>`__. You can as
+well refer to the ``bioflow._integration_tests.py`` file for examples of how it would work with
+provided data (glycogen biosynthesis in yeast).
 
-    > from bioflow.utils.smtp_log_behavior import get_smtp_logger, started_process, \
-    completed, smtp_error_bail_out
+Enabling the SMTP logging requires you to define appropriate smtp server variables in the configs
+file and add the smtp handles to all the loggers you want to use it::
 
-    > try:
-    >   started_process()
-    > except Exception as e:
-    >   smtp_error_bail_out()
-    >   raise e
+    > from bioflow.utils.log_behavior import get_logger
+    > from bioflow.utils.smtp_log_behavior import mail_handler
 
-    > try:
-    >   <your code here>
-    > except Exception as e:
-    >   try:
-    >       logger.exception(e)
-    >   except Exception as e:
-    >        smtp_error_bail_out()
-    >        raise e
-    >   raise e
+    > log = get_logger(__name__)
+    > log.addHandler(mail_handler)
 
-    > else:
-    >   try:
-    >       completed()
-    >   except Exception as e:
-    >       smtp_error_bail_out()
-    >       raise e
 
 Command line:
 `````````````
@@ -521,7 +509,7 @@ Or, in case of installation with pip, directly from a command line (assumed here
 
     > bioflow <command> [--options]
 
-Setup environment (likely to take a while top pull all the online databases): ::
+Setup environment (likely to take a while to pull all the online databases): ::
 
     > bioflow downloaddbs
     > bioflow loadneo4j
@@ -547,13 +535,16 @@ Alternatively::
 
     > bioflow analyze --depth 24 --processors 3 --background True --name=<name_of_experiment>
 
+For all of them, if the smtp is configured, an ``--smtplog`` option will trigger the mail
+start/stop/exception reporting
+
 More information is available with::
 
     > bioflow --help
 
     > bioflow about
 
-The results of analysis will be available in the output folder, and printed out to the StdOut.
+The results of analysis will be available in the output folder, and printed out to the ``std.out``.
 
 
 Post-processing:
@@ -566,7 +557,9 @@ columns for the nodes:
 - node type
 - ``legacy_id``
 - degree of the node
-- whether it is present or not in the hits list (source)
+- whether it is present or not in the hits list (source; negative for secondary list)
+- if the hits list was weighted, the weight; if a secondary list was present, it's weights, but
+in negative
 - ``p-value``, comparing the information flow through the node to the flow expected for the random
 set of genes
 - -log10(``p_value``) (``p_p-value``)
@@ -590,8 +583,12 @@ The most common pipleine involves using `Gephi open graph visualization platform
 - Adjust label size
 - Adjust labels position (Layout > LabelAdjust)
 
+More details on the specifics of the .gdf output file is available in the `advanced usage guide
+<http://bioflow.readthedocs.org/en/latest/advanced_guide.html#gdf-files>`__.
+
 For more details or usage as a library, refer to the `usage guide
 <http://bioflow.readthedocs.org/en/latest/guide.html#basic-usage>`__.
+
 
 .. |License Type| image:: https://img.shields.io/badge/license-BSD3-blue.svg
    :target: https://github.com/chiffa/BioFlow/blob/master/License-new_BSD.txt
@@ -600,8 +597,6 @@ For more details or usage as a library, refer to the `usage guide
 .. |Coverage Status| image:: https://coveralls.io/repos/chiffa/BioFlow/badge.svg?branch=master&service=github
    :target: https://coveralls.io/github/chiffa/BioFlow?branch=master
 
-.. |Duplicate Lines| image:: https://img.shields.io/badge/duplicate%20lines-11.45%25-yellowgreen.svg
-   :target: http://clonedigger.sourceforge.net/
 
 .. |Python version| image:: https://img.shields.io/badge/python-3.X-blue.svg
    :target: https://www.python.org/downloads/release/python-2715/

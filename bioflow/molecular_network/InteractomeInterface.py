@@ -47,7 +47,7 @@ class InteractomeInterface(object):
     """
     Interface between interactome in the knowledge database and the interactome graph laplacian
 
-    :param background_up_ids: (optional) background that will be used for sparse_sampling of random
+    :param background_up_ids: (optional) background that will be used for sampling of random
     nodes to build a comparison interface for the
     """
 
@@ -676,7 +676,7 @@ class InteractomeInterface(object):
             self,
             memoized: bool = True,  # is required to enable the fast loading.
             incremental: bool = False,  # This is always false and was used in order to resume the
-            # sparse_sampling
+            # sampling
             cancellation: bool = True,
             sparse_samples: int = -1,
             fast_load: bool = False):  # REFACTOR: [fast resurrection] currently dead
@@ -691,7 +691,7 @@ class InteractomeInterface(object):
             existing ones. Useful for the computation of particularly big systems with
             intermediate dumps
         :param cancellation: divides the final current by number of bioflow-sink pairs
-        :param sparse_samples: if set to an integer >0, the sparse_sampling will be sparse and not
+        :param sparse_samples: if set to an integer >0, the sampling will be sparse and not
             dense,i.e. instead of computation for each node pair, only an estimation will be made,
             equal to computing sparse_rounds association with other randomly chosen nodes
         :param fast_load: if True, will try to lad a pre-saved instance
@@ -903,17 +903,14 @@ class InteractomeInterface(object):
         loaded active samples.
 
         :param random_samples: how many times we would like to sample each uniprot number
-        :param sparse_rounds:  if we want to use sparse sparse_sampling (useful in case of
+        :param sparse_rounds:  if we want to use sparse sampling (useful in case of
         large uniprot sets), we would use this option
-        :param no_add: if set to True, the result of sparse_sampling will not be added to the
+        :param no_add: if set to True, the result of sampling will not be added to the
         database of samples. Useful if re-running tests with similar parameters several times.
-        :param pool_no: explicit sparse_sampling pool number (used for reporting/debugging)
+        :param pool_no: explicit sampling pool number (used for reporting/debugging)
         :param sampling_policy: sampling policy used
         :param optional_sampling_param: sampling policy optional argument
         """
-        # DONE: [Better sparse_sampling]: include the limitations on the types of nodes to sample
-        #   solved by weighted background
-
         sample_chars = characterize_flow_parameters(self._active_weighted_sample,
                                                     self._secondary_weighted_sample, sparse_rounds)
 
@@ -957,7 +954,7 @@ class InteractomeInterface(object):
             # self.set_uniprot_source(sample)
 
             log.info('Sampling thread: %s, Thread hex: %s; Random sample %d/%d \n'
-                     'sparse_sampling characteristics: sys_hash: %s, sample_hash: %s, '
+                     'sampling characteristics: sys_hash: %s, sample_hash: %s, '
                      'target_hash: %s' %
                      (pool_no, self.thread_hex, i, random_samples,
                       self.md5_hash(), sample_hash, super_hash))

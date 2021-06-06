@@ -45,15 +45,20 @@ def main():
                                 'to wait for a while for hte download to complete. '
                                 'Some files are large (up to 3 Gb).'
                                 'You can perform this step manually (cf documentation).')
-def downloaddbs():
+@click.option('--smtplog', default=False, is_flag=True, help='Enables mail reporting. Make sure '
+                                                             'SMTP configs are set properly first.')
+def downloaddbs(smtplog):
     """
     Downloads the databases automatically
     \f
 
     :return:
     """
-    from bioflow.utils.source_dbs_download import pull_online_dbs
-    from bioflow.utils.smtp_log_behavior import smtp_logger
+    from bioflow.utils.source_dbs_download import pull_online_dbs, log
+
+    if smtplog:
+        from bioflow.utils.smtp_log_behavior import mail_handler
+        log.addHandler(mail_handler)
 
     pull_online_dbs()
 
@@ -72,7 +77,6 @@ def purgeneo4j():
     print('neo4j will start purging the master database. It will take some time to finish.' \
           ' Please do not close the shell')
     from bioflow.db_importers.import_main import destroy_db
-    from bioflow.utils.smtp_log_behavior import smtp_logger
 
     destroy_db()
 
@@ -80,7 +84,9 @@ def purgeneo4j():
 @click.command()
 @click.confirmation_option(help='Are you sure you want to start loading the neo4j '
                                 'database? The process might take several hours or days')
-def loadneo4j():
+@click.option('--smtplog', default=False, is_flag=True, help='Enables mail reporting. Make sure '
+                                                             'SMTP configs are set properly first.')
+def loadneo4j(smtplog):
     """
     Loads the information from external database into the main knowledge repository inside neo4j
     \f
@@ -89,16 +95,24 @@ def loadneo4j():
     """
     print('neo4j will start loading data into the master database. It will take a couple ' \
           'of hours to finish. Please do not close the shell.')
-    from bioflow.db_importers.import_main import build_db
-    from bioflow.utils.smtp_log_behavior import smtp_logger
+    from bioflow.db_importers.import_main import build_db, log
+
+    if smtplog:
+        from bioflow.utils.smtp_log_behavior import mail_handler
+        log.addHandler(mail_handler)
 
     build_db()
 
 
 @click.command()
-@click.option('--background', default='', help='path to file of IDs of all genes detectable by a method')
+@click.option('--background', default='', help='path to file of IDs of all genes detectable by a '
+                                               'method. supports weighted sets')
+@click.option('--secondary', default='', help='path to the file of IDs of the secondary genes '
+                                              'set. supports weighted sets')
+@click.option('--smtplog', default=False, is_flag=True, help='Enables mail reporting. Make sure '
+                                                             'SMTP configs are set properly first.')
 @click.argument('source')
-def mapsource(source, background):
+def mapsource(source, secondary, background, smtplog):
     """
     Sets the source and background files that will be uses in the analysis.
 
@@ -112,22 +126,36 @@ def mapsource(source, background):
 
     :param source:
     :param background:
+    :param secondary:
     :return:
     """
-    from bioflow.utils.top_level import map_and_save_gene_ids
-    map_and_save_gene_ids(source, background)
+    from bioflow.utils.top_level import map_and_save_gene_ids, log
+
+    if smtplog:
+        from bioflow.utils.smtp_log_behavior import mail_handler
+        log.addHandler(mail_handler)
+
+    if secondary != '':
+        map_and_save_gene_ids((source, secondary), background)
+    else:
+        map_and_save_gene_ids(source, background)
 
 
 @click.command()
-def rebuildlaplacians():
+@click.option('--smtplog', default=False, is_flag=True, help='Enables mail reporting. Make sure '
+                                                             'SMTP configs are set properly first.')
+def rebuildlaplacians(smtplog):
     """
     Extracts the Laplacian matrices from the master graph database.
     \f
 
     :return:
     """
-    from bioflow.utils.top_level import rebuild_the_laplacians
-    from bioflow.utils.smtp_log_behavior import smtp_logger
+    from bioflow.utils.top_level import rebuild_the_laplacians, log
+
+    if smtplog:
+        from bioflow.utils.smtp_log_behavior import mail_handler
+        log.addHandler(mail_handler)
 
     rebuild_the_laplacians()
 
@@ -160,10 +188,12 @@ def purgemongo(collection):
                    'annotome) or both')
 @click.option('--depth', default=25, help='random samples used to infer flow pattern significance')
 @click.option('--processors', default=1, help='processor cores used in flow patterns calculation')
-@click.option('--skipsampling', default=False, help='if True, skips random sampling step')
-@click.option('--background', default=False, help='if True, uses the background for sampling')
+@click.option('--skipsampling', default=False, is_flag=True, help='Skips random sampling step')
+@click.option('--background', default=False, is_flag=True, help='Uses the background for sampling')
 @click.option('--name', default='', help='name of the experiment')
-def analyze(name, matrix, depth, processors, skipsampling, background):
+@click.option('--smtplog', default=False, is_flag=True, help='Enables mail reporting. Make sure '
+                                                             'SMTP configs are set properly first.')
+def analyze(name, matrix, depth, processors, skipsampling, background, smtplog):
     """
     Performs the analysis of the information flow
 
@@ -179,7 +209,17 @@ def analyze(name, matrix, depth, processors, skipsampling, background):
     from bioflow.molecular_network.interactome_analysis import auto_analyze as interactome_analysis
     from bioflow.annotation_network.knowledge_access_analysis \
         import auto_analyze as knowledge_analysis
-    from bioflow.utils.smtp_log_behavior import smtp_logger
+
+    if smtplog:
+        from bioflow.utils.io_routines import log as logger_1
+        from bioflow.molecular_network.interactome_analysis import log as logger_2
+        from bioflow.annotation_network.knowledge_access_analysis import log as logger_3
+
+        from bioflow.utils.smtp_log_behavior import mail_handler
+
+        logger_1.addHandler(mail_handler)
+        logger_2.addHandler(mail_handler)
+        logger_3.addHandler(mail_handler)
 
     source, sec_source = get_source_bulbs_ids()
 
@@ -197,7 +237,7 @@ def analyze(name, matrix, depth, processors, skipsampling, background):
     if matrix != 'annotome':
         # # perform the interactome analysis
         interactome_analysis(source_list=source,
-                             secondary_source_list= sec_source,
+                             secondary_source_list=sec_source,
                              output_destinations_list=name,
                              random_samples_to_test_against=depth,
                              processors=processors,
@@ -208,70 +248,13 @@ def analyze(name, matrix, depth, processors, skipsampling, background):
     if matrix != 'interactome':
         # # perform the knowledge analysis
         knowledge_analysis(source_list=source,
+                           secondary_source_list=sec_source,
                            output_destinations_list=name,
                            random_samples_to_test_against=depth,
                            processors=processors,
                            background_list=background,
                            skip_sampling=skipsampling,
                            )
-
-
-
-
-# @click.command()
-# @click.option('--depth', default=24, help='random samples used to infer flow pattern significance')
-# @click.option('--processors', default=3, help='processor cores used in flow patterns calculation')
-# @click.option('--skipsampling', default=False, help='if True, skips random sparse_sampling step')
-# @click.option('--background', default=False, help='if True, skips hits sample flow computation ')
-# def interactomeanalysis(depth, processors, skipsampling, background):
-#     """
-#     Performs interactome analysis given background set given earlier.
-#     \f
-#
-#     :param depth:
-#     :param processors:
-#     :param skipsampling:
-#     :param skiphitflow:
-#     :return:
-#     """
-#     from bioflow.utils.io_routines import get_background_bulbs_ids, get_source_bulbs_ids
-#     from bioflow.molecular_network.interactome_analysis import auto_analyze as interactome_analysis
-#
-#     source_bulbs_ids = get_source_bulbs_ids()
-#     background_internal_ids = get_background_bulbs_ids()
-#
-#     interactome_analysis([source_bulbs_ids],
-#                          random_samples_to_test_against=depth,
-#                          processors=processors,
-#                          background_list=background_internal_ids,
-#                          skip_sampling=skipsampling,
-#                          from_memoization=skiphitflow)
-#
-#
-# @click.command()
-# @click.option('--depth', default=24, help='random samples used to infer flow pattern significance')
-# @click.option('--processors', default=3, help='processor cores used in flow patterns calculation')
-# @click.option('--skipsampling', default=False, help='if True, skips random sparse_sampling step')
-# def knowledgeanalysis(depth, processors, skipsampling):
-#     """
-#     Performs annotome analysis given background set given earlier.
-#     \f
-#
-#     :param depth:
-#     :param processors:
-#     :param skipsampling:
-#     :return:
-#     """
-#     from bioflow.utils.io_routines import get_source_bulbs_ids
-#     from bioflow.annotation_network.knowledge_access_analysis \
-#         import auto_analyze as knowledge_analysis
-#
-#     source_bulbs_ids = get_source_bulbs_ids()
-#
-#     knowledge_analysis([source_bulbs_ids],
-#                        random_samples_to_test_against=depth,
-#                        processors=processors,
-#                        skip_sampling=skipsampling)
 
 
 main.add_command(downloaddbs)
