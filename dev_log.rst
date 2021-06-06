@@ -4,37 +4,16 @@ TODOs for the project in the future:
 On the table:
 -------------
 
-TODO: document new features
-    DONE: CLI:
-        - DONE: add support for secondary sets
-        - DONE: add support for mail report of completion (import log as well and patch the log)
-        - DONE: switch pure boolean options to flags; propagate to readme examples
-    DONE: todoc pass
-    DONE: Three levels of usage:
-        - DONE: Basic >>> readme
-            - DONE: rewrite an example for basic usage, from CLI and example line
-            - DONE: mention the integration tests and the samples shipped for unittests
-        - DONE: Advanced
-            - DONE: secondary set
-            - DONE: weighted set
-            - DONE: weighted background
-            - DONE: reweighting/specific nodes exclusion
-        - DONE: Deep dive
-            - DONE: adding to the main database
-            - DONE: Weighting schema modification
-            - DONE: Pair generation method
-            - DONE: Statistical significance
-            - DONE: Sampling method
-            - DONE: GDF
-
 TODO: rebuild and upload the project to the PyPI
-TODO: test docker deployment
 
+TEST: test docker deployment
+
+TODO: rebuild and test for human deployment
 
 
  - TODO: [FEATURE]: Bayesian re-weighting
     - TODO: sample a large set of nodes, non-normalized
-    - TODO:
+    - TODO: calculate the resulting flows
 
  - TODO: [FEATURE]: Factor out the structural analysis of the network properties to a module
     - TODO: basically eigenvalues + eigenvector for the largest one
@@ -157,6 +136,29 @@ Current refactoring:
 
 
 DONE SEPARATOR:
+
+TODO: document new features
+    DONE: CLI:
+        - DONE: add support for secondary sets
+        - DONE: add support for mail report of completion (import log as well and patch the log)
+        - DONE: switch pure boolean options to flags; propagate to readme examples
+    DONE: todoc pass
+    DONE: Three levels of usage:
+        - DONE: Basic >>> readme
+            - DONE: rewrite an example for basic usage, from CLI and example line
+            - DONE: mention the integration tests and the samples shipped for unittests
+        - DONE: Advanced
+            - DONE: secondary set
+            - DONE: weighted set
+            - DONE: weighted background
+            - DONE: reweighting/specific nodes exclusion
+        - DONE: Deep dive
+            - DONE: adding to the main database
+            - DONE: Weighting schema modification
+            - DONE: Pair generation method
+            - DONE: Statistical significance
+            - DONE: Sampling method
+            - DONE: GDF
 
  - NOFX : change the active organism by simple list and then read from the main_configs
     (NOFX: major refactor, interferes)
