@@ -749,8 +749,8 @@ class InteractomeInterface(object):
 
         self.UP2UP_voltages.update(
             {tuple(sorted([self.matrix_index_2_neo4j_id[i],
-                           self.matrix_index_2_neo4j_id[j]])) : voltage
-                     for (i, j), voltage in up_pair_2_voltage.items()})
+                           self.matrix_index_2_neo4j_id[j]])): voltage
+                          for (i, j), voltage in up_pair_2_voltage.items()})
 
         if incremental:
             self.current_accumulator = self.current_accumulator + current_accumulator
