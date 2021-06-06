@@ -29,6 +29,14 @@ bioflow.analysis\_pipeline\_example module
    :undoc-members:
    :show-inheritance:
 
+bioflow.bioflow\_types module
+-----------------------------
+
+.. automodule:: bioflow.bioflow_types
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 bioflow.cli module
 ------------------
 

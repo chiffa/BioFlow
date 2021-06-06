@@ -5,21 +5,21 @@ On the table:
 -------------
 
 TODO: document new features
-    TODO: CLI:
+    DONE: CLI:
         - DONE: add support for secondary sets
         - DONE: add support for mail report of completion (import log as well and patch the log)
         - DONE: switch pure boolean options to flags; propagate to readme examples
-    TODO: todoc pass
-    TODO: Three levels of usage:
+    DONE: todoc pass
+    DONE: Three levels of usage:
         - DONE: Basic >>> readme
             - DONE: rewrite an example for basic usage, from CLI and example line
             - DONE: mention the integration tests and the samples shipped for unittests
-        - TODO: Advanced
+        - DONE: Advanced
             - DONE: secondary set
             - DONE: weighted set
             - DONE: weighted background
-            - TODO: reweighting/specific nodes exclusion
-        - TODO: Deep dive
+            - DONE: reweighting/specific nodes exclusion
+        - DONE: Deep dive
             - DONE: adding to the main database
             - DONE: Weighting schema modification
             - DONE: Pair generation method

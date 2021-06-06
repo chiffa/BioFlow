@@ -36,6 +36,14 @@ bioflow.algorithms\_bank.flow\_significance\_evaluation module
    :undoc-members:
    :show-inheritance:
 
+bioflow.algorithms\_bank.model\_assumptions module
+--------------------------------------------------
+
+.. automodule:: bioflow.algorithms_bank.model_assumptions
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 bioflow.algorithms\_bank.sampling\_policies module
 --------------------------------------------------
 
