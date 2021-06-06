@@ -3,7 +3,7 @@ An example of a top-level script that could be as an example of analysis of the 
 """
 from bioflow.utils.log_behavior import clear_logs
 from bioflow.utils.source_dbs_download import pull_online_dbs
-from bioflow.configs.main_configs import sources_location
+from bioflow.configs.main_configs import sources_location, smtp_logging
 from bioflow.db_importers.import_main import destroy_db, build_db
 from bioflow.annotation_network.knowledge_access_analysis import auto_analyze as \
     knowledge_analysis
@@ -13,10 +13,15 @@ from bioflow.utils.top_level import map_and_save_gene_ids, rebuild_the_laplacian
     generate_random_weights
 import os
 from bioflow.utils.log_behavior import get_logger
-from bioflow.utils.smtp_log_behavior import mail_handler
+
 
 log = get_logger(__name__)
-log.addHandler(mail_handler)
+
+
+if smtp_logging:
+    from bioflow.utils.smtp_log_behavior import mail_handler
+    log.addHandler(mail_handler)
+
 
 if __name__ == "__main__":
 
