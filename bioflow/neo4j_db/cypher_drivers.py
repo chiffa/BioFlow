@@ -117,7 +117,17 @@ class GraphDBPipe(object):
         if neo4j_db_name is None:
             self._active_database = DEFAULT_DATABASE
         else:
-            self._active_database = neo4j_db_name
+            self._active_database = DEFAULT_DATABASE  # in the community edition we only can have
+            # one db active
+
+        # else:
+        #     self._active_database = neo4j_db_name
+        #     with self._driver.session(database="system") as session:
+        #         session.write_transaction(self._create_active_db, self._active_database)
+
+    @staticmethod
+    def _create_active_db(tx, db_to_set):
+        tx.run("CREATE DATABASE %s IF NOT EXISTS" % db_to_set)
 
     def close(self):
         """

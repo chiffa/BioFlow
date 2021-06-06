@@ -54,7 +54,7 @@ with open(user_yaml_confs, 'r', encoding='utf8') as user_yaml_configs:
 mongo_db_url = os.getenv('MONGOURL', Servers['mongodb_server'])
 neo4j_server_url = os.getenv('NEO4URL', Servers['neo4j_server'])
 neo4j_user = 'neo4j'
-# neo4j_user = os.getenv('NEO4USER', Servers['neo4j_user'])  # TRACING: activate on configs rebuild
+neo4j_user = os.getenv('NEO4USER', Servers['neo4j_user'])
 source_db_paths = compute_full_paths(Sources, DB_locations, sources_location)
 
 
