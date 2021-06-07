@@ -55,7 +55,7 @@ if __name__ == "__main__":
     # TODO: add a set org to yeast
 
     # # pulling the online databases
-    pull_online_dbs()  # TRACING: revert to default behavior
+    pull_online_dbs()
 
     # building the neo4j database
     build_db()

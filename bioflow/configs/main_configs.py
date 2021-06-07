@@ -165,6 +165,14 @@ class NewOutputs(object):
         self.interactome_network_scatterplot = path.join(root_path, 'interactome.png')
         self.knowledge_network_scatterplot = path.join(root_path, 'knowledge.png')
 
+        # cluster_complement
+
+        self.knowledge_clusters_output = path.join(root_path, 'knowledge_clusters_stats.tsv')
+        self.interactome_clusters_output = path.join(root_path, 'interactome_clusters_stats.tsv')
+
+        self.interactome_clusters_scatterplot = path.join(root_path, 'interactome_clusters.png')
+        self.knowledge_clusters_scatterplot = path.join(root_path, 'knowledge_clusters.png')
+
 
 # This can now be reweighted by policy modification
 laplacian_default_type_edge_weighting = {

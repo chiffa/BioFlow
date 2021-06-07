@@ -23,6 +23,7 @@ from bioflow.utils.log_behavior import get_logger
 from bioflow.neo4j_db.db_io_routines import translate_reweight_dict
 from bioflow.algorithms_bank.flow_significance_evaluation import get_neighboring_degrees,\
     get_p_val_by_gumbel
+from bioflow.algorithms_bank.clustering_routines import compute_tension_clustering
 import bioflow.algorithms_bank.sampling_policies as sampling_policies
 
 
@@ -164,7 +165,7 @@ def local_indexed_select(bi_array, array_column, selection_span):
 
 
 def samples_scatter_and_hist(background_curr_deg_conf, true_sample_bi_corr_array,
-                             save_path: NewOutputs = None, p_values: np.array = None):
+                             save_path: str = None, p_values: np.array = None):
     """
     A general function that performs demonstration of an example of random samples of
      the same size as our sample and of our sample and conducts the statistical tests
@@ -227,8 +228,135 @@ def samples_scatter_and_hist(background_curr_deg_conf, true_sample_bi_corr_array
                         color='r', alpha=0.5)
 
     # plt.show()
-    plt.savefig(save_path.interactome_network_scatterplot)
+    if save_path is not None:
+        plt.savefig(save_path)
+
     plt.clf()
+
+
+def clustering_analysis_complement(interactome_interface_instance: InteractomeInterface,
+                                   p_val_cutoff: float = 0.05,
+                                   sparse_rounds: int = -1,
+                                   output_destination: NewOutputs = None,
+                                   random_sampling_method=sampling_policies.matched_sampling,
+                                   random_sampling_option='exact',
+                                   ) -> list:
+
+    def get_max_for_each_degree(min_inf_flow, clust_size):
+        # print('debug max_array_shape:', str(sample_sub_arrray.shape))
+        degrees = np.unique(clust_size)
+        max_array = []
+
+        for degree in degrees:
+            filter = clust_size == degree
+            max_array.append([min_inf_flow[filter].max(), degree])
+
+        m_arr = np.array(max_array)
+        return m_arr.T
+
+    if sparse_rounds > 0:
+        return []
+
+    if interactome_interface_instance is None or interactome_interface_instance.node_current == {}:
+        raise Exception("tried to perform clustering complement analysis on an empty interface "
+                        "instance")
+
+    md5_hash = interactome_interface_instance.md5_hash()
+    active_sample_hash = interactome_interface_instance.active_sample_md5_hash(sparse_rounds)
+
+    background_sub_array_list = []
+    max_sub_array_list = []
+
+    count = 0
+
+    log.info("clustering complement looking to test against:\n"
+             "\t target_hash: %s \t sys_hash: %s \n"
+             "random sampled according to %s/%s" %
+             (active_sample_hash, md5_hash, random_sampling_method.__name__, random_sampling_option))
+
+    samples_to_test_against = count_interactome_rand_samp({
+                                          'active_sample_hash': active_sample_hash,
+                                          'sys_hash': md5_hash,
+                                          'sampling_policy': random_sampling_method.__name__,
+                                          'sampling_policy_options': random_sampling_option})
+
+    if samples_to_test_against == 0:
+        raise Exception('No samples found to test against. '
+                        'There is likely a discrepancy between the parameters used for sampling '
+                        'and parameters used for the life sample analysis')
+
+    log.info("samples found to test against:\t %d" % samples_to_test_against)
+
+    background_samples = find_interactome_rand_samp({
+                                          'active_sample_hash': active_sample_hash,
+                                          'sys_hash': md5_hash,
+                                          'sampling_policy': random_sampling_method.__name__,
+                                          'sampling_policy_options': random_sampling_option})
+
+    for i, sample in enumerate(background_samples):
+
+        voltages = pickle.loads(sample['voltages'])
+
+        _, min_clust_inf_flow, clust_size = compute_tension_clustering(voltages, random_sample=True)
+
+        back_arr = np.vstack([min_clust_inf_flow, clust_size])
+        background_sub_array_list.append(back_arr)
+
+        max_arr = get_max_for_each_degree(min_clust_inf_flow, clust_size)
+        max_sub_array_list.append(max_arr)
+        count = i
+
+    background_array = np.concatenate(tuple(background_sub_array_list), axis=1)
+    max_array = np.concatenate(tuple(max_sub_array_list), axis=1)
+
+    voltages = interactome_interface_instance.UP2UP_voltages
+    clusters, min_clust_inf_flow, clust_size = compute_tension_clustering(voltages,
+                                                                          random_sample=False)
+
+    query_array = np.vstack([min_clust_inf_flow, clust_size])
+
+    clust_sizes = np.unique(clust_size)
+
+    combined_p_vals = np.ones_like(min_clust_inf_flow)
+
+    for cluster_size in clust_sizes.tolist():
+        _filter = clust_size == cluster_size
+        entry = min_clust_inf_flow[_filter]
+
+        min_clust_inf_flow_per_run = get_neighboring_degrees(cluster_size,
+                                                             max_array,
+                                                             min_nodes=min_nodes_for_p_val)
+
+        p_vals = get_p_val_by_gumbel(entry, min_clust_inf_flow_per_run)
+        combined_p_vals[_filter] = p_vals
+
+    samples_scatter_and_hist(background_array, query_array,
+                             save_path=output_destination.interactome_clusters_scatterplot,
+                             # to save
+                             p_values=combined_p_vals)
+
+    not_random_clusters = [(cluster, i)
+                           for i, cluster
+                           in enumerate(clusters)
+                           if combined_p_vals[i] < p_val_cutoff]
+
+    # rough render of the results
+
+    cluster_entries = []
+
+    for cluster, cluster_no in not_random_clusters:
+        cluster_entries.append([cluster_no,
+                                combined_p_vals[cluster_no],
+                                clust_size[cluster_no],
+                                min_clust_inf_flow[cluster_no],
+                                []])
+        for internal_id in cluster:
+            legacy_id = interactome_interface_instance.neo4j_id_2_legacy_id[internal_id]
+            node_type = interactome_interface_instance.neo4j_id_2_node_type[internal_id]
+            full_name = interactome_interface_instance.neo4j_id_2_display_name[internal_id]
+            cluster_entries[-1][-1].append([internal_id, legacy_id, node_type, full_name])
+
+    return cluster_entries
 
 
 def compare_to_blank(interactome_interface_instance: InteractomeInterface,
@@ -275,9 +403,10 @@ def compare_to_blank(interactome_interface_instance: InteractomeInterface,
 
     background_sub_array_list = []
     max_sub_array_list = []
+
     count = 0
 
-    log.info("looking to test against:"
+    log.info("looking to test against:\n"
              "\t target_hash: %s \t sys_hash: %s \n"
              "random sampled according to %s/%s" %
              (active_sample_hash, md5_hash, random_sampling_method.__name__, random_sampling_option))
@@ -347,7 +476,7 @@ def compare_to_blank(interactome_interface_instance: InteractomeInterface,
     for degree in degrees.tolist():
         _filter = query_array[1, :] == degree
 
-        entry = query_array[:, _filter]
+        entry = query_array[0, _filter]
         background_set = background_array[:, background_array[1, :] == degree]
 
         # REFACTOR: [MODULARITY] this part is too coupled. we should factor it out
@@ -359,7 +488,8 @@ def compare_to_blank(interactome_interface_instance: InteractomeInterface,
         combined_p_vals[_filter] = p_vals
 
     samples_scatter_and_hist(background_array, query_array,
-                             save_path=output_destination,
+                             save_path=output_destination.interactome_network_scatterplot,
+                             # to save
                              p_values=combined_p_vals)
 
     r_nodes = background_density(query_array[(1, 0), :])  # legacy - unused now
@@ -570,6 +700,35 @@ def auto_analyze(source_list: List[Union[List[int], List[Tuple[int, float]]]],
         headers = ['node id', 'display name', 'info flow', 'degree', 'p value']
 
         print(tabulate(nr_nodes, headers, tablefmt='simple', floatfmt=".3g"))
+
+        cluster_entries = clustering_analysis_complement(
+            interactome_interface,
+            p_val_cutoff=p_value_cutoff,
+            sparse_rounds=sparse_rounds,
+            output_destination=outputs_subdirs,
+            random_sampling_method=sampling_policy,
+            random_sampling_option=sampling_policy_options
+        )
+
+        with open(outputs_subdirs.interactome_clusters_output_output, 'wt') as output:
+            writer = csv_writer(output, delimiter='\t')
+            for cluster in cluster_entries:
+                writer.writerow(['cluster_no', 'cluster_p_val', 'cluster_size',
+                                 'min_cluster_info_flow'])
+                writer.writerow(cluster[:-1])
+                writer.writerow(['', 'id', 'legacy id', 'type', 'display name'])
+                for node in cluster[-1]:
+                    writer.writerow([''] + node)
+
+        # using tabulate output to stdout:
+
+        cluster_headers = ['cluster_no', 'cluster_p_val', 'cluster_size', 'min_cluster_info_flow']
+        nodes_list_headers = ['', 'id', 'legacy id', 'type', 'display name']
+
+        for cluster in cluster_entries:
+            print(tabulate(cluster[:-1], cluster_headers, tablefmt='simple', floatfmt=".3g"))
+            print(tabulate(cluster[-1], nodes_list_headers, tablefmt='simple', floatfmt=".3g"))
+
 
 
 if __name__ == "__main__":

@@ -68,6 +68,6 @@ def get_p_val_by_gumbel(entry: np.array,
     log.debug('gumbel_r fit: mu %.2f, beta: %.2f, 95 alpha: %.2f, .%.2f'
               % (mu, beta, a_95_low, a_95_high))
 
-    p_vals = 1 - frozen_gumbel.cdf(entry[0, :])
+    p_vals = 1 - frozen_gumbel.cdf(entry)
 
     return p_vals
