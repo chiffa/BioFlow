@@ -11,7 +11,8 @@ from neo4j import GraphDatabase, DEFAULT_DATABASE
 from neo4j.graph import Node, Relationship, Path
 from typing import List, Tuple, NewType, Dict
 from bioflow.utils.log_behavior import get_logger
-from bioflow.configs.main_configs import neo4j_server_url, neo4j_db_name, neo4j_user
+from bioflow.configs.main_configs import neo4j_server_url, neo4j_db_name, neo4j_user, \
+    neo4j_autobatch_threshold
 
 
 log = get_logger(__name__)
@@ -232,16 +233,50 @@ class GraphDBPipe(object):
 
     @staticmethod
     def _clear_database(tx):
+
         node_types = tx.run("MATCH (N) RETURN DISTINCT LABELS(N)")
         node_types = [_type for _type in node_types]
         node_types = [_type["LABELS(N)"][0] for _type in node_types]
 
         log.info('Clearing the database')
         for node_type in node_types:
+
+            log.info('deleting %s' % node_type)
+
+            result = tx.run("MATCH (n:%s) "
+                             "OPTIONAL MATCH (n)<-[r:annotates]-(a) "
+                             "RETURN count(distinct (n)) as nn, "
+                                    "count(distinct (a)) as na " %
+                            node_type)
+
+            nodes_n = result.peek()['nn']
+            nodes_a = result.single()['na']
+
+            log.info('\t deleting %d nodes, %d annotations' % (nodes_n, nodes_a))
+
+            while nodes_n > neo4j_autobatch_threshold:
+
+                tx.run("MATCH (n:%s) "
+                       "OPTIONAL MATCH (n)<-[r:annotates]-(a) "
+                       "DETACH DELETE a, n " % node_type)
+
+                # tx.commit()
+
+                nodes_n = tx.run("MATCH (n:%s) "
+                             "OPTIONAL MATCH (n)<-[r:annotates]-(a) "
+                             "RETURN count(distinct (n)) as nn, "
+                                    "count(distinct (a)) as na " %
+                            node_type).single()['nn']
+
+                log.info('\t\tdebug: %d nodes remaining' % nodes_n)
+
             tx.run("MATCH (n:%s) "
                    "OPTIONAL MATCH (n)<-[r:annotates]-(a) "
                    "DETACH DELETE a, n " % node_type)
-            log.info('deleted %s' % node_type)
+
+            # tx.commit()
+
+            log.info('\t deleted %s' % node_type)
 
     def get(self,
             node_id: db_id,
@@ -793,13 +828,21 @@ class GraphDBPipe(object):
             session.write_transaction(self._count_up_inf_content)
 
     @staticmethod
-    def _count_direct_coverage(tx):
+    def _count_direct_coverage(tx):  # TODO: there is a problem here with java heap space overflow
+
+        log.info('debug: started direct coverage run')
+
         tx.run("MATCH (n:UNIPROT)--(a:GOTerm) "
                "WITH a, count(distinct n) as dir_links "
                "SET a.direct_links = dir_links")
 
+        log.info('debug: direct coverage went through')
+
     @staticmethod
     def _count_indirect_coverage(tx):
+
+        log.info('debug: started indirect coverage run')
+
         total_up = tx.run("MATCH (n:UNIPROT) RETURN count(distinct n) as tot_links")
         total_up = total_up.single()['tot_links']
 
@@ -809,13 +852,20 @@ class GraphDBPipe(object):
                "SET b.total_links = tot_links "
                "SET b.information_content = log(toFloat(%s)/toFloat(tot_links))" % (total_up))
 
+        log.info('debug: indirect coverage went through')
+
 
     @staticmethod
     def _count_up_inf_content(tx):
+
+        log.info('debug: started inf content run')
+
         tx.run("MATCH (n:UNIPROT)-[:is_go_annotation]-(b:GOTerm) "
                "OPTIONAL MATCH (n:UNIPROT)-[:is_go_annotation]->(a:GOTerm)-[:is_a_go*]->(b:GOTerm) "
                "WITH n, sum(b.information_content) as tot_inf "
                "SET n.total_information = tot_inf")
+
+        log.info('debug: inf content went through')
 
     def get_preferential_gene_names(self) -> dict:
         """

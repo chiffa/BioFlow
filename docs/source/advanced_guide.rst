@@ -29,6 +29,23 @@ linking. ``legacyID`` is the identifier of the node in the source database and `
 the name of the biological knowledge node that that will be shown to the end user.
 
 
+Why there is no KEGG?
+---------------------
+As of building of this framework, the KEGG database dump files could only be accessed for a fee
+that this project did not have a budget for.
+
+If you have the .xml dumops access to them and are willing to integrate them, you are welcome to
+copy the parsing/insertion/crosslinking from ``biolflow.bio_db_parsers.reactomeParser``,
+``biolflow.db_importers.reactome_importer`` and ``bioflow.db_importers.go_and_uniprot_importer``,
+for the cross-linking to the SwissProt/UNIPROT IDs, that serve as a backbone of the database.
+
+Similarly, I would recommend running a diagnostics for excessively connected nodes (``GraphDBPipe()
+.self_diag()`` or ``InteractomeInterface.get_eigen_spectrum()`` are a good place to start) and
+add them to the list of over-connected nodes excluded from the analysis (``configs
+.internal_configs.XXX_forbidden_nodes``).
+
+
+
 Input files:
 ============
 
@@ -260,3 +277,28 @@ have no meaning. For the ease of the presentation, they have been hard-coded to 
 visible but non-obtrusive 1, 0.05 and 1.3 respectively. You might want to be aware when performing
 your p-value cutoffs, or alternatively just reweight them in the program you  are using to
 analyze the network.
+
+
+Neo4j configurations:
+=====================
+
+
+Additional memory and batching:
+-------------------------------
+
+Due to the nature and the volume of the biological data, some of the database manipulation can
+lead to neo4j running out of memory.
+
+The simplest solution to this problem is to increase java heap size that neo4j has access to -
+basically the size of a request response it can pull up and return.
+
+To do this, ``sudo nano /etc/neo4j/neo4j.conf``, uncomment the lines::
+
+    > # dbms.memory.heap.initial_size=4g
+    > # dbms.memory.heap.max_size=16g
+
+And adjust the ``max_size``. 16g seems to do the trick for human datasets. In general it's a good
+idea to leave 10-12g for the Python part, on top of what the OS would tend to use.
+
+
+If all fails, manual batching can be implemented

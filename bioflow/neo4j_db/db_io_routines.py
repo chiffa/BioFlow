@@ -279,6 +279,7 @@ if on_unittest:
     import unittests.Mocks.DB_IO_Mocks as SelfMock
     sys.modules[__name__] = SelfMock
 
+
 def translate_reweight_dict(reweight_dict: Dict) -> Dict:
     """
     Checks a dict assigning desired weight changes in the matrix and if needed translates the

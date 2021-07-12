@@ -103,6 +103,14 @@ def loadneo4j(smtplog):
 
     build_db()
 
+@click.command()
+def diagneo4j():
+    from bioflow.neo4j_db.cypher_drivers import GraphDBPipe
+
+    neo4j_pipe = GraphDBPipe()
+    neo4j_pipe.self_diag()
+
+
 
 @click.command()
 @click.option('--background', default='', help='path to file of IDs of all genes detectable by a '
@@ -260,11 +268,13 @@ def analyze(name, matrix, depth, processors, skipsampling, background, smtplog):
 main.add_command(downloaddbs)
 main.add_command(purgeneo4j)
 main.add_command(loadneo4j)
+main.add_command(diagneo4j)
 main.add_command(rebuildlaplacians)
 main.add_command(purgemongo)
 main.add_command(mapsource)
 main.add_command(analyze)
 main.add_command(about)
+
 
 if __name__ == '__main__':
     main()

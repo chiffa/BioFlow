@@ -52,10 +52,8 @@ def analysis_loop_test(primary, secondary=None, background=''):
 
 if __name__ == "__main__":
 
-    # TODO: add a set org to yeast
-
-    # # pulling the online databases
-    pull_online_dbs()
+    # # # pulling the online databases IMPORTANT: HAS TO BE DONE FIRST AND SEPARATELY
+    # pull_online_dbs()
 
     # building the neo4j database
     build_db()

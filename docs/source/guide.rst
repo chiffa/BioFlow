@@ -104,6 +104,3 @@ For the main as well as the secondary set BioFlow supports weighting. It is poss
 
 Bioflow supports as well the weighting of the main
 
-
-Reweighting and node edge exclusion:
-====================================

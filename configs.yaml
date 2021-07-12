@@ -40,6 +40,7 @@ Servers:
   mongodb_server: mongodb://localhost:27017/
   neo4j_server: bolt://localhost:7687
   neo4j_user: 'neo4j'
+  neo4j_autobatch_threshold: 50000
 
 # Configurations for different organisms.
 # To change the organism, please comment out the active organism and uncomment the one you want

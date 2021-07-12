@@ -4,29 +4,41 @@ TODOs for the project in the future:
 On the table:
 -------------
 
+DEBUG: it seems that the current architecture of neo4j is having trouble with very large transaction
+    - TODO: implement the autobatching
+
 TODO: rebuild and upload the project to the PyPI
 
 TEST: test docker deployment
 
 TODO: rebuild and test for human deployment
 
+TODO: document the need to add to the java heap of neo4j when operating the database on the human
+interactome knowledge.
+
 
  - TODO: [FEATURE]: Bayesian re-weighting
+    A possible implementation of this feature is to provide a mechanism that would sample the
+flow through the network based on provided pairs/groups and correct the resistances to make sure
+the generated flow is non significant (aka set things to 1 by dividing by the information flow).
+
     - TODO: sample a large set of nodes, non-normalized
     - TODO: calculate the resulting flows
+
 
  - TODO: [FEATURE]: Factor out the structural analysis of the network properties to a module
     - TODO: basically eigenvalues + eigenvector for the largest one
 
- - TODO: [FEATURE]: Factor out the clustering analysis of the network to a different function in
+ - TEST: [FEATURE]: Factor out the clustering analysis of the network to a different function in
         the knowledge/interactome analyses
-    - TODO: write a significance analysis function,
+    - TEST: write a significance analysis function,
         - taking in the UP2UP tension + UP2UP background tension
         - if the analysis was dense
         - hierarchically clustering the matrix
         - sorting the clusters by size and average flow
         - for each size, compare the flow intensity
         - use Gumbel to determine significance
+    - TODO: replicate it for the knowledge analysis
 
 Current refactoring:
 --------------------
