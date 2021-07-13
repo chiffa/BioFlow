@@ -785,6 +785,7 @@ class GraphDBPipe(object):
     def _build_indexes(tx):
         # Because neo4j breaks retro compatibility more often than I rebuild the database
         tx.run("CREATE INDEX IF NOT EXISTS FOR (n:UNIPROT) ON (n.legacyID)")
+        tx.run("CREATE INDEX IF NOT EXISTS FOR (n:UNIPROT) ON (n.processing)")
         tx.run("CREATE INDEX IF NOT EXISTS FOR (n:Annotation) ON (n.tag)")
         tx.run("CREATE INDEX IF NOT EXISTS FOR (n:Annotation) ON (n.tag, n.type)")
 
@@ -824,19 +825,36 @@ class GraphDBPipe(object):
         """
         with self._driver.session(database=self._active_database) as session:
             session.write_transaction(self._count_direct_coverage)
+
+        with self._driver.session(database=self._active_database) as session:
             session.write_transaction(self._count_indirect_coverage)
-            session.write_transaction(self._count_up_inf_content)
+        #
+        # with self._driver.session(database=self._active_database) as session:
+        #     session.write_transaction(self._count_up_inf_content)
+
+        with self._driver.session(database=self._active_database) as session:
+            log.info('debug: started session batched inf content run')
+
+            nodes_remaining = session.write_transaction(self._batched_count_up_inf_content)
+
+            while nodes_remaining:
+                log.info('\tdebug: intermediate; nodes remaining to process: %d' % nodes_remaining)
+                nodes_remaining = session.write_transaction(self._batched_count_up_inf_content)
+
+            session.write_transaction(self._clear_batching_tag)
+
+            log.info('debug: finished session batched inf content run')
 
     @staticmethod
-    def _count_direct_coverage(tx):  # TODO: there is a problem here with java heap space overflow
+    def _count_direct_coverage(tx):
 
-        log.info('debug: started direct coverage run')
+        # log.info('debug: started direct coverage run')
 
         tx.run("MATCH (n:UNIPROT)--(a:GOTerm) "
                "WITH a, count(distinct n) as dir_links "
                "SET a.direct_links = dir_links")
 
-        log.info('debug: direct coverage went through')
+        # log.info('debug: direct coverage went through')
 
     @staticmethod
     def _count_indirect_coverage(tx):
@@ -856,16 +874,60 @@ class GraphDBPipe(object):
 
 
     @staticmethod
-    def _count_up_inf_content(tx):
+    def _count_up_inf_content(tx):  # runs out of memory here.
 
         log.info('debug: started inf content run')
 
+
+        total_unprocessed = 1
+
+        while total_unprocessed > 0:
+
+            tx.run("MATCH (n:UNIPROT)-[:is_go_annotation]-(b:GOTerm) "
+                   "WHERE NOT EXISTS(n.processing) "
+                   "WITH n LIMIT %s "
+                   "OPTIONAL MATCH (n:UNIPROT)-[:is_go_annotation]->(a:GOTerm)-[:is_a_go*]->(b:GOTerm) "
+                   "WITH n, sum(b.information_content)+sum(a.information_content) as tot_inf "
+                   "SET n.total_information = tot_inf "
+                   "SET n.processing = true" % neo4j_autobatch_threshold)
+
+            total_unprocessed = tx.run("MATCH (n:UNIPROT)-[:is_go_annotation]-(b:GOTerm) "
+                                       "WHERE NOT EXISTS(n.processing) "
+                                       "RETURN count(distinct n) as tot_links").single()['tot_links']
+
+            log.info('\tdebug: intermediate; nodes remaining to process: %d' % total_unprocessed)
+
         tx.run("MATCH (n:UNIPROT)-[:is_go_annotation]-(b:GOTerm) "
-               "OPTIONAL MATCH (n:UNIPROT)-[:is_go_annotation]->(a:GOTerm)-[:is_a_go*]->(b:GOTerm) "
-               "WITH n, sum(b.information_content) as tot_inf "
-               "SET n.total_information = tot_inf")
+               "WHERE n.processing = true"
+               "REMOVE n.processing")
 
         log.info('debug: inf content went through')
+
+
+    @staticmethod
+    def _batched_count_up_inf_content(tx):  # runs out of memory here.
+
+        tx.run("MATCH (n:UNIPROT)"
+               "WHERE NOT EXISTS(n.processing) "
+               "WITH n LIMIT %s "
+               "OPTIONAL MATCH (n:UNIPROT)-[:is_go_annotation]-(b:GOTerm) "
+               "OPTIONAL MATCH (n:UNIPROT)-[:is_go_annotation]->(a:GOTerm)-[:is_a_go*]->(b:GOTerm) "
+               "WITH n, sum(b.information_content) as tot_inf "
+               "SET n.total_information = tot_inf "
+               "SET n.processing = true" % neo4j_autobatch_threshold)
+
+        total_unprocessed = tx.run("MATCH (n:UNIPROT)-[:is_go_annotation]-(b:GOTerm) "
+                                   "WHERE NOT EXISTS(n.processing) "
+                                   "RETURN count(distinct n) as tot_links").single()['tot_links']
+
+        return total_unprocessed
+
+    @staticmethod
+    def _clear_batching_tag(tx):
+
+        tx.run("MATCH (n) "
+               "WHERE n.processing = true "
+               "REMOVE n.processing")
 
     def get_preferential_gene_names(self) -> dict:
         """

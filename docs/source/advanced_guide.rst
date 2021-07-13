@@ -292,7 +292,8 @@ lead to neo4j running out of memory.
 The simplest solution to this problem is to increase java heap size that neo4j has access to -
 basically the size of a request response it can pull up and return.
 
-To do this, ``sudo nano /etc/neo4j/neo4j.conf``, uncomment the lines::
+To do this, head to ``sudo nano /etc/neo4j/neo4j.conf`` (or wherever your neo4j.conf file is
+located) and uncomment the lines::
 
     > # dbms.memory.heap.initial_size=4g
     > # dbms.memory.heap.max_size=16g
@@ -300,5 +301,12 @@ To do this, ``sudo nano /etc/neo4j/neo4j.conf``, uncomment the lines::
 And adjust the ``max_size``. 16g seems to do the trick for human datasets. In general it's a good
 idea to leave 10-12g for the Python part, on top of what the OS would tend to use.
 
+A second way of dealing with the problem is asking neo4j not to cache any queries. It will slow
+things down, but given how big the queries are on average and how rare they are compared to the
+intended neo4j use, it can be a good approach.
 
-If all fails, manual batching can be implemented
+To do this, head to  ``sudo nano /etc/neo4j/neo4j.conf`` (or wherever your neo4j.conf file is
+located) and add this line::
+
+    > dbms.query_cache_size=0
+

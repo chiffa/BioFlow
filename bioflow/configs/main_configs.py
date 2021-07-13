@@ -256,7 +256,7 @@ default_background_samples = int(user_settings['analysis']['default_background_s
 default_p_val_cutoff = float(user_settings['analysis']['default_p_val_cutoff'])
 min_nodes_for_p_val = int(user_settings['analysis']['min_nodes_for_p_val'])
 
-neo4j_autobatch_threshold = int(configs_loaded['Servers'].get('neo4j_autobatch_threshold', 50000))
+neo4j_autobatch_threshold = int(configs_loaded['Servers'].get('neo4j_autobatch_threshold', 5000))
 
 if __name__ == "__main__":
     pass

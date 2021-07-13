@@ -56,7 +56,7 @@ def destroy_db():
 
 
 if __name__ == "__main__":
-    # pass
+    pass
     DatabaseGraph.clear_database()
     run_diagnostics()
     insert_reactome()

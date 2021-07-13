@@ -5,7 +5,13 @@ On the table:
 -------------
 
 DEBUG: it seems that the current architecture of neo4j is having trouble with very large transaction
-    - TODO: implement the autobatching
+    - DONE: implement the autobatching
+        - we are adding a new parameter to the nodes being processed in batch: n.processing
+        - it is cleared after a request goes through
+        - we are limiting calls by the WITH n LIMIT XXX statement
+        - where XXX is autobatching parameter
+        - and performing a batching loop in self._driver.session, but around the session
+            .write_transaction
 
 TODO: rebuild and upload the project to the PyPI
 
