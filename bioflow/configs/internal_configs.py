@@ -13,7 +13,8 @@ reactome_forbidden_nodes = ['H+', 'ATP', 'GTP', 'Pi', 'H2O', 'ADP', 'PPi', 'GDP'
 # Basically, members of protein degradation pathways
 # CURRENTPASS: add human nodes to the neo4j parse
 uniprot_forbidden_nodes = ['UBI4P_YEAST', 'NAB2_YEAST', 'SSB2_YEAST', 'HSP82_YEAST', 'SMT3_YEAST',
-                           ]
+                           'UBC_HUMAN', 'CUL3_HUMAN', 'NXF1_HUMAN', 'EGFR_HUMAN', 'A4_HUMAN',
+                           'ELAV1_HUMAN', 'HS90A_HUMAN']  # > 1770  PPi recorded; prot degrad net.
 
 # # allowed payload types for the annotation nodes
 # deprecated_annotation_nodes_ptypes = [
