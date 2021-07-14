@@ -564,7 +564,9 @@ class InteractomeInterface(object):
         :return:
         """
 
-        def _verify_uniprot_ids(id_weight_vector: List[Tuple[int, float]]):
+        def _verify_uniprot_ids(id_weight_vector: List[Tuple[int, float]]) \
+                -> List[Tuple[int, float]]:
+
             uniprots = np.array(id_weight_vector)[:, 0].tolist()
 
             if not set(uniprots) <= set(self.known_neo4j_ids):
@@ -578,7 +580,9 @@ class InteractomeInterface(object):
                        else False
                        for uniprot in uniprots]
 
-            return np.array(id_weight_vector)[_filter, :].tolist()
+            pre_return = np.array(id_weight_vector)[_filter, :].tolist()
+
+            return [(id, val) for id, val in pre_return]
 
         self._active_weighted_sample = _verify_uniprot_ids(reduce_and_deduplicate_sample(sample))
 
@@ -896,7 +900,7 @@ class InteractomeInterface(object):
             no_add=False,
             pool_no=None,
             sampling_policy=sampling_policies.matched_sampling,
-            optional_sampling_param = 'exact'):
+            optional_sampling_param='exact'):
         """
         Randomly samples the set of deprecated_reached_uniprots_neo4j_id_list used to create the model.
         This is the null model creation routine. It will match the null model to the currently

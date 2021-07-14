@@ -2,6 +2,11 @@ import numpy as np
 import scipy.spatial.distance as ssd
 import scipy.cluster.hierarchy as sch
 
+from bioflow.utils.log_behavior import get_logger
+
+
+log = get_logger(__name__)
+
 
 def compute_tension_clustering(voltage_pair_dict: dict,
                                random_sample: bool = True) -> (list, np.array, np.array):
@@ -57,6 +62,9 @@ def compute_tension_clustering(voltage_pair_dict: dict,
 
         for line in clust_linkmap:
             id_1, id_2 = (line[0], line[1])
+            log.info('debug: indices in clustering: %s, %s' % (id_1, id_2))
+
+            id_1, id_2 = (int(id_1), int(id_2))
 
             if id_1 >= total_nodes:
                 nodes_set_1 = clusters_collection[id_1 - total_nodes]

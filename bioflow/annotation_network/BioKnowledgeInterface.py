@@ -846,7 +846,9 @@ class GeneOntologyInterface(object):
                        else False
                        for uniprot in uniprots]
 
-            return np.array(id_weight_vector)[_filter, :].tolist()
+            pre_return = np.array(id_weight_vector)[_filter, :].tolist()
+
+            return [(id, val) for id, val in pre_return]
 
         self._active_weighted_sample = _verify_uniprot_ids(reduce_and_deduplicate_sample(sample))
 
@@ -980,8 +982,7 @@ class GeneOntologyInterface(object):
         if not incremental or self.current_accumulator == np.zeros((2, 2)):
             self.current_accumulator = lil_matrix(self.inflated_laplacian.shape)
             self.UP2UP_voltages = {}
-            self.uniprots_2_voltage = {}  # REFACTOR [maintenance]: remove
-
+            self.uniprots_2_voltage = {}
 
         weighted_up_pairs = self._flow_calculation_method(self._active_weighted_sample,
                                                           self._secondary_weighted_sample,
@@ -1174,7 +1175,7 @@ class GeneOntologyInterface(object):
             no_add=False,
             pool_no=None,
             sampling_policy=sampling_policies.matched_sampling,
-            optional_sampling_param = 'exact'):
+            optional_sampling_param='exact'):
         """
         Randomly samples the set of deprecated_reached_uniprots_neo4j_id_list used to create the model.
         This is the null model creation routine

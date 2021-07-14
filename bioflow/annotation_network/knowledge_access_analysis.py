@@ -345,7 +345,7 @@ def compare_to_blank(
     for degree in degrees.tolist():
         _filter = query_array[2, :] == degree
 
-        entry = query_array[:, _filter]
+        entry = query_array[0, _filter]
         background_set = background_array[:, background_array[2, :] == degree]
 
         # REFACTOR: [maintenability] this part is too coupled. we should factor it out
