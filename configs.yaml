@@ -45,56 +45,56 @@ Servers:
 # Configurations for different organisms.
 # To change the organism, please comment out the active organism and uncomment the one you want
 
-#Sources:  # Yeast  # TRACING: revert to the reference state, i.e. only yeast is active
-#  BIOGRID:
-#    name_pattern: Saccharomyces_cerevisiae
-#  GO:
-#    file: go.obo
-#  HINT:
-#    file: SaccharomycesCerevisiaeS288C_binary_hq.txt
-#  INTERNAL:
-#    compops: '15'
-#    dumpprefix: /yeast
-#    mongoprefix: _yeast
-#    mongosuffix: _v_1
-#    neo4jdb: yeast
-#  META:
-#    organism: Yeast
-#  PHOSPHOSITE:
-#    file: Kinase_Substrate_Dataset
-#    organism: yeast
-#  REACTOME:
-#    file: Saccharomyces_cerevisiae.owl
-#  UNIPROT:
-#    tax_ids: 559292,
-
-Sources:  # Human
+Sources:  # Yeast  # TRACING: revert to the reference state, i.e. only yeast is active
   BIOGRID:
-    name_pattern: Homo_sapiens
-  COMPLEXPORTAL:
-    file: 9606.tsv
+    name_pattern: Saccharomyces_cerevisiae
   GO:
     file: go.obo
   HINT:
-    file: HomoSapiens_binary_hq.txt
+    file: SaccharomycesCerevisiaeS288C_binary_hq.txt
   INTERNAL:
-    compops: '3'
-    dumpprefix: /human
-    mongoprefix: _human
+    compops: '15'
+    dumpprefix: /yeast
+    mongoprefix: _yeast
     mongosuffix: _v_1
-    neo4jdb: human
+    neo4jdb: yeast
   META:
-    organism: Human
+    organism: Yeast
   PHOSPHOSITE:
     file: Kinase_Substrate_Dataset
-    organism: human
+    organism: yeast
   REACTOME:
-    file: Homo_sapiens.owl
-  TRRUST:
-    file: trrust_rawdata.human.tsv
-    significance: '1'
+    file: Saccharomyces_cerevisiae.owl
   UNIPROT:
-    tax_ids: '9606'
+    tax_ids: 559292,
+
+#Sources:  # Human
+#  BIOGRID:
+#    name_pattern: Homo_sapiens
+#  COMPLEXPORTAL:
+#    file: 9606.tsv
+#  GO:
+#    file: go.obo
+#  HINT:
+#    file: HomoSapiens_binary_hq.txt
+#  INTERNAL:
+#    compops: '3'
+#    dumpprefix: /human
+#    mongoprefix: _human
+#    mongosuffix: _v_1
+#    neo4jdb: human
+#  META:
+#    organism: Human
+#  PHOSPHOSITE:
+#    file: Kinase_Substrate_Dataset
+#    organism: human
+#  REACTOME:
+#    file: Homo_sapiens.owl
+#  TRRUST:
+#    file: trrust_rawdata.human.tsv
+#    significance: '1'
+#  UNIPROT:
+#    tax_ids: '9606'
 
 #Sources:   # Mouse. Not recommended - the data is really lacking
 #  BIOGRID:

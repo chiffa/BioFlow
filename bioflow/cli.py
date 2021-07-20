@@ -40,11 +40,6 @@ def main():
 
 
 @click.command()
-@click.confirmation_option(help='Pulling online databases. '
-                                'Please make sure you initialized the project and you are ready'
-                                'to wait for a while for hte download to complete. '
-                                'Some files are large (up to 3 Gb).'
-                                'You can perform this step manually (cf documentation).')
 @click.option('--smtplog', default=False, is_flag=True, help='Enables mail reporting. Make sure '
                                                              'SMTP configs are set properly first.')
 def downloaddbs(smtplog):
@@ -54,6 +49,13 @@ def downloaddbs(smtplog):
 
     :return:
     """
+    click.confirm('Pulling online databases. '
+                                'Please make sure you initialized the project and you are ready'
+                                'to wait for a while for hte download to complete. '
+                                'Some files are large (up to 3 Gb).'
+                                'You can perform this step manually (cf documentation).',
+                  abort=True)
+
     from bioflow.utils.source_dbs_download import pull_online_dbs, log
 
     if smtplog:
@@ -64,9 +66,6 @@ def downloaddbs(smtplog):
 
 
 @click.command()
-@click.confirmation_option(help='Are you sure you want to purge this neo4j database instance?'
-                                ' You will have to re-import all the data'
-                                'for this to work properly')
 def purgeneo4j():
     """
     Wipes the neo4j organism-specific database
@@ -74,6 +73,10 @@ def purgeneo4j():
 
     :return:
     """
+    click.confirm('Are you sure you want to purge this neo4j database instance?'
+                                ' You will have to re-import all the data'
+                                'for this to work properly', abort=True)
+
     print('neo4j will start purging the master database. It will take some time to finish.' \
           ' Please do not close the shell')
     from bioflow.db_importers.import_main import destroy_db
@@ -82,8 +85,6 @@ def purgeneo4j():
 
 
 @click.command()
-@click.confirmation_option(help='Are you sure you want to start loading the neo4j '
-                                'database? The process might take several hours or days')
 @click.option('--smtplog', default=False, is_flag=True, help='Enables mail reporting. Make sure '
                                                              'SMTP configs are set properly first.')
 def loadneo4j(smtplog):
@@ -93,6 +94,9 @@ def loadneo4j(smtplog):
 
     :return:
     """
+    click.confirm('Are you sure you want to start loading the neo4j database?'
+                    ' The process might take several hours or days', abort=True)
+
     print('neo4j will start loading data into the master database. It will take a couple ' \
           'of hours to finish. Please do not close the shell.')
     from bioflow.db_importers.import_main import build_db, log

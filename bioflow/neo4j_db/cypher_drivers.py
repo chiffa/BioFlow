@@ -216,11 +216,20 @@ class GraphDBPipe(object):
             return suppression
 
     @staticmethod
-    def _delete_all(tx, nodetype):
-        result = tx.run("MATCH (n:%s) "
-                        "OPTIONAL MATCH (n)<-[r:annotates]-(a) "
-                        "DETACH DELETE a, n " % nodetype)
-        return result
+    def _delete_all(tx, nodetype, limiter=-1):
+
+        if limiter > 0:
+            result = tx.run("MATCH (n:%s) "
+                            "OPTIONAL MATCH (n)<-[r:annotates]-(a) "
+                            "DETACH DELETE a, n " % nodetype)
+            return result
+
+        else:
+
+            result = tx.run("MATCH (n:%s) "
+                            "OPTIONAL MATCH (n)<-[r:annotates]-(a) "
+                            "DETACH DELETE a, n " % nodetype)
+            return result
 
     def clear_database(self) -> None:
         """
@@ -229,7 +238,48 @@ class GraphDBPipe(object):
         :return:
         """
         with self._driver.session(database=self._active_database) as session:
+            node_counts = session.write_transaction(self._pull_nodetype_stats)
+            epoch_counter = 0
+
+            while node_counts != {}: # batching due to the dataset size
+                log.info('debug: epoch %d' % epoch_counter)
+                epoch_counter += 1
+
+                for node_type, (nn, na) in node_counts.items():
+                    log.info('debug: processing node type %s: %d; %d' % (node_type, nn, na))
+                    session.write_transaction(self._delete_all, node_type, neo4j_autobatch_threshold)
+
+                node_counts = session.write_transaction(self._pull_nodetype_stats)
+
             session.write_transaction(self._clear_database)
+
+    @staticmethod
+    def _pull_nodetype_stats(tx):
+
+        node_types = tx.run("MATCH (N) RETURN DISTINCT LABELS(N)")
+        node_types = [_type for _type in node_types]
+        node_types = [_type["LABELS(N)"][0] for _type in node_types]
+
+        nodes_counts = {}
+
+        for node_type in node_types:
+
+            if node_type == 'Annotation':
+               continue
+
+            result = tx.run("MATCH (n:%s) "
+                             "OPTIONAL MATCH (n)<-[r:annotates]-(a) "
+                             "RETURN count(distinct (n)) as nn, "
+                                    "count(distinct (a)) as na " %
+                            node_type)
+
+            nodes_n = result.peek()['nn']
+            nodes_a = result.single()['na']
+
+            nodes_counts[node_type] = (nodes_n, nodes_a)
+
+        return nodes_counts
+
 
     @staticmethod
     def _clear_database(tx):
@@ -254,6 +304,7 @@ class GraphDBPipe(object):
 
             log.info('\t deleting %d nodes, %d annotations' % (nodes_n, nodes_a))
 
+            # tracing: remove batching here
             while nodes_n > neo4j_autobatch_threshold:
 
                 tx.run("MATCH (n:%s) "

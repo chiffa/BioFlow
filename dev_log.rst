@@ -4,7 +4,12 @@ TODOs for the project in the future:
 On the table:
 -------------
 
-DEBUG: it seems that the current architecture of neo4j is having trouble with very large transaction
+DOCS: write the expected environmental variables:
+    - NEOPASS
+    - BIOFLOWHOME
+
+
+DONE: it seems that the current architecture of neo4j is having trouble with very large transaction
     - DONE: implement the autobatching
         - we are adding a new parameter to the nodes being processed in batch: n.processing
         - it is cleared after a request goes through
