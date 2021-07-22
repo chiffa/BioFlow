@@ -96,7 +96,7 @@ if __name__ == "__main__":
     background_file = os.path.join(chromosomes_directory, "all_genes.tab")
 
     # generate_random_weights(os.path.join(chromosomes_directory, "all_genes.tab"),
-    #                         'test_weighted_background.tsv')
+    #                         'yeast_test_weighted_background.tsv')
 
     # rebuild_the_laplacians()
 
@@ -142,7 +142,7 @@ if __name__ == "__main__":
     # hits_ids, sec_hit_ids, background_internal_ids = map_and_save_gene_ids(
     #     ('yeast_test_gene_set-glycogen_biosynthesis_tsw_1.tsv',
     #      'yeast_test_gene_set-glycogen_biosynthesis_tsw_2.tsv'),
-    #      'test_weighted_background.tsv')
+    #      'yeast_test_weighted_background.tsv')
 
     hits_ids, sec_hit_ids, background_internal_ids = map_and_save_gene_ids(
          'yeast_test_gene_set-glycogen_biosynthesis.tsv',

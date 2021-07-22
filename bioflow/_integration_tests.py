@@ -67,7 +67,7 @@ if __name__ == "__main__":
     # analysis_loop_test('yeast_test_gene_set-glycogen_biosynthesis.tsv')
     # # primary with background
     # analysis_loop_test('yeast_test_gene_set-glycogen_biosynthesis.tsv',
-    #                    'test_background.tsv')
+    #                    'yeast_test_background.tsv')
     # # primary and secondary
     # analysis_loop_test(('yeast_test_gene_set-glycogen_biosynthesis_ts_1.tsv',
     #                     'yeast_test_gene_set-glycogen_biosynthesis_ts_2.tsv'))
@@ -79,4 +79,4 @@ if __name__ == "__main__":
     # # weighted primary and secondary with background
     # analysis_loop_test(('yeast_test_gene_set-glycogen_biosynthesis_tsw_1.tsv',
     #                     'yeast_test_gene_set-glycogen_biosynthesis_tsw_2.tsv'),
-    #                    'test_weighted_background.tsv')
+    #                    'yeast_test_weighted_background.tsv')
