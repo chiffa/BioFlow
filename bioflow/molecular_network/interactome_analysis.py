@@ -245,13 +245,13 @@ def clustering_analysis_complement(interactome_interface_instance: InteractomeIn
     def get_max_for_each_degree(min_inf_flow, clust_size):
         # print('debug max_array_shape:', str(sample_sub_arrray.shape))
         degrees = np.unique(clust_size)
-        max_array = []
+        _max_array = []
 
         for degree in degrees:
-            filter = clust_size == degree
-            max_array.append([min_inf_flow[filter].max(), degree])
+            l_filter = clust_size == degree
+            _max_array.append([min_inf_flow[l_filter].max(), degree])
 
-        m_arr = np.array(max_array)
+        m_arr = np.array(_max_array)
         return m_arr.T
 
     if sparse_rounds > 0:
@@ -269,7 +269,7 @@ def clustering_analysis_complement(interactome_interface_instance: InteractomeIn
 
     count = 0
 
-    log.info("clustering complement looking to test against:\n"
+    log.info("Interactome clustering complement looking to test against:\n"
              "\t target_hash: %s \t sys_hash: %s \n"
              "random sampled according to %s/%s" %
              (active_sample_hash, md5_hash, random_sampling_method.__name__, random_sampling_option))

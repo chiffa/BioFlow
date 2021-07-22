@@ -4,10 +4,7 @@ TODOs for the project in the future:
 On the table:
 -------------
 
-TODO: rebuild and upload the project to the PyPI
-
-TODO: document the need to add to the java heap of neo4j when operating the database on the human
-interactome knowledge.
+ - TODO: rebuild and upload the project to the PyPI
 
 
  - TODO: [FEATURE]: Bayesian re-weighting
@@ -21,18 +18,8 @@ the generated flow is non significant (aka set things to 1 by dividing by the in
 
  - TODO: [FEATURE]: Factor out the structural analysis of the network properties to a module
     - TODO: basically eigenvalues + eigenvector for the largest one
+    - TODO: tools used with Mehdi for the analysis of the network
 
-
- - TEST: [FEATURE]: Factor out the clustering analysis of the network to a different function in
-        the knowledge/interactome analyses
-    - DONE: write a significance analysis function,
-        - taking in the UP2UP tension + UP2UP background tension
-        - if the analysis was dense
-        - hierarchically clustering the matrix
-        - sorting the clusters by size and average flow
-        - for each size, compare the flow intensity
-        - use Gumbel to determine significance
-    - TODO: replicate it for the knowledge analysis
 
 Current refactoring:
 --------------------
@@ -138,6 +125,20 @@ Current refactoring:
 
 
 DONE SEPARATOR:
+
+DONE: document the need to add to the java heap of neo4j when operating the database on the human
+interactome knowledge.
+
+DONE: [FEATURE]: Factor out the clustering analysis of the network to a different function in
+        the knowledge/interactome analyses
+    - DONE: write a significance analysis function,
+        - taking in the UP2UP tension + UP2UP background tension
+        - if the analysis was dense
+        - hierarchically clustering the matrix
+        - sorting the clusters by size and average flow
+        - for each size, compare the flow intensity
+        - use Gumbel to determine significance
+    - DONE: replicate it for the knowledge analysis
 
 DONE: [SANITY][REFACTOR]: Integration test grid
     - Flat prim, weighted prim, flat prim/sec, weighted prim/sec
