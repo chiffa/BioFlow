@@ -397,6 +397,18 @@ Usage walk-through:
 For more information about data and config files, refer to the `data and database guide
 <http://bioflow.readthedocs.org/en/latest/guide.html#data-and-databases-setup>`__
 
+Environment variables and setup:
+````````````````````````````````
+
+In order to connect to the neo4j database, bioflow needs to have the neo4j authentication
+password setup. For safety reasons, it is possible exclusively through the environment variable
+``$NEOPASS``.
+
+In addition to that, it is possible to setup where the bioflow will be store its data with the
+``$BIOFLOWHOME``.
+
+
+
 Python scripts:
 ```````````````
 This is the recommended method for using BioFlow.
