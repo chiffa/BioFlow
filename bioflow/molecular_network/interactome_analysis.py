@@ -702,34 +702,33 @@ def auto_analyze(source_list: List[Union[List[int], List[Tuple[int, float]]]],
         print(tabulate(nr_nodes, headers, tablefmt='simple', floatfmt=".3g"))
 
 
-        # INTEST: currently inactive
-        # cluster_entries = clustering_analysis_complement(
-        #     interactome_interface,
-        #     p_val_cutoff=p_value_cutoff,
-        #     sparse_rounds=sparse_rounds,
-        #     output_destination=outputs_subdirs,
-        #     random_sampling_method=sampling_policy,
-        #     random_sampling_option=sampling_policy_options
-        # )
-        #
-        # with open(outputs_subdirs.interactome_clusters_output_output, 'wt') as output:
-        #     writer = csv_writer(output, delimiter='\t')
-        #     for cluster in cluster_entries:
-        #         writer.writerow(['cluster_no', 'cluster_p_val', 'cluster_size',
-        #                          'min_cluster_info_flow'])
-        #         writer.writerow(cluster[:-1])
-        #         writer.writerow(['', 'id', 'legacy id', 'type', 'display name'])
-        #         for node in cluster[-1]:
-        #             writer.writerow([''] + node)
-        #
-        # # using tabulate output to stdout:
-        #
-        # cluster_headers = ['cluster_no', 'cluster_p_val', 'cluster_size', 'min_cluster_info_flow']
-        # nodes_list_headers = ['', 'id', 'legacy id', 'type', 'display name']
-        #
-        # for cluster in cluster_entries:
-        #     print(tabulate(cluster[:-1], cluster_headers, tablefmt='simple', floatfmt=".3g"))
-        #     print(tabulate(cluster[-1], nodes_list_headers, tablefmt='simple', floatfmt=".3g"))
+        cluster_entries = clustering_analysis_complement(
+            interactome_interface,
+            p_val_cutoff=p_value_cutoff,
+            sparse_rounds=sparse_rounds,
+            output_destination=outputs_subdirs,
+            random_sampling_method=sampling_policy,
+            random_sampling_option=sampling_policy_options
+        )
+
+        with open(outputs_subdirs.interactome_clusters_output, 'wt') as output:
+            writer = csv_writer(output, delimiter='\t')
+            for cluster in cluster_entries:
+                writer.writerow(['cluster_no', 'cluster_p_val', 'cluster_size',
+                                 'min_cluster_info_flow'])
+                writer.writerow(cluster[:-1])
+                writer.writerow(['', 'id', 'legacy id', 'type', 'display name'])
+                for node in cluster[-1]:
+                    writer.writerow([''] + node)
+
+        # using tabulate output to stdout:
+
+        cluster_headers = ['cluster_no', 'cluster_p_val', 'cluster_size', 'min_cluster_info_flow']
+        nodes_list_headers = ['', 'id', 'legacy id', 'type', 'display name']
+
+        for cluster in cluster_entries:
+            print(tabulate([cluster[:-1]], cluster_headers, tablefmt='simple', floatfmt=".3g"))
+            print(tabulate(cluster[-1], nodes_list_headers, tablefmt='simple', floatfmt=".3g"))
 
 
 

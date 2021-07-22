@@ -4,25 +4,7 @@ TODOs for the project in the future:
 On the table:
 -------------
 
-DOCS: write the expected environmental variables:
-    - NEOPASS
-    - BIOFLOWHOME
-
-
-DONE: it seems that the current architecture of neo4j is having trouble with very large transaction
-    - DONE: implement the autobatching
-        - we are adding a new parameter to the nodes being processed in batch: n.processing
-        - it is cleared after a request goes through
-        - we are limiting calls by the WITH n LIMIT XXX statement
-        - where XXX is autobatching parameter
-        - and performing a batching loop in self._driver.session, but around the session
-            .write_transaction
-
 TODO: rebuild and upload the project to the PyPI
-
-TEST: test docker deployment
-
-TODO: rebuild and test for human deployment
 
 TODO: document the need to add to the java heap of neo4j when operating the database on the human
 interactome knowledge.
@@ -40,9 +22,10 @@ the generated flow is non significant (aka set things to 1 by dividing by the in
  - TODO: [FEATURE]: Factor out the structural analysis of the network properties to a module
     - TODO: basically eigenvalues + eigenvector for the largest one
 
+
  - TEST: [FEATURE]: Factor out the clustering analysis of the network to a different function in
         the knowledge/interactome analyses
-    - TEST: write a significance analysis function,
+    - DONE: write a significance analysis function,
         - taking in the UP2UP tension + UP2UP background tension
         - if the analysis was dense
         - hierarchically clustering the matrix
@@ -79,13 +62,6 @@ Current refactoring:
     - TODO: put a type straight-jacket
     - TODO: move the `internet_io` to the `data_stores` package
 
- - TODO: [SANITY][REFACTOR]: put all the imports  under the umbrella making clear where they come from
-
- - TODO: [SANITY][REFACTOR]: Integration test grid
-    - Flat prim, weighted prim, flat prim/sec, weighted prim/sec
-    - Knowledge & Interactome
-    - No background, flat backgroumd, weighted background
-
  - TODO: [TESTING]: write integration test suite
     - TODO: implement docker testing
     - TODO: check computation speed
@@ -95,6 +71,7 @@ Current refactoring:
         annotome_analysis
  - TODO: [SANIFY][REFACTOR] Add a typing module with shared types
 
+
 <Sanify BioKnowledge>
 
  - TODO: Develop a pluggable Informativity weighting function for the matrix assembly
@@ -103,10 +80,12 @@ Current refactoring:
     - eg. GO attachment comes from UNIPROT
     - reactome comes from reactome and can be assigned a linkage score.
 
- - TODO: inline the reach computation to remove excessively complex function
+ - DONE: inline the reach computation to remove excessively complex function
 
 
-<Type hinting and typing>
+<Type hinting, typing and imports>
+
+ - TODO: [SANITY][REFACTOR]: put all the imports  under the umbrella making clear where they come from
 
  - TODO: move the models and types into a top-level file "typing", containing all the class models
 
@@ -128,7 +107,7 @@ Current refactoring:
  - TODO: [USABILITY] store a header of what was analyzed and where it was pulled from + env
         parameters in a text file in the beginning of a run.
 
- - TODO: define a persistent "environment_state" file in the $BIOFLOWHOME/.interal/
+ - TODO: define a persistent "environment_state" file in the $BIOFLOWHOME/.internal/
     - TODO: log the organism currently operating
         => check_organism() -> base, neo4j, laplacians
         => update_organism(base, neo4j, laplacians) -> None
@@ -142,7 +121,8 @@ Current refactoring:
         => "check_neo4j_empty" (calls check_organism, checks that neo4j is "None")
     - TODO: make sure that the retrieved backtround set is still valid
 
-<pretty progress>
+
+<Pretty progress>
 
  - TODO: [USABILITY] Improve the progress reporting
         Move the INFO to a progress bar. The problem is that we are working with multiple threads in
@@ -155,10 +135,31 @@ Current refactoring:
 
  - TODO: [USABILITY]: fold the current verbose state into a `-v/--vebose` argument
 
-<>
 
 
 DONE SEPARATOR:
+
+DONE: [SANITY][REFACTOR]: Integration test grid
+    - Flat prim, weighted prim, flat prim/sec, weighted prim/sec
+    - Knowledge & Interactome
+    - No background, flat backgroumd, weighted background
+
+DONE: write the expected environmental variables:
+    - NEOPASS
+    - BIOFLOWHOME
+
+DONE: test docker deployment
+
+DONE: rebuild and test for human deployment
+
+DONE: it seems that the current architecture of neo4j is having trouble with very large transaction
+    - DONE: implement the autobatching
+        - we are adding a new parameter to the nodes being processed in batch: n.processing
+        - it is cleared after a request goes through
+        - we are limiting calls by the WITH n LIMIT XXX statement
+        - where XXX is autobatching parameter
+        - and performing a batching loop in self._driver.session, but around the session
+            .write_transaction
 
 TODO: document new features
     DONE: CLI:
