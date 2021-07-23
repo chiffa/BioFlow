@@ -92,9 +92,6 @@ if __name__ == "__main__":
     #
     # raise Exception('debugging')
 
-    chromosomes_directory = "//localhome//kucharav//Projects//BioFlow paper//yeast_chr_genes"
-    background_file = os.path.join(chromosomes_directory, "all_genes.tab")
-
     # generate_random_weights(os.path.join(chromosomes_directory, "all_genes.tab"),
     #                         'yeast_test_weighted_background.tsv')
 
@@ -169,33 +166,65 @@ if __name__ == "__main__":
     #                    skip_sampling=False,
     #                    )
 
+    chromosomes_directory = "//localhome//kucharav//Projects//BioFlow paper//yeast_chr_genes"
+    background_file = os.path.join(chromosomes_directory, "all_genes.tab")
+
+    chromosomes_files = []
+    name_files = []
     for filename in os.listdir(chromosomes_directory):
         if filename != "all_genes.tab":
+            chromosomes_files.append(os.path.join(chromosomes_directory, filename))
+            name_files.append('chr_%s' % filename[:-4])
 
-            target_file = os.path.join(chromosomes_directory, filename)
-            hits_ids, background_internal_ids = map_and_save_gene_ids(target_file, background_file)
+    hits_ids, sec_hit_ids, background_ids = map_and_save_gene_ids(chromosomes_files, background_file)
 
-            # if not background_set:
-            #     rebuild_the_laplacians(all_detectable_genes=background_internal_ids)
-            #     background_set = True
+    interactome_analysis(source_list=hits_ids,
+                         output_destinations_list=name_files,
+                         random_samples_to_test_against=25,
+                         processors=1,
+                         background_list=background_ids,
+                         skip_sampling=False
+                         )
 
-            # # perform the interactome analysis
+    knowledge_analysis(source_list=hits_ids,
+                       output_destinations_list=name_files,
+                       random_samples_to_test_against=25,
+                       processors=1,
+                       background_list=background_ids,
+                       skip_sampling=False,
+                       )
 
-            interactome_analysis(source_list=[hits_ids],
-                                 output_destinations_list=['chr_%s' % filename[:-4]],
-                                 random_samples_to_test_against=5,
-                                 processors=1,
-                                 background_list=background_internal_ids,
-                                 skip_sampling=False
-                                 )
 
-            # # perform the knowledge analysis
-            knowledge_analysis(source_list=[hits_ids],
-                               output_destinations_list=['chr_%s' % filename[:-4]],
-                               random_samples_to_test_against=5,
-                               processors=1,
-                               background_list=background_internal_ids,
-                               skip_sampling=False,
-                               )
-
-            # raise Exception('debug')
+    # # compile chromosome file names
+    #
+    # for filename in os.listdir(chromosomes_directory):
+    #     if filename != "all_genes.tab":
+    #
+    #         target_file = os.path.join(chromosomes_directory, filename)
+    #         hits_ids, sec_hit_ids, background_internal_ids = map_and_save_gene_ids(target_file,
+    #                                                                                background_file)
+    #
+    #         # if not background_set:
+    #         #     rebuild_the_laplacians(all_detectable_genes=background_internal_ids)
+    #         #     background_set = True
+    #
+    #         # # perform the interactome analysis
+    #
+    #         interactome_analysis(source_list=hits_ids,
+    #                              output_destinations_list=['chr_%s' % filename[:-4]],
+    #                              random_samples_to_test_against=5,
+    #                              processors=1,
+    #                              background_list=background_internal_ids,
+    #                              skip_sampling=False
+    #                              )
+    #
+    #         # # perform the knowledge analysis
+    #         knowledge_analysis(source_list=hits_ids,
+    #                            output_destinations_list=['chr_%s' % filename[:-4]],
+    #                            random_samples_to_test_against=5,
+    #                            processors=1,
+    #                            background_list=background_internal_ids,
+    #                            skip_sampling=False,
+    #                            )
+    #
+    #         # raise Exception('debug')

@@ -42,11 +42,11 @@ def map_and_save_gene_ids(hit_genes_location, all_detectable_genes_location=''):
     if type(hit_genes_location) == list:
         for sub_hit_genes_location in hit_genes_location:
             if type(sub_hit_genes_location) == str:
-                standardized_hits += [cast_external_refs_to_internal_ids(hit_genes_location)]
+                standardized_hits += [cast_external_refs_to_internal_ids(sub_hit_genes_location)]
                 standardized_secondary_hits += [None]
             if type(sub_hit_genes_location) == tuple:
-                standardized_hits += [cast_external_refs_to_internal_ids(hit_genes_location[0])]
-                standardized_secondary_hits += [cast_external_refs_to_internal_ids(hit_genes_location[1])]
+                standardized_hits += [cast_external_refs_to_internal_ids(sub_hit_genes_location[0])]
+                standardized_secondary_hits += [cast_external_refs_to_internal_ids(sub_hit_genes_location[1])]
 
     log.debug('standardized primary hits:\n\t%s' % standardized_hits)
     log.debug('standardized secondary_hits:\n\t%s' % standardized_secondary_hits)
@@ -85,10 +85,11 @@ def map_and_save_gene_ids(hit_genes_location, all_detectable_genes_location=''):
         sec_set = re_primary_set
 
         if type(background_set[0]) == str or type(background_set[0]) == int:  # unweighted
-            background_set = set(background_set).union(primary_set).union(sec_set)
+            background_set = list(set(background_set).union(primary_set).union(sec_set))
 
         else:
             bck_set = {_id[0] for _id in background_set}
+            bck_set = list(bck_set)
 
             if not primary_set.issubset(bck_set):
                 log.info('Nodes ids %s are missing in background set and are added with weight 0' %

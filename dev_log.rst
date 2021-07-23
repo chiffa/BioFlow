@@ -4,14 +4,6 @@ TODOs for the project in the future:
 On the table:
 -------------
 
- - TODO: rebuild and upload the project to the PyPI
-    - TODO: rebuild and upload to the testPyPI
-    - TODO: test it inside a docker instance
-    - TODO: rebuild and upload to the PyPI
-    - TODO: test it inside a docker instance
-
- - TODO: re-enable the env_skip flags in InteractomeInterface
-
  - TODO: [FEATURE]: Factor out the structural analysis of the network properties to a module
     - TODO: basically eigenvalues + eigenvector for the largest one
     - TODO: tools used with Mehdi for the analysis of the network
@@ -38,6 +30,14 @@ Current refactoring:
         - DONE: add an implicit switch if there is a single element to analysis or multiple
             between explicitely multi-threaded and implicitely single-threaded
         - DONE: temporary patch and flag it as a known bug
+
+ - TODO: rebuild and upload the project to the PyPI
+    Delayed until after the review
+    - TODO: rebuild and upload to the testPyPI
+    - TODO: test it inside a docker instance
+    - TODO: rebuild and upload to the PyPI
+    - TODO: test it inside a docker instance
+
 
  - TODO: [REFACTOR]: factor out the process spawning logic shared between knowledge and
         interactome analysis to a "utility" domain of BioFlow
@@ -129,6 +129,8 @@ Current refactoring:
 
 
 DONE SEPARATOR:
+
+ - DONE: re-enable the env_skip flags in InteractomeInterface
 
  - NOFX: [FEATURE]: Bayesian re-weighting
     A possible implementation of this feature is to provide a mechanism that would sample the
