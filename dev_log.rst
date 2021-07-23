@@ -10,6 +10,8 @@ On the table:
     - TODO: rebuild and upload to the PyPI
     - TODO: test it inside a docker instance
 
+ - TODO: re-enable the env_skip flags in InteractomeInterface
+
  - TODO: [FEATURE]: Factor out the structural analysis of the network properties to a module
     - TODO: basically eigenvalues + eigenvector for the largest one
     - TODO: tools used with Mehdi for the analysis of the network

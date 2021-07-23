@@ -258,6 +258,20 @@ min_nodes_for_p_val = int(user_settings['analysis']['min_nodes_for_p_val'])
 
 neo4j_autobatch_threshold = int(configs_loaded['Servers'].get('neo4j_autobatch_threshold', 5000))
 
+
+if env_skip_hint:
+    laplacian_default_source_edge_weighting['HINT'] = 0
+    adjacecency_default_source_edge_weighting['HINT'] = 0
+
+if env_skip_biogrid:
+    laplacian_default_source_edge_weighting['BioGRID'] = 0
+    adjacecency_default_source_edge_weighting['BioGRID'] = 0
+
+if env_skip_reactome:
+    laplacian_default_source_edge_weighting['Reactome'] = 0
+    adjacecency_default_source_edge_weighting['Reactome'] = 0
+
+
 if __name__ == "__main__":
     pass
     # pprint((Servers, Sources))

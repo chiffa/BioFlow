@@ -749,7 +749,6 @@ class GeneOntologyInterface(object):
                   "\t line loss: %s\n"
                   "\t l_norm: %s\n"
                   "\t edge drop: %s\n"
-                  "\t skipping reactome|hint|biogrid: %s\n"
                   % (md5,
                      hashlib.md5(json.dumps(sorted_initset, sort_keys=True).encode('utf-8')).hexdigest(),
                      self.go_namespace_filter,
@@ -758,8 +757,7 @@ class GeneOntologyInterface(object):
                      self.ultraspec_lvl,
                      confs.line_loss,
                      confs.use_normalized_laplacian,
-                     confs.fraction_edges_dropped_in_laplacian,
-                     (confs.env_skip_reactome, confs.env_skip_hint, confs.env_skip_biogrid)))
+                     confs.fraction_edges_dropped_in_laplacian))
 
         return str(md5)
 
