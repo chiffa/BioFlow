@@ -203,9 +203,11 @@ def purgemongo(collection):
 @click.option('--skipsampling', default=False, is_flag=True, help='Skips random sampling step')
 @click.option('--background', default=False, is_flag=True, help='Uses the background for sampling')
 @click.option('--name', default='', help='name of the experiment')
+@click.option('--nocluster', default=False, is_flag=True, help='performs the clustering '
+                                                                'complement')
 @click.option('--smtplog', default=False, is_flag=True, help='Enables mail reporting. Make sure '
                                                              'SMTP configs are set properly first.')
-def analyze(name, matrix, depth, processors, skipsampling, background, smtplog):
+def analyze(name, matrix, depth, processors, skipsampling, background, nocluster, smtplog):
     """
     Performs the analysis of the information flow
 
@@ -214,6 +216,7 @@ def analyze(name, matrix, depth, processors, skipsampling, background, smtplog):
     :param depth:
     :param processors:
     :param skipsampling:
+    :param nocluster:
     :param background:
     :return:
     """
@@ -254,7 +257,8 @@ def analyze(name, matrix, depth, processors, skipsampling, background, smtplog):
                              random_samples_to_test_against=depth,
                              processors=processors,
                              background_list=background,
-                             skip_sampling=skipsampling
+                             skip_sampling=skipsampling,
+                             cluster=not(nocluster)
                              )
 
     if matrix != 'interactome':
@@ -266,6 +270,7 @@ def analyze(name, matrix, depth, processors, skipsampling, background, smtplog):
                            processors=processors,
                            background_list=background,
                            skip_sampling=skipsampling,
+                           cluster=not(nocluster)
                            )
 
 

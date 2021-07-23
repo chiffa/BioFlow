@@ -6,16 +6,6 @@ On the table:
 
  - TODO: rebuild and upload the project to the PyPI
 
-
- - TODO: [FEATURE]: Bayesian re-weighting
-    A possible implementation of this feature is to provide a mechanism that would sample the
-flow through the network based on provided pairs/groups and correct the resistances to make sure
-the generated flow is non significant (aka set things to 1 by dividing by the information flow).
-
-    - TODO: sample a large set of nodes, non-normalized
-    - TODO: calculate the resulting flows
-
-
  - TODO: [FEATURE]: Factor out the structural analysis of the network properties to a module
     - TODO: basically eigenvalues + eigenvector for the largest one
     - TODO: tools used with Mehdi for the analysis of the network
@@ -125,6 +115,15 @@ Current refactoring:
 
 
 DONE SEPARATOR:
+
+ - NOFX: [FEATURE]: Bayesian re-weighting
+    A possible implementation of this feature is to provide a mechanism that would sample the
+        flow through the network based on provided pairs/groups and correct the resistances to make sure
+        the generated flow is non significant (aka set things to 1 by dividing by the information flow).
+    - TODO: sample a large set of nodes, non-normalized
+    - TODO: calculate the resulting flows
+    - NOFX: We are solving the same problem through statistics due to the difficulty of defining a
+        proper prior and the amount of calculation needed to get there.
 
 DONE: document the need to add to the java heap of neo4j when operating the database on the human
 interactome knowledge.
