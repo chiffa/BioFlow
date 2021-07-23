@@ -251,7 +251,7 @@ class GraphDBPipe(object):
 
                 node_counts = session.write_transaction(self._pull_nodetype_stats)
 
-            session.write_transaction(self._clear_database)
+            session.write_transaction(self._ubatched_clear_database)
 
     @staticmethod
     def _pull_nodetype_stats(tx):
@@ -282,7 +282,7 @@ class GraphDBPipe(object):
 
 
     @staticmethod
-    def _clear_database(tx):
+    def _ubatched_clear_database(tx):
 
         node_types = tx.run("MATCH (N) RETURN DISTINCT LABELS(N)")
         node_types = [_type for _type in node_types]
@@ -290,44 +290,10 @@ class GraphDBPipe(object):
 
         log.info('Clearing the database')
         for node_type in node_types:
-
-            log.info('deleting %s' % node_type)
-
-            result = tx.run("MATCH (n:%s) "
-                             "OPTIONAL MATCH (n)<-[r:annotates]-(a) "
-                             "RETURN count(distinct (n)) as nn, "
-                                    "count(distinct (a)) as na " %
-                            node_type)
-
-            nodes_n = result.peek()['nn']
-            nodes_a = result.single()['na']
-
-            log.info('\t deleting %d nodes, %d annotations' % (nodes_n, nodes_a))
-
-            # tracing: remove batching here
-            while nodes_n > neo4j_autobatch_threshold:
-
-                tx.run("MATCH (n:%s) "
-                       "OPTIONAL MATCH (n)<-[r:annotates]-(a) "
-                       "DETACH DELETE a, n " % node_type)
-
-                # tx.commit()
-
-                nodes_n = tx.run("MATCH (n:%s) "
-                             "OPTIONAL MATCH (n)<-[r:annotates]-(a) "
-                             "RETURN count(distinct (n)) as nn, "
-                                    "count(distinct (a)) as na " %
-                            node_type).single()['nn']
-
-                log.info('\t\tdebug: %d nodes remaining' % nodes_n)
-
             tx.run("MATCH (n:%s) "
                    "OPTIONAL MATCH (n)<-[r:annotates]-(a) "
                    "DETACH DELETE a, n " % node_type)
-
-            # tx.commit()
-
-            log.info('\t deleted %s' % node_type)
+            log.info('deleted %s' % node_type)
 
     def get(self,
             node_id: db_id,
