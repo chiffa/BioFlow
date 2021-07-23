@@ -14,7 +14,7 @@ On the table:
 
  - TODO: [PAPER]:
     - TODO: generate the plot to justify Gumbel distribution choice as fitting the max value
-    - TODO: run the chr11 re-analysis
+    - INTEST: run the chr11 re-analysis
     - TODO: replicate the COVID19 patient fluids diff expression
 
 Current refactoring:
