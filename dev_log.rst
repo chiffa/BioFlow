@@ -5,11 +5,23 @@ On the table:
 -------------
 
  - TODO: rebuild and upload the project to the PyPI
+    - TODO: rebuild and upload to the testPyPI
+    - TODO: test it inside a docker instance
+    - TODO: rebuild and upload to the PyPI
+    - TODO: test it inside a docker instance
 
  - TODO: [FEATURE]: Factor out the structural analysis of the network properties to a module
     - TODO: basically eigenvalues + eigenvector for the largest one
     - TODO: tools used with Mehdi for the analysis of the network
+    - TODO: create a bioflow.var folder and put scripts there
+        - TODO: gene essentiality analysis => it's a different project and needs to be moved
+            there with bioflow as a dependency
+        - TODO:
 
+ - TODO: [PAPER]:
+    - TODO: generate the plot to justify Gumbel distribution choice as fitting the max value
+    - TODO: run the chr11 re-analysis
+    - TODO: replicate the COVID19 patient fluids diff expression
 
 Current refactoring:
 --------------------

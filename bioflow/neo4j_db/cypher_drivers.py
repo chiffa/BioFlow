@@ -242,11 +242,11 @@ class GraphDBPipe(object):
             epoch_counter = 0
 
             while node_counts != {}: # batching due to the dataset size
-                log.info('debug: epoch %d' % epoch_counter)
+                log.debug('debug: epoch %d' % epoch_counter)
                 epoch_counter += 1
 
                 for node_type, (nn, na) in node_counts.items():
-                    log.info('debug: processing node type %s: %d; %d' % (node_type, nn, na))
+                    log.debug('debug: processing node type %s: %d; %d' % (node_type, nn, na))
                     session.write_transaction(self._delete_all, node_type, neo4j_autobatch_threshold)
 
                 node_counts = session.write_transaction(self._pull_nodetype_stats)
@@ -850,33 +850,33 @@ class GraphDBPipe(object):
         #     session.write_transaction(self._count_up_inf_content)
 
         with self._driver.session(database=self._active_database) as session:
-            log.info('debug: started session batched inf content run')
+            log.debug('debug: started session batched inf content run')
 
             nodes_remaining = session.write_transaction(self._batched_count_up_inf_content)
 
             while nodes_remaining:
-                log.info('\tdebug: intermediate; nodes remaining to process: %d' % nodes_remaining)
+                log.debug('\tdebug: intermediate; nodes remaining to process: %d' % nodes_remaining)
                 nodes_remaining = session.write_transaction(self._batched_count_up_inf_content)
 
             session.write_transaction(self._clear_batching_tag)
 
-            log.info('debug: finished session batched inf content run')
+            log.debug('debug: finished session batched inf content run')
 
     @staticmethod
     def _count_direct_coverage(tx):
 
-        # log.info('debug: started direct coverage run')
+        # log.debug('debug: started direct coverage run')
 
         tx.run("MATCH (n:UNIPROT)--(a:GOTerm) "
                "WITH a, count(distinct n) as dir_links "
                "SET a.direct_links = dir_links")
 
-        # log.info('debug: direct coverage went through')
+        # log.debug('debug: direct coverage went through')
 
     @staticmethod
     def _count_indirect_coverage(tx):
 
-        log.info('debug: started indirect coverage run')
+        log.debug('debug: started indirect coverage run')
 
         total_up = tx.run("MATCH (n:UNIPROT) RETURN count(distinct n) as tot_links")
         total_up = total_up.single()['tot_links']
@@ -887,13 +887,13 @@ class GraphDBPipe(object):
                "SET b.total_links = tot_links "
                "SET b.information_content = log(toFloat(%s)/toFloat(tot_links))" % (total_up))
 
-        log.info('debug: indirect coverage went through')
+        log.debug('debug: indirect coverage went through')
 
 
     @staticmethod
     def _count_up_inf_content(tx):  # runs out of memory here.
 
-        log.info('debug: started inf content run')
+        log.debug('debug: started inf content run')
 
 
         total_unprocessed = 1
@@ -912,13 +912,13 @@ class GraphDBPipe(object):
                                        "WHERE NOT EXISTS(n.processing) "
                                        "RETURN count(distinct n) as tot_links").single()['tot_links']
 
-            log.info('\tdebug: intermediate; nodes remaining to process: %d' % total_unprocessed)
+            log.debug('\tdebug: intermediate; nodes remaining to process: %d' % total_unprocessed)
 
         tx.run("MATCH (n:UNIPROT)-[:is_go_annotation]-(b:GOTerm) "
                "WHERE n.processing = true"
                "REMOVE n.processing")
 
-        log.info('debug: inf content went through')
+        log.debug('debug: inf content went through')
 
 
     @staticmethod

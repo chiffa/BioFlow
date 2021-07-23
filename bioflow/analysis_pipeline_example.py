@@ -144,21 +144,21 @@ if __name__ == "__main__":
     #      'yeast_test_gene_set-glycogen_biosynthesis_tsw_2.tsv'),
     #      'yeast_test_weighted_background.tsv')
 
-    hits_ids, sec_hit_ids, background_internal_ids = map_and_save_gene_ids(
-         'yeast_test_gene_set-glycogen_biosynthesis.tsv',
-         '')
-
-    log.debug('debug: hits_ids parse: %s' % hits_ids)
-
-    interactome_analysis(source_list=hits_ids,
-                         secondary_source_list=sec_hit_ids,
-                         # output_destinations_list=['chr_%s' % filename[:-4]],
-                         random_samples_to_test_against=5,
-                         processors=1,
-                         background_list=background_internal_ids,
-                         skip_sampling=False,
-                         forced_lapl_reweight={155606: 0.0}
-                         )
+    # hits_ids, sec_hit_ids, background_internal_ids = map_and_save_gene_ids(
+    #      'yeast_test_gene_set-glycogen_biosynthesis.tsv',
+    #      '')
+    #
+    # log.debug('debug: hits_ids parse: %s' % hits_ids)
+    #
+    # interactome_analysis(source_list=hits_ids,
+    #                      secondary_source_list=sec_hit_ids,
+    #                      # output_destinations_list=['chr_%s' % filename[:-4]],
+    #                      random_samples_to_test_against=5,
+    #                      processors=1,
+    #                      background_list=background_internal_ids,
+    #                      skip_sampling=False,
+    #                      forced_lapl_reweight={155606: 0.0}
+    #                      )
 
     # knowledge_analysis(source_list=hits_ids,
     #                    secondary_source_list=sec_hit_ids,
@@ -168,9 +168,6 @@ if __name__ == "__main__":
     #                    background_list=background_internal_ids,
     #                    skip_sampling=False,
     #                    )
-
-    raise Exception('Debug Exception')
-
 
     for filename in os.listdir(chromosomes_directory):
         if filename != "all_genes.tab":
@@ -184,20 +181,18 @@ if __name__ == "__main__":
 
             # # perform the interactome analysis
 
-            interactome_analysis(source_list=[hits_ids[:20]],
+            interactome_analysis(source_list=[hits_ids],
                                  output_destinations_list=['chr_%s' % filename[:-4]],
-                                 desired_depth=5,
+                                 random_samples_to_test_against=5,
                                  processors=1,
                                  background_list=background_internal_ids,
                                  skip_sampling=False
                                  )
 
-            raise Exception('Debug Exception')
-
             # # perform the knowledge analysis
-            knowledge_analysis(source_list=[hits_ids[20:]],
+            knowledge_analysis(source_list=[hits_ids],
                                output_destinations_list=['chr_%s' % filename[:-4]],
-                               desired_depth=5,
+                               random_samples_to_test_against=5,
                                processors=1,
                                background_list=background_internal_ids,
                                skip_sampling=False,

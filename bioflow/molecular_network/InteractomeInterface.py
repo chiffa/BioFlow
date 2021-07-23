@@ -948,7 +948,7 @@ class InteractomeInterface(object):
                                                      random_samples,
                                                      optional_sampling_param):
 
-            # print('debug: selected UProt IDs :', sample)
+            # log.debug('debug: selected UProt IDs : %s' % sample)
 
             self.set_flow_sources(sample, sec_sample)
 

@@ -62,7 +62,7 @@ def compute_tension_clustering(voltage_pair_dict: dict,
 
         for line in clust_linkmap:
             id_1, id_2 = (line[0], line[1])
-            log.info('debug: indices in clustering: %s, %s' % (id_1, id_2))
+            log.debug('indices in clustering: %s, %s' % (id_1, id_2))
 
             id_1, id_2 = (int(id_1), int(id_2))
 

@@ -226,7 +226,7 @@ def get_current_through_nodes(triu_current_matrix: spmat.csc_matrix) -> List[np.
             log.critical('outgoing', outgoing_current)
             log.critical('diff', incoming_current + outgoing_current)
             log.critical(np.any(incoming_current + outgoing_current > 0.))
-            raise Exception('debug: assumption failed....')
+            raise Exception('Bug encountered: current symmetry assumption failed....')
 
     ret = list(incoming_current)
 
