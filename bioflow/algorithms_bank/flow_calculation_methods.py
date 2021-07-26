@@ -71,7 +71,7 @@ def evaluate_ops(prim_len: int, sec_len: int,
     else:
 
         if sec_len == 0:
-            return prim_len * sparse_rounds / 2
+            return prim_len * sparse_rounds // 2
 
         elif sec_len == 1:
             return prim_len
@@ -97,7 +97,7 @@ def reduce_ops(prim_len, sec_len, max_ops) -> int:
 
     else:
         if sec_len == 0:
-            return max(max_ops // ( prim_len**2 ), 5)
+            return max(max_ops // (prim_len//2), 5)
         elif sec_len == 1:
             return -1
         else:

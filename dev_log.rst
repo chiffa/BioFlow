@@ -4,6 +4,15 @@ TODOs for the project in the future:
 On the table:
 -------------
 
+ - DONE: there is a problem with trimming the length of sampled sets
+    - current hypothesis is that it's due to duplicate neo4j ids that get eliminated during the
+        translation to the matrix_ids
+    - hypothesis is confirmed by the sampling engine not having the replace set to False in the
+        np.random.choice
+
+ - TEST: there is a problem with the sparse_sampling toggle being stuck on -1 even in the cases
+        where it should not be.
+
  - TODO: [FEATURE]: Factor out the structural analysis of the network properties to a module
     - TODO: basically eigenvalues + eigenvector for the largest one
     - TODO: tools used with Mehdi for the analysis of the network

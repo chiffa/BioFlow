@@ -878,7 +878,9 @@ class GeneOntologyInterface(object):
         ro = sampling_policies.characterize_flow_parameters(self._active_weighted_sample,
                                                             self._secondary_weighted_sample,
                                                             -2)
-        return self._ops_evaluation_method(ro[1], ro[3], sparse_rounds)
+        eo = self._ops_evaluation_method(ro[0], ro[3], sparse_rounds)
+        log.debug('BKI ops evaluation: %s, %s, %s, %s' % (ro[0], ro[3], sparse_rounds, eo))
+        return eo
 
     def reduce_ops(self, ops_limit):
         """
@@ -892,8 +894,9 @@ class GeneOntologyInterface(object):
         ro = sampling_policies.characterize_flow_parameters(self._active_weighted_sample,
                                                             self._secondary_weighted_sample,
                                                             -2)
-
-        return self._ops_reduction_method(ro[1], ro[3], ops_limit)
+        op_r = self._ops_reduction_method(ro[0], ro[3], ops_limit)
+        log.debug('BKI ops reduction: %s, %s, %s, %s' % (ro[0], ro[3], ops_limit, op_r))
+        return op_r
 
     def inflate_matrix_and_indexes(self):
         """

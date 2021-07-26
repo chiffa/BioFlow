@@ -640,7 +640,9 @@ class InteractomeInterface(object):
         ro = sampling_policies.characterize_flow_parameters(self._active_weighted_sample,
                                                             self._secondary_weighted_sample,
                                                             -2)
-        return self._ops_evaluation_method(ro[1], ro[3], sparse_rounds)
+        eo = self._ops_evaluation_method(ro[0], ro[3], sparse_rounds)
+        log.debug('II ops evaluation: %s, %s, %s, %s' % (ro[0], ro[3], sparse_rounds, eo))
+        return eo
 
     def reduce_ops(self, ops_limit):
         """
@@ -655,7 +657,9 @@ class InteractomeInterface(object):
                                                             self._secondary_weighted_sample,
                                                             -2)
 
-        return self._ops_reduction_method(ro[1], ro[3], ops_limit)
+        op_r = self._ops_reduction_method(ro[0], ro[3], ops_limit)
+        log.debug('II ops reduction: %s, %s, %s, %s' % (ro[0], ro[3], ops_limit, op_r))
+        return op_r
 
     def set_uniprot_source(self, uniprots):
         """
@@ -682,7 +686,7 @@ class InteractomeInterface(object):
             incremental: bool = False,  # This is always false and was used in order to resume the
             # sampling
             cancellation: bool = True,
-            sparse_samples: int = -1,
+            sparse_rounds: int = -1,
             fast_load: bool = False):  # REFACTOR: [fast resurrection] currently dead
         # this way.
         """
@@ -695,7 +699,7 @@ class InteractomeInterface(object):
             existing ones. Useful for the computation of particularly big systems with
             intermediate dumps
         :param cancellation: divides the final current by number of bioflow-sink pairs
-        :param sparse_samples: if set to an integer >0, the sampling will be sparse and not
+        :param sparse_rounds: if set to an integer >0, the sampling will be sparse and not
             dense,i.e. instead of computation for each node pair, only an estimation will be made,
             equal to computing sparse_rounds association with other randomly chosen nodes
         :param fast_load: if True, will try to lad a pre-saved instance
@@ -746,7 +750,7 @@ class InteractomeInterface(object):
                                    translated_active_weighted_sample,
                                    secondary_sample=translated_secondary_weighted_sample,
                                    cancellation=cancellation,
-                                   sparse_rounds=sparse_samples,
+                                   sparse_rounds=sparse_rounds,
                                    potential_diffs_remembered=True,
                                    thread_hex=self.thread_hex,
                                    flow_calculation_method=self._flow_calculation_method)
@@ -967,7 +971,7 @@ class InteractomeInterface(object):
 
             # KNOWNBUG: [fast resurrection] fast resurrection is impossible (memoized hard-coded to
             #  false, because the pipeline is broken)
-            self.compute_current_and_potentials(memoized=False, sparse_samples=sparse_rounds)
+            self.compute_current_and_potentials(memoized=False, sparse_rounds=sparse_rounds)
 
             sample_ids_md5 = hashlib.md5(
                 json.dumps(
@@ -985,8 +989,7 @@ class InteractomeInterface(object):
                             sparse_rounds, sampling_policy.__name__, optional_sampling_param,
                             np.sum(self.current_accumulator)))
 
-                insert_interactome_rand_samp(
-                    {
+                insert_interactome_rand_samp({
                         'UP_hash': sample_ids_md5,  # specific retrieval, but inexact.
                         'sys_hash': self.md5_hash(),
                         'active_sample_hash': self.active_sample_md5_hash(sparse_rounds),

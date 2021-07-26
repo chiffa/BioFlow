@@ -656,7 +656,7 @@ def auto_analyze(source_list: List[Union[List[int], List[Tuple[int, float]]]],
                                 sampling_policy=sampling_policy,
                                 sampling_options=sampling_policy_options)
 
-        go_interface.compute_current_and_potentials()
+        go_interface.compute_current_and_potentials(sparse_rounds=sparse_rounds)
 
         nr_nodes, p_val_dict = compare_to_blank(
             go_interface,

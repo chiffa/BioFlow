@@ -14,6 +14,7 @@ from bioflow.utils.general_utils import _is_int
 from bioflow.neo4j_db.GraphDeclarator import DatabaseGraph
 from bioflow.utils.log_behavior import get_logger
 
+
 log = get_logger(__name__)
 
 
