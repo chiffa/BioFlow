@@ -187,8 +187,8 @@ def matched_sampling(sample, secondary_sample,
         background_whg = np.array(background)[:, 1]
 
     log.debug('debug sum %s, type: %s, all:%s' % (np.sum(background_whg),
-                                             type(background_whg),
-                                             background_whg))
+                                                  type(background_whg),
+                                                  background_whg))
 
     background_whg /= np.sum(background_whg)
 
@@ -196,12 +196,14 @@ def matched_sampling(sample, secondary_sample,
 
         if _is_int(sample[0]):  # it should never be an int, but for safety ...
             for i in range(0, samples):
-                selected = np.random.choice(background_ids, len(sample), p=background_whg)
+                selected = np.random.choice(background_ids, len(sample), p=background_whg,
+                                            replace=False)
                 yield i, selected, None
 
         else:
             for i in range(0, samples):
-                id_loads = np.random.choice(background_ids, len(sample), p=background_whg)
+                id_loads = np.random.choice(background_ids, len(sample), p=background_whg,
+                                            replace=False)
                 float_part = _sample_floats(np.array(sample)[:, 1], float_sampling_method)
                 ids_and_floats = [(_id, _float) for _id, _float in zip(id_loads, float_part)]
                 yield i, ids_and_floats, None
@@ -212,7 +214,7 @@ def matched_sampling(sample, secondary_sample,
             for i in range(0, samples):
                 selected = np.random.choice(background_ids,
                                      len(sample)+len(secondary_sample),
-                                     p=background_whg)
+                                     p=background_whg, replace=False)
                 np.random.shuffle(selected)
                 yield i, selected[:len(sample)], selected[-len(secondary_sample):]
 
@@ -221,7 +223,7 @@ def matched_sampling(sample, secondary_sample,
             for i in range(0, samples):
                 selected = np.random.choice(background_ids,
                                      len(sample)+len(secondary_sample),
-                                     p=background_whg)
+                                     p=background_whg, replace=False)
                 np.random.shuffle(selected)
 
                 id_loads = selected[:len(sample)]
