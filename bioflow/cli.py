@@ -123,8 +123,11 @@ def diagneo4j():
                                               'set. supports weighted sets')
 @click.option('--smtplog', default=False, is_flag=True, help='Enables mail reporting. Make sure '
                                                              'SMTP configs are set properly first.')
+@click.option('--translatewith', default='', help='File in case a pre-translation of gene IDs is '
+                                              'required before processing (eg in case of organism'
+                                              ' ortholog mappings)')
 @click.argument('source')
-def mapsource(source, secondary, background, smtplog):
+def mapsource(source, secondary, background, smtplog, translatewith):
     """
     Sets the source and background files that will be uses in the analysis.
 
@@ -139,13 +142,30 @@ def mapsource(source, secondary, background, smtplog):
     :param source:
     :param background:
     :param secondary:
+    :param smtplog:
+    :param translatewith:
     :return:
     """
     from bioflow.utils.top_level import map_and_save_gene_ids, log
+    from bioflow.pre_processing.remap_IDs import translate_identifiers
+    from bioflow.configs.main_configs import Dumps
 
     if smtplog:
         from bioflow.utils.smtp_log_behavior import mail_handler
         log.addHandler(mail_handler)
+
+    if translatewith != '':
+
+        translate_identifiers(source, Dumps.translated_primary, translatewith)
+        source = Dumps.translated_primary
+
+        if secondary != '':
+            translate_identifiers(secondary, Dumps.translated_secondary, translatewith)
+            secondary = Dumps.translated_secondary
+
+        if background != '':
+            translate_identifiers(background, Dumps.translated_background, translatewith)
+            background = Dumps.translated_background
 
     if secondary != '':
         map_and_save_gene_ids((source, secondary), background)
