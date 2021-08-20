@@ -77,7 +77,7 @@ def purgeneo4j():
                                 ' You will have to re-import all the data'
                                 'for this to work properly', abort=True)
 
-    print('neo4j will start purging the master database. It will take some time to finish.' \
+    print('neo4j will start purging the master database. It will take some time to finish.'
           ' Please do not close the shell')
     from bioflow.db_importers.import_main import destroy_db
 
@@ -87,7 +87,8 @@ def purgeneo4j():
 @click.command()
 @click.option('--smtplog', default=False, is_flag=True, help='Enables mail reporting. Make sure '
                                                              'SMTP configs are set properly first.')
-def loadneo4j(smtplog):
+@click.option('--refinish', default=False, is_flag=True, help='Retries the annotation computation loop')
+def loadneo4j(smtplog, refinish):
     """
     Loads the information from external database into the main knowledge repository inside neo4j
     \f
@@ -97,15 +98,20 @@ def loadneo4j(smtplog):
     click.confirm('Are you sure you want to start loading the neo4j database?'
                     ' The process might take several hours or days', abort=True)
 
-    print('neo4j will start loading data into the master database. It will take a couple ' \
+    print('neo4j will start loading data into the master database. It will take a couple '
           'of hours to finish. Please do not close the shell.')
-    from bioflow.db_importers.import_main import build_db, log
+    from bioflow.db_importers.import_main import build_db, log, compute_annotation_informativity
 
     if smtplog:
         from bioflow.utils.smtp_log_behavior import mail_handler
         log.addHandler(mail_handler)
 
-    build_db()
+    if not refinish:
+        build_db()
+
+    else:
+        compute_annotation_informativity()
+
 
 @click.command()
 def diagneo4j():
@@ -202,6 +208,8 @@ def purgemongo(collection):
     :param collection:
     :return:
     """
+    click.confirm('Are you sure you want to purge the database of existing samples?', abort=True)
+
     from bioflow.sample_storage.mongodb import drop_all_interactome_rand_samp
     from bioflow.sample_storage.mongodb import drop_all_annotome_rand_samp
 
@@ -278,7 +286,7 @@ def analyze(name, matrix, depth, processors, skipsampling, background, nocluster
                              processors=processors,
                              background_list=background,
                              skip_sampling=skipsampling,
-                             cluster=not(nocluster)
+                             cluster=not(nocluster),
                              )
 
     if matrix != 'interactome':
@@ -290,7 +298,7 @@ def analyze(name, matrix, depth, processors, skipsampling, background, nocluster
                            processors=processors,
                            background_list=background,
                            skip_sampling=skipsampling,
-                           cluster=not(nocluster)
+                           cluster=not(nocluster),
                            )
 
 
