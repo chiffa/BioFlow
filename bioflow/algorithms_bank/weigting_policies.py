@@ -3,6 +3,7 @@ Module containing functions that perform weighting policies
 """
 from bioflow.utils.log_behavior import get_logger
 import bioflow.configs.main_configs as confs
+from random import uniform
 
 log = get_logger(__name__)
 
@@ -19,15 +20,23 @@ def flat_policy(start_node, end_node, edge) -> float:
     return 1
 
 
-def source_x_type_policy(start_node, end_node, edge, source_weights, type_weights) -> float:
+def source_x_type_policy(start_node, end_node, edge, source_weights, type_weights,
+                         drop_chance) -> float:
     """
     A policy that uses the type and the source of the edge itself (and only the edge)
 
     :param start_node: start node object
     :param end_node: end node object
     :param edge: edge object
+    :param source_weights:
+    :param type_weights:
+    :param drop_chance:
     :return: 1
     """
+    if drop_chance > 0.0001:
+        if uniform(0.0, 1.0) < drop_chance:
+            return 0
+
     return type_weights[edge.type] * source_weights[edge['source']]
 
 
