@@ -16,9 +16,20 @@ log = get_logger(__name__)
 
 
 def translate_identifiers(data_source_location, data_dump_location,
-                          translation_file_location, gene_to_id_file_location):
+                          translation_file_location, gene_to_id_file_location=None,
+                          low_confidence_translations_accepted=False):
     """
     Performs a translation of gene identifiers from one organism to another one.
+
+    The relevant data in the translation file is source stable gene id (col. 1), target stable
+    gene id (col. 2), target gene name (col. 3) and confidence in translation (col. 4),
+    where 0 and 1 denote respectively a low and high confidences.
+
+    The gene to id translation is optional and will translate gene names to gene stable ids if
+    the original file does not use the stable gene ids (gene names change over times and there
+    are variance in their nomenclature).
+
+    (nb: col 1 = col 0 in python)
 
     :param data_source_location: where the gene id to translate are
     :param data_dump_location: where the translated gene ids will be stored
@@ -26,60 +37,102 @@ def translate_identifiers(data_source_location, data_dump_location,
         expects a .tsv file with [Source org gene id, dest org gene id, dest org gene symbol,
         confidence (1=high, 0=low), ...] per line
     :param gene_to_id_file_location: (optional) where the file that maps gene ids to HGCN names
-         expects a .tsv file with [Gene stable ID, Transcript stable ID, Gene name, HGNC symbol]
+         expects a .tsv file with [Gene stable ID, Transcript stable ID, Gene name, HGNC symbol].
+         Adding this file will automatically trigger a translation
+    :param low_confidence_translations_accepted: if set to true, the contects of lowe confidence
+        mapping will be returned as well
     :return:
     """
-    high_conf_translation_dict = {}
-    low_conf_translation_dict = {}
-    genes_to_ids_dict = {}
+    # The look up table format :
+    # Gene stable id org 1  |   Transcript stable id org 2    |   Gene name   | HGCN symbol
+
+    # the translation file format:
+    # Gene stable ID | Human gene stable ID | Human gene name |
+    # Human orthology confidence [0 low, 1 high] | Gene name | Gene description
+
+
+    high_conf_translation_dict = {}  # Gene mappings with high orthology confidence
+    low_conf_translation_dict = {}  # Gene mappings with low orthology confidence
+    genes_to_ids_dict = {}  # Means ?
 
     with open(translation_file_location, 'rt') as source:
         reader = csv_reader(source, delimiter='\t')
+        log.info('Parsing organism translation table')
+        log.debug('org translation file: %s' % translation_file_location)
         log.debug('org translation file header: %s' % str(next(reader)))
+
         for line in reader:
-            if line[0] and line[1]:
-                if int(line[3]):
-                    # We still need to account for the confidence in mapping
-                    high_conf_translation_dict[line[0]] = [line[1], line[2]]
-                    # print line[0:4]
+            from_gen_id, to_gen_id, to_gene_name, confidence, from_gene_id, desc = line
+
+            if from_gen_id and to_gen_id:  # there is a possible translation
+
+                if int(confidence):  # 0: low, 1: high
+                    high_conf_translation_dict[from_gen_id] = [to_gen_id, to_gene_name]
+
                 else:
-                    low_conf_translation_dict[line[0]] = [line[1], line[2]]
+                    low_conf_translation_dict[from_gen_id] = [to_gen_id, to_gene_name]
+        log.info('Parsing done')
 
     high_conf_trans = []
     low_conf_trans = []
 
-    if gene_to_id_file_location:
+    if gene_to_id_file_location:  # reverse translates the name of genes into stable gene ids
         with open(gene_to_id_file_location, 'rt') as source:
             reader = csv_reader(source, delimiter='\t')
+            log.info('Parsing gene to id file')
+            log.debug('gene to id file: %s' % translation_file_location)
             log.debug('gene to id file header: %s' % str(next(reader)))
+
             for line in reader:
                 genes_to_ids_dict[line[2]] = line[0]
 
+            log.info('Parsing done')
+
+    total_lines = 0
     with open(data_source_location, 'rt') as source:
         reader = csv_reader(source)
-        for i, line in enumerate(reader):
-            word = line[0]
-            if gene_to_id_file_location:
-                word = genes_to_ids_dict.get(word, 'None found')
-            if word in list(high_conf_translation_dict.keys()):
-                high_conf_trans.append(high_conf_translation_dict[word])
-            if word in list(low_conf_translation_dict.keys()):
-                low_conf_trans.append(low_conf_translation_dict[word])
 
-    log.info("out of %s, %s were translated with high confidence,"
+        for i, line in enumerate(reader):
+            gene_id = line[0]
+            gene_weight = None
+            if len(line) > 1:
+                gene_weight = line[1]
+
+
+            if gene_to_id_file_location:
+                gene_id = genes_to_ids_dict.get(gene_id, 'None found')
+
+            if gene_id in list(high_conf_translation_dict.keys()):
+
+                if gene_weight is not None:
+                    high_conf_trans.append([high_conf_translation_dict[gene_id], gene_weight])
+                else:
+                    high_conf_trans.append(high_conf_translation_dict[gene_id])
+
+            if gene_id in list(low_conf_translation_dict.keys()):
+
+                if gene_weight is not None:
+                    low_conf_trans.append([low_conf_translation_dict[gene_id], gene_weight])
+                else:
+                    low_conf_trans.append(low_conf_translation_dict[gene_id])
+
+            total_lines = i
+
+    log.info("out of %s ids, %s were translated with high confidence,"
              " %s with low and %s were not found" % \
-             (i, len(high_conf_trans), len(low_conf_trans),
-              i - len(high_conf_trans) - len(low_conf_trans)))
+             (total_lines, len(high_conf_trans), len(low_conf_trans),
+              total_lines - len(high_conf_trans) - len(low_conf_trans)))
+
+    if len(high_conf_trans) + len(low_conf_trans) < 0.2 * total_lines:
+        raise Exception('Problem with translation - too few genes were translated between '
+                        'organisms. Please check the format compatibility')
 
     with open(data_dump_location, 'wt') as destination:
-        writer = csv_writer(destination)
+        writer = csv_writer(destination, delimiter='\t')
         writer.writerows((word for word in high_conf_trans))
+        if low_confidence_translations_accepted:
+            writer.writerows((word for word in low_conf_trans))
 
 
 if __name__ == "__main__":
-    translation_file_location = '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Veena data/Mouse_2_human.tsv'
-    gene_to_id_file_location = '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Kp_Km data/mouse_look_up_table.tsv'
-    data_source_location = '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Kp_Km data/all_significant.csv'
-    data_dump_location = '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Kp_Km data/all_sig_hum.csv'
-    translate_identifiers(data_source_location, data_dump_location,
-                          translation_file_location, gene_to_id_file_location)
+    pass
