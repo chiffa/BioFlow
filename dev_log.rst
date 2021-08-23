@@ -4,27 +4,67 @@ TODOs for the project in the future:
 On the table:
 -------------
 
- - DONE: there is a problem with trimming the length of sampled sets
-    - current hypothesis is that it's due to duplicate neo4j ids that get eliminated during the
-        translation to the matrix_ids
-    - hypothesis is confirmed by the sampling engine not having the replace set to False in the
-        np.random.choice
+ - TEST: [FEATURE]: Translation tables
+    - TEST: raise an exception if the translation base is too small
+    - TEST: fold it into the translate into internal ids
+    - TEST: In the mapping, preserve the weights column
 
- - TEST: there is a problem with the sparse_sampling toggle being stuck on -1 even in the cases
-        where it should not be.
-
- - TODO: [FEATURE]: Factor out the structural analysis of the network properties to a module
-    - TODO: basically eigenvalues + eigenvector for the largest one
-    - TODO: tools used with Mehdi for the analysis of the network
-    - TODO: create a bioflow.var folder and put scripts there
-        - TODO: gene essentiality analysis => it's a different project and needs to be moved
-            there with bioflow as a dependency
-        - TODO:
+ - TEST: [BUG]: forward the edge dropping into the construction routines
 
  - TODO: [PAPER]:
-    - TODO: generate the plot to justify Gumbel distribution choice as fitting the max value
+    - Replicability analysis:
+    - ASK RONG for data (published):
+        DONE: found in archives
+        - Linhao paper for aggregates RNA-seq
+        - NOPE: (too much already) Akshay p53 screens
+    - ASK EWALD/BADER for data (published):
+        DONE: found in archives
+        - TWIST-1
+            '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/TWIST1_ECAD/Hits.csv',
+        - K14 (Veena?):
+            '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Veena data/both_HUM.csv',
+            '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/TWIST1_ECAD/All_genes.csv'
+        - Kp/Km
+            '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Kp_Km data/top_100_hum.csv',
+        - Collagen vs Matrigel
+            '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Matrigel vs Collagen/Matrigel_vs_collagen-tumor.tsv'
+    - OTHER VALIDATIONS:
+        - Breast Cancer cell lines aneuploidy
+        - Replicate the COVID19 patient fluids diff expression
+
+ - TODO: [PAPER]: generate the plot to justify Gumbel distribution choice as fitting the max value
+
+ - TODO: [PAPER]:
+    -
     - INTEST: run the chr11 re-analysis
     - TODO: replicate the COVID19 patient fluids diff expression
+    - NOPE: p53 in case of Akshay
+        Data will be hard to impossible to find
+    - INTEST: Veena networks
+
+
+ - TODO: [PAPER]: Ablation study
+    - DONE: Code to perform the ablation study comparison:
+        - DONE: compare calls
+        - DONE: compare cll groups
+    - TODO: Hits degradation:3
+            - randomly remove 5%, 10%, 20% and 50% hits
+            - randomly remove 5%, 10%, 20% and 50% of lowest hits
+    - TODO: Random noise in hits:
+            - replace 5%, 10%, 20% and 50% hits with random node sets
+    - TODO: Size of background samples
+            - perform a sampling with 5, 10, 20, 25, 50 and 100 background reads
+    - TODO: Weighting:
+            - Weighted vs unweighted
+    - TODO: Network degradation
+            - interactome: randomly remove 5%, 10%, 20% and 50% of edges
+            - annotome: randomly remove 5%, 10% and 20% of annotation attachments on proteins
+    - TODO: Resistance to poisoning (Baggerly-robustness)
+            - take a random set of nodes
+            - show absence of calls
+            - sprinkle a test dataset (glycogen biosynthesis)
+            - show that only that cluster pops up
+
 
 Current refactoring:
 --------------------
@@ -71,6 +111,51 @@ Current refactoring:
         annotome_analysis
  - TODO: [SANIFY][REFACTOR] Add a typing module with shared types
 
+ - TODO: [FEATURE]: Factor out the structural analysis of the network properties to a module
+    - TODO: basically eigenvalues + eigenvector for the largest one
+    - TODO: tools used with Mehdi for the analysis of the network
+    - TODO: create a bioflow.var folder and put scripts there
+        - TODO: gene essentiality analysis => it's a different project and needs to be moved
+            there with bioflow as a dependency
+        - TODO:
+
+<Environment registration>
+
+ - TODO: build status.yaml in the $BIOFLOWHOME$/.internal
+    - TODO: gets written to upon
+        - databases downloads ['DOWNLOAD section']: name + date of download + hash
+        - organism definition
+        - neo4j filling: upon a neo4j "build"
+        - Laplacians constructions
+        - Translation of a dataset
+    - TODO: on each addition to the stack, everything that is above a certain layer gets
+        removed
+    - TODO: on an addition of a stack, if a next level is to be added without the previous one
+        existing, the level gets niked
+    - TODO: gets copied to run upon each
+        - upon a run, the status.yaml gets copied into the base folder
+        - and a commit # gets added to it
+        - plus if any untracked changes are present in the tracked files inside .bioflow
+
+ - TODO: [USABILITY] store a header of what was analyzed and where it was pulled from + env
+        parameters in a text file in the beginning of a run.
+
+ - TODO: define a persistent "environment_state" file in the $BIOFLOWHOME/.internal/
+    - TODO: log the organism currently operating
+        => check_organism() -> base, neo4j, laplacians
+        => update_organism(base, neo4j, laplacians) -> None
+    - TODO: log the organism loaded in the neo4j
+    - TODO: log the organism loaded in laplacians
+    - TODO: define a "check_org_state" function
+    - TODO: define an "update_org_state" function
+    - TODO: make sure that the organisms in operating/neo4j/laplacian are all synced
+        => "check_sync()" (calls check_organism, raises if inconsistency)
+    - TODO: make sure that the neo4j is erased before a new organism is loaded into it.
+        => "check_neo4j_empty" (calls check_organism, checks that neo4j is "None")
+    - TODO: make sure that the retrieved backtround set is still valid
+
+<END Environment registration>
+
 
 <Sanify BioKnowledge>
 
@@ -102,26 +187,6 @@ Current refactoring:
     - potential
 
 
-<Environment registration>
-
- - TODO: [USABILITY] store a header of what was analyzed and where it was pulled from + env
-        parameters in a text file in the beginning of a run.
-
- - TODO: define a persistent "environment_state" file in the $BIOFLOWHOME/.internal/
-    - TODO: log the organism currently operating
-        => check_organism() -> base, neo4j, laplacians
-        => update_organism(base, neo4j, laplacians) -> None
-    - TODO: log the organism loaded in the neo4j
-    - TODO: log the organism loaded in laplacians
-    - TODO: define a "check_org_state" function
-    - TODO: define an "update_org_state" function
-    - TODO: make sure that the organisms in operating/neo4j/laplacian are all synced
-        => "check_sync()" (calls check_organism, raises if inconsistency)
-    - TODO: make sure that the neo4j is erased before a new organism is loaded into it.
-        => "check_neo4j_empty" (calls check_organism, checks that neo4j is "None")
-    - TODO: make sure that the retrieved backtround set is still valid
-
-
 <Pretty progress>
 
  - TODO: [USABILITY] Improve the progress reporting
@@ -138,6 +203,19 @@ Current refactoring:
 
 
 DONE SEPARATOR:
+
+ - DONE: sort clusters by p-value
+    - DONE: there seems to be a bug where most clsters don't get output correctly anymore
+        => Nope, correct, just no correct calls made
+
+ - DONE: there is a problem with the sparse_sampling toggle being stuck on -1 even in the cases
+        where it should not be.
+
+ - DONE: there is a problem with trimming the length of sampled sets
+    - current hypothesis is that it's due to duplicate neo4j ids that get eliminated during the
+        translation to the matrix_ids
+    - hypothesis is confirmed by the sampling engine not having the replace set to False in the
+        np.random.choice
 
  - DONE: re-enable the env_skip flags in InteractomeInterface
 

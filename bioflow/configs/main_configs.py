@@ -132,6 +132,10 @@ class Dumps(object):
     GO_Analysis_memoized = os.path.join(prefix, 'GO_memoization.dump')
     GO_Indep_Linset = os.path.join(prefix, 'GO_Indep_linset.dump')
 
+    translated_primary = os.path.join(prefix, 'translated_primary.dump')
+    translated_secondary = os.path.join(prefix, 'translated_secondary.dump')
+    translated_background = os.path.join(prefix, 'translated_background.dump')
+
     RNA_seq_counts_compare = os.path.join(prefix, 'RNA_seq_compare.dump')
 
     # those are temporary storage of cast sets of IDs and backgrounds
