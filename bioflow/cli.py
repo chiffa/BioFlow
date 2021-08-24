@@ -129,11 +129,14 @@ def diagneo4j():
                                               'set. supports weighted sets')
 @click.option('--smtplog', default=False, is_flag=True, help='Enables mail reporting. Make sure '
                                                              'SMTP configs are set properly first.')
-@click.option('--translatewith', default='', help='File in case a pre-translation of gene IDs is '
-                                              'required before processing (eg in case of organism'
-                                              ' ortholog mappings)')
+@click.option('--orthologmap', default='', help='File to perform an ortholog mapping between '
+                                                  'organisms, in case a direct equivalence is '
+                                                  'assumed')
+@click.option('--geneidlookup', default='', help='File to perform a mapping of genes from '
+                                                 'internal ids to ids used by the translation '
+                                                 'table')
 @click.argument('source')
-def mapsource(source, secondary, background, smtplog, translatewith):
+def mapsource(source, secondary, background, smtplog, orthologmap, geneidlookup):
     """
     Sets the source and background files that will be uses in the analysis.
 
@@ -149,7 +152,8 @@ def mapsource(source, secondary, background, smtplog, translatewith):
     :param background:
     :param secondary:
     :param smtplog:
-    :param translatewith:
+    :param orthologmap:
+    :param geneidlookup:
     :return:
     """
     from bioflow.utils.top_level import map_and_save_gene_ids, log
@@ -160,17 +164,23 @@ def mapsource(source, secondary, background, smtplog, translatewith):
         from bioflow.utils.smtp_log_behavior import mail_handler
         log.addHandler(mail_handler)
 
-    if translatewith != '':
+    if orthologmap != '':
 
-        translate_identifiers(source, Dumps.translated_primary, translatewith)
+        if geneidlookup == '':
+            geneidlookup = None
+
+        translate_identifiers(source, Dumps.translated_primary,
+                              orthologmap, geneidlookup)
         source = Dumps.translated_primary
 
         if secondary != '':
-            translate_identifiers(secondary, Dumps.translated_secondary, translatewith)
+            translate_identifiers(secondary, Dumps.translated_secondary,
+                                  orthologmap, geneidlookup)
             secondary = Dumps.translated_secondary
 
         if background != '':
-            translate_identifiers(background, Dumps.translated_background, translatewith)
+            translate_identifiers(background, Dumps.translated_background,
+                                  orthologmap, geneidlookup)
             background = Dumps.translated_background
 
     if secondary != '':
