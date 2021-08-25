@@ -18,7 +18,14 @@ storage_folder = Path(source_path.parent.joinpath(fname))
 storage_folder.mkdir(parents=True, exist_ok=True)
 
 
-def dump_experiment(experiment_name, corrected_lines):
+def dump_experiment(experiment_name, corrected_lines, write_outs=[], dump_out=False):
+
+    if dump_out:
+        print(write_outs)
+        return
+
+    write_outs.append(experiment_name)
+
     updated_experiment_name = experiment_name + '.tsv'
     print('debug', storage_folder)
     print('debug2', updated_experiment_name)
@@ -113,6 +120,8 @@ for removal_value in [0.05, 0.1, 0.2, 0.5]:
                        in zip(filter_line, lines)]
 
     dump_experiment('no_weights_random_%d_percent_set_to_random' % (removal_value*100), corrected_lines)
+
+dump_experiment('', [], dump_out=True)
 
 # assumes that everything is in the order
 

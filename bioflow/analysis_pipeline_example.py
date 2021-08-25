@@ -12,6 +12,7 @@ from bioflow.utils.io_routines import get_source_bulbs_ids, get_background_bulbs
 from bioflow.utils.top_level import map_and_save_gene_ids, rebuild_the_laplacians, \
     generate_random_weights
 import os
+from pathlib import Path
 from bioflow.utils.log_behavior import get_logger
 
 
@@ -141,6 +142,10 @@ if __name__ == "__main__":
     #      'yeast_test_gene_set-glycogen_biosynthesis_tsw_2.tsv'),
     #      'yeast_test_weighted_background.tsv')
 
+    #===============================================================
+    # Legacy Experiments
+    #===============================================================
+
     test_folder_root = '/localhome/kucharav/Ewald Lab validation/distilled/'
 
     matrigel_collagen_tumor = 'Collagen-Matrigel/Matrigel_vs_collagen-tumor.tsv'
@@ -202,6 +207,73 @@ if __name__ == "__main__":
                        background_list=background_internal_ids,
                        skip_sampling=False,
                        )
+
+    #===============================================================
+    # Ablation Experiments
+    #===============================================================
+    root_directory = "C:\\Users\\Andrei\Dropbox\\workspaces\\JHU\\" \
+                            "Ewald Lab\\Kp_Km data\\"
+
+    root_dir_path = Path(root_directory)
+
+    ablation_experiments_rail = ['lowest_5_percent_removed', 'lowest_5_percent_set_to_random',
+                                 'random_5_percent_removed', 'random_5_percent_set_to_random',
+                                 'lowest_10_percent_removed', 'lowest_10_percent_set_to_random',
+                                 'random_10_percent_removed', 'random_10_percent_set_to_random',
+                                 'lowest_20_percent_removed', 'lowest_20_percent_set_to_random',
+                                 'random_20_percent_removed', 'random_20_percent_set_to_random',
+                                 'lowest_50_percent_removed', 'lowest_50_percent_set_to_random',
+                                 'random_50_percent_removed', 'random_50_percent_set_to_random',
+                                 'no_weights',
+                                 'no_weights_lowest_5_percent_removed',
+                                 'no_weights_lowest_5_percent_set_to_random',
+                                 'no_weights_random_5_percent_removed',
+                                 'no_weights_random_5_percent_set_to_random',
+                                 'no_weights_lowest_10_percent_removed',
+                                 'no_weights_lowest_10_percent_set_to_random',
+                                 'no_weights_random_10_percent_removed',
+                                 'no_weights_random_10_percent_set_to_random',
+                                 'no_weights_lowest_20_percent_removed'
+                                 'no_weights_lowest_20_percent_set_to_random',
+                                 'no_weights_random_20_percent_removed'
+                                 'no_weights_random_20_percent_set_to_random',
+                                 'no_weights_lowest_50_percent_removed',
+                                 'no_weights_lowest_50_percent_set_to_random',
+                                 'no_weights_random_50_percent_removed',
+                                 'no_weights_random_50_percent_set_to_random']
+
+    background_file = root_dir_path.join('mouse_genes_background.txt')
+    reference_file = root_dir_path.join('mouse_weighted_abs_log-fold.txt')
+
+    fname = reference_file.stem
+    fname = fname + '_ablations'
+    storage_folder = root_dir_path.joinpath(fname)
+
+    path_files = [storage_folder.joinpath(stem + '.tsv') for stem in ablation_experiments_rail]
+
+    hits_ids, sec_hit_ids, background_ids = map_and_save_gene_ids(path_files,
+                                                                  background_file)
+
+    interactome_analysis(source_list=hits_ids,
+                         output_destinations_list=ablation_experiments_rail,
+                         random_samples_to_test_against=25,
+                         processors=1,
+                         background_list=background_ids,
+                         skip_sampling=False
+                         )
+
+    knowledge_analysis(source_list=hits_ids,
+                       output_destinations_list=ablation_experiments_rail,
+                       random_samples_to_test_against=25,
+                       processors=1,
+                       background_list=background_ids,
+                       skip_sampling=False,
+                       )
+
+
+    #===============================================================
+    # Chromosome Experiments
+    #===============================================================
 
     # chromosomes_directory = "//localhome//kucharav//Projects//BioFlow paper//yeast_chr_genes"
     # background_file = os.path.join(chromosomes_directory, "all_genes.tab")
