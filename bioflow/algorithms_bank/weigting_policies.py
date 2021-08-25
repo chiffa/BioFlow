@@ -21,7 +21,7 @@ def flat_policy(start_node, end_node, edge) -> float:
 
 
 def source_x_type_policy(start_node, end_node, edge, source_weights, type_weights,
-                         drop_chance) -> float:
+                         drop_chance=confs.fraction_edges_dropped_in_laplacian) -> float:
     """
     A policy that uses the type and the source of the edge itself (and only the edge)
 

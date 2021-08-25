@@ -252,8 +252,8 @@ psutil_main_loop_memory_tracing = bool(user_settings['debug_flags']['psutil_main
 memory_source_allowed = bool(user_settings['debug_flags']['memory_source_allowed'])
 node_current_in_debug = bool(user_settings['debug_flags']['node_current_in_debug'])
 
-use_normalized_laplacian = user_settings['use_normalized_laplacian']
-fraction_edges_dropped_in_laplacian = user_settings['fraction_edges_dropped_in_laplacian']
+use_normalized_laplacian = bool(user_settings['use_normalized_laplacian'])
+fraction_edges_dropped_in_laplacian = float(user_settings['fraction_edges_dropped_in_laplacian'])
 
 sparse_analysis_threshold = int(user_settings['analysis']['sparse_analysis_threshold'])
 default_background_samples = int(user_settings['analysis']['default_background_samples'])
