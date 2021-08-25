@@ -26,125 +26,111 @@ if smtp_logging:
 
 if __name__ == "__main__":
 
-    # first, let's clear logs:
-    # clear_logs()
+    # ==========================================
+    # Setup
+    # ==========================================
 
-    # # if needed, clear the mongodb:
-    # from bioflow.main_configs import annotome_rand_samp, interactome_rand_samp_db
-    # annotome_rand_samp.drop()
-    # interactome_rand_samp_db.drop()
+    # # first, let's clear logs:
+    # clear_logs()
 
     # # pulling the online databases
     # pull_online_dbs()
 
-
-    # # clearing the database, if required
+    # # clear the main database, if needed
     # destroy_db()
-    #
-    # # building the neo4j database
+
+    # # rebuild the main database, if needed
     # build_db()
 
-    background_internal_ids = []
+    # # finally rebuild the laplacians:
+    # rebuild_the_laplacians()
 
-    # Map the bulbs we are seeking to analyze
+    # # in case we are constantly switch around in code between using or not background
+    # background_internal_ids = []
 
-    # hits_ids, background_ids = map_and_save_gene_ids(
-    #     '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Matrigel vs Collagen/Matrigel_vs_collagen-tumor.tsv',
-    #     '')
+    # ==============================================================
+    # Perform integration tests on yeast glycogen biosynthesis tests
+    # ===============================================================
 
-    # hits_ids, background_ids = map_and_save_gene_ids(
-    #       '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/TWIST1_ECAD/Hits.csv',
-    # #     '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Kp_Km data/top_100_hum.csv',
-    #      '')
+    # ------------------------
+    # just the unweighted set
+    # ------------------------
 
-    # hits_ids, background_ids = map_and_save_gene_ids(
-    #     '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/Veena data/both_HUM.csv',
-    #     ''
-    #     # '/home/andrei/Dropbox/workspaces/JHU/Ewald Lab/TWIST1_ECAD/All_genes.csv'
-    # )
-
-    # hits_ids, background_internal_ids = map_and_save_gene_ids(
+    # hits_ids, sec_hit_ids, background_internal_ids = map_and_save_gene_ids(
     #     'yeast_test_gene_set-glycogen_biosynthesis.tsv',
     #     '')
 
-    # # get the bulbs ids for the nodes we would like to analyze
-    # hits_ids = get_source_bulbs_ids()
-
-
-    # background_internal_ids = get_background_bulbs_ids()
-
-    # rebuild_the_laplacians(all_detectable_genes=background_internal_ids)
-
     # # perform the interactome analysis
-    # interactome_analysis([hits_ids],
-    #                      random_samples_to_test_against=30,
+    # interactome_analysis(hits_ids,
+    #                      random_samples_to_test_against=20,
     #                      processors=3,
     #                      background_list=background_internal_ids,
     #                      skip_sampling=False,
     #                      from_memoization=False)
     #
     # # perform the knowledge analysis
-    # knowledge_analysis([hits_ids],
+    # knowledge_analysis(hits_ids,
     #                    random_samples_to_test_against=20,
     #                    processors=3,
     #                    param_set=ref_param_set,
     #                    skip_sampling=False)
     #
     #
-    # raise Exception('debugging')
 
-    # generate_random_weights(os.path.join(chromosomes_directory, "all_genes.tab"),
-    #                         'yeast_test_weighted_background.tsv')
+    # ------------------------
+    # weighted set
+    # ------------------------
 
-    # rebuild_the_laplacians()
+    # hits_ids, sec_hit_ids, background_internal_ids = map_and_save_gene_ids(
+    #     'yeast_test_gene_set-glycogen_biosynthesis_w.tsv',
+    #     '')
 
-    # perform the interactome analysis
-
-    # currnetly we are having an issue where the name mapping generate a list that is buffered
-    # => Not that much of a problem actually
-
-    # interactome_analysis([hits_ids],
+    # # perform the interactome analysis
+    # interactome_analysis(hits_ids,
     #                      random_samples_to_test_against=20,
-    #                      processors=6,
+    #                      processors=3,
     #                      background_list=background_internal_ids,
     #                      skip_sampling=False,
     #                      from_memoization=False)
     #
     # # perform the knowledge analysis
-    # knowledge_analysis([hits_ids],
+    # knowledge_analysis(hits_ids,
     #                    random_samples_to_test_against=20,
-    #                    processors=6,
+    #                    processors=3,
     #                    param_set=ref_param_set,
     #                    skip_sampling=False)
     #
     #
-    # raise Exception('debugging')
 
-    # hits_ids, sec_hit_ids, background_internal_ids = map_and_save_gene_ids(
-    #     'yeast_test_gene_set-glycogen_biosynthesis_w.tsv',
-    #     '')
-    #
-    # log.debug('debug: hits_ids parse: %s' % hits_ids)
-    #
-    # interactome_analysis(source_list=hits_ids,
-    #                      secondary_source_list=sec_hit_ids,
-    #                      # output_destinations_list=['chr_%s' % filename[:-4]],
-    #                      random_samples_to_test_against=5,
-    #                      processors=1,
-    #                      background_list=background_internal_ids,
-    #                      skip_sampling=False
-    #                      )
-    #
-    # raise Exception('Debug Exception')
+    # ---------------------------------
+    # secondary and background weighted
+    # ---------------------------------
 
     # hits_ids, sec_hit_ids, background_internal_ids = map_and_save_gene_ids(
     #     ('yeast_test_gene_set-glycogen_biosynthesis_tsw_1.tsv',
     #      'yeast_test_gene_set-glycogen_biosynthesis_tsw_2.tsv'),
     #      'yeast_test_weighted_background.tsv')
 
-    #===============================================================
+    # # perform the interactome analysis
+    # interactome_analysis(hits_ids,
+    #                      random_samples_to_test_against=20,
+    #                      processors=3,
+    #                      background_list=background_internal_ids,
+    #                      skip_sampling=False,
+    #                      from_memoization=False)
+    #
+    # # perform the knowledge analysis
+    # knowledge_analysis(hits_ids,
+    #                    random_samples_to_test_against=20,
+    #                    processors=3,
+    #                    param_set=ref_param_set,
+    #                    skip_sampling=False)
+    #
+    #
+
+    # ===============================================================
     # Legacy Experiments
-    #===============================================================
+    # ===============================================================
 
     test_folder_root = '/localhome/kucharav/Ewald Lab validation/distilled/'
 
@@ -208,9 +194,9 @@ if __name__ == "__main__":
                        skip_sampling=False,
                        )
 
-    #===============================================================
+    # ===============================================================
     # Ablation Experiments
-    #===============================================================
+    # ===============================================================
     root_directory = "C:\\Users\\Andrei\Dropbox\\workspaces\\JHU\\" \
                             "Ewald Lab\\Kp_Km data\\"
 
@@ -302,38 +288,3 @@ if __name__ == "__main__":
     #                    background_list=background_ids,
     #                    skip_sampling=False,
     #                    )
-
-
-    # # compile chromosome file names
-    #
-    # for filename in os.listdir(chromosomes_directory):
-    #     if filename != "all_genes.tab":
-    #
-    #         target_file = os.path.join(chromosomes_directory, filename)
-    #         hits_ids, sec_hit_ids, background_internal_ids = map_and_save_gene_ids(target_file,
-    #                                                                                background_file)
-    #
-    #         # if not background_set:
-    #         #     rebuild_the_laplacians(all_detectable_genes=background_internal_ids)
-    #         #     background_set = True
-    #
-    #         # # perform the interactome analysis
-    #
-    #         interactome_analysis(source_list=hits_ids,
-    #                              output_destinations_list=['chr_%s' % filename[:-4]],
-    #                              random_samples_to_test_against=5,
-    #                              processors=1,
-    #                              background_list=background_internal_ids,
-    #                              skip_sampling=False
-    #                              )
-    #
-    #         # # perform the knowledge analysis
-    #         knowledge_analysis(source_list=hits_ids,
-    #                            output_destinations_list=['chr_%s' % filename[:-4]],
-    #                            random_samples_to_test_against=5,
-    #                            processors=1,
-    #                            background_list=background_internal_ids,
-    #                            skip_sampling=False,
-    #                            )
-    #
-    #         # raise Exception('debug')

@@ -47,14 +47,15 @@ On the table:
     - DONE: Code to perform the ablation study comparison:
         - DONE: compare calls
         - DONE: compare cll groups
-    - TODO: Hits degradation:3
+        - DONE: generate ablations file to be compared
+    - TEST: Hits degradation:3
             - randomly remove 5%, 10%, 20% and 50% hits
             - randomly remove 5%, 10%, 20% and 50% of lowest hits
-    - TODO: Random noise in hits:
+    - TEST: Random noise in hits:
             - replace 5%, 10%, 20% and 50% hits with random node sets
     - TODO: Size of background samples
             - perform a sampling with 5, 10, 20, 25, 50 and 100 background reads
-    - TODO: Weighting:
+    - TEST: Weighting:
             - Weighted vs unweighted
     - TODO: Network degradation
             - interactome: randomly remove 5%, 10%, 20% and 50% of edges

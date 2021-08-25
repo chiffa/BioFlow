@@ -347,7 +347,7 @@ def clustering_analysis_complement(go_interface_instance: GeneOntologyInterface,
             cluster_entries[-1][-1].append([internal_id, legacy_id, node_type, full_name])
 
     # sort by p-value:
-    cluster_entries = sorted(cluster_entries, key=lambda x: x[1])
+    cluster_entries = sorted(cluster_entries, key=lambda x: x[1]    )
 
     return cluster_entries
 
