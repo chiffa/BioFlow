@@ -12,6 +12,7 @@ from bioflow.utils.log_behavior import get_logger
 from csv import reader as csv_reader
 from csv import writer as csv_writer
 import random
+import pathlib
 
 # debug dependencies
 import numpy as np
@@ -31,20 +32,26 @@ def map_and_save_gene_ids(hit_genes_location, all_detectable_genes_location=''):
     standardized_hits = []  # [primary_set]
     standardized_secondary_hits = []  # [secondary_set=None]
 
-    if type(hit_genes_location) == str:
+    if type(hit_genes_location) == str or isinstance(hit_genes_location, pathlib.PurePath):
+        # log.info('codepath 1')
         standardized_hits = [cast_external_refs_to_internal_ids(hit_genes_location)]
         standardized_secondary_hits = [None]
 
     if type(hit_genes_location) == tuple:
+        # log.info('codepath 2')
         standardized_hits = [cast_external_refs_to_internal_ids(hit_genes_location[0])]
         standardized_secondary_hits = [cast_external_refs_to_internal_ids(hit_genes_location[1])]
 
     if type(hit_genes_location) == list:
+        # log.info('codepath 3')
         for sub_hit_genes_location in hit_genes_location:
-            if type(sub_hit_genes_location) == str:
+            # log.info('codepath 3.0')
+            if type(sub_hit_genes_location) == str or isinstance(sub_hit_genes_location, pathlib.PurePath):
+                # log.info('codepath 3.1')
                 standardized_hits += [cast_external_refs_to_internal_ids(sub_hit_genes_location)]
                 standardized_secondary_hits += [None]
             if type(sub_hit_genes_location) == tuple:
+                # log.info('codepath 3.2')
                 standardized_hits += [cast_external_refs_to_internal_ids(sub_hit_genes_location[0])]
                 standardized_secondary_hits += [cast_external_refs_to_internal_ids(sub_hit_genes_location[1])]
 

@@ -5,10 +5,10 @@ import random
 import numpy as np
 
 source_file = "C:\\Users\\Andrei\\Dropbox\\workspaces\\JHU\\Ewald Lab\\" \
-              "Kp_Km data\\mouse_weighted_abs_log-fold.txt"
+              "Kp_Km data\\humanized_weighted_abs_log-fold.txt"
 
 background_file = "C:\\Users\\Andrei\\Dropbox\\workspaces\\JHU\\Ewald Lab\\" \
-                  "Kp_Km data\\mouse_genes_background.txt"
+                  "Kp_Km data\\humanized_genes_background.txt"
 
 source_path = Path(source_file)
 

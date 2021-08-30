@@ -90,7 +90,7 @@ def translate_identifiers(data_source_location, data_dump_location,
 
     total_lines = 0
     with open(data_source_location, 'rt') as source:
-        reader = csv_reader(source)
+        reader = csv_reader(source, delimiter='\t')
 
         for i, line in enumerate(reader):
             gene_id = line[0]
@@ -98,25 +98,42 @@ def translate_identifiers(data_source_location, data_dump_location,
             if len(line) > 1:
                 gene_weight = line[1]
 
+            # print("attempting to translate '%s, %s'" % (gene_id, gene_weight))
 
             if gene_to_id_file_location:
                 gene_id = genes_to_ids_dict.get(gene_id, 'None found')
+                # print('gene to id translation: %s' % gene_id)
 
             if gene_id in list(high_conf_translation_dict.keys()):
+                # print("high-confidence translation '%s'" % high_conf_translation_dict[gene_id])
 
                 if gene_weight is not None:
-                    high_conf_trans.append([high_conf_translation_dict[gene_id], gene_weight])
+                    high_conf_trans.append([high_conf_translation_dict[gene_id][1], gene_weight])
+                    # print("weighted high-confidence translation '%s, %s'" %
+                    #       (high_conf_translation_dict[gene_id][1], gene_weight))
                 else:
-                    high_conf_trans.append(high_conf_translation_dict[gene_id])
+                    high_conf_trans.append([high_conf_translation_dict[gene_id][1], ])
+                    # print("unweighted high-confidence translation '%s'" %
+                    #       high_conf_translation_dict[gene_id][1])
 
             if gene_id in list(low_conf_translation_dict.keys()):
+                # print("high-confidence translation '%s'" % high_conf_translation_dict[gene_id])
 
                 if gene_weight is not None:
-                    low_conf_trans.append([low_conf_translation_dict[gene_id], gene_weight])
+                    low_conf_trans.append([low_conf_translation_dict[gene_id][1], gene_weight])
+                    # print("weighted low-confidence translation '%s, %s'" %
+                    #       (low_conf_translation_dict[gene_id][1], gene_weight))
                 else:
-                    low_conf_trans.append(low_conf_translation_dict[gene_id])
+                    low_conf_trans.append([low_conf_translation_dict[gene_id][1], ])
+                    # print("unweighted low-confidence translation '%s'" %
+                    #       low_conf_translation_dict[gene_id][1])
+
+            # input('confirm line translation')
 
             total_lines = i
+
+    # TODO: there are some ids that are translated both with high and low confidence, or map to
+    #  the same values. Which is problematic
 
     log.info("out of %s ids, %s were translated with high confidence,"
              " %s with low and %s were not found" % \

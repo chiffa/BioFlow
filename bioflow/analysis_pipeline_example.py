@@ -12,7 +12,7 @@ from bioflow.utils.io_routines import get_source_bulbs_ids, get_background_bulbs
 from bioflow.utils.top_level import map_and_save_gene_ids, rebuild_the_laplacians, \
     generate_random_weights
 import os
-from pathlib import Path
+from pathlib import Path, PurePath
 from bioflow.utils.log_behavior import get_logger
 
 
@@ -132,73 +132,74 @@ if __name__ == "__main__":
     # Legacy Experiments
     # ===============================================================
 
-    test_folder_root = '/localhome/kucharav/Ewald Lab validation/distilled/'
-
-    matrigel_collagen_tumor = 'Collagen-Matrigel/Matrigel_vs_collagen-tumor.tsv'
-    matrigel_collagen_normal = 'Collagen-Matrigel/Matrigel_vs_collagen-normal.tsv'
-
-    kp_km_mouse = 'Kp-Km/top_100.csv'
-    kp_km_human = 'Kp-Km/top_100_hum.csv'
-    kp_km_20_rd_drop = 'Kp-Km/top_80 - 20p drop-out.csv'
-
-    K14_base = 'K14/All_genes.csv'
-    K14_human = 'K14/both_HUM.csv'
-    K14_mouse = 'K14/both.csv'
-
-    TWIST_1_base = 'TWIST-1/All_genes.csv'
-    TWIST_1_hits = 'TWIST-1/Hits.csv'
-
-
-    second_folder_root = '/localhome/kucharav/bioflow validation data'
-
-    breast_cancer_1q = 'breast cancer aneuploidy/1q.txt'
-    breast_cancer_8p = 'breast cancer aneuploidy/8p.txt'
-    breast_cancer_8q = 'breast cancer aneuploidy/8q.txt'
-    breast_cancer_8q2 = 'breast cancer aneuploidy/8q - second half.txt'
-    breast_cancer_18q = 'breast cancer aneuploidy/18q.txt'
-    breast_cancer_20q = 'breast cancer aneuploidy/20q.txt'
-
-    Linhao_no_import_hits = '"yeast -  Linhao no import screens"/hits.csv'
-    Linhao_no_import_background = '"yeast -  Linhao no import screens"background.csv'
-
-    Linhao_MudPIT_hits = 'yeast - Linhao MudPIT/background.csv'
-    Linhao_MudPIT_background = 'yeast - Linhao MudPIT/hits_WT-MUT_vs_CTRL.csv'
-
-
-    active_load = os.path.join(second_folder_root, breast_cancer_20q)
-    active_back = ''
-    # active_back = os.path.join(second_folder_root, TWIST_1_base)
-
-    hits_ids, sec_hit_ids, background_internal_ids = map_and_save_gene_ids(
-         active_load, active_back)
-
-    # log.debug('debug: hits_ids parse: %s' % hits_ids)
-
-    log.info('Registration: run from %s' % active_load)
-
-    interactome_analysis(source_list=hits_ids,
-                         secondary_source_list=sec_hit_ids,
-                         output_destinations_list=['BR_C_8q'],
-                         random_samples_to_test_against=25,
-                         processors=1,
-                         background_list=background_internal_ids,
-                         skip_sampling=False
-                         )
-
-    knowledge_analysis(source_list=hits_ids,
-                       secondary_source_list=sec_hit_ids,
-                       output_destinations_list=['BR_C_8q'],
-                       random_samples_to_test_against=25,
-                       processors=1,
-                       background_list=background_internal_ids,
-                       skip_sampling=False,
-                       )
+    # test_folder_root = '/localhome/kucharav/Ewald Lab validation/distilled/'
+    #
+    # matrigel_collagen_tumor = 'Collagen-Matrigel/Matrigel_vs_collagen-tumor.tsv'
+    # matrigel_collagen_normal = 'Collagen-Matrigel/Matrigel_vs_collagen-normal.tsv'
+    #
+    # kp_km_mouse = 'Kp-Km/top_100.csv'
+    # kp_km_human = 'Kp-Km/top_100_hum.csv'
+    # kp_km_20_rd_drop = 'Kp-Km/top_80 - 20p drop-out.csv'
+    #
+    # K14_base = 'K14/All_genes.csv'
+    # K14_human = 'K14/both_HUM.csv'
+    # K14_mouse = 'K14/both.csv'
+    #
+    # TWIST_1_base = 'TWIST-1/All_genes.csv'
+    # TWIST_1_hits = 'TWIST-1/Hits.csv'
+    #
+    #
+    # second_folder_root = '/localhome/kucharav/bioflow validation data'
+    #
+    # breast_cancer_1q = 'breast cancer aneuploidy/1q.txt'
+    # breast_cancer_8p = 'breast cancer aneuploidy/8p.txt'
+    # breast_cancer_8q = 'breast cancer aneuploidy/8q.txt'
+    # breast_cancer_8q2 = 'breast cancer aneuploidy/8q - second half.txt'
+    # breast_cancer_18q = 'breast cancer aneuploidy/18q.txt'
+    # breast_cancer_20q = 'breast cancer aneuploidy/20q.txt'
+    #
+    #
+    # # TRACING: still to be done, upon the database reload
+    # Linhao_no_import_hits = '"yeast -  Linhao no import screens"/hits.csv'
+    # Linhao_no_import_background = '"yeast -  Linhao no import screens"background.csv'
+    #
+    # Linhao_MudPIT_hits = 'yeast - Linhao MudPIT/background.csv'
+    # Linhao_MudPIT_background = 'yeast - Linhao MudPIT/hits_WT-MUT_vs_CTRL.csv'
+    #
+    #
+    # active_load = os.path.join(second_folder_root, breast_cancer_20q)
+    # active_back = ''
+    # # active_back = os.path.join(second_folder_root, TWIST_1_base)
+    #
+    # hits_ids, sec_hit_ids, background_internal_ids = map_and_save_gene_ids(
+    #      active_load, active_back)
+    #
+    # # log.debug('debug: hits_ids parse: %s' % hits_ids)
+    #
+    # log.info('Registration: run from %s' % active_load)
+    #
+    # interactome_analysis(source_list=hits_ids,
+    #                      secondary_source_list=sec_hit_ids,
+    #                      output_destinations_list=['BR_C_8q'],
+    #                      random_samples_to_test_against=25,
+    #                      processors=1,
+    #                      background_list=background_internal_ids,
+    #                      skip_sampling=False
+    #                      )
+    #
+    # knowledge_analysis(source_list=hits_ids,
+    #                    secondary_source_list=sec_hit_ids,
+    #                    output_destinations_list=['BR_C_8q'],
+    #                    random_samples_to_test_against=25,
+    #                    processors=1,
+    #                    background_list=background_internal_ids,
+    #                    skip_sampling=False,
+    #                    )
 
     # ===============================================================
     # Ablation Experiments
     # ===============================================================
-    root_directory = "C:\\Users\\Andrei\Dropbox\\workspaces\\JHU\\" \
-                            "Ewald Lab\\Kp_Km data\\"
+    root_directory = "/localhome/kucharav/Ewald Lab validation/Kp_Km/"
 
     root_dir_path = Path(root_directory)
 
@@ -219,26 +220,29 @@ if __name__ == "__main__":
                                  'no_weights_lowest_10_percent_set_to_random',
                                  'no_weights_random_10_percent_removed',
                                  'no_weights_random_10_percent_set_to_random',
-                                 'no_weights_lowest_20_percent_removed'
+                                 'no_weights_lowest_20_percent_removed',
                                  'no_weights_lowest_20_percent_set_to_random',
-                                 'no_weights_random_20_percent_removed'
+                                 'no_weights_random_20_percent_removed',
                                  'no_weights_random_20_percent_set_to_random',
                                  'no_weights_lowest_50_percent_removed',
                                  'no_weights_lowest_50_percent_set_to_random',
                                  'no_weights_random_50_percent_removed',
                                  'no_weights_random_50_percent_set_to_random']
 
-    background_file = root_dir_path.join('mouse_genes_background.txt')
-    reference_file = root_dir_path.join('mouse_weighted_abs_log-fold.txt')
+    background_file = root_dir_path.joinpath('humanized_genes_background.txt')
+    reference_file = root_dir_path.joinpath('humanized_weighted_abs_log-fold.txt')
 
     fname = reference_file.stem
     fname = fname + '_ablations'
     storage_folder = root_dir_path.joinpath(fname)
 
     path_files = [storage_folder.joinpath(stem + '.tsv') for stem in ablation_experiments_rail]
+    path_files.append(reference_file)
 
     hits_ids, sec_hit_ids, background_ids = map_and_save_gene_ids(path_files,
                                                                   background_file)
+
+    names_rail = ablation_experiments_rail + ['reference']
 
     interactome_analysis(source_list=hits_ids,
                          output_destinations_list=ablation_experiments_rail,
