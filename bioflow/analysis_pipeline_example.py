@@ -203,19 +203,19 @@ if __name__ == "__main__":
 
     root_dir_path = Path(root_directory)
 
-    ablation_experiments_rail = ['lowest_5_percent_removed', 'lowest_5_percent_set_to_random',
-                                 'random_5_percent_removed', 'random_5_percent_set_to_random',
-                                 'lowest_10_percent_removed', 'lowest_10_percent_set_to_random',
-                                 'random_10_percent_removed', 'random_10_percent_set_to_random',
-                                 'lowest_20_percent_removed', 'lowest_20_percent_set_to_random',
-                                 'random_20_percent_removed', 'random_20_percent_set_to_random',
-                                 'lowest_50_percent_removed', 'lowest_50_percent_set_to_random',
-                                 'random_50_percent_removed', 'random_50_percent_set_to_random',
-                                 'no_weights',
-                                 'no_weights_lowest_5_percent_removed',
-                                 'no_weights_lowest_5_percent_set_to_random',
-                                 'no_weights_random_5_percent_removed',
-                                 'no_weights_random_5_percent_set_to_random',
+    ablation_experiments_rail = ['lowest_5_percent_removed', 'lowest_5_percent_set_to_random',   #1
+                                 'random_5_percent_removed', 'random_5_percent_set_to_random',   #3
+                                 'lowest_10_percent_removed', 'lowest_10_percent_set_to_random', #5
+                                 'random_10_percent_removed', 'random_10_percent_set_to_random', #7
+                                 'lowest_20_percent_removed', 'lowest_20_percent_set_to_random', #9
+                                 'random_20_percent_removed', 'random_20_percent_set_to_random', #11
+                                 'lowest_50_percent_removed', 'lowest_50_percent_set_to_random', #13
+                                 'random_50_percent_removed', 'random_50_percent_set_to_random', #15
+                                 'no_weights', #16
+                                 'no_weights_lowest_5_percent_removed', #17
+                                 'no_weights_lowest_5_percent_set_to_random', #18
+                                 'no_weights_random_5_percent_removed',  #19
+                                 'no_weights_random_5_percent_set_to_random', #20
                                  'no_weights_lowest_10_percent_removed',
                                  'no_weights_lowest_10_percent_set_to_random',
                                  'no_weights_random_10_percent_removed',
@@ -245,7 +245,7 @@ if __name__ == "__main__":
     names_rail = ablation_experiments_rail + ['reference']
 
     interactome_analysis(source_list=hits_ids,
-                         output_destinations_list=ablation_experiments_rail,
+                         output_destinations_list=names_rail,
                          random_samples_to_test_against=25,
                          processors=1,
                          background_list=background_ids,
@@ -253,7 +253,7 @@ if __name__ == "__main__":
                          )
 
     knowledge_analysis(source_list=hits_ids,
-                       output_destinations_list=ablation_experiments_rail,
+                       output_destinations_list=names_rail,
                        random_samples_to_test_against=25,
                        processors=1,
                        background_list=background_ids,

@@ -68,6 +68,9 @@ def _auxilary_annotation_ids_from_csv(source_csv):
     :param source_csv:
     :return:
     """
+
+    log.info('translating to internal ids %s' % source_csv)
+
     old_ids_parse = []
     new_ids_parse = []
 
@@ -88,7 +91,7 @@ def _auxilary_annotation_ids_from_csv(source_csv):
             if len(row) == 2:
                 new_ids_parse.append(row)
             if len(row) > 2:
-                raise Exception('more than two values provided in the source file')
+                raise Exception('more than two values provided in the source file. \n %s' % row)
 
     log.debug('debug auxilary_annotation_ids_from_csv: old_ids_parse: %s\n'
              '\tnew_ids_parse:%s' % (old_ids_parse, new_ids_parse))
@@ -112,6 +115,7 @@ def cast_external_refs_to_internal_ids(analysis_set_csv_location):
     :param analysis_set_csv_location:
     :return:
     """
+
     old_live_ids, new_live_ids = _auxilary_annotation_ids_from_csv(analysis_set_csv_location)
 
     log.debug('debug: \n\tgot old_live_ids (%s)\n\tand new_live_ids (%s)\n\t'
@@ -129,10 +133,10 @@ def cast_external_refs_to_internal_ids(analysis_set_csv_location):
 
     else:
         _, _, db_ids_list = look_up_annotation_set([_id for _id, _weight in new_live_ids])
-        log.info('new_live_ids branch: mapped ids to %s' % db_ids_list)
+        log.debug('new_live_ids branch: mapped ids to %s' % db_ids_list)
         weighted_db_map = [[_id, float(new_live_ids[i][1])] for i, _id
                            in enumerate(db_ids_list) if _id != '']
-        log.info('built the weighted_db_map %s' % weighted_db_map)
+        log.debug('built the weighted_db_map %s' % weighted_db_map)
 
         return weighted_db_map
 

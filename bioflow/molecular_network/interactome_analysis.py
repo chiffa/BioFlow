@@ -590,7 +590,8 @@ def auto_analyze(source_list: List[Union[List[int], List[Tuple[int, float]]]],
 
     if len(output_destinations_list) != len(source_list):  # we are not calling len on None
         log.warning('Output destination list has %d elements, whereas %d sources were supplied. '
-                    'Falling back to default output structure')
+                    'Falling back to default output structure' % (len(output_destinations_list),
+                                                                  len(source_list)))
         output_destinations_list = list(range(len(source_list)))
         output_destinations_list = [str(_item) for _item in output_destinations_list]
 
@@ -612,6 +613,8 @@ def auto_analyze(source_list: List[Union[List[int], List[Tuple[int, float]]]],
 
     for hits_list, sec_list, output_destination in zip(source_list, secondary_source_list,
                                                        output_destinations_list):
+
+        local_skip_sampling = skip_sampling
 
         if hits_list is None or len(hits_list) < 2:
             log.warning('hits list for destination %s contains less than two items: (%s).'
@@ -659,14 +662,14 @@ def auto_analyze(source_list: List[Union[List[int], List[Tuple[int, float]]]],
         if in_storage >= random_samples_to_test_against:
             log.info("%d suitable random samples found in storage for %d desired. Skipping "
                      "sampling" % (in_storage, random_samples_to_test_against))
-            skip_sampling = True
+            local_skip_sampling = True
 
         else:
             log.info("%d suitable random samples found in storage for %d desired. Sampling %d" %
                      (in_storage, random_samples_to_test_against, random_samples_to_test_against - in_storage))
             random_samples_to_test_against = random_samples_to_test_against - in_storage
 
-        if not skip_sampling:
+        if not local_skip_sampling:
 
             _spawn_sampler_pool(processors,
                                 (hits_list, sec_list),
