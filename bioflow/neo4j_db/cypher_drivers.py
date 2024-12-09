@@ -901,7 +901,7 @@ class GraphDBPipe(object):
         while total_unprocessed > 0:
 
             tx.run("MATCH (n:UNIPROT)-[:is_go_annotation]-(b:GOTerm) "
-                   "WHERE NOT EXISTS(n.processing) "
+                   "WHERE NOT n.processing IS NOT NULL "
                    "WITH n LIMIT %s "
                    "OPTIONAL MATCH (n:UNIPROT)-[:is_go_annotation]->(a:GOTerm)-[:is_a_go*]->(b:GOTerm) "
                    "WITH n, sum(b.information_content)+sum(a.information_content) as tot_inf "
@@ -909,7 +909,7 @@ class GraphDBPipe(object):
                    "SET n.processing = true" % neo4j_autobatch_threshold)
 
             total_unprocessed = tx.run("MATCH (n:UNIPROT)-[:is_go_annotation]-(b:GOTerm) "
-                                       "WHERE NOT EXISTS(n.processing) "
+                                       "WHERE NOT n.processing IS NOT NULL "
                                        "RETURN count(distinct n) as tot_links").single()['tot_links']
 
             log.debug('\tdebug: intermediate; nodes remaining to process: %d' % total_unprocessed)
@@ -925,7 +925,7 @@ class GraphDBPipe(object):
     def _batched_count_up_inf_content(tx):  # runs out of memory here.
 
         tx.run("MATCH (n:UNIPROT)"
-               "WHERE NOT EXISTS(n.processing) "
+               "WHERE NOT n.processing IS NOT NULL "
                "WITH n LIMIT %s "
                "OPTIONAL MATCH (n:UNIPROT)-[:is_go_annotation]-(b:GOTerm) "
                "OPTIONAL MATCH (n:UNIPROT)-[:is_go_annotation]->(a:GOTerm)-[:is_a_go*]->(b:GOTerm) "
@@ -934,7 +934,7 @@ class GraphDBPipe(object):
                "SET n.processing = true" % neo4j_autobatch_threshold)
 
         total_unprocessed = tx.run("MATCH (n:UNIPROT)-[:is_go_annotation]-(b:GOTerm) "
-                                   "WHERE NOT EXISTS(n.processing) "
+                                   "WHERE NOT n.processing IS NOT NULL "
                                    "RETURN count(distinct n) as tot_links").single()['tot_links']
 
         return total_unprocessed
@@ -1070,7 +1070,7 @@ class GraphDBPipe(object):
                 "MATCH (N)-[r]-(M) "
                 "WHERE (N.parse_type='physical_entity' AND M.parse_type='physical_entity') "
                 "AND N.main_connex='True' "
-                "AND NOT (EXISTS(N.forbidden) OR EXISTS(M.forbidden)) "
+                "AND NOT (N.forbidden IS NOT NULL OR M.forbidden IS NOT NULL) "
                 "AND (r.parse_type='physical_entity_molecular_interaction' "
                 "OR r.parse_type='identity' OR r.parse_type='refines')"
                 "WITH [N, M] as tl "
@@ -1083,7 +1083,7 @@ class GraphDBPipe(object):
                 "MATCH (N)-[r]-(M) "
                 "WHERE (N.parse_type='physical_entity' AND M.parse_type='physical_entity') "
                 "AND N.main_connex='True' "
-                "AND NOT (EXISTS(N.forbidden) OR EXISTS(M.forbidden)) "
+                "AND NOT (N.forbidden IS NOT NULL OR M.forbidden IS NOT NULL) "
                 "AND (r.parse_type='physical_entity_molecular_interaction' "
                 "OR r.parse_type='identity' OR r.parse_type='refines')"
                 "RETURN DISTINCT(r)")
@@ -1096,7 +1096,7 @@ class GraphDBPipe(object):
             nodes = tx.run(
                 "MATCH (N)-[r]-(M) "
                 "WHERE (N.parse_type='physical_entity' AND M.parse_type='physical_entity') "
-                "AND NOT (EXISTS(N.forbidden) OR EXISTS(M.forbidden)) "
+                "AND NOT (N.forbidden IS NOT NULL OR M.forbidden IS NOT NULL) "
                 "AND (r.parse_type='physical_entity_molecular_interaction' "
                 "OR r.parse_type='identity' OR r.parse_type='refines')"
                 "WITH [N, M] as tl "
@@ -1108,7 +1108,7 @@ class GraphDBPipe(object):
             rels = tx.run(
                 "MATCH (N)-[r]-(M) "
                 "WHERE (N.parse_type='physical_entity' AND M.parse_type='physical_entity') " 
-                "AND NOT (EXISTS(N.forbidden) OR EXISTS(M.forbidden)) "
+                "AND NOT (N.forbidden IS NOT NULL OR M.forbidden IS NOT NULL) "
                 "AND (r.parse_type='physical_entity_molecular_interaction' "
                 "OR r.parse_type='identity' OR r.parse_type='refines')"
                 "RETURN DISTINCT(r)")
@@ -1171,7 +1171,7 @@ class GraphDBPipe(object):
             if _property in required_node_params:
                 raise Exception('Trying to clear a required node parameter %s' % _property)
             resets = tx.run("MATCH (N) "
-                            "WHERE EXISTS(N.%s) "
+                            "WHERE N.%s IS NOT NULL "
                             "REMOVE N.%s "
                             "RETURN COUNT(N)" % (_property, _property)).single()['COUNT(N)']
             log.info("Cleared property %s in %d nodes" % (_property, resets))
@@ -1217,7 +1217,7 @@ class GraphDBPipe(object):
 
                 property_occurences = tx.run(
                     "MATCH (N:%s) "
-                    "WHERE EXISTS(N.%s) "
+                    "WHERE N.%s IS NOT NULL "
                     "RETURN COUNT(N)" % (node_type, _property)).single()["COUNT(N)"]
 
                 print("\t %s: %d/%.2f %%; %d distinct values"
@@ -1260,7 +1260,7 @@ class GraphDBPipe(object):
                                                   % (rel_type, _property)).single()[0]
 
                 property_occurences = tx.run("MATCH ()-[r:%s]-() "
-                                             "WHERE EXISTS(r.%s) "
+                                             "WHERE r.%s IS NOT NULL "
                                              "RETURN COUNT(r)" % (rel_type, _property)).single()[0]
 
                 print("\t %s: %d/%.2f %%; %d distinct values"
