@@ -6,7 +6,6 @@ cython
 pymongo
 requests
 click
-scikits.sparse
 mock
 requests-ftp
 neo4j-driver
