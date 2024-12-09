@@ -1,4 +1,4 @@
-"""
+    """
 Linear Algebra routines used throughout the project
 """
 from itertools import combinations_with_replacement, combinations, product
@@ -9,7 +9,7 @@ import numpy as np
 
 import scipy.sparse as spmat
 from scipy.sparse import lil_matrix, triu
-from scipy.sparse.linalg import eigsh
+from sksparse.linalg import eigsh
 
 from sklearn.cluster import spectral_clustering
 import warnings
