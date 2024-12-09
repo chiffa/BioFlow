@@ -30,7 +30,7 @@ def reduce_and_deduplicate_sample(sample: Union[List[int], List[Tuple[int, float
         sample = [(node_id, 1) for node_id in sample]
 
 
-    np_sample = np.array(sample).astype(np.float)
+    np_sample = np.array(sample).astype(float)
     u, c = np.unique(np_sample[:, 0], return_counts=True)
     dup = u[c > 1]
 

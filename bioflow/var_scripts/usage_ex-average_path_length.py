@@ -72,7 +72,7 @@ for i, sample in enumerate(background_samples):
     io_nodes, tension = (tensions.keys()[0], tensions.values()[0])
     # this actually should be a multiplication - we divide to normalize to 1 volt, after counting for 1 amp
 
-    nodes_current = np.sort(np.array(nodes_current_dict.values()).astype(np.float))[-100:] * tension
+    nodes_current = np.sort(np.array(nodes_current_dict.values()).astype(float))[-100:] * tension
 
     # not the most efficient implementation, but oh well
     essential_max_current = 0

@@ -35,13 +35,13 @@ def compare_calls(path_1_to_compare, path_2_to_compare,
     ids_1 = table_1[1:, 0].astype(np.int)
     ids_2 = table_2[1:, 0].astype(np.int)
 
-    selection_1 = table_1[1:, column_selector].astype(np.float)
-    selection_2 = table_2[1:, column_selector].astype(np.float)
+    selection_1 = table_1[1:, column_selector].astype(float)
+    selection_2 = table_2[1:, column_selector].astype(float)
 
-    p_val_list_1 = table_1[1:, p_val_column_selector].astype(np.float)
+    p_val_list_1 = table_1[1:, p_val_column_selector].astype(float)
     p_val_list_1_filter = p_val_list_1 < p_val_cutoff
 
-    p_val_list_2 = table_2[1:, p_val_column_selector].astype(np.float)
+    p_val_list_2 = table_2[1:, p_val_column_selector].astype(float)
     p_val_list_2_filter = p_val_list_2 < p_val_cutoff
 
     common_ids = set(ids_1[p_val_list_1_filter].tolist()).intersection(

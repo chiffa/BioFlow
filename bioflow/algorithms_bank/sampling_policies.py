@@ -93,7 +93,7 @@ def _characterize_set(sample: Union[List[int], List[Tuple[int, float]]]):
         return len(sample), 1, rounded_hist.tolist()
 
     else:
-        rounded_hist = _reduce_distribution(np.array(sample).astype(np.float)[:, 1])
+        rounded_hist = _reduce_distribution(np.array(sample).astype(float)[:, 1])
 
         return len(sample), 2, rounded_hist.tolist()
 
@@ -180,7 +180,7 @@ def matched_sampling(sample, secondary_sample,
 
     if _is_int(background[0]):
         background_ids = np.array(background)
-        background_whg = np.ones_like(background_ids).astype(np.float)
+        background_whg = np.ones_like(background_ids).astype(float)
 
     else:
         background_ids = np.array(background)[:, 0]

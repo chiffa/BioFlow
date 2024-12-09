@@ -265,8 +265,8 @@ class InteractomeInterface(object):
         laplacian matrix
         """
         log.debug('new val matrix: %dx%d' % (len(node_dict), len(node_dict)))
-        adjacency_matrix = lil_matrix((len(node_dict), len(node_dict)), dtype=np.float)
-        laplacian_matrix = lil_matrix((len(node_dict), len(node_dict)), dtype=np.float)
+        adjacency_matrix = lil_matrix((len(node_dict), len(node_dict)), dtype=float)
+        laplacian_matrix = lil_matrix((len(node_dict), len(node_dict)), dtype=float)
 
         node_id_2_mat_idx = {_id: _i for _i, _id in enumerate(node_dict.keys())}
         mat_idx_2_note_id = {_i: _id for _id, _i in node_id_2_mat_idx.items()}
