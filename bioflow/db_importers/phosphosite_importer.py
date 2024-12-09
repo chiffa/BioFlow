@@ -54,7 +54,7 @@ def insert_into_the_database(up_ids_2_inner_ids,
         DatabaseGraph.link(node1_id, node2_id,
                            'is_interacting',
                            {'source': origin,
-                            'weight': float(np.sum(np.array(link_parameter).astype(np.int))),
+                            'weight': float(np.sum(np.array(link_parameter).astype(int))),
                             'parse_type': 'physical_entity_molecular_interaction'})
 
 

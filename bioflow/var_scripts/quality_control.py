@@ -32,8 +32,8 @@ def compare_calls(path_1_to_compare, path_2_to_compare,
     table_1 = np.genfromtxt(path_1_to_compare, delimiter='\t')
     table_2 = np.genfromtxt(path_2_to_compare, delimiter='\t')
 
-    ids_1 = table_1[1:, 0].astype(np.int)
-    ids_2 = table_2[1:, 0].astype(np.int)
+    ids_1 = table_1[1:, 0].astype(int)
+    ids_2 = table_2[1:, 0].astype(int)
 
     selection_1 = table_1[1:, column_selector].astype(float)
     selection_2 = table_2[1:, column_selector].astype(float)

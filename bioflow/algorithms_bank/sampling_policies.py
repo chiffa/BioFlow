@@ -64,7 +64,7 @@ def _reduce_distribution(floats_arr: np.array):
     normalized_arr = floats_arr / np.max(floats_arr)
     bins = np.linspace(0, 1.001, 101)  # because floats round funny
     hist, bin_edges = np.histogram(normalized_arr, bins=bins, density=True)
-    rounded_hist = np.array(hist * 100).astype(np.int)
+    rounded_hist = np.array(hist * 100).astype(int)
 
     return rounded_hist
 
@@ -89,7 +89,7 @@ def _characterize_set(sample: Union[List[int], List[Tuple[int, float]]]):
 
     if _is_int(sample[0]):
         rounded_hist = [1] * 100
-        rounded_hist = np.array(rounded_hist).astype(np.int)
+        rounded_hist = np.array(rounded_hist).astype(int)
         return len(sample), 1, rounded_hist.tolist()
 
     else:

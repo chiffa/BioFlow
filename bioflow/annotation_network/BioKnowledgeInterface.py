@@ -831,7 +831,7 @@ class GeneOntologyInterface(object):
         """
 
         def _verify_uniprot_ids(id_weight_vector: List[Tuple[int, float]]):
-            uniprots = np.array(id_weight_vector)[:, 0].astype(np.int).tolist()
+            uniprots = np.array(id_weight_vector)[:, 0].astype(int).tolist()
 
             if not set(uniprots) <= self.known_up_ids:
 
